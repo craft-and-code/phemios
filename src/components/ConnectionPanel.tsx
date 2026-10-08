@@ -1,6 +1,7 @@
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
+import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
 import { useLibrary } from "../library/context";
-/** Credentials are entered once, cleared after submission and never persisted in the webview. */
+/** Successful login names are remembered; passwords and bearer credentials stay ephemeral. */
 export function ConnectionPanel(props: { onClose: () => void }) {
   let panel: HTMLElement | undefined;
   onMount(() => {
@@ -36,8 +37,18 @@ export function ConnectionPanel(props: { onClose: () => void }) {
     });
   });
   const library = useLibrary();
-  const [server, setServer] = createSignal(library.snapshot()?.server ?? "http://127.0.0.1:3412");
-  const [username, setUsername] = createSignal("");
+  const [preferenceError, setPreferenceError] = createSignal("");
+  let remembered: ReturnType<typeof readLoginPreference>;
+  try {
+    remembered = readLoginPreference(localStorage);
+  } catch {
+    setPreferenceError("Le nom d’utilisateur mémorisé est indisponible.");
+  }
+  const initialServer = library.snapshot()?.server ?? remembered?.server ?? "http://127.0.0.1:3412";
+  const [server, setServer] = createSignal(initialServer);
+  const [username, setUsername] = createSignal(
+    remembered?.server === initialServer ? remembered.username : "",
+  );
   const [password, setPassword] = createSignal("");
   return (
     <div
@@ -67,7 +78,18 @@ export function ConnectionPanel(props: { onClose: () => void }) {
                 const secret = password();
                 setPassword("");
                 await library.connect(server(), username(), secret);
-                if (library.session() && !library.error()) props.onClose();
+                const session = library.session();
+                if (session) {
+                  try {
+                    saveLoginPreference(localStorage, session.server, session.account.username);
+                    setPreferenceError("");
+                  } catch {
+                    setPreferenceError(
+                      "Connexion réussie, mais le nom d’utilisateur n’a pas pu être mémorisé.",
+                    );
+                  }
+                }
+                if (session && !library.error() && !preferenceError()) props.onClose();
               }}
             >
               <p class="eyebrow">VOTRE SERVEUR AÈDE</p>
@@ -106,8 +128,8 @@ export function ConnectionPanel(props: { onClose: () => void }) {
                 <p class="muted">La connexion utilise le pont natif de l’application desktop.</p>
               </Show>
               <small>
-                Les identifiants restent en mémoire. Les données du catalogue et les images
-                disposent d’un cache local.
+                Le nom d’utilisateur est mémorisé sur cet appareil. Le mot de passe est demandé à
+                chaque connexion.
               </small>
             </form>
           }
@@ -126,6 +148,9 @@ export function ConnectionPanel(props: { onClose: () => void }) {
             Synchroniser la bibliothèque
           </button>
           <button onClick={() => library.disconnect()}>Se déconnecter</button>
+        </Show>
+        <Show when={preferenceError()}>
+          <p role="status">{preferenceError()}</p>
         </Show>
         <Show when={library.error()}>
           <p role="alert">{library.error()}</p>

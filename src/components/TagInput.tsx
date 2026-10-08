@@ -50,22 +50,7 @@ export function TagInput(props: {
   return (
     <div class="tag-editor">
       <label for={id}>Tags</label>
-      <div class="tag-tokens" classList={{ disabled: props.disabled }}>
-        <For each={props.value}>
-          {(tag, index) => (
-            <span class="tag-pill">
-              {tag}
-              <button
-                class="tag-remove"
-                disabled={props.disabled}
-                aria-label={`Retirer le tag ${tag}`}
-                onClick={() => props.onChange(props.value.filter((_, i) => i !== index()))}
-              >
-                <Icon name="close" />
-              </button>
-            </span>
-          )}
-        </For>
+      <div class="tag-field" classList={{ disabled: props.disabled }}>
         <input
           id={id}
           role="combobox"
@@ -142,6 +127,23 @@ export function TagInput(props: {
           </For>
         </ul>
       </Show>
+      <div class="tag-pills" aria-label="Tags validés">
+        <For each={props.value}>
+          {(tag, index) => (
+            <span class="tag-pill">
+              {tag}
+              <button
+                class="tag-remove"
+                disabled={props.disabled}
+                aria-label={`Retirer le tag ${tag}`}
+                onClick={() => props.onChange(props.value.filter((_, i) => i !== index()))}
+              >
+                <Icon name="close" />
+              </button>
+            </span>
+          )}
+        </For>
+      </div>
       <small>
         Entrée ou virgule pour créer une pastille. Les tags sont enregistrés avec les notes.
       </small>

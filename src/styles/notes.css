@@ -138,7 +138,7 @@
   display: block;
   margin-bottom: 8px;
 }
-.tag-tokens {
+.tag-field {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -149,11 +149,11 @@
   border-radius: 8px;
   background: var(--surface);
 }
-.tag-tokens:focus-within {
+.tag-field:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
-.tag-tokens input[role="combobox"] {
+.tag-field input[role="combobox"] {
   flex: 1;
   min-width: 130px;
   width: auto;
@@ -161,7 +161,7 @@
   border: 0;
   background: transparent;
 }
-.tag-tokens input:focus-visible {
+.tag-field input[role="combobox"]:focus-visible {
   outline: none;
   box-shadow: none;
 }
@@ -218,4 +218,17 @@
 .tag-editor > small {
   display: block;
   margin-top: 6px;
+}
+
+.tag-field input[role="combobox"]:focus-visible {
+  border-color: transparent;
+}
+.tag-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.tag-field input[role="combobox"] {
+  width: 100%;
 }
