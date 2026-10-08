@@ -8,12 +8,14 @@
   color: var(--muted);
 }
 .stat-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   margin: 20px 0;
 }
 .stat-tiles > div {
+  flex: 1 1 155px;
+  min-width: min-content;
   display: grid;
   gap: 12px;
   padding: 18px;
@@ -26,6 +28,8 @@
   font-size: 12px;
 }
 .stat-tiles strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   font-size: 24px;
   font-weight: 500;
   color: var(--accent);

@@ -1,6 +1,6 @@
 import { createMemo, createSignal, For, Show, createUniqueId } from "solid-js";
 import type { Neighbour } from "../library/relations";
-import { relationSpace } from "../library/relation-space";
+import { relationSpace, relationLabels, relationBrightness } from "../library/relation-space";
 /** Rotatable 3D geometry with SVG perspective, accessible neighbours and no idle animation. */
 export function RelationGraph(props: {
   name: string;
@@ -17,6 +17,7 @@ export function RelationGraph(props: {
         edge: props.edges[p.index]!,
       })),
     );
+  const labels = createMemo(() => relationLabels(nodes()));
   let drag: { id: number; x: number; y: number; moved: boolean } | undefined,
     suppressClick = false;
   const scale = (delta: number) => setZoom((z) => Math.max(0.6, Math.min(1.6, z + delta)));
@@ -60,12 +61,13 @@ export function RelationGraph(props: {
               <title>
                 {node.edge.artist.name} · {node.edge.weight} pistes · {node.edge.source}
               </title>
-              <circle r={19 * node.scale} style={{ "--node-fill": `url(#${gradient})` }} />
-              <text y={22 * node.scale + 20} text-anchor="middle">
-                {node.edge.artist.name.length > 26
-                  ? `${node.edge.artist.name.slice(0, 25)}…`
-                  : node.edge.artist.name}
-              </text>
+              <circle
+                r={19 * node.scale}
+                style={{
+                  "--node-fill": `url(#${gradient})`,
+                  "--node-brightness": relationBrightness(node.x, node.y),
+                }}
+              />
             </g>
           </g>
         )}
@@ -162,14 +164,42 @@ export function RelationGraph(props: {
           style={{ "--node-fill": `url(#${gradient})` }}
         />
         {layer(true)}
+        <For each={labels()}>
+          {(label) => {
+            const node = () => nodes().find((n) => n.index === label.index)!;
+            return (
+              <g
+                class="relation-label"
+                aria-hidden="true"
+                onClick={() => {
+                  if (!suppressClick) props.onSelect(node().edge.artist.reference);
+                }}
+              >
+                <Show when={props.edges.length > 6}>
+                  <line
+                    class="relation-label-leader"
+                    x1={node().x}
+                    y1={node().y}
+                    x2={label.anchor === "start" ? 220 : 680}
+                    y2={label.y - 4}
+                  />
+                </Show>
+                <text x={label.x} y={label.y} text-anchor={label.anchor}>
+                  {node().edge.artist.name.length > 26
+                    ? `${node().edge.artist.name.slice(0, 25)}…`
+                    : node().edge.artist.name}
+                </text>
+                <title>{node().edge.artist.name}</title>
+              </g>
+            );
+          }}
+        </For>
         <text class="relation-core-label" x="450" y="319" text-anchor="middle">
           {props.name}
         </text>
       </svg>
       <div class="relation-space-tools">
-        <span>
-          Glisser pour tourner · molette pour zoomer · survoler un point pour l’identifier
-        </span>
+        <span>Glisser pour tourner · molette pour zoomer</span>
         <button aria-label="Zoom arrière" onClick={() => scale(-0.1)}>
           −
         </button>
@@ -180,7 +210,8 @@ export function RelationGraph(props: {
       </div>
       <Show when={props.edges.length}>
         <small>
-          La profondeur est une disposition visuelle ; elle ne mesure pas la proximité artistique.
+          La couleur suit l’éloignement visuel du centre ; la disposition ne mesure pas la proximité
+          artistique.
         </small>
       </Show>
     </div>

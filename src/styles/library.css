@@ -918,17 +918,43 @@ pre {
   color: #f59d9d;
 }
 
-/* Dense graphs reveal names on demand; the list preserves every readable identity. */
-.relation-graph.dense .relation-node text {
-  opacity: 0;
-}
-.relation-graph.dense .relation-node:hover text,
-.relation-graph.dense .relation-node:focus-visible text {
-  opacity: 1;
-}
 .relation-space .relation-core-label {
   paint-order: stroke;
   stroke: #10171b;
   stroke-width: 3px;
   stroke-linejoin: round;
+}
+
+.album-artist-link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.album-disc > h3 {
+  margin-top: 26px;
+  color: var(--accent);
+  font-size: 15px;
+}
+.analysis-coverage {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.relation-space .relation-node circle {
+  filter: brightness(var(--node-brightness, 1));
+}
+.relation-label {
+  cursor: pointer;
+}
+.relation-label text {
+  fill: var(--text);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: #10171b;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.relation-label-leader {
+  stroke: #78949680;
+  stroke-width: 0.8;
+  pointer-events: none;
 }

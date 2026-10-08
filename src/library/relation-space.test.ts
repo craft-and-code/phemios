@@ -14,3 +14,19 @@ it("rotates real depth without losing or reordering collaboration identities", (
   expect(() => relationSpace(1, 0, 0, 5)).toThrow();
   expect(relationSpace(0, 0, 0, 1)).toEqual([]);
 });
+it("keeps every dense-graph label readable and darkens spatially remote nodes", async () => {
+  const { relationLabels, relationBrightness } = await import("./relation-space");
+  const points = relationSpace(16, -0.35, 0.2, 1);
+  const labels = relationLabels(points);
+  expect(new Set(labels.map((p) => p.index)).size).toBe(16);
+  for (const anchor of ["start", "end"]) {
+    const positions = labels
+      .filter((p) => p.anchor === anchor)
+      .map((p) => p.y)
+      .sort((a, b) => a - b);
+    for (let i = 1; i < positions.length; i++)
+      expect(positions[i]! - positions[i - 1]!).toBeGreaterThanOrEqual(26);
+  }
+  expect(relationBrightness(450, 255)).toBeGreaterThan(relationBrightness(800, 400));
+  expect(relationLabels([])).toEqual([]);
+});

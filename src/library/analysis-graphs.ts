@@ -33,7 +33,8 @@ export function analysisGraphs(value: unknown) {
   if (row.source !== "flaccompagnon") throw new Error("Source d’analyse non prise en charge.");
   const clipping = object(data.clipping),
     detections = object(data.detections);
-  const gauges: Gauge[] = [];
+  const gauges: Gauge[] = [],
+    missing: string[] = [];
   function add(
     label: string,
     unit: string,
@@ -45,6 +46,7 @@ export function analysisGraphs(value: unknown) {
   ) {
     const measured = number(value, validLow, validHigh);
     if (measured !== undefined) gauges.push({ label, unit, value: measured, low, high });
+    else missing.push(label);
   }
   add("Niveau intégré", "LUFS", data.integrated_lufs, -60, 0);
   add("Dynamique", "dB DR", data.dr_db, 0, 30, 0);
@@ -55,6 +57,7 @@ export function analysisGraphs(value: unknown) {
   add("Précision mesurée", "bits", data.real_bit_depth, 0, 32, 0, 64);
   const rate = number(data.sample_rate, 1);
   if (rate) add("Coupure spectrale", "Hz", data.cutoff_hz, 0, rate / 2, 0);
+  else missing.push("Coupure spectrale");
   add("Corrélation stéréo", "", data.phase_correlation, -1, 1, -1, 1);
   add("Balance D/G", "dB", object(data.stereo_balance).right_minus_left_db, -12, 12);
   const phase = object(data.local_phase);
@@ -67,6 +70,7 @@ export function analysisGraphs(value: unknown) {
     if (low !== undefined && high !== undefined)
       add(`Phase ${low}–${high} Hz`, "", object(band.summary).correlation, -1, 1, -1, 1);
   }
+  if (!(phase.bands as unknown[] | undefined)?.length) missing.push("Phase par bandes");
   const duration = number(data.duration_secs, 0),
     discontinuities = object(data.discontinuities);
   let eventCount = 0,
@@ -105,6 +109,7 @@ export function analysisGraphs(value: unknown) {
   }
   return {
     gauges,
+    missing,
     events,
     duration,
     eventCount: completeCount ? eventCount : undefined,

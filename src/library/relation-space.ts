@@ -29,3 +29,33 @@ export function relationSpace(count: number, yaw: number, pitch: number, zoom: n
     };
   }).sort((a, b) => a.depth - b.depth);
 }
+
+interface ProjectedNode {
+  index: number;
+  x: number;
+  y: number;
+}
+/** Perimeter labels reserve one readable row per node when projected names would overlap. */
+export function relationLabels(points: readonly ProjectedNode[]) {
+  if (points.length <= 6)
+    return points.map((p) => ({ ...p, y: p.y + 42, anchor: "middle" as const }));
+  const labels: { index: number; x: number; y: number; anchor: "start" | "end" }[] = [];
+  for (const left of [true, false]) {
+    const side = points
+      .filter((p) => p.x < 450 === left)
+      .sort((a, b) => a.y - b.y || a.index - b.index);
+    side.forEach((p, i) =>
+      labels.push({
+        index: p.index,
+        x: left ? 12 : 888,
+        y: side.length === 1 ? 255 : 42 + (i * 426) / (side.length - 1),
+        anchor: left ? "start" : "end",
+      }),
+    );
+  }
+  return labels;
+}
+/** Darkness follows projected spatial distance only, never inferred musical proximity. */
+export function relationBrightness(x: number, y: number) {
+  return 1 - 0.6 * Math.min(1, Math.hypot(x - 450, y - 255) / 400);
+}

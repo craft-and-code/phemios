@@ -40,6 +40,12 @@ export function AnalysisCharts(props: { analysis: unknown }) {
             Les barres situent les mesures sur une échelle ; elles ne représentent pas un score.
             Survolez une mesure pour son explication.
           </p>
+          <Show when={data().missing.length}>
+            <p class="analysis-coverage" role="status">
+              Mesures non fournies par ce rapport : {data().missing.join(" · ")}. Une nouvelle
+              analyse complète peut les ajouter ; aucune valeur n’est déduite des autres pistes.
+            </p>
+          </Show>
           <div class="analysis-gauges">
             <For each={data().gauges}>
               {(gauge) => {

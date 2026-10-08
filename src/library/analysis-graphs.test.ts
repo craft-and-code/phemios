@@ -48,3 +48,13 @@ it("rejects malformed finite/range values rather than drawing fictitious graphs"
     analysisGraphs({ source: "flaccompagnon", dr_db: 10, source_data: null }).gauges[0]?.value,
   ).toBe(10);
 });
+it("explains missing measurements instead of hiding legacy report coverage", () => {
+  const report = analysisGraphs({
+    source: "flaccompagnon",
+    source_data: { dr_db: 9, sample_rate: 44100, cutoff_hz: 21000 },
+  });
+  expect(report.missing).toContain("Niveau intégré");
+  expect(report.missing).toContain("Phase par bandes");
+  expect(report.missing).not.toContain("Dynamique");
+  expect(report.gauges.find((g) => g.label === "Niveau intégré")).toBeUndefined();
+});
