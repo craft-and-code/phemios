@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { Artwork } from "../components/Artwork";
 import { demoAlbums, demoArtists } from "../demo/catalog";
@@ -7,9 +7,17 @@ import type { Filters } from "../library/types";
 import type { Section } from "../navigation/routes";
 
 /** Only sourced demo origins are grouped; unknown values have their own choice. */
-export function LibraryPage(props: { section: Section; filters: Filters; reverse: boolean }) {
-  const [country, setCountry] = createSignal<string | null | undefined>();
-  const [genre, setGenre] = createSignal<string | undefined>();
+export function LibraryPage(props: {
+  section: Section;
+  filters: Filters;
+  setFilters: (filters: Filters) => void;
+  reverse: boolean;
+}) {
+  const country = () => props.filters.country;
+  const setCountry = (country: string | null | undefined) =>
+    props.setFilters({ ...props.filters, country });
+  const genre = () => props.filters.genre;
+  const setGenre = (genre: string | undefined) => props.setFilters({ ...props.filters, genre });
   const compare = (a: string, b: string) =>
     normalizeName(a).localeCompare(normalizeName(b), "fr") * (props.reverse ? -1 : 1);
   const artists = createMemo(() => {
@@ -28,20 +36,9 @@ export function LibraryPage(props: { section: Section; filters: Filters; reverse
       .sort((a, b) => compare(a.title, b.title)),
   );
   const artistView = () => ["artists", "countries", "genres"].includes(props.section);
-  const titles: Partial<Record<Section, string>> = {
-    artists: "Artistes",
-    albums: "Albums",
-    compilations: "Compilations",
-    countries: "Pays",
-    genres: "Genres",
-  };
   return (
-    <section class="page library-page">
+    <section class="page library-page" aria-label="Catalogue">
       <div class="page-heading">
-        <div>
-          <p class="eyebrow">VOTRE CATALOGUE</p>
-          <h1>{titles[props.section]}</h1>
-        </div>
         <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
       </div>
       <Show when={props.section === "countries"}>

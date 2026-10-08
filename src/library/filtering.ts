@@ -61,6 +61,14 @@ export function searchAlbum(album: Album, artist: Artist, query: string): boolea
   return normalizeName(text).includes(normalizeName(query));
 }
 
+/** Facets remain visible in the filter bar when the navigation view changes. */
+export function matchesFacets(artist: Artist, filters: Filters): boolean {
+  return (
+    (filters.country === undefined || artist.country === filters.country) &&
+    (filters.genre === undefined || artist.genre === filters.genre)
+  );
+}
+
 /** Artist year matching uses its releases; alphabet matching uses its own name. */
 export function filterArtists(
   artists: readonly Artist[],
@@ -69,6 +77,7 @@ export function filterArtists(
 ) {
   return artists.filter(
     (artist) =>
+      matchesFacets(artist, filters) &&
       matchesAlphabet(artist.name, filters) &&
       albums.some(
         (album) =>
@@ -89,6 +98,7 @@ export function filterAlbums(
     const artist = artists.find((candidate) => candidate.reference === album.artist);
     return (
       artist !== undefined &&
+      matchesFacets(artist, filters) &&
       matchesYear(album, filters) &&
       matchesAlphabet(album.title, filters) &&
       searchAlbum(album, artist, filters.query)

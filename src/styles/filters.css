@@ -49,13 +49,13 @@
   font-size: 10px;
 }
 .rail-track {
-  height: 22px;
+  height: 54px;
   position: relative;
   margin: 0 9px;
 }
 .rail-line {
   position: absolute;
-  top: 10px;
+  top: 42px;
   height: 3px;
   width: 100%;
   background: #383c3d;
@@ -63,13 +63,13 @@
 }
 .rail-band {
   position: absolute;
-  top: 3px;
+  top: 35px;
   height: 17px;
   min-width: 4px;
   border: 0;
   border-radius: 5px;
   padding: 0;
-  background: #9aaf48;
+  background: linear-gradient(transparent 7px, var(--accent) 7px 10px, transparent 10px);
   cursor: grab;
   touch-action: none;
 }
@@ -79,7 +79,7 @@
 .rail-track input {
   position: absolute;
   left: -9px;
-  top: 0;
+  top: 33px;
   width: calc(100% + 18px);
   height: 22px;
   margin: 0;
@@ -94,9 +94,10 @@
 .rail-track input::-webkit-slider-thumb {
   appearance: none;
   width: 18px;
-  height: 22px;
+  height: 18px;
+  margin-top: 2px;
   border: 2px solid #171b10;
-  border-radius: 5px;
+  border-radius: 50%;
   background: var(--accent);
   pointer-events: auto;
   cursor: ew-resize;
@@ -109,7 +110,7 @@
   width: 14px;
   height: 18px;
   border: 2px solid #171b10;
-  border-radius: 5px;
+  border-radius: 50%;
   background: var(--accent);
   pointer-events: auto;
   cursor: ew-resize;
@@ -154,4 +155,35 @@
   .rail-heading small {
     display: none;
   }
+}
+
+.rail-histogram {
+  position: absolute;
+  inset: 0 -3px 14px;
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  pointer-events: none;
+}
+.histogram-bin {
+  flex: 1;
+  min-width: 1px;
+  background: #454d46;
+  border-radius: 2px 2px 0 0;
+}
+.histogram-bin.selected {
+  background: #a2b651;
+}
+.rail-switches {
+  display: flex;
+  gap: 6px;
+}
+.filter-options .icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+}
+.filter-facet {
+  color: var(--accent);
+  border-color: #5c683c;
 }

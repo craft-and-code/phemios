@@ -1,5 +1,5 @@
 import { createSignal, Show } from "solid-js";
-import { sections, type Section } from "../navigation/routes";
+import { type Section } from "../navigation/routes";
 
 const descriptions: Partial<Record<Section, string>> = {
   favourites: "Retrouvez les artistes et albums marqués comme favoris.",
@@ -18,8 +18,6 @@ export function WorkspacePage(props: { section: Section }) {
   const [convert, setConvert] = createSignal(false);
   return (
     <section class="page workspace-page">
-      <p class="eyebrow">VOTRE MUSIQUE & OUTILS</p>
-      <h1>{sections.find((section) => section.id === props.section)?.label}</h1>
       <p class="intro">{descriptions[props.section]}</p>
       <Show
         when={props.section === "players"}

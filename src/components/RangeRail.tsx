@@ -1,6 +1,7 @@
 import { For, createMemo } from "solid-js";
 import { shiftInterval } from "../library/filtering";
 import type { Interval } from "../library/types";
+import type { CountBin } from "../library/distribution";
 
 interface Props {
   label: string;
@@ -9,6 +10,8 @@ interface Props {
   ticks: readonly number[];
   format: (value: number) => string;
   onChange: (value: Interval) => void;
+  bins: readonly CountBin[];
+  countLabel: string;
 }
 
 /** Two native bounds plus a draggable/keyboard-movable selected band. */
@@ -21,11 +24,21 @@ export function RangeRail(props: Props) {
   const label = createMemo(
     () => `${props.format(props.value[0])} — ${props.format(props.value[1])}`,
   );
+  const histogram = createMemo(() => {
+    const lookup = new Map(props.bins.map((bin) => [bin.value, bin.count]));
+    const maximum = Math.max(1, ...props.bins.map((bin) => bin.count));
+    return Array.from({ length: span() + 1 }, (_, index) => {
+      const value = props.domain[0] + index;
+      const count = lookup.get(value) ?? 0;
+      return { value, count, height: count === 0 ? 2 : 4 + (count / maximum) * 26 };
+    });
+  });
 
   function start(event: PointerEvent & { currentTarget: HTMLButtonElement }) {
     if (event.button !== 0 || !track) return;
     drag = { x: event.clientX, range: props.value, width: track.clientWidth };
     event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.focus();
     event.preventDefault();
   }
 
@@ -62,6 +75,20 @@ export function RangeRail(props: Props) {
           track = element;
         }}
       >
+        <div class="rail-histogram" aria-label={`Répartition par ${props.label.toLowerCase()}`}>
+          <For each={histogram()}>
+            {(bin) => (
+              <div
+                class="histogram-bin"
+                classList={{ selected: bin.value >= props.value[0] && bin.value <= props.value[1] }}
+                role="img"
+                aria-label={`${props.format(bin.value)} : ${bin.count} ${props.countLabel}`}
+                title={`${props.format(bin.value)} · ${bin.count} ${props.countLabel}`}
+                style={{ height: `${bin.height}px` }}
+              />
+            )}
+          </For>
+        </div>
         <div class="rail-line" />
         <button
           class="rail-band"

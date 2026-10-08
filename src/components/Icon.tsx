@@ -1,4 +1,12 @@
 const paths: Record<string, string> = {
+  calendar: "M3 5h18v16H3V5ZM7 2v6M17 2v6M3 10h18M7 14h3M14 14h3M7 18h3",
+  alphabet: "m2 18 5-13 5 13M4 14h6M16 5h6l-6 13h6",
+  previous: "M5 5v14M19 5 8 12l11 7V5Z",
+  next: "M19 5v14M5 5l11 7-11 7V5Z",
+  pause: "M8 5v14M16 5v14",
+  repeat: "M4 8h14l-3-3m3 3-3 3M20 16H6l3 3m-3-3 3-3",
+  shuffle: "M3 5c10 0 6 14 16 14m-3-3 3 3-3 3M3 19c10 0 6-14 16-14m-3-3 3 3-3 3",
+  volume: "M3 9h4l5-4v14l-5-4H3V9ZM16 8a6 6 0 0 1 0 8M19 4a11 11 0 0 1 0 16",
   menu: "M3 6h18M3 12h18M3 18h18",
   sort: "M4 6h16M4 12h10M4 18h4m10-4 3 4 3-4M21 3v15",
   users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87",

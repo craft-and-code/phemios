@@ -1,4 +1,6 @@
 import { createMemo, createResource, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { distributions } from "./library/distribution";
+import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
 import { Icon } from "./components/Icon";
 import { demoAlbums, demoArtists, demoYearDomain } from "./demo/catalog";
@@ -66,7 +68,6 @@ export function App() {
             onInput={(event) => setFilters({ ...filters(), query: event.currentTarget.value })}
           />
         </label>
-        <span class="demo-badge">DÉMONSTRATION</span>
       </header>
       <Show when={sidebar()}>
         <aside class="sidebar" aria-label="Navigation principale">
@@ -113,6 +114,23 @@ export function App() {
             setValue={setFilters}
             context={context()}
             yearDomain={demoYearDomain}
+            histogram={distributions(
+              demoArtists,
+              current().kind === "artist"
+                ? demoAlbums.filter((album) => {
+                    const route = current();
+                    return route.kind === "artist" && album.artist === route.reference;
+                  })
+                : demoAlbums,
+              filters(),
+              current().kind === "section" &&
+                ["artists", "countries", "genres"].includes(section()),
+            )}
+            countLabel={
+              current().kind === "section" && ["artists", "countries", "genres"].includes(section())
+                ? "artistes"
+                : "albums"
+            }
           />
           <div class="catalog-tools">
             <span>Les pochettes restent visibles dans les deux densités.</span>
@@ -141,7 +159,12 @@ export function App() {
             when={["artists", "albums", "compilations", "countries", "genres"].includes(section())}
             fallback={<WorkspacePage section={section()} />}
           >
-            <LibraryPage section={section()} filters={filters()} reverse={reverse()} />
+            <LibraryPage
+              section={section()}
+              filters={filters()}
+              setFilters={setFilters}
+              reverse={reverse()}
+            />
           </Show>
         </Show>
         <Show when={current().kind === "artist"}>
@@ -173,27 +196,7 @@ export function App() {
           </div>
         </Show>
       </main>
-      <footer class="player-bar" aria-label="Lecture">
-        <div>
-          <Icon name="disc" />
-          <span>
-            Aucun morceau en lecture<small>Le moteur audio sera raccordé à Aède.</small>
-          </span>
-        </div>
-        <button class="icon-button" disabled aria-label="Lecture indisponible">
-          <Icon name="play" />
-        </button>
-        <div class="audio-settings">
-          <Icon name="wave" />
-          <label>
-            Volume
-            <input type="range" disabled aria-label="Volume indisponible" />
-          </label>
-          <select disabled aria-label="Sortie audio indisponible">
-            <option>Sortie audio non connectée</option>
-          </select>
-        </div>
-      </footer>
+      <PlayerBar />
     </div>
   );
 }

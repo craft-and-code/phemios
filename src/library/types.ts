@@ -28,4 +28,6 @@ export interface Filters {
   alphabet: Interval;
   includeUnknownYear: boolean;
   query: string;
+  country?: string | null | undefined;
+  genre?: string | undefined;
 }
