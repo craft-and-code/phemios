@@ -10,7 +10,8 @@ export type Section =
   | "playlists"
   | "analysis"
   | "relations"
-  | "players";
+  | "players"
+  | "statistics";
 export type Route =
   | { kind: "section"; section: Section }
   | { kind: "artist" | "album"; reference: string }
@@ -28,6 +29,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "playlists", label: "Listes M3U", symbol: "list" },
   { id: "analysis", label: "Analyses", symbol: "wave" },
   { id: "relations", label: "Relations", symbol: "graph" },
+  { id: "statistics", label: "Statistiques", symbol: "stats" },
   { id: "players", label: "Lecteurs externes", symbol: "drive" },
 ];
 

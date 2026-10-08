@@ -43,3 +43,7 @@ Connection popovers close via outside pointer activation or Escape, keep focus w
 ### Visual personal notes
 
 Artist and album pages use the same current-owner annotation component. Stars and the favourite heart have 18 px glyphs, unframed 28 px click targets, labels and pressed states. CommonMark notes use the explicitly approved Milkdown kit with bold, italic, heading, paragraph, lists, quote and undo/redo icons. Stored Markdown is hidden during normal editing. Account/server annotations remain authoritative; explicit save and errors preserve the draft. Untouched note source is not normalized by merely opening the editor.
+
+### Statistics
+
+The sidebar exposes whole-library statistics independently of catalog filters: albums/compilations, tracks/files, distinct principal/credited artists, duration/bytes, genres/labels, orphan tracks, completeness, codecs, encoded quality classes, sample rates, decades, sourced origins, credit roles and artist/writer rankings. Every breakdown is bounded and independently paged. Server diagnostics report saved integrity and pending analysis counts without running new tasks. The local coverage section shows unknown metadata and available media; owner favourites, ratings, notes and tags stay separate. Offline values are labelled as public snapshot counts, never invented server totals. Refresh creates a new consistent scan epoch.

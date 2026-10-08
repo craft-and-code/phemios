@@ -190,3 +190,12 @@ fn busy_playlist_publication_is_never_replayed() {
     );
     worker.join().unwrap();
 }
+
+#[test]
+fn statistics_and_diagnosis_are_read_only_narrow_capabilities() {
+    assert!(allowed("GET", "/api/v1/stats"));
+    assert!(allowed("GET", "/api/v1/doctor"));
+    assert!(!allowed("POST", "/api/v1/stats"));
+    assert!(!allowed("DELETE", "/api/v1/doctor"));
+    assert!(!allowed("GET", "/api/v1/stats/../../accounts"));
+}

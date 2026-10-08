@@ -89,7 +89,10 @@ export function App() {
     (current().kind === "section" &&
       ["artists", "albums", "compilations", "countries", "genres"].includes(section()));
   onMount(() => {
-    const sync = () => setRoute(parseRoute(window.location.hash));
+    const sync = () => {
+      setRoute(parseRoute(window.location.hash));
+      document.getElementById("content")?.scrollTo({ top: 0 });
+    };
     window.addEventListener("hashchange", sync);
     onCleanup(() => window.removeEventListener("hashchange", sync));
   });

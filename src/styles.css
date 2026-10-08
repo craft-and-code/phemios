@@ -2,6 +2,7 @@
 @import "./styles/filters.css";
 @import "./styles/library.css";
 @import "./styles/notes.css";
+@import "./styles/statistics.css";
 
 :root {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -154,4 +155,9 @@ select:focus-visible {
 }
 .search input:focus-visible {
   box-shadow: none;
+}
+
+/* Primary-action text retains contrast when the pointer remains over a saved action. */
+.primary:hover:not(:disabled) {
+  color: #161913;
 }
