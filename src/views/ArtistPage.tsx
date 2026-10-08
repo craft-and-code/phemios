@@ -60,7 +60,7 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
         style={
           banner()
             ? {
-                "background-image": `linear-gradient(90deg,#101917aa,#11191735),url("${banner()}")`,
+                "--artist-banner": `linear-gradient(90deg,#101917aa,#11191735),url("${banner()}")`,
               }
             : {}
         }
@@ -74,15 +74,6 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
         </div>
       </header>
       <div class="page artist-content">
-        <div class="section-heading">
-          <h2>Discographie</h2>
-          <span role="status">{albums().length} albums dans la sélection</span>
-        </div>
-        <AlbumGrid albums={albums()} />
-        <Show when={appearances().length}>
-          <h2>Participations</h2>
-          <AlbumGrid albums={appearances()} />
-        </Show>
         <section class="biography">
           <h2>Biographie</h2>
           <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
@@ -104,7 +95,16 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
             <small>Texte fictif pour l’aperçu.</small>
           </Show>
         </section>
-        <AnnotationPanel reference={props.artist.reference} />
+        <div class="section-heading">
+          <h2>Discographie</h2>
+          <span role="status">{albums().length} albums dans la sélection</span>
+        </div>
+        <AlbumGrid albums={albums()} />
+        <Show when={appearances().length}>
+          <h2>Participations</h2>
+          <AlbumGrid albums={appearances()} />
+        </Show>
+        <AnnotationPanel reference={props.artist.reference} kind="artist" />
       </div>
     </article>
   );

@@ -16,7 +16,7 @@ import type { Annotation } from "../library/server";
 import { NoteEditor } from "./NoteEditor";
 import { Icon } from "./Icon";
 /** Icons save their own fields immediately; notes/tags stay in an explicit draft. */
-export function AnnotationPanel(props: { reference: string }) {
+export function AnnotationPanel(props: { reference: string; kind: "artist" | "album" }) {
   const library = useLibrary();
   const [editorUnavailable, setEditorUnavailable] = createSignal(true);
   const [rating, setRating] = createSignal<number | null>(null),
@@ -89,7 +89,10 @@ export function AnnotationPanel(props: { reference: string }) {
     setFailure("");
     try {
       await held.write({ [field]: value } as AnnotationPatch);
-      if (current(held)) setMessage("Étoiles et favori enregistrés dans Aède.");
+      if (current(held))
+        setMessage(
+          `Étoiles et favori de ${props.kind === "artist" ? "cet artiste" : "cet album"} enregistrés dans Aède.`,
+        );
     } catch (error) {
       if (!current(held)) return;
       if (revision === revisions[field]) {
@@ -139,7 +142,7 @@ export function AnnotationPanel(props: { reference: string }) {
   const dirty = () => note() !== savedNote() || tags() !== savedTags();
   return (
     <section class="annotation-panel">
-      <h2>Vos annotations</h2>
+      <h2>Annotations de {props.kind === "artist" ? "l’artiste" : "l’album"}</h2>
       <Show when={!library.session()}>
         <p class="notice">Connectez-vous pour enregistrer vos annotations.</p>
       </Show>

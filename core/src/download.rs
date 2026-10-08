@@ -1,4 +1,4 @@
-//! Publish a server-authored M3U under a native-selected download directory.
+//! Publish server-authored M3U and analysis reports under a native-selected download directory.
 use serde_json::Value;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -15,13 +15,21 @@ pub fn publish(folder: &Path, id: &str, response: &Value) -> Result<PathBuf, Str
         .as_str()
         .filter(|value| value.starts_with("#EXTM3U") && value.len() <= 8 * 1024 * 1024)
         .ok_or("Contenu M3U invalide.")?;
+    publish_named(folder, id, "m3u", content.as_bytes())
+}
+fn publish_named(
+    folder: &Path,
+    stem: &str,
+    extension: &str,
+    content: &[u8],
+) -> Result<PathBuf, String> {
     fs::create_dir_all(folder)
         .map_err(|_| "Dossier de téléchargement inaccessible.".to_string())?;
     for attempt in 0..1000 {
         let filename = if attempt == 0 {
-            format!("{id}.m3u")
+            format!("{stem}.{extension}")
         } else {
-            format!("{id}-{attempt}.m3u")
+            format!("{stem}-{attempt}.{extension}")
         };
         let path = folder.join(filename);
         let mut options = OpenOptions::new();
@@ -37,7 +45,7 @@ pub fn publish(folder: &Path, id: &str, response: &Value) -> Result<PathBuf, Str
             Err(_) => return Err("Téléchargement impossible.".into()),
         };
         if file
-            .write_all(content.as_bytes())
+            .write_all(content)
             .and_then(|()| file.sync_all())
             .is_err()
         {
@@ -47,7 +55,55 @@ pub fn publish(folder: &Path, id: &str, response: &Value) -> Result<PathBuf, Str
         }
         return Ok(path);
     }
-    Err("Trop de copies de cette liste existent dans les téléchargements.".into())
+    Err("Trop de copies de ce fichier existent dans les téléchargements.".into())
+}
+/// Save a validated server-authored FlacCompagnon report; paths in the JSON are data only.
+pub fn publish_analysis(
+    folder: &Path,
+    reference: &str,
+    response: &Value,
+) -> Result<PathBuf, String> {
+    use std::hash::{Hash, Hasher};
+    if reference.len() > 4096
+        || !["track:", "release:"].iter().any(|kind| {
+            reference
+                .strip_prefix(kind)
+                .is_some_and(|value| !value.is_empty())
+        })
+    {
+        return Err("Référence d’analyse invalide.".into());
+    }
+    let files = response["report"]["files"]
+        .as_array()
+        .filter(|files| !files.is_empty() && files.len() <= 2048)
+        .ok_or("Rapport d’analyse incomplet.")?;
+    if response["format"] != "flaccompagnon-report"
+        || !response["version"]
+            .as_u64()
+            .is_some_and(|version| version <= 1)
+        || !response["report"]["root"].is_string()
+        || !response["report"]["has_flac"].is_boolean()
+        || files.iter().any(|file| !file["path"].is_string())
+    {
+        return Err("Rapport FlacCompagnon invalide.".into());
+    }
+    let content = serde_json::to_vec_pretty(response).map_err(|_| "Rapport d’analyse invalide.")?;
+    if content.len() > 16 * 1024 * 1024 {
+        return Err("Rapport d’analyse trop volumineux.".into());
+    }
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    reference.hash(&mut hash);
+    let kind = if reference.starts_with("track:") {
+        "titre"
+    } else {
+        "album"
+    };
+    publish_named(
+        folder,
+        &format!("flaccompagnon-{kind}-{:016x}", hash.finish()),
+        "json",
+        &content,
+    )
 }
 #[cfg(test)]
 #[path = "download_tests.rs"]

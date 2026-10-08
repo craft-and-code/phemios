@@ -37,6 +37,9 @@ export const loginAede = (server: string, username: string, password: string) =>
     password,
   });
 export const downloadAede = (id: string) => nativeCall<string>("aede_download", { id });
+/** Fetch the server-selected complete report and save it under the native Downloads folder. */
+export const downloadAnalysisAede = (reference: string) =>
+  nativeCall<string>("aede_download_analysis", { reference });
 export const logoutAede = () => nativeCall<void>("aede_logout");
 export const syncAede = () => nativeCall<unknown>("aede_sync");
 export const cachedAede = () => nativeCall<unknown | null>("aede_cache");

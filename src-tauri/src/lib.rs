@@ -25,7 +25,8 @@ pub fn run() -> Result<(), tauri::Error> {
             aede::aede_cache,
             aede::aede_request,
             aede::aede_artwork,
-            aede::aede_download
+            aede::aede_download,
+            aede::aede_download_analysis
         ])
         .run(tauri::generate_context!())
 }

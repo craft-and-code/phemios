@@ -1,5 +1,8 @@
 import { AnnotationPanel } from "../components/AnnotationPanel";
-import { createEffect, createResource, For, Show } from "solid-js";
+import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import { AnalysisCharts } from "../components/AnalysisCharts";
+import { AnalysisDownload } from "../components/AnalysisDownload";
+import { CoverPreview } from "../components/CoverPreview";
 import { Artwork } from "../components/Artwork";
 import { JobControls } from "../components/JobControls";
 import { M3UExport } from "../components/M3UExport";
@@ -13,6 +16,7 @@ interface AvailableTrack extends Track {
 /** Read/edit current-account annotations; save failure never discards the draft. */
 export function AlbumPage(props: { album: Album }) {
   const library = useLibrary();
+  const [enlarged, setEnlarged] = createSignal(false);
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
   const [tracks, { refetch }] = createResource(
     () => (library.session() ? props.album.reference : false),
@@ -36,7 +40,20 @@ export function AlbumPage(props: { album: Album }) {
   return (
     <article class="page album-page">
       <div class="album-hero">
-        <Artwork album={props.album} />
+        <button
+          class="cover-open"
+          aria-label={`Agrandir la pochette de ${props.album.title}`}
+          disabled={!library.demo && !library.image(props.album.reference, "cover")}
+          onClick={(event) => {
+            event.currentTarget.focus();
+            setEnlarged(true);
+          }}
+        >
+          <Artwork album={props.album} />
+        </button>
+        <Show when={enlarged()}>
+          <CoverPreview album={props.album} onClose={() => setEnlarged(false)} />
+        </Show>
         <div>
           <p class="eyebrow">{props.album.compilation ? "COMPILATION" : "ALBUM"}</p>
           <h1>{props.album.title}</h1>
@@ -49,9 +66,16 @@ export function AlbumPage(props: { album: Album }) {
           <M3UExport release={props.album.reference} title={props.album.title} />
         </div>
       </div>
-      <AnnotationPanel reference={props.album.reference} />
+      <AnnotationPanel reference={props.album.reference} kind="album" />
       <section>
-        <h2>Pistes, analyses et spectres</h2>
+        <div class="section-heading">
+          <h2>Pistes, analyses et spectres</h2>
+          <AnalysisDownload
+            reference={props.album.reference}
+            album
+            available={!!tracks()?.length && tracks()!.every((track) => track.analyses.length > 0)}
+          />
+        </div>
         <JobControls release={props.album.reference} />
         <Show when={tracks.error}>
           <p role="alert">Pistes indisponibles : {String(tracks.error)}</p>
@@ -77,10 +101,7 @@ export function AlbumPage(props: { album: Album }) {
                   </Show>
                 </div>
                 <Show when={track.analyses.length}>
-                  <details>
-                    <summary>Analyse FlacCompagnon disponible</summary>
-                    <pre>{JSON.stringify(track.analyses, null, 2)}</pre>
-                  </details>
+                  <TrackAnalysis track={track} />
                 </Show>
                 <Show when={library.image(track.reference, "spectrum")}>
                   {(url) => <img class="spectrum" src={url()} alt={`Spectre de ${track.title}`} />}
@@ -94,5 +115,23 @@ export function AlbumPage(props: { album: Album }) {
         </ol>
       </section>
     </article>
+  );
+}
+
+function TrackAnalysis(props: { track: AvailableTrack }) {
+  const [open, setOpen] = createSignal(false);
+  return (
+    <details onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary>Graphiques FlacCompagnon</summary>
+      <AnalysisDownload
+        reference={props.track.reference}
+        available={props.track.analyses.length > 0}
+      />
+      <Show when={open()}>
+        <For each={props.track.analyses}>
+          {(analysis) => <AnalysisCharts analysis={analysis} />}
+        </For>
+      </Show>
+    </details>
   );
 }

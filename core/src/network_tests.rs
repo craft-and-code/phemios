@@ -206,3 +206,10 @@ fn connection_status_allows_only_reading_the_current_session() {
     assert!(!allowed("PUT", "/api/auth/v1/session"));
     assert!(!allowed("GET", "/api/auth/v1/password"));
 }
+
+#[test]
+fn analysis_report_is_a_read_only_scoped_capability() {
+    assert!(allowed("GET", "/api/v1/analysis/report"));
+    assert!(!allowed("POST", "/api/v1/analysis/report"));
+    assert!(!allowed("GET", "/api/v1/analysis/report/../../private"));
+}

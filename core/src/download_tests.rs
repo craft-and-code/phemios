@@ -34,3 +34,27 @@ fn invalid_identity_or_content_never_creates_the_download_directory() {
     assert!(publish(&root, &id, &json!({"id":"other","content":"#EXTM3U"})).is_err());
     assert!(!root.exists());
 }
+
+#[test]
+fn analysis_download_preserves_original_fields_and_never_replaces_a_previous_report() {
+    let root =
+        std::env::temp_dir().join(format!("phemios-analysis-download-{}", std::process::id()));
+    let report = serde_json::json!({"format":"flaccompagnon-report","version":1,"report":{"root":"/music/album","files":[{"path":"/music/album/one.flac","unknown_future":42}],"has_flac":true}});
+    let a = publish_analysis(&root, "track:one", &report).unwrap();
+    let b = publish_analysis(&root, "track:one", &report).unwrap();
+    assert_ne!(a, b);
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&std::fs::read(a).unwrap()).unwrap(),
+        report
+    );
+    assert!(publish_analysis(&root, "../../escape", &report).is_err());
+    assert!(
+        publish_analysis(
+            &root,
+            "track:one",
+            &serde_json::json!({"format":"flaccompagnon-report","report":{"files":[]}})
+        )
+        .is_err()
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

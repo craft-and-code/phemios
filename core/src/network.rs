@@ -278,6 +278,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/v1/presentation/albums"
                     | "/api/v1/stats"
                     | "/api/v1/doctor"
+                    | "/api/v1/analysis/report"
                     | "/api/v1/album"
                     | "/api/v1/artist"
                     | "/api/v1/track"

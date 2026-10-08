@@ -166,3 +166,25 @@ pub(crate) async fn aede_download(
     })
     .await
 }
+
+#[tauri::command]
+pub(crate) async fn aede_download_analysis(
+    version: u32,
+    reference: String,
+    state: State<'_, Aede>,
+) -> Result<String, String> {
+    bridge(version)?;
+    let client = client(&state)?;
+    let folder = state.downloads.clone();
+    blocking(move || {
+        let response = client.request(
+            "GET",
+            "/api/v1/analysis/report",
+            &[("ref", reference.as_str())],
+            None,
+        )?;
+        let path = phemios_core::download::publish_analysis(&folder, &reference, &response)?;
+        Ok(path.to_string_lossy().into_owned())
+    })
+    .await
+}

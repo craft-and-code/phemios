@@ -239,6 +239,13 @@ export function App() {
         </Show>
         <Show when={(hasFilters() || backLink()) && library.artists().length}>
           <div class="catalog-tools">
+            <Show when={backLink()}>
+              {(link) => (
+                <a class="back" href={link().href}>
+                  ← {link().label}
+                </a>
+              )}
+            </Show>
             <span>{library.busy() ? "Synchronisation…" : ""}</span>
             <Show when={hasFilters()}>
               <button
@@ -259,13 +266,6 @@ export function App() {
               >
                 <Icon name="layers" />
               </button>
-            </Show>
-            <Show when={backLink()}>
-              {(link) => (
-                <a class="back" href={link().href}>
-                  ← {link().label}
-                </a>
-              )}
             </Show>
           </div>
         </Show>
