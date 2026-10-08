@@ -58,3 +58,18 @@ fn analysis_download_preserves_original_fields_and_never_replaces_a_previous_rep
     );
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn spectrum_download_preserves_image_bytes_and_uses_confined_unique_names() {
+    let root =
+        std::env::temp_dir().join(format!("phemios-spectrum-download-{}", std::process::id()));
+    let png = b"\x89PNG\r\n\x1a\nretained-spectrum";
+    let first = publish_spectrum(&root, "track:one", png).unwrap();
+    let second = publish_spectrum(&root, "track:one", png).unwrap();
+    assert_ne!(first, second);
+    assert_eq!(fs::read(first).unwrap(), png);
+    assert_eq!(second.extension().unwrap(), "png");
+    assert!(publish_spectrum(&root, "../../escape", png).is_err());
+    assert!(publish_spectrum(&root, "track:one", b"not an image").is_err());
+    fs::remove_dir_all(root).unwrap();
+}

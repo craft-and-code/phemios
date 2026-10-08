@@ -65,3 +65,7 @@ export const playbackStart = (
 ) => nativeCall<void>("playback_start", { tracks, device, index, policy });
 export const playbackControl = (action: string, value: unknown = null) =>
   nativeCall<void>("playback_control", { action, value });
+
+/** Save the authenticated server-selected spectrum without exposing filesystem writes. */
+export const downloadSpectrumAede = (reference: string) =>
+  nativeCall<string>("aede_download_spectrum", { reference });

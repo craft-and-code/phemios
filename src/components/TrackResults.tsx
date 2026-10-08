@@ -1,4 +1,5 @@
 import { createResource, createSignal, createUniqueId, For, Show } from "solid-js";
+import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import type { Track } from "../library/server";
@@ -103,7 +104,11 @@ export function TrackResults(props: {
         </div>
       </Show>
       <Show when={spectrum()}>
-        <div id={`${id}-spectrum`}>
+        <div id={`${id}-spectrum`} class="track-analysis">
+          <div class="analysis-result-heading">
+            <strong>Spectre</strong>
+            <SpectrumDownload reference={props.track.reference} />
+          </div>
           <Show
             when={library.image(props.track.reference, "spectrum")}
             fallback={

@@ -105,6 +105,35 @@ pub fn publish_analysis(
         &content,
     )
 }
+/// Save only server-selected spectrum bytes; the webview cannot choose a filename or path.
+pub fn publish_spectrum(folder: &Path, reference: &str, bytes: &[u8]) -> Result<PathBuf, String> {
+    use std::hash::{Hash, Hasher};
+    if reference.len() > 4096
+        || !reference
+            .strip_prefix("track:")
+            .is_some_and(|s| !s.is_empty())
+    {
+        return Err("Référence de spectre invalide.".into());
+    }
+    if bytes.len() > 8 * 1024 * 1024 {
+        return Err("Spectre trop volumineux.".into());
+    }
+    let extension = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        "png"
+    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        "jpg"
+    } else {
+        return Err("Format de spectre invalide.".into());
+    };
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    reference.hash(&mut hash);
+    publish_named(
+        folder,
+        &format!("spectre-{:016x}", hash.finish()),
+        extension,
+        bytes,
+    )
+}
 #[cfg(test)]
 #[path = "download_tests.rs"]
 mod tests;

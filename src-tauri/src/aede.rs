@@ -194,3 +194,20 @@ pub(crate) async fn aede_download_analysis(
     })
     .await
 }
+
+#[tauri::command]
+pub(crate) async fn aede_download_spectrum(
+    version: u32,
+    reference: String,
+    state: State<'_, Aede>,
+) -> Result<String, String> {
+    bridge(version)?;
+    let client = client(&state)?;
+    let folder = state.downloads.clone();
+    blocking(move || {
+        let bytes = client.artwork(&reference, "spectrum")?;
+        let path = phemios_core::download::publish_spectrum(&folder, &reference, &bytes)?;
+        Ok(path.to_string_lossy().into_owned())
+    })
+    .await
+}

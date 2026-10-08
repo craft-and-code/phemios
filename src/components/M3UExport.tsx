@@ -1,4 +1,5 @@
 import { createSignal, Show } from "solid-js";
+import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
 import { requestAede, downloadAede, isNative } from "../platform/desktop";
 export interface M3UFile {
@@ -55,16 +56,25 @@ export function M3UExport(props: { release: string; title: string }) {
   return (
     <div class="m3u-export">
       <button
+        class="icon-button quiet"
+        aria-label="Enregistrer le M3U sur Aède"
+        title="Enregistrer le M3U sur Aède"
         disabled={!library.session() || library.session()?.account.role === "auditor" || busy()}
         onClick={save}
       >
-        Enregistrer le M3U sur Aède
+        <Icon name="list" />
       </button>
       <Show when={file()}>
         {(value) => (
           <>
-            <button disabled={busy()} onClick={() => download(value())}>
-              Télécharger le M3U
+            <button
+              class="icon-button quiet"
+              title="Télécharger le M3U"
+              aria-label="Télécharger le M3U"
+              disabled={busy()}
+              onClick={() => download(value())}
+            >
+              <Icon name="download" />
             </button>
             <small>Enregistré sur le serveur · chemins du serveur</small>
           </>

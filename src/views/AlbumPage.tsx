@@ -61,30 +61,14 @@ export function AlbumPage(props: { album: Album }) {
             </Show>{" "}
             · {props.album.year ?? "Année inconnue"}
           </p>
-          <button
-            class="primary"
-            disabled={!library.player.ready() || library.player.busy() || !tracks()?.length}
-            title={
-              library.player.ready()
-                ? "Lire l’album dans l’ordre des pistes"
-                : "Connectez un compte autorisé à la lecture"
-            }
-            onClick={() =>
-              void library.player.start(
-                tracks() ?? [],
-                props.album,
-                artist()?.name ?? "Artistes divers",
-              )
-            }
-          >
-            Lire l’album
-          </button>
-          <M3UExport release={props.album.reference} title={props.album.title} />
         </div>
       </div>
       <AnnotationPanel reference={props.album.reference} kind="album" />
       <section>
-        <h2>Pistes</h2>
+        <div class="section-heading">
+          <h2>Pistes</h2>
+          <M3UExport release={props.album.reference} title={props.album.title} />
+        </div>
         <Show when={tracks.error}>
           <p role="alert">Pistes indisponibles : {String(tracks.error)}</p>
         </Show>

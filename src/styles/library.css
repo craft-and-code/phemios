@@ -926,7 +926,7 @@ pre {
 }
 
 .album-artist-link {
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 3px;
 }
 .album-disc > h3 {
@@ -957,4 +957,20 @@ pre {
   stroke: #78949680;
   stroke-width: 0.8;
   pointer-events: none;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.m3u-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.m3u-export > p,
+.m3u-export small {
+  font-size: 11px;
 }

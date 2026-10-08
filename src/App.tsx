@@ -93,6 +93,7 @@ export function App() {
     <div
       class="app"
       classList={{ "sidebar-hidden": !sidebar(), "density-compact": compact() }}
+      onContextMenu={(event) => event.preventDefault()}
       onClick={(event) => {
         if (
           event.defaultPrevented ||
@@ -248,7 +249,7 @@ export function App() {
             <Show when={backLink()}>
               {(link) => (
                 <a class="back" href={link().href} data-navigation-back>
-                  ← {link().label}
+                  <Icon name="back" /> {link().label}
                 </a>
               )}
             </Show>

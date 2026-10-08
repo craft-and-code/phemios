@@ -14,7 +14,7 @@
   margin: 20px 0;
 }
 .stat-tiles > div {
-  flex: 1 1 155px;
+  flex: 0 1 180px;
   min-width: min-content;
   display: grid;
   gap: 12px;
