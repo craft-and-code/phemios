@@ -1,5 +1,5 @@
 import type { JSX } from "solid-js";
-import { createResource, createSignal, createUniqueId, For, Show } from "solid-js";
+import { createEffect, createResource, createSignal, createUniqueId, For, Show } from "solid-js";
 import { PlayingBars } from "./PlayingBars";
 import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
@@ -14,11 +14,17 @@ export function TrackResults(props: {
   number: number;
   onPlay: () => void;
   context?: JSX.Element;
+  expanded?: boolean;
 }) {
   const library = useLibrary(),
     id = createUniqueId(),
-    [analysis, setAnalysis] = createSignal(false),
-    [spectrum, setSpectrum] = createSignal(false);
+    [analysis, setAnalysis] = createSignal(
+      !!props.expanded && (props.track.analysis_available ?? props.track.analyses.length > 0),
+    ),
+    [spectrum, setSpectrum] = createSignal(!!props.expanded && props.track.spectrum_available);
+  createEffect(() => {
+    if (spectrum()) void library.warmImage(props.track.reference, "spectrum");
+  });
   const duration = () => props.track.duration_ms;
   const [detail] = createResource(
     () =>
@@ -80,7 +86,6 @@ export function TrackResults(props: {
               onClick={() => {
                 const visible = !spectrum();
                 setSpectrum(visible);
-                if (visible) void library.warmImage(props.track.reference, "spectrum");
               }}
             >
               <Icon name="spectrum" />

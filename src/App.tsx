@@ -207,7 +207,8 @@ export function App() {
             </Show>
             <small>
               <Show when={runtime()} fallback="Initialisation du pont…">
-                {runtime()?.native ? "Application desktop" : "Aperçu navigateur"}
+                {runtime()?.native ? "Application desktop" : "Aperçu navigateur"} ·{" "}
+                {runtime()?.version}
               </Show>
             </small>
             <Show when={runtime.error}>

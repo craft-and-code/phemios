@@ -1,12 +1,14 @@
 import { createSignal, Show } from "solid-js";
+import { saveLibraryM3U } from "../library/m3u-save";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
-import { requestAede, downloadAede, isNative } from "../platform/desktop";
+import { downloadAede, isNative } from "../platform/desktop";
 export interface M3UFile {
   id: string;
   name: string;
   filename: string;
   content: string;
+  library_files?: string[];
 }
 /** Download exactly the M3U produced by Aède, retaining its server-side paths. */
 export async function downloadM3U(file: M3UFile): Promise<string> {
@@ -41,12 +43,14 @@ export function M3UExport(props: { release: string; title: string }) {
     setBusy(true);
     setError("");
     try {
-      setFile(
-        await requestAede<M3UFile>("/api/me/v1/m3u", {}, "POST", {
-          release: props.release,
-          name: props.title,
-        }),
+      const session = library.session(),
+        reference = props.release;
+      const saved = await saveLibraryM3U(
+        reference,
+        props.title,
+        () => library.session() === session && props.release === reference,
       );
+      if (saved) setFile(saved);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Export impossible.");
     } finally {
@@ -55,11 +59,18 @@ export function M3UExport(props: { release: string; title: string }) {
   }
   return (
     <div class="m3u-export">
+      <Show when={file()}>
+        <small title={file()?.library_files?.join("\n")}>
+          {file()?.library_files?.length
+            ? "Enregistré dans les dossiers de la bibliothèque"
+            : "Enregistré sur le serveur · chemins du serveur"}
+        </small>
+      </Show>
       <button
         class="icon-button quiet"
         aria-label="Enregistrer le M3U sur Aède"
         title="Enregistrer le M3U sur Aède"
-        disabled={!library.session() || library.session()?.account.role === "auditor" || busy()}
+        disabled={!library.session() || library.session()?.account.role !== "admin" || busy()}
         onClick={save}
       >
         <Icon name="list" />
@@ -76,7 +87,6 @@ export function M3UExport(props: { release: string; title: string }) {
             >
               <Icon name="download" />
             </button>
-            <small>Enregistré sur le serveur · chemins du serveur</small>
           </>
         )}
       </Show>

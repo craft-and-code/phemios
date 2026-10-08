@@ -4,6 +4,7 @@ import { requestAede } from "../platform/desktop";
 import { parseTrackDetail } from "../library/track-detail";
 import { Artwork } from "../components/Artwork";
 import { AnnotationPanel } from "../components/AnnotationPanel";
+import { fileSize, trackDuration } from "../library/detail-format";
 import { TrackResults } from "../components/TrackResults";
 /** Track facts, credits, annotations and retained results share the catalog detail conventions. */
 export function TrackPage(props: { reference: string }) {
@@ -61,18 +62,14 @@ export function TrackPage(props: { reference: string }) {
                 </div>
                 <div>
                   <dt>Durée</dt>
-                  <dd>
-                    {row().duration_ms === null
-                      ? "Inconnue"
-                      : format(Math.round(row().duration_ms! / 1000), "s")}
-                  </dd>
+                  <dd>{trackDuration(row().duration_ms)}</dd>
                 </div>
                 <div>
                   <dt>Fréquence</dt>
                   <dd>{format(row().properties.sample_rate, "Hz")}</dd>
                 </div>
                 <div>
-                  <dt>Résolution</dt>
+                  <dt>Profondeur de bits</dt>
                   <dd>{format(row().properties.bit_depth, "bits")}</dd>
                 </div>
                 <div>
@@ -85,7 +82,7 @@ export function TrackPage(props: { reference: string }) {
                 </div>
                 <div>
                   <dt>Taille</dt>
-                  <dd>{format(row().size, "octets")}</dd>
+                  <dd>{fileSize(row().size)}</dd>
                 </div>
               </dl>
               <Show when={row().path}>
@@ -127,6 +124,7 @@ export function TrackPage(props: { reference: string }) {
               <ol class="track-list">
                 <TrackResults
                   track={row()}
+                  expanded
                   number={row().track_no ?? 1}
                   onPlay={() => void library.player.startReference(props.reference)}
                 />
