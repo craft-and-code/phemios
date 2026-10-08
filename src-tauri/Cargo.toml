@@ -1,0 +1,15 @@
+[package]
+name = "phemios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+[lib]
+name = "phemios_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+[dependencies]
+tauri = { version = "~2.12.1", features = [] }
+phemios-core = { path = "../core" }
+serde = { version = "1", features = ["derive"] }

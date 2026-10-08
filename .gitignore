@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-native/
+target/
+src-tauri/gen/
+coverage/
+.DS_Store
+*.log

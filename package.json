@@ -1,0 +1,29 @@
+{
+  "name": "phemios",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1420",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "tauri": "tauri",
+    "test": "node --test tests/*.test.mjs",
+    "check:tauri": "node scripts/check-tauri-versions.mjs",
+    "check": "npm test && npm run build && npm run check:tauri && cargo fmt --all -- --check && cargo test --workspace --locked && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo doc --workspace --no-deps --locked"
+  },
+  "dependencies": {
+    "solid-js": "1.9.17",
+    "@tauri-apps/api": "2.12.1"
+  },
+  "devDependencies": {
+    "vite": "8.3.3",
+    "vite-plugin-solid": "2.11.14",
+    "typescript": "7.0.2",
+    "@tauri-apps/cli": "2.12.1",
+    "@types/node": "26.6.4"
+  }
+}
