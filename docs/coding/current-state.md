@@ -2,6 +2,10 @@
 
 The desktop foundation is initialized with SolidJS, TypeScript, Vite and Tauri 2, in a dedicated repository. Rust client policies and Tauri wiring are separate; IPC is centralized and versioned. Browser preview is explicitly distinct from native execution. No Aède server, audio backend or copy destination is connected yet.
 
-Current task: configure the project and implement the first offline library shell with draggable year/alphabet ranges. Follow `docs/design/roadmap.md` and `docs/design/interface.md`.
+Foundation, engineering configuration and the first offline library shell are implemented. The fictional bundled catalog supports artist/album navigation, optional banner/background, country/genre selection, accent-aware broad preview search, icon sorting, two cover-preserving densities and hideable navigation. The year domain follows available releases; years/alphabet/both support inclusive bounds and width-preserving band movement by pointer or keyboard. Album annotations and external-player options are explicitly temporary UI drafts.
+
+Next: read-only integration with Aède and the persistent artwork cache, following `docs/design/roadmap.md` and `docs/design/interface.md`. The globe, relationship graph, server annotations/collections/M3U, native playback, lyrics, analyses and real mounted-device copying are planned; their placeholder controls do not imply implemented services. Large-library performance and guaranteed loaded covers require that cache/virtualization phase and measurements.
+
+Verification on 2026-10-08: the complete gate passes on Node 26.10 / Rust 1.99 / macOS, with 8 Node tooling tests, 8 TypeScript behavior tests and 2 independent Rust-core tests. Browser checks covered both rail drags, width preservation, keyboard movement, mode switching, detail navigation, temporary annotations, sidebar hiding and unknown origins. The release macOS bundle launches with the native IPC response and the strict CSP; its library and artist pages render offline. A UI regression check exposed unfiltered artist participations; those now follow the same rails/search as the discography.
 
 The authoritative gate is `tools/check.sh`; native bundling uses `npm run build:native`. Cross-platform execution, minimum Rust-version acceptance and physical output remain unverified until separately run. Lockfiles record the actual dependencies.

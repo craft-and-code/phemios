@@ -12,7 +12,9 @@ npm run dev
 npm run tauri dev
 ```
 
-`npm run dev` opens a browser-only offline preview at `http://127.0.0.1:1420`. `npm run tauri dev` starts the native window with its typed bridge. No server connection or audio playback starts automatically.
+`npm run dev` serves a browser-only offline preview at `http://127.0.0.1:1420`. `npm run tauri dev` starts the native window with its typed bridge. No server connection or audio playback starts automatically.
+
+The first interface uses a fictional bundled catalog: artists → artist page → album page, optional artist banner/background, draggable year/alphabet intervals, icon sorting, cover-preserving density modes and hideable navigation. Country/genre lists work in the demonstration. Album annotations and transfer options are temporary UI drafts; no server data or music files are written. The globe, relationship graph, persistent cache, playback, collections, M3U and real transfer/analysis services are next phases.
 
 ## Verify and build
 

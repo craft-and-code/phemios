@@ -11,3 +11,5 @@
 9. **Release acceptance** — platform builds, revocation/account isolation, cache lifecycle, measured large-library behavior, native/physical output and external-drive checks.
 
 Each coherent part gets its own verified commit. These phases are implementation boundaries, not claims that server or physical acceptance already passed.
+
+Phases 1–3 are implemented as an offline demonstration foundation. Later-phase pages have navigation/form previews where useful, with connected actions unavailable. They remain pending integration and acceptance.
