@@ -19,3 +19,5 @@ pub fn validate_bridge(version: u32) -> Result<(), &'static str> {
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
+
+pub mod playback;

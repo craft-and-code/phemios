@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  stop: "M6 6h12v12H6V6Z",
   close: "M6 6l12 12M6 18 18 6",
   download: "M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4",
   spectrum: "M3 20h18M5 16v-4M9 16V5M13 16V9M17 16V3M21 16v-6",

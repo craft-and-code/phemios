@@ -60,8 +60,23 @@ export function AlbumPage(props: { album: Album }) {
           <p>
             {artist()?.name ?? "Artistes divers"} · {props.album.year ?? "Année inconnue"}
           </p>
-          <button class="primary" disabled>
-            Lecture native à raccorder
+          <button
+            class="primary"
+            disabled={!library.player.ready() || library.player.busy() || !tracks()?.length}
+            title={
+              library.player.ready()
+                ? "Lire l’album dans l’ordre des pistes"
+                : "Connectez un compte autorisé à la lecture"
+            }
+            onClick={() =>
+              void library.player.start(
+                tracks() ?? [],
+                props.album,
+                artist()?.name ?? "Artistes divers",
+              )
+            }
+          >
+            Lire l’album
           </button>
           <M3UExport release={props.album.reference} title={props.album.title} />
         </div>
@@ -77,7 +92,20 @@ export function AlbumPage(props: { album: Album }) {
         </Show>
         <ol class="track-list">
           <For each={tracks()}>
-            {(track, index) => <TrackResults track={track} number={index() + 1} />}
+            {(track, index) => (
+              <TrackResults
+                track={track}
+                number={index() + 1}
+                onPlay={() =>
+                  void library.player.start(
+                    tracks() ?? [],
+                    props.album,
+                    artist()?.name ?? "Artistes divers",
+                    index(),
+                  )
+                }
+              />
+            )}
           </For>
         </ol>
       </section>

@@ -53,3 +53,11 @@ export function requestAede<T>(
 ): Promise<T> {
   return nativeCall<T>("aede_request", { path, query, method, body });
 }
+
+/** PCM credentials and device callbacks stay native; only bounded transport controls cross IPC. */
+export const playbackState = () => nativeCall<unknown>("playback_state");
+export const playbackOutputs = () => nativeCall<unknown>("playback_devices");
+export const playbackStart = (tracks: readonly string[], device: string, index: number) =>
+  nativeCall<void>("playback_start", { tracks, device, index });
+export const playbackControl = (action: string, value: unknown = null) =>
+  nativeCall<void>("playback_control", { action, value });

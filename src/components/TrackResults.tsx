@@ -8,6 +8,7 @@ import { Icon } from "./Icon";
 export function TrackResults(props: {
   track: Track & { spectrum_available: boolean };
   number: number;
+  onPlay: () => void;
 }) {
   const library = useLibrary(),
     id = createUniqueId(),
@@ -25,6 +26,14 @@ export function TrackResults(props: {
             : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
         </small>
         <div class="track-actions">
+          <button
+            class="icon-button quiet"
+            disabled={!library.player.ready() || library.player.busy()}
+            aria-label={`Lire ${props.track.title}`}
+            onClick={props.onPlay}
+          >
+            <Icon name="play" />
+          </button>
           <Show when={props.track.analyses.length}>
             <button
               class="icon-button quiet"

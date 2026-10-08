@@ -444,3 +444,27 @@ legend {
     animation: none;
   }
 }
+
+.playing-cover {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+.playing-cover .artwork {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+}
+.player-bar .now-playing > span {
+  min-width: 0;
+}
+.player-bar .now-playing strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-bar .playback-error {
+  color: #efb6aa;
+  white-space: normal;
+}

@@ -11,10 +11,10 @@ pub(crate) struct Aede {
     pub(crate) downloads: std::path::PathBuf,
     pub(crate) snapshot: Mutex<Option<Arc<Value>>>,
 }
-fn bridge(version: u32) -> Result<(), String> {
+pub(crate) fn bridge(version: u32) -> Result<(), String> {
     phemios_core::validate_bridge(version).map_err(str::to_owned)
 }
-fn client(state: &Aede) -> Result<Client, String> {
+pub(crate) fn client(state: &Aede) -> Result<Client, String> {
     state
         .session
         .lock()
@@ -22,7 +22,7 @@ fn client(state: &Aede) -> Result<Client, String> {
         .clone()
         .ok_or_else(|| "Connectez-vous à Aède.".into())
 }
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     work: impl FnOnce() -> Result<T, String> + Send + 'static,
 ) -> Result<T, String> {
     tauri::async_runtime::spawn_blocking(work)
@@ -52,8 +52,14 @@ pub(crate) async fn aede_login(
     Ok(account)
 }
 #[tauri::command]
-pub(crate) async fn aede_logout(version: u32, state: State<'_, Aede>) -> Result<(), String> {
+pub(crate) async fn aede_logout(
+    version: u32,
+    state: State<'_, Aede>,
+    player: State<'_, std::sync::Arc<phemios_core::playback::Player>>,
+) -> Result<(), String> {
     bridge(version)?;
+    let audio = player.inner().clone();
+    blocking(move || audio.halt()).await?;
     let session = state
         .session
         .lock()

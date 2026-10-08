@@ -80,6 +80,9 @@ fn decode(data: &[u8]) -> Result<Value, String> {
     serde_json::from_slice(data).map_err(|_| "Réponse JSON Aède invalide.".into())
 }
 impl Client {
+    pub(crate) fn playback_credentials(&self) -> (&str, &str) {
+        (&self.server, &self.token)
+    }
     /// Authenticate only against the selected authority. Passwords are not retained.
     pub fn login(server: &str, username: &str, password: &str) -> Result<Self, String> {
         let server = server_address(server)?;

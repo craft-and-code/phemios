@@ -8,6 +8,7 @@ import {
   type ParentProps,
   type Accessor,
 } from "solid-js";
+import { createPlayback } from "./playback";
 import { connectionMonitor } from "./connection";
 import { createJobs } from "./jobs";
 import { requestAede } from "../platform/desktop";
@@ -24,6 +25,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  player: ReturnType<typeof createPlayback>;
   tasks: ReturnType<typeof createJobs>;
   artists: Accessor<readonly Artist[]>;
   albums: Accessor<readonly Album[]>;
@@ -63,6 +65,9 @@ export function LibraryProvider(props: ParentProps) {
     const account = await requestAede<{ id: string; enabled: boolean }>("/api/auth/v1/session");
     if (account.id !== current.account.id || !account.enabled) throw new Error("Session invalide.");
   }, setConnected);
+  const player = createPlayback(
+    () => connected() && ["user", "admin"].includes(session()?.account.role ?? ""),
+  );
   const tasks = createJobs(() => !!session());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
@@ -226,6 +231,7 @@ export function LibraryProvider(props: ParentProps) {
       setError(failure instanceof Error ? failure.message : "Déconnexion interrompue.");
     } finally {
       connection.stop();
+      player.reset();
       setSession(undefined);
       for (const ref of Object.keys(annotations)) setAnnotations(ref, undefined);
     }
@@ -248,6 +254,7 @@ export function LibraryProvider(props: ParentProps) {
   });
   const value: Library = {
     tasks,
+    player,
     artists,
     albums,
     demo,

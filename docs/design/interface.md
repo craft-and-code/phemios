@@ -30,7 +30,7 @@ Separate audio-output devices from mounted storage destinations. The export page
 
 ## Integration boundaries
 
-Native artwork/prose, paged tag search/current-owner annotations, private M3U publication and scoped analysis tasks are defined in `native-integration.md`. Collection evaluation, richer dated credits/relations, device control/registry, native playback and mounted-player copy still require their own frontend/native orchestration. Never infer HTTP endpoints from CLI availability. Downloaded M3U paths/URLs must match the intended local/remote client and authorization context.
+Native artwork/prose, paged tag search/current-owner annotations, private M3U publication and scoped analysis tasks are defined in `native-integration.md`. Collection evaluation, richer dated credits/relations, persistent device profiles, repeat/shuffle/lyrics/effects and mounted-player copy still require their own frontend/native orchestration. Never infer HTTP endpoints from CLI availability. Downloaded M3U paths/URLs must match the intended local/remote client and authorization context.
 
 ## Browsing controls
 
