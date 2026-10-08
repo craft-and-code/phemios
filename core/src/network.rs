@@ -131,14 +131,16 @@ impl Client {
         }
         let url = format!("{}{}", self.server, path);
         let response = if method == "GET" {
-            let mut request = self
-                .agent
-                .get(&url)
-                .header("Authorization", format!("Bearer {}", self.token));
-            for (key, value) in query {
-                request = request.query(key, value);
-            }
-            request.call()
+            read_response(|| {
+                let mut request = self
+                    .agent
+                    .get(&url)
+                    .header("Authorization", format!("Bearer {}", self.token));
+                for (key, value) in query {
+                    request = request.query(key, value);
+                }
+                request.call()
+            })
         } else if method == "DELETE" {
             let mut request = self
                 .agent
@@ -235,32 +237,36 @@ impl Client {
         } else {
             "1920"
         };
-        let mut attempt = 0;
-        let response = loop {
-            let response = self
-                .agent
+        let response = read_response(|| {
+            self.agent
                 .get(format!("{}/api/v1/artwork", self.server))
                 .query("ref", reference)
                 .query("kind", kind)
                 .query("size", size)
                 .header("Authorization", format!("Bearer {}", self.token))
                 .call()
-                .map_err(|_| "Image Aède inaccessible.".to_string())?;
-            if matches!(response.status().as_u16(), 429 | 503) && attempt < 4 {
-                // Idempotent art reads may compete with catalog/personal inspection slots.
-                drop(response);
-                std::thread::sleep(Duration::from_millis(150 << attempt));
-                attempt += 1;
-                continue;
-            }
-            break response;
-        };
+        })
+        .map_err(|_| "Image Aède inaccessible.".to_string())?;
         let data = bytes(response, 32 * 1024 * 1024)?;
         if !data.starts_with(&[0xff, 0xd8, 0xff]) && !data.starts_with(b"\x89PNG\r\n\x1a\n") {
             return Err("Format d’image Aède invalide.".into());
         }
         Ok(data)
     }
+}
+// Only idempotent GET operations enter this retry boundary; writes are never replayed.
+fn read_response(
+    call: impl Fn() -> Result<ureq::http::Response<ureq::Body>, ureq::Error>,
+) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+    for attempt in 0..4 {
+        let response = call()?;
+        if !matches!(response.status().as_u16(), 429 | 503) {
+            return Ok(response);
+        }
+        drop(response);
+        std::thread::sleep(Duration::from_millis(150 << attempt));
+    }
+    call()
 }
 fn allowed(method: &str, path: &str) -> bool {
     match method {
