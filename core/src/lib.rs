@@ -1,5 +1,8 @@
 //! Framework-independent Phémios client policies.
 #![warn(missing_docs)]
+pub mod cache;
+pub mod download;
+pub mod network;
 
 /// Current typed IPC contract understood by the web frontend.
 pub const BRIDGE_VERSION: u32 = 1;

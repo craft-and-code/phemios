@@ -1,0 +1,319 @@
+//! Bounded HTTP client for one explicit Aède authority; sessions stay in memory.
+use serde_json::{Value, json};
+use std::time::Duration;
+
+const JSON_LIMIT: u64 = 16 * 1024 * 1024;
+/// Trusted native session; never serialize or log this value.
+#[derive(Clone)]
+pub struct Client {
+    agent: ureq::Agent,
+    server: String,
+    token: String,
+    account: Value,
+}
+/// Reject insecure remote login, URL credentials, redirects and embedded queries.
+pub fn server_address(value: &str) -> Result<String, String> {
+    let value = value.trim().trim_end_matches('/');
+    let uri: value_uri::Uri = value.parse().map_err(|_| "Adresse de serveur invalide.")?;
+    let authority = uri.authority().ok_or("Adresse de serveur invalide.")?;
+    let host = uri.host().ok_or("Adresse de serveur invalide.")?;
+    let scheme = uri.scheme_str().ok_or("Adresse de serveur invalide.")?;
+    if authority.as_str().contains('@')
+        || uri.query().is_some()
+        || uri.path() != "/"
+        || value.contains('#')
+        || !matches!(scheme, "http" | "https")
+    {
+        return Err(
+            "Utilisez une adresse HTTP/HTTPS sans identifiants, chemin ni paramètres.".into(),
+        );
+    }
+    let loopback = host == "localhost"
+        || host == "[::1]"
+        || host
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|address| address.is_loopback());
+    if scheme == "http" && !loopback {
+        return Err("Un serveur distant nécessite HTTPS.".into());
+    }
+    Ok(value.into())
+}
+// Reuse the HTTP parser shipped by ureq rather than a second URL parser.
+mod value_uri {
+    pub use ureq::http::Uri;
+}
+fn agent() -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(30)))
+        .max_redirects(0)
+        .http_status_as_error(false)
+        .build()
+        .into()
+}
+fn failure(status: u16) -> String {
+    match status {
+        401 => "Session absente ou expirée. Reconnectez-vous.",
+        403 => "Votre compte ne permet pas cette opération.",
+        404 => "Service ou ressource indisponible sur ce serveur.",
+        409 => "Les données ont changé ou sont occupées. Réessayez.",
+        429 | 503 => "Aède est occupé. Réessayez dans quelques instants.",
+        _ => "La requête Aède a échoué.",
+    }
+    .into()
+}
+fn bytes(mut response: ureq::http::Response<ureq::Body>, limit: u64) -> Result<Vec<u8>, String> {
+    let status = response.status().as_u16();
+    if !(200..300).contains(&status) {
+        return Err(failure(status));
+    }
+    response
+        .body_mut()
+        .with_config()
+        .limit(limit)
+        .read_to_vec()
+        .map_err(|_| "Réponse Aède trop grande ou interrompue.".into())
+}
+fn decode(data: &[u8]) -> Result<Value, String> {
+    if data.is_empty() {
+        return Ok(Value::Null);
+    }
+    serde_json::from_slice(data).map_err(|_| "Réponse JSON Aède invalide.".into())
+}
+impl Client {
+    /// Authenticate only against the selected authority. Passwords are not retained.
+    pub fn login(server: &str, username: &str, password: &str) -> Result<Self, String> {
+        let server = server_address(server)?;
+        if username.trim().is_empty()
+            || username.len() > 128
+            || password.is_empty()
+            || password.len() > 1024
+        {
+            return Err("Identifiants invalides.".into());
+        }
+        let agent = agent();
+        let data = json!({"username":username,"password":password}).to_string();
+        let response = agent
+            .post(format!("{server}/api/auth/v1/session"))
+            .header("Content-Type", "application/json")
+            .send(data.as_bytes())
+            .map_err(|_| "Impossible de joindre Aède.".to_string())?;
+        let answer = decode(&bytes(response, 64 * 1024)?)?;
+        let token = answer["token"]
+            .as_str()
+            .filter(|value| value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit()))
+            .ok_or("Session Aède invalide.")?
+            .to_owned();
+        let account = answer["account"].clone();
+        if !account.is_object() || account["id"].as_str().is_none() {
+            return Err("Compte Aède invalide.".into());
+        }
+        Ok(Self {
+            agent,
+            server,
+            token,
+            account,
+        })
+    }
+    /// Public account metadata excludes the bearer credential.
+    pub fn account(&self) -> Value {
+        json!({"account":self.account,"server":self.server})
+    }
+    /// Explicit supported JSON operations; never accept a second authority or arbitrary URL.
+    pub fn request(
+        &self,
+        method: &str,
+        path: &str,
+        query: &[(&str, &str)],
+        body: Option<&Value>,
+    ) -> Result<Value, String> {
+        if !allowed(method, path) {
+            return Err("Opération native non prise en charge.".into());
+        }
+        let url = format!("{}{}", self.server, path);
+        let response = if method == "GET" {
+            let mut request = self
+                .agent
+                .get(&url)
+                .header("Authorization", format!("Bearer {}", self.token));
+            for (key, value) in query {
+                request = request.query(key, value);
+            }
+            request.call()
+        } else if method == "DELETE" {
+            let mut request = self
+                .agent
+                .delete(&url)
+                .header("Authorization", format!("Bearer {}", self.token));
+            for (key, value) in query {
+                request = request.query(key, value);
+            }
+            request.call()
+        } else {
+            let data = body.unwrap_or(&Value::Null).to_string();
+            if data.len() > 16 * 1024 {
+                return Err("Requête trop grande.".into());
+            }
+            let mut request = if method == "PUT" {
+                self.agent.put(&url)
+            } else {
+                self.agent.post(&url)
+            };
+            request = request
+                .header("Authorization", format!("Bearer {}", self.token))
+                .header("Content-Type", "application/json");
+            for (key, value) in query {
+                request = request.query(key, value);
+            }
+            request.send(data.as_bytes())
+        }
+        .map_err(|_| "Impossible de joindre Aède.".to_string())?;
+        decode(&bytes(response, JSON_LIMIT)?)
+    }
+    /// Synchronize complete pages with a bounded retry when a scan changes their epoch.
+    pub fn snapshot(&self) -> Result<Value, String> {
+        for _ in 0..3 {
+            let artists = self.pages("/api/v1/presentation/artists")?;
+            let albums = self.pages("/api/v1/presentation/albums")?;
+            if artists.1 == albums.1 {
+                return Ok(
+                    json!({"artists":artists.0,"albums":albums.0,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]}),
+                );
+            }
+        }
+        Err("Le catalogue change pendant la synchronisation. Réessayez.".into())
+    }
+    fn pages(&self, path: &str) -> Result<(Vec<Value>, u64), String> {
+        let mut items = Vec::new();
+        let mut stamp = None;
+        let mut total = None;
+        loop {
+            let offset = items.len().to_string();
+            let page = self.request("GET", path, &[("offset", &offset), ("limit", "200")], None)?;
+            let count = page["total"]
+                .as_u64()
+                .and_then(|count| usize::try_from(count).ok())
+                .filter(|count| *count <= 1_000_000)
+                .ok_or("Pagination Aède invalide.")?;
+            let at = page["scanned_at"]
+                .as_u64()
+                .ok_or("Pagination Aède invalide.")?;
+            if stamp.is_some_and(|previous| previous != at)
+                || total.is_some_and(|previous| previous != count)
+            {
+                return Err("Le catalogue a changé. Relancez la synchronisation.".into());
+            }
+            stamp = Some(at);
+            total = Some(count);
+            let rows = page["items"]
+                .as_array()
+                .ok_or("Pagination Aède invalide.")?;
+            if rows.len() > 200
+                || page["offset"].as_u64() != Some(items.len() as u64)
+                || items.len() + rows.len() > count
+                || rows.is_empty() && items.len() < count
+            {
+                return Err("Pagination Aède incohérente.".into());
+            }
+            items.extend(rows.iter().cloned());
+            if items.len() == count {
+                return Ok((items, at));
+            }
+        }
+    }
+    /// Fetch only catalog-selected local artwork, never an external image URL.
+    pub fn artwork(&self, reference: &str, kind: &str) -> Result<Vec<u8>, String> {
+        if reference.len() > 16 * 1024
+            || !matches!(
+                kind,
+                "cover" | "banner" | "background" | "portrait" | "spectrum"
+            )
+        {
+            return Err("Image non prise en charge.".into());
+        }
+        let size = if matches!(kind, "cover" | "portrait") {
+            "512"
+        } else {
+            "1920"
+        };
+        let mut attempt = 0;
+        let response = loop {
+            let response = self
+                .agent
+                .get(format!("{}/api/v1/artwork", self.server))
+                .query("ref", reference)
+                .query("kind", kind)
+                .query("size", size)
+                .header("Authorization", format!("Bearer {}", self.token))
+                .call()
+                .map_err(|_| "Image Aède inaccessible.".to_string())?;
+            if matches!(response.status().as_u16(), 429 | 503) && attempt < 4 {
+                // Idempotent art reads may compete with catalog/personal inspection slots.
+                drop(response);
+                std::thread::sleep(Duration::from_millis(150 << attempt));
+                attempt += 1;
+                continue;
+            }
+            break response;
+        };
+        let data = bytes(response, 32 * 1024 * 1024)?;
+        if !data.starts_with(&[0xff, 0xd8, 0xff]) && !data.starts_with(b"\x89PNG\r\n\x1a\n") {
+            return Err("Format d’image Aède invalide.".into());
+        }
+        Ok(data)
+    }
+}
+fn allowed(method: &str, path: &str) -> bool {
+    match method {
+        "GET" => {
+            matches!(
+                path,
+                "/api/v1/presentation/artists"
+                    | "/api/v1/presentation/albums"
+                    | "/api/v1/album"
+                    | "/api/v1/artist"
+                    | "/api/v1/track"
+                    | "/api/v1/lyrics"
+                    | "/api/v1/query"
+                    | "/api/me/v1/annotation"
+                    | "/api/me/v1/annotations"
+                    | "/api/me/v1/m3u"
+                    | "/api/me/v1/collections"
+                    | "/api/me/v1/collection"
+                    | "/api/me/v1/history"
+            ) || task_path(path, false)
+                || playlist_path(path)
+        }
+        "PUT" => matches!(path, "/api/me/v1/annotation" | "/api/me/v1/collection"),
+        "DELETE" => matches!(path, "/api/auth/v1/session" | "/api/me/v1/collection"),
+        "POST" => {
+            matches!(
+                path,
+                "/api/admin/v1/analyze" | "/api/admin/v1/spectrum" | "/api/me/v1/m3u"
+            ) || task_path(path, true)
+        }
+        _ => false,
+    }
+}
+fn task_path(path: &str, cancel: bool) -> bool {
+    let Some(id) = path.strip_prefix("/api/admin/v1/tasks/") else {
+        return false;
+    };
+    let id = if cancel {
+        match id.strip_suffix("/cancel") {
+            Some(id) => id,
+            None => return false,
+        }
+    } else {
+        id
+    };
+    !id.is_empty() && id.len() <= 20 && id.bytes().all(|b| b.is_ascii_digit())
+}
+
+#[cfg(test)]
+#[path = "network_tests.rs"]
+mod tests;
+
+fn playlist_path(path: &str) -> bool {
+    path.strip_prefix("/api/me/v1/m3u/playlist-")
+        .is_some_and(|id| id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit()))
+}
