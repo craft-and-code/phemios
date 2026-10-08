@@ -16,7 +16,7 @@ npm run tauri dev
 
 The browser preview uses a fictional catalog and cannot authenticate. The native app starts empty, or reopens the last public catalog/artwork cache. Use **Connexion Aède** with an explicitly started Aède server and account; synchronization and available artwork prefetch then run natively. Aède must include the additive presentation/artwork/media-job/M3U contracts described in `docs/design/native-integration.md`; an older server reports unavailable services rather than substituting demonstration data.
 
-Artist/album pages, banner/background/portrait, histogram rails, the rotating country globe and compact cover rows are available. Native account actions include album ratings/favourites/tags/notes, favourite lists, collection rule creation/editing, listening-history reads, server M3U save/download, and explicit FlacCompagnon/spectrum jobs. The relationship graph presents bounded local collaborations with their source. Playback/output/lyrics/effects and external-drive transfer remain unavailable controls.
+Artist/album pages, banner/background/portrait, independently hideable histogram rails (years by default), the rotating country globe and compact cover rows are available. Native account actions include artist/album ratings, icon favourites, tags and visual Markdown notes (Milkdown), favourite lists, collection rule creation/editing, listening-history reads, server M3U save/download, and explicit FlacCompagnon/spectrum jobs. The relationship graph presents bounded local collaborations with their source. Playback/output/lyrics/effects and external-drive transfer remain unavailable controls.
 
 ## Native connection and storage
 

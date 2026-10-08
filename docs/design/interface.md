@@ -39,3 +39,7 @@ Years are the sole default rail. Each visibility icon toggles independently, inc
 The main artist/country/genre catalog lists only artists referenced by Aède's canonical album-artist field, matching singular Submariner browsing. Supporting credits remain in the full catalog for search, participations, favourites and relation exploration; a supporting musician with their own release is also a principal artist. Names and external person/group classifications never decide inclusion.
 
 Connection popovers close via outside pointer activation or Escape, keep focus within while open and restore trigger focus on dismissal. Field focus uses the whole input edge rather than an offset partial outline.
+
+### Visual personal notes
+
+Artist and album pages use the same current-owner annotation component. Stars and the favourite heart have 18 px glyphs, unframed 28 px click targets, labels and pressed states. CommonMark notes use the explicitly approved Milkdown kit with bold, italic, heading, paragraph, lists, quote and undo/redo icons. Stored Markdown is hidden during normal editing. Account/server annotations remain authoritative; explicit save and errors preserve the draft. Untouched note source is not normalized by merely opening the editor.

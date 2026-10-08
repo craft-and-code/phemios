@@ -1,3 +1,4 @@
+import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createMemo, Show } from "solid-js";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { useLibrary } from "../library/context";
@@ -85,6 +86,7 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
           <h2>Participations</h2>
           <AlbumGrid albums={appearances()} />
         </Show>
+        <AnnotationPanel reference={props.artist.reference} />
         <section class="biography">
           <h2>Biographie</h2>
           <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
