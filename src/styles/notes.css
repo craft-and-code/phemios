@@ -18,6 +18,24 @@
   background: transparent;
   border-radius: 4px;
 }
+/* Glyph edges overlap slightly; individual button hit areas do not overlap. */
+.stars {
+  gap: 0;
+}
+.stars button {
+  width: 14px;
+  flex: 0 0 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stars button svg {
+  pointer-events: none;
+}
+.stars button:focus-visible {
+  outline-offset: 1px;
+}
 .stars button svg,
 .annotation-heart svg {
   width: 18px;

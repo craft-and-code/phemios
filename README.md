@@ -12,7 +12,15 @@ npm run dev
 npm run tauri dev
 ```
 
-`npm run dev` serves a browser-only offline preview at `http://127.0.0.1:1420`. `npm run tauri dev` starts the native window with its typed bridge. No server connection or audio playback starts automatically.
+`npm run dev` serves the browser-only offline preview. `npm run tauri dev` starts and owns its Vite server, then supplies the actual listening URL to the native window; do not launch Vite separately for this command. The preferred development port is 1420, configured once in `scripts/development.mjs`. If it is occupied, Vite chooses the next available port and Tauri follows that exact URL. No application connection port is fixed to this development preference. No server connection or audio playback starts automatically.
+
+To choose a port explicitly on macOS/Linux:
+
+```sh
+PHEMIOS_DEV_PORT=1500 npm run tauri dev
+```
+
+PowerShell: `$env:PHEMIOS_DEV_PORT = "1500"; npm run tauri dev`. An explicit port is strict: a collision reports an error instead of changing the chosen value. Invalid ports are refused. Use the npm wrapper for native development; invoking the underlying Tauri CLI directly bypasses Vite orchestration. Stopping or interrupting the development command closes its owned server. The packaged app runs without Vite and needs no development port.
 
 The browser preview uses a fictional catalog and cannot authenticate. The native app starts empty, or reopens the last public catalog/artwork cache. Use **Connexion Aède** with an explicitly started Aède server and account; synchronization and available artwork prefetch then run natively. Aède must include the additive presentation/artwork/media-job/M3U contracts described in `docs/design/native-integration.md`; an older server reports unavailable services rather than substituting demonstration data.
 

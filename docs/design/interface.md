@@ -42,7 +42,7 @@ Connection popovers close via outside pointer activation or Escape, keep focus w
 
 ### Visual personal notes
 
-Artist and album pages use the same current-owner annotation component. Stars and the favourite heart have 18 px glyphs, unframed 28 px click targets, labels and pressed states. CommonMark notes use the explicitly approved Milkdown kit with bold, italic, heading, paragraph, lists, quote and undo/redo icons. Stored Markdown is hidden during normal editing. Account/server annotations remain authoritative; explicit save and errors preserve the draft. Untouched note source is not normalized by merely opening the editor.
+Artist and album pages use the same current-owner annotation component. Stars and the favourite heart have 18 px glyphs, unframed controls (28 px high), labels and pressed states. Star glyph edges overlap slightly through a 14 px horizontal step; neighbouring hit areas do not overlap, so the fourth star cannot activate the fifth. Clicking the selected rating again clears all stars; clicking another selects that rating. CommonMark notes use the explicitly approved Milkdown kit with bold, italic, heading, paragraph, lists, quote and undo/redo icons. Stored Markdown is hidden during normal editing. Account/server annotations remain authoritative; explicit save and errors preserve the draft. Untouched note source is not normalized by merely opening the editor.
 
 ### Statistics
 
