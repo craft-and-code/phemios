@@ -1,5 +1,6 @@
 import { createSignal, Show } from "solid-js";
 import { downloadAnalysisAede } from "../platform/desktop";
+import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
 /** Export comes from Aède; no user-selected filesystem path enters the native bridge. */
 export function AnalysisDownload(props: {
@@ -25,10 +26,19 @@ export function AnalysisDownload(props: {
   }
   return (
     <div class="analysis-download">
-      <button disabled={!library.session() || !props.available || busy()} onClick={download}>
-        {busy()
-          ? "Téléchargement…"
-          : `Télécharger le JSON ${props.album ? "de l’album" : "du titre"}`}
+      <button
+        class="icon-button quiet"
+        disabled={!library.session() || !props.available || busy()}
+        onClick={download}
+        aria-busy={busy()}
+        aria-label={
+          busy()
+            ? "Téléchargement du rapport…"
+            : `Télécharger le JSON ${props.album ? "de l’album" : "du titre"}`
+        }
+        title={`Télécharger le JSON ${props.album ? "de l’album" : "du titre"}`}
+      >
+        <Icon name="download" />
       </button>
       <Show when={path()}>
         <small role="status">Enregistré : {path()}</small>

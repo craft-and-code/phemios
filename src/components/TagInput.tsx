@@ -86,8 +86,10 @@ export function TagInput(props: {
           onInput={(event) => {
             const value = event.currentTarget.value,
               pieces = value.split(",");
-            if (pieces.length > 1)
+            if (pieces.length > 1) {
               props.onChange(commitTags(props.value, pieces.slice(0, -1).join(",")));
+              event.currentTarget.value = pieces.at(-1) ?? "";
+            }
             fragment(pieces.at(-1) ?? "");
             setOpen(true);
           }}

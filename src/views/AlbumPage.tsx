@@ -1,6 +1,6 @@
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
-import { AnalysisCharts } from "../components/AnalysisCharts";
+import { TrackResults } from "../components/TrackResults";
 import { AnalysisDownload } from "../components/AnalysisDownload";
 import { CoverPreview } from "../components/CoverPreview";
 import { Artwork } from "../components/Artwork";
@@ -68,15 +68,7 @@ export function AlbumPage(props: { album: Album }) {
       </div>
       <AnnotationPanel reference={props.album.reference} kind="album" />
       <section>
-        <div class="section-heading">
-          <h2>Pistes, analyses et spectres</h2>
-          <AnalysisDownload
-            reference={props.album.reference}
-            album
-            available={!!tracks()?.length && tracks()!.every((track) => track.analyses.length > 0)}
-          />
-        </div>
-        <JobControls release={props.album.reference} />
+        <h2>Pistes</h2>
         <Show when={tracks.error}>
           <p role="alert">Pistes indisponibles : {String(tracks.error)}</p>
         </Show>
@@ -85,53 +77,21 @@ export function AlbumPage(props: { album: Album }) {
         </Show>
         <ol class="track-list">
           <For each={tracks()}>
-            {(track) => (
-              <li>
-                <div class="track-heading">
-                  <strong>{track.title}</strong>
-                  <small>
-                    {track.duration_ms === null
-                      ? "Durée inconnue"
-                      : `${Math.floor(track.duration_ms / 60000)}:${String(Math.floor(track.duration_ms / 1000) % 60).padStart(2, "0")}`}
-                  </small>
-                  <Show when={track.spectrum_available}>
-                    <button onClick={() => library.warmImage(track.reference, "spectrum")}>
-                      Afficher le spectre
-                    </button>
-                  </Show>
-                </div>
-                <Show when={track.analyses.length}>
-                  <TrackAnalysis track={track} />
-                </Show>
-                <Show when={library.image(track.reference, "spectrum")}>
-                  {(url) => <img class="spectrum" src={url()} alt={`Spectre de ${track.title}`} />}
-                </Show>
-                <Show when={library.imageError(track.reference, "spectrum")}>
-                  <p role="alert">{library.imageError(track.reference, "spectrum")}</p>
-                </Show>
-              </li>
-            )}
+            {(track, index) => <TrackResults track={track} number={index() + 1} />}
           </For>
         </ol>
       </section>
+      <section class="album-analysis-jobs">
+        <div class="section-heading">
+          <h2>Analyse de l’album</h2>
+          <AnalysisDownload
+            reference={props.album.reference}
+            album
+            available={!!tracks()?.length && tracks()!.every((track) => track.analyses.length > 0)}
+          />
+        </div>
+        <JobControls release={props.album.reference} />
+      </section>
     </article>
-  );
-}
-
-function TrackAnalysis(props: { track: AvailableTrack }) {
-  const [open, setOpen] = createSignal(false);
-  return (
-    <details onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary>Graphiques FlacCompagnon</summary>
-      <AnalysisDownload
-        reference={props.track.reference}
-        available={props.track.analyses.length > 0}
-      />
-      <Show when={open()}>
-        <For each={props.track.analyses}>
-          {(analysis) => <AnalysisCharts analysis={analysis} />}
-        </For>
-      </Show>
-    </details>
   );
 }

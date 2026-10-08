@@ -429,18 +429,18 @@ pre {
 }
 .track-list {
   padding: 0;
-  list-style-position: inside;
+  list-style: none;
 }
 .track-list > li {
   border-top: 1px solid var(--border);
-  padding: 16px 0;
+  padding: 8px 0;
 }
 .track-heading {
-  display: inline-flex;
-  width: 95%;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 .track-heading strong {
   flex: 1;
@@ -616,7 +616,7 @@ pre {
 }
 .analysis-gauges {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
   gap: 20px;
 }
 .analysis-charts figure {
@@ -628,8 +628,8 @@ pre {
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 12px;
-  margin-bottom: 6px;
+  font-size: 14px;
+  margin-bottom: 8px;
 }
 .analysis-charts svg {
   display: block;
@@ -660,7 +660,7 @@ pre {
   margin-top: 10px;
 }
 .analysis-download {
-  margin: 12px 0;
+  margin: 0;
 }
 .analysis-download small {
   display: block;
@@ -685,6 +685,7 @@ pre {
   margin-bottom: 12px;
 }
 .relation-picker button[aria-pressed="true"] {
+  background: #24291d;
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -694,4 +695,51 @@ pre {
 
 .cover-dialog-heading h2:focus {
   outline: none;
+}
+
+.track-number {
+  color: var(--muted);
+  min-width: 20px;
+  font-size: 12px;
+}
+.track-actions {
+  display: flex;
+  gap: 4px;
+}
+.track-actions .icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  font-size: inherit;
+}
+.analysis-result-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+}
+.analysis-gauges strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.analysis-gauges svg {
+  min-height: 40px;
+}
+.track-analysis .analysis-charts {
+  margin-top: 12px;
+}
+.album-analysis-jobs {
+  margin-top: 28px;
+}
+.album-analysis-jobs .job-controls {
+  margin-bottom: 0;
+}
+@media (max-width: 780px) {
+  .analysis-gauges {
+    grid-template-columns: 1fr;
+  }
+  .track-heading {
+    gap: 8px;
+  }
 }

@@ -83,9 +83,11 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <p class="notice">Connectez-vous pour accéder aux données de votre compte.</p>
       </Show>
       <Show when={props.section === "favourites"}>
-        <AlbumGrid albums={favourites()} />
-        <Show when={!favourites().length}>
-          <p class="empty">Aucun album favori dans cette sélection.</p>
+        <Show
+          when={favourites().length}
+          fallback={<p class="empty">Aucun album favori dans cette sélection.</p>}
+        >
+          <AlbumGrid albums={favourites()} />
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
