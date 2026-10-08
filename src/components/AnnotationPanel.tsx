@@ -13,6 +13,8 @@ import { annotationScope } from "../library/annotation-scope";
 import { annotationWriter, type AnnotationPatch } from "../library/annotation-writes";
 import { requestAede } from "../platform/desktop";
 import type { Annotation } from "../library/server";
+import { TagInput } from "./TagInput";
+import { tagVocabulary } from "../library/tags";
 import { NoteEditor } from "./NoteEditor";
 import { Icon } from "./Icon";
 /** Icons save their own fields immediately; notes/tags stay in an explicit draft. */
@@ -21,15 +23,17 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   const [editorUnavailable, setEditorUnavailable] = createSignal(true);
   const [rating, setRating] = createSignal<number | null>(null),
     [favourite, setFavourite] = createSignal(false),
-    [tags, setTags] = createSignal(""),
+    [tags, setTags] = createSignal<string[]>([]),
+    [pendingTag, setPendingTag] = createSignal(false),
     [note, setNote] = createSignal(""),
     [pending, setPending] = createSignal(0),
     [savingNotes, setSavingNotes] = createSignal(false),
     [savedNote, setSavedNote] = createSignal(""),
-    [savedTags, setSavedTags] = createSignal(""),
+    [savedTags, setSavedTags] = createSignal<string[]>([]),
     [message, setMessage] = createSignal(""),
     [failure, setFailure] = createSignal("");
-  let readNote = () => note(),
+  let readTags = () => tags(),
+    readNote = () => note(),
     disposed = false;
   const revisions = { rating: 0, loved: 0 };
   onCleanup(() => {
@@ -70,7 +74,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       const saved = answer?.annotation;
       setRating(saved?.rating ?? null);
       setFavourite(saved?.loved ?? false);
-      setTags(saved?.tags.join(", ") ?? "");
+      setTags(saved?.tags.slice() ?? []);
       setNote(saved?.note ?? "");
       setSavedNote(note());
       setSavedTags(tags());
@@ -106,21 +110,14 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   async function saveNotes() {
     const held = writer(),
       currentNote = readNote(),
-      currentTags = tags();
+      currentTags = readTags();
     setSavingNotes(true);
     setMessage("");
     setFailure("");
     try {
       await held.write({
         note: currentNote || null,
-        tags: [
-          ...new Set(
-            currentTags
-              .split(",")
-              .map((value) => value.trim())
-              .filter(Boolean),
-          ),
-        ],
+        tags: currentTags,
       });
       if (current(held)) {
         setSavedNote(currentNote);
@@ -139,7 +136,10 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     library.session()?.account.role === "auditor" ||
     annotation.loading ||
     !!annotation.error;
-  const dirty = () => note() !== savedNote() || tags() !== savedTags();
+  const dirty = () =>
+    note() !== savedNote() ||
+    pendingTag() ||
+    JSON.stringify(tags()) !== JSON.stringify(savedTags());
   return (
     <section class="annotation-panel">
       <h2>Annotations de {props.kind === "artist" ? "l’artiste" : "l’album"}</h2>
@@ -186,18 +186,20 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
           <Icon name="heart" />
         </button>
       </div>
-      <label>
-        Tags
-        <input
-          disabled={blocked()}
-          value={tags()}
-          onInput={(event) => {
-            setTags(event.currentTarget.value);
-            setMessage("");
-          }}
-          placeholder="Séparez les tags par des virgules"
-        />
-      </label>
+      <TagInput
+        value={tags()}
+        vocabulary={tagVocabulary(Object.values(library.annotations))}
+        disabled={blocked()}
+        resetKey={`${library.session()?.account.id ?? ""}:${props.reference}`}
+        onChange={(value) => {
+          setTags(value);
+          setMessage("");
+        }}
+        onPending={setPendingTag}
+        onRead={(read) => {
+          readTags = read;
+        }}
+      />
       <div class="annotation-note">
         <p>Notes personnelles</p>
         <NoteEditor
