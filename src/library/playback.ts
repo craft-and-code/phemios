@@ -8,6 +8,7 @@ import {
 } from "../platform/desktop";
 import { idlePlayback, parseOutputs, parsePlayback, type AudioOutput } from "./playback-state";
 import type { Track } from "./server";
+import { createSeekProgress } from "./seek-progress";
 import { playbackSelection, type PlayableSelection } from "./playback-selection";
 import type { Artist, Album } from "./types";
 const message = (failure: unknown) =>
@@ -26,6 +27,11 @@ export function createPlayback(
     [target, setTarget] = createSignal(""),
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
+  const progress = createSeekProgress(
+    state,
+    (position) => playbackControl("seek", position),
+    setError,
+  );
   let audibleVolume = 0.5,
     preferenceKey = "";
   function identify(key: string) {
@@ -91,13 +97,15 @@ export function createPlayback(
       if (epoch !== generation) return;
       setState(value);
       if (!["idle", "ended", "error"].includes(value.status))
-        timer = setTimeout(() => void refresh(epoch), 250);
+        timer = setTimeout(() => void refresh(epoch), value.status === "playing" ? 60 : 250);
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
     }
   }
   async function action(command: string, value: unknown = null) {
+    if (command === "seek" && typeof value === "number") return progress.seek(value);
     if (busy()) return;
+    progress.reset();
     setBusy(true);
     setError("");
     cancel();
@@ -191,6 +199,7 @@ export function createPlayback(
     }
   }
   function reset() {
+    progress.reset();
     lifetime++;
     cancel();
     setBusy(false);
@@ -206,10 +215,16 @@ export function createPlayback(
     setPolicy("without-effects");
   }
   onCleanup(() => {
+    progress.reset();
     lifetime++;
     cancel();
   });
   return {
+    seek: progress.seek,
+    previewSeek: progress.preview,
+    clearSeekPreview: progress.clearPreview,
+    seekPosition: progress.position,
+    seeking: progress.pending,
     target,
     setTarget,
     startReference,

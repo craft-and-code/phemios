@@ -43,3 +43,29 @@ fn snapshot_exposes_meters_only_for_active_unpaused_consumption() {
         );
     }
 }
+
+#[test]
+fn seek_tickets_distinguish_accepted_commands_from_applied_positions() {
+    let player = Player::default();
+    let (tx, rx) = mpsc::sync_channel(4);
+    let (keep_tx, keep_rx) = mpsc::channel();
+    *player.worker.lock().unwrap() = Some(Worker {
+        commands: tx,
+        handle: std::thread::spawn(move || {
+            let _ = keep_rx.recv();
+        }),
+    });
+    let ticket = player.seek(4500).unwrap();
+    assert!(ticket > 0);
+    assert_eq!(player.snapshot().unwrap()["seek_id"], 0);
+    match rx.recv().unwrap() {
+        Command::Seek(position, id) => {
+            assert_eq!(position, 4500);
+            assert_eq!(id, ticket);
+        }
+        _ => panic!("expected seek"),
+    }
+    assert!(player.seek(86_400_001).is_err());
+    keep_tx.send(()).unwrap();
+    player.halt().unwrap();
+}

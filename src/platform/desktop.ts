@@ -64,7 +64,7 @@ export const playbackStart = (
   policy = "without-effects",
 ) => nativeCall<void>("playback_start", { tracks, device, index, policy });
 export const playbackControl = (action: string, value: unknown = null) =>
-  nativeCall<void>("playback_control", { action, value });
+  nativeCall<unknown>("playback_control", { action, value });
 
 /** Save the authenticated server-selected spectrum without exposing filesystem writes. */
 export const downloadSpectrumAede = (reference: string) =>

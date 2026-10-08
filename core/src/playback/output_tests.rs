@@ -50,3 +50,19 @@ fn meters_follow_consumed_stereo_samples_and_clear_on_pause_or_starvation() {
     );
     assert_eq!(consumer.slots(), 1);
 }
+
+#[test]
+fn equalizer_level_measures_written_output_with_flaccompagnon_gain() {
+    let (mut producer, mut consumer) = RingBuffer::new(4);
+    let signals = Signals::default();
+    signals.paused.store(false, Ordering::Relaxed);
+    producer.push([0.5, 0.25]).unwrap();
+    let mut output = [0_f32; 2];
+    render(&mut output, 2, &mut consumer, &signals, &AtomicU64::new(0));
+    let expected = ((0.25_f32.powi(2) + 0.125_f32.powi(2)) / 2.).sqrt() * 4.;
+    assert!((f32::from_bits(signals.level.load(Ordering::Relaxed)) - expected).abs() < 0.00001);
+    signals.volume.store(0_f32.to_bits(), Ordering::Relaxed);
+    producer.push([1., 1.]).unwrap();
+    render(&mut output, 2, &mut consumer, &signals, &AtomicU64::new(0));
+    assert_eq!(signals.level.load(Ordering::Relaxed), 0_f32.to_bits());
+}

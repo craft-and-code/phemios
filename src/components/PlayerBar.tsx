@@ -11,6 +11,7 @@ const time = (ms: number | null) =>
 export function PlayerBar() {
   const player = useLibrary().player,
     state = player.state;
+  const position = player.seekPosition;
   const active = () => ["playing", "paused"].includes(state().status);
   const disabled = () => player.busy() || !active();
   const issue = () => player.error() || state().error;
@@ -140,16 +141,22 @@ export function PlayerBar() {
           </button>
         </div>
         <div class="playback-progress">
-          <small>{time(state().position_ms)}</small>
+          <small>{time(position())}</small>
           <input
             type="range"
             min="0"
             max={state().duration_ms ?? 1}
             step="1000"
-            value={state().position_ms}
-            disabled={disabled() || !state().duration_ms}
+            value={position()}
+            disabled={(!active() && !player.seeking()) || player.busy() || !state().duration_ms}
             aria-label="Position de lecture"
-            onChange={(event) => void player.action("seek", Number(event.currentTarget.value))}
+            onInput={(event) => player.previewSeek(Number(event.currentTarget.value))}
+            onChange={(event) => {
+              const selected = Number(event.currentTarget.value);
+              void player.seek(selected);
+            }}
+            onPointerCancel={player.clearSeekPreview}
+            onBlur={player.clearSeekPreview}
           />
           <button
             class="time-toggle"
@@ -160,7 +167,7 @@ export function PlayerBar() {
             onClick={player.toggleTime}
           >
             {player.remaining() && state().duration_ms !== null
-              ? `−${time(Math.max(0, state().duration_ms! - state().position_ms))}`
+              ? `−${time(Math.max(0, state().duration_ms! - position()))}`
               : time(state().duration_ms)}
           </button>
         </div>

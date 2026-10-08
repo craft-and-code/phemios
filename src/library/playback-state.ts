@@ -11,6 +11,8 @@ export interface PlaybackState {
   history_confirmed: boolean;
   device: string;
   error: string;
+  seek_id: number;
+  level: number;
   levels: readonly number[];
 }
 export interface AudioOutput {
@@ -30,6 +32,8 @@ export const idlePlayback: PlaybackState = {
   history_confirmed: false,
   device: "",
   error: "",
+  seek_id: 0,
+  level: 0,
   levels: [0, 0, 0, 0],
 };
 function object(value: unknown): Record<string, unknown> {
@@ -64,7 +68,19 @@ export function parsePlayback(value: unknown): PlaybackState {
       !v.levels.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1))
   )
     throw new Error("Niveaux audio invalides.");
-  return { ...v, levels: v.levels ?? [0, 0, 0, 0] } as unknown as PlaybackState;
+  if (v.seek_id !== undefined && !count(v.seek_id))
+    throw new Error("Confirmation de position invalide.");
+  if (
+    v.level !== undefined &&
+    (typeof v.level !== "number" || !Number.isFinite(v.level) || v.level < 0 || v.level > 1)
+  )
+    throw new Error("Niveau audio invalide.");
+  return {
+    ...v,
+    seek_id: v.seek_id ?? 0,
+    level: v.level ?? 0,
+    levels: v.levels ?? [0, 0, 0, 0],
+  } as unknown as PlaybackState;
 }
 /** Outputs are explicitly discovered on the native host, never guessed from the catalog. */
 export function parseOutputs(value: unknown): AudioOutput[] {

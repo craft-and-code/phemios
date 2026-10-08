@@ -42,15 +42,21 @@ pub(crate) async fn playback_control(
     action: String,
     value: Value,
     player: State<'_, Arc<Player>>,
-) -> Result<(), String> {
+) -> Result<Value, String> {
     bridge(version)?;
     let player = player.inner().clone();
     blocking(move || {
-        if action == "stop" {
-            player.halt()
-        } else {
-            player.control(&action, value)
+        if action == "seek" {
+            return player
+                .seek(value.as_u64().ok_or("Position invalide.")?)
+                .map(|ticket| serde_json::json!({"seek_id": ticket}));
         }
+        if action == "stop" {
+            player.halt()?;
+        } else {
+            player.control(&action, value)?;
+        }
+        Ok(Value::Null)
     })
     .await
 }

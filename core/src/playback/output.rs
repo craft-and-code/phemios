@@ -9,6 +9,7 @@ use std::sync::{
 pub(super) struct Signals {
     pub volume: AtomicU32,
     pub paused: AtomicBool,
+    pub level: AtomicU32,
     pub levels: [AtomicU32; 4],
 }
 impl Default for Signals {
@@ -16,6 +17,7 @@ impl Default for Signals {
         Self {
             volume: AtomicU32::new(0.5_f32.to_bits()),
             paused: AtomicBool::new(true),
+            level: AtomicU32::new(0_f32.to_bits()),
             levels: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
         }
     }
@@ -78,6 +80,7 @@ fn render<T: SizedSample + FromSample<f32>>(
     let mut frames = 0;
     let mut squares = [0_f64; 2];
     let mut peaks = [0_f32; 2];
+    let mut output_squares = 0_f64;
     for target in output.chunks_exact_mut(channels) {
         let sample = if signals.paused.load(Ordering::Relaxed) {
             [0., 0.]
@@ -98,8 +101,12 @@ fn render<T: SizedSample + FromSample<f32>>(
             peaks[channel] = peaks[channel].max(magnitude);
         }
         if channels == 1 {
-            target[0] = T::from_sample((sample[0] + sample[1]) * 0.5 * gain);
+            let value = (sample[0] + sample[1]) * 0.5 * gain;
+            output_squares += f64::from(value).powi(2);
+            target[0] = T::from_sample(value);
         } else {
+            output_squares +=
+                f64::from(sample[0] * gain).powi(2) + f64::from(sample[1] * gain).powi(2);
             target[0] = T::from_sample(sample[0] * gain);
             target[1] = T::from_sample(sample[1] * gain);
         }
@@ -119,6 +126,15 @@ fn render<T: SizedSample + FromSample<f32>>(
     {
         target.store(value.to_bits(), Ordering::Relaxed);
     }
+    let count = (output.len() / channels * channels) as f64;
+    let rms = if count == 0. {
+        0.
+    } else {
+        (output_squares / count).sqrt() as f32
+    };
+    signals
+        .level
+        .store((rms * 4.).min(1.).to_bits(), Ordering::Relaxed);
     consumed.fetch_add(frames, Ordering::Relaxed);
 }
 impl Output {
@@ -128,6 +144,7 @@ impl Output {
             .map_err(|_| "Impossible de suspendre la sortie audio.".into())
     }
     pub fn open(id: &str, signals: Arc<Signals>) -> Result<Self, String> {
+        signals.level.store(0_f32.to_bits(), Ordering::Relaxed);
         for level in &signals.levels {
             level.store(0_f32.to_bits(), Ordering::Relaxed);
         }

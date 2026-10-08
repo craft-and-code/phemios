@@ -48,3 +48,11 @@ it("rejects invalid meters and preserves measured levels without inventing activ
   expect(() => parsePlayback({ ...state, levels: [0, 0, 0, 1.1] })).toThrow();
   expect(parsePlayback(state).levels).toEqual([0, 0, 0, 0]);
 });
+it("validates seek acknowledgements and the FlacCompagnon output level", () => {
+  expect(parsePlayback(state).seek_id).toBe(0);
+  expect(parsePlayback({ ...state, seek_id: 7, level: 0.6 }).seek_id).toBe(7);
+  for (const seek_id of [-1, 1.5, "7"])
+    expect(() => parsePlayback({ ...state, seek_id })).toThrow();
+  for (const level of [-0.1, 1.1, "0.6"])
+    expect(() => parsePlayback({ ...state, level })).toThrow();
+});

@@ -91,9 +91,12 @@ pub(super) fn run(
                 position = 0;
                 paused = false;
             }
-            Command::Seek(value) => {
+            Command::Seek(value, ticket) => {
                 position = value;
-                update(state, |s| s.position = position)?;
+                update(state, |s| {
+                    s.position = position;
+                    s.seek_id = ticket;
+                })?;
             }
             Command::Output(value) => {
                 device = value;

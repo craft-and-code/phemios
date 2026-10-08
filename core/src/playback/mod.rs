@@ -9,7 +9,7 @@ use output::Signals;
 use serde_json::{Value, json};
 use std::sync::{
     Arc, Mutex,
-    atomic::Ordering,
+    atomic::{AtomicU64, Ordering},
     mpsc::{self, SyncSender},
 };
 use std::thread::JoinHandle;
@@ -20,7 +20,7 @@ enum Command {
     Resume,
     Next,
     Previous,
-    Seek(u64),
+    Seek(u64, u64),
     Stop,
     Output(String),
 }
@@ -57,6 +57,7 @@ struct State {
     total: usize,
     position: u64,
     duration: Option<u64>,
+    seek_id: u64,
     rate: u32,
     error: String,
     confirmed: bool,
@@ -66,6 +67,7 @@ struct State {
 /// One bounded actor owns the socket and device; no credential enters the UI or audio callback.
 pub struct Player {
     worker: Mutex<Option<Worker>>,
+    next_seek: AtomicU64,
     state: Arc<Mutex<State>>,
     signals: Arc<Signals>,
 }
@@ -73,6 +75,7 @@ impl Default for Player {
     fn default() -> Self {
         Self {
             worker: Mutex::new(None),
+            next_seek: AtomicU64::new(1),
             state: Arc::new(Mutex::new(State {
                 status: "idle",
                 ..State::default()
@@ -97,8 +100,13 @@ impl Player {
         } else {
             [0.; 4]
         };
+        let level = if s.status == "playing" && !self.signals.paused.load(Ordering::Relaxed) {
+            f32::from_bits(self.signals.level.load(Ordering::Relaxed))
+        } else {
+            0.
+        };
         Ok(
-            json!({"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -190,6 +198,24 @@ impl Player {
         }
         update(&self.state, |s| s.status = "idle")
     }
+    /// Queue a seek and return its ticket; snapshots acknowledge it only after the actor applies it.
+    pub fn seek(&self, position: u64) -> Result<u64, String> {
+        if position > 86_400_000 {
+            return Err("Position invalide.".into());
+        }
+        let worker = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
+        let worker = worker
+            .as_ref()
+            .filter(|w| !w.handle.is_finished())
+            .ok_or("Aucune lecture active.")?;
+        let ticket = self.next_seek.fetch_add(1, Ordering::Relaxed);
+        worker
+            .commands
+            .try_send(Command::Seek(position, ticket))
+            .map_err(|_| "Lecteur occupé, réessayez.")?;
+        self.signals.paused.store(true, Ordering::Relaxed);
+        Ok(ticket)
+    }
     /// Narrow transport controls; unsupported values are explicit errors.
     pub fn control(&self, action: &str, value: Value) -> Result<(), String> {
         if action == "volume" {
@@ -202,6 +228,11 @@ impl Player {
                 .store((volume as f32).to_bits(), Ordering::Relaxed);
             return Ok(());
         }
+        if action == "seek" {
+            return self
+                .seek(value.as_u64().ok_or("Position invalide.")?)
+                .map(|_| ());
+        }
         let command = match action {
             "policy" => Command::Policy(Policy::parse(value.as_str().ok_or("Mode invalide.")?)?),
             "pause" => Command::Pause,
@@ -209,12 +240,6 @@ impl Player {
             "next" => Command::Next,
             "previous" => Command::Previous,
             "stop" => Command::Stop,
-            "seek" => Command::Seek(
-                value
-                    .as_u64()
-                    .filter(|v| *v <= 86_400_000)
-                    .ok_or("Position invalide.")?,
-            ),
             "output" => Command::Output(
                 value
                     .as_str()
