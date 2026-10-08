@@ -51,7 +51,7 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
       classList={{ "has-backdrop": !!background() }}
       style={
         background()
-          ? { "background-image": `linear-gradient(#111213e8,#111213f5),url("${background()}")` }
+          ? { "background-image": `linear-gradient(#111213ad,#111213d4),url("${background()}")` }
           : {}
       }
     >
@@ -60,14 +60,11 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
         style={
           banner()
             ? {
-                "background-image": `linear-gradient(90deg,#101917dd,#11191735),url("${banner()}")`,
+                "background-image": `linear-gradient(90deg,#101917aa,#11191735),url("${banner()}")`,
               }
             : {}
         }
       >
-        <a class="back" href="#/artists">
-          ← Tous les artistes
-        </a>
         <div>
           <p class="eyebrow">ARTISTE</p>
           <h1>{props.artist.name}</h1>
@@ -86,7 +83,6 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
           <h2>Participations</h2>
           <AlbumGrid albums={appearances()} />
         </Show>
-        <AnnotationPanel reference={props.artist.reference} />
         <section class="biography">
           <h2>Biographie</h2>
           <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
@@ -108,6 +104,7 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
             <small>Texte fictif pour l’aperçu.</small>
           </Show>
         </section>
+        <AnnotationPanel reference={props.artist.reference} />
       </div>
     </article>
   );

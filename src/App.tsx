@@ -73,6 +73,15 @@ export function App() {
       ? library.albums().find((item) => item.reference === value.reference)
       : undefined;
   });
+  const backLink = createMemo(() => {
+    if (selectedArtist()) return { href: "#/artists", label: "Tous les artistes" };
+    const album = selectedAlbum();
+    if (!album) return undefined;
+    const artist = library.artists().find((item) => item.reference === album.artist);
+    return artist
+      ? { href: `#/artist/${encodeURIComponent(artist.reference)}`, label: artist.name }
+      : { href: "#/albums", label: "Tous les albums" };
+  });
   const artistReleases = createMemo(() => {
     const route = current();
     return route.kind === "artist"
@@ -121,7 +130,16 @@ export function App() {
           />
         </label>
         <button class="server-button" onClick={() => setConnectionPanel(!connectionPanel())}>
-          {library.session() ? "Aède connecté" : "Connexion Aède"}
+          <span
+            class="server-indicator"
+            classList={{ online: library.connected() }}
+            aria-hidden="true"
+          />
+          {library.connected()
+            ? "Aède connecté"
+            : library.session()
+              ? "Connexion Aède perdue"
+              : "Connexion Aède"}
         </button>
       </header>
       <Show when={connectionPanel()}>
@@ -218,26 +236,37 @@ export function App() {
                 : "albums"
             }
           />
+        </Show>
+        <Show when={(hasFilters() || backLink()) && library.artists().length}>
           <div class="catalog-tools">
             <span>{library.busy() ? "Synchronisation…" : ""}</span>
-            <button
-              class="icon-button"
-              title="Inverser l’ordre alphabétique"
-              aria-label="Inverser l’ordre alphabétique"
-              aria-pressed={reverse()}
-              onClick={() => setReverse(!reverse())}
-            >
-              <Icon name="sort" />
-            </button>
-            <button
-              class="icon-button"
-              title="Vue compacte"
-              aria-label="Vue compacte"
-              aria-pressed={compact()}
-              onClick={() => setCompact(!compact())}
-            >
-              <Icon name="layers" />
-            </button>
+            <Show when={hasFilters()}>
+              <button
+                class="icon-button"
+                title="Inverser l’ordre alphabétique"
+                aria-label="Inverser l’ordre alphabétique"
+                aria-pressed={reverse()}
+                onClick={() => setReverse(!reverse())}
+              >
+                <Icon name="sort" />
+              </button>
+              <button
+                class="icon-button"
+                title="Vue compacte"
+                aria-label="Vue compacte"
+                aria-pressed={compact()}
+                onClick={() => setCompact(!compact())}
+              >
+                <Icon name="layers" />
+              </button>
+            </Show>
+            <Show when={backLink()}>
+              {(link) => (
+                <a class="back" href={link().href}>
+                  ← {link().label}
+                </a>
+              )}
+            </Show>
           </div>
         </Show>
         <Show when={current().kind === "section"}>

@@ -185,12 +185,13 @@
   border-color: var(--accent);
 }
 .artist-hero {
-  min-height: 235px;
+  min-height: 154px;
   padding: 24px 36px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  background: #202626;
+  background: #20262636;
+  border-bottom: 1px solid #ffffff0a;
 }
 .artist-hero.has-banner {
   background:
@@ -198,11 +199,11 @@
     url("/demo/landscape.svg") center 48% / cover;
 }
 .artist-hero > div {
-  margin-top: auto;
+  margin-top: 0;
 }
 .artist-hero h1 {
-  font-size: 52px;
-  margin: 8px 0;
+  font-size: clamp(32px, 4vw, 48px);
+  margin: 4px 0 8px;
 }
 .artist-hero p:not(.eyebrow) {
   margin: 0;

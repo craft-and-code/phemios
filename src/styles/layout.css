@@ -131,7 +131,10 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 36px 0;
+  padding: 12px 36px;
+}
+.catalog-tools .back {
+  margin-bottom: 0;
 }
 .catalog-tools > span {
   margin-right: auto;
@@ -375,6 +378,9 @@ legend {
   margin: 8px 8px 0 0;
 }
 .server-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 11px;
   white-space: nowrap;
 }
@@ -396,4 +402,45 @@ legend {
 }
 .connection-panel input {
   width: 100%;
+}
+
+.server-indicator {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #ef6262;
+  box-shadow: 0 0 8px #ef626255;
+  animation: connection-blink 1.2s ease-in-out infinite;
+}
+.server-indicator.online {
+  background: #8bcc66;
+  box-shadow: 0 0 8px #8bcc6655;
+  animation: connection-heartbeat 1.8s ease-in-out infinite;
+}
+@keyframes connection-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+@keyframes connection-heartbeat {
+  0%,
+  35%,
+  100% {
+    transform: scale(1);
+  }
+  12%,
+  25% {
+    transform: scale(1.28);
+    box-shadow: 0 0 11px #8bcc6699;
+  }
+  18% {
+    transform: scale(1.06);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .server-indicator,
+  .server-indicator.online {
+    animation: none;
+  }
 }

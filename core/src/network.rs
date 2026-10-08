@@ -273,7 +273,8 @@ fn allowed(method: &str, path: &str) -> bool {
         "GET" => {
             matches!(
                 path,
-                "/api/v1/presentation/artists"
+                "/api/auth/v1/session"
+                    | "/api/v1/presentation/artists"
                     | "/api/v1/presentation/albums"
                     | "/api/v1/stats"
                     | "/api/v1/doctor"

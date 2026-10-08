@@ -199,3 +199,10 @@ fn statistics_and_diagnosis_are_read_only_narrow_capabilities() {
     assert!(!allowed("DELETE", "/api/v1/doctor"));
     assert!(!allowed("GET", "/api/v1/stats/../../accounts"));
 }
+
+#[test]
+fn connection_status_allows_only_reading_the_current_session() {
+    assert!(allowed("GET", "/api/auth/v1/session"));
+    assert!(!allowed("PUT", "/api/auth/v1/session"));
+    assert!(!allowed("GET", "/api/auth/v1/password"));
+}

@@ -35,14 +35,6 @@ export function AlbumPage(props: { album: Album }) {
   });
   return (
     <article class="page album-page">
-      <a
-        class="back"
-        href={
-          props.album.artist ? `#/artist/${encodeURIComponent(props.album.artist)}` : "#/albums"
-        }
-      >
-        ← {artist()?.name ?? "Tous les albums"}
-      </a>
       <div class="album-hero">
         <Artwork album={props.album} />
         <div>

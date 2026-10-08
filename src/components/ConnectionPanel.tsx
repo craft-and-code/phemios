@@ -112,7 +112,15 @@ export function ConnectionPanel(props: { onClose: () => void }) {
             </form>
           }
         >
-          <p>Connecté : {library.session()?.account.username}</p>
+          <p>
+            {library.connected() ? "Connecté" : "Session"} : {library.session()?.account.username}
+          </p>
+          <Show when={!library.connected()}>
+            <p role="status">
+              Connexion perdue ou session expirée. Si nécessaire, déconnectez-vous puis
+              reconnectez-vous.
+            </p>
+          </Show>
           <p class="muted">{library.session()?.server}</p>
           <button disabled={library.busy()} onClick={() => library.sync()}>
             Synchroniser la bibliothèque

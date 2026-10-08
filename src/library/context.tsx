@@ -8,6 +8,7 @@ import {
   type ParentProps,
   type Accessor,
 } from "solid-js";
+import { connectionMonitor } from "./connection";
 import { createJobs } from "./jobs";
 import { requestAede } from "../platform/desktop";
 import { createStore } from "solid-js/store";
@@ -29,6 +30,7 @@ interface Library {
   demo: boolean;
   session: Accessor<AccountSession | undefined>;
   busy: Accessor<boolean>;
+  connected: Accessor<boolean>;
   error: Accessor<string>;
   snapshot: Accessor<Snapshot | undefined>;
   connect: (server: string, username: string, password: string) => Promise<void>;
@@ -49,11 +51,18 @@ export function LibraryProvider(props: ParentProps) {
   const [snapshot, setSnapshot] = createSignal<Snapshot>(),
     [session, setSession] = createSignal<AccountSession>(),
     [busy, setBusy] = createSignal(false),
+    [connected, setConnected] = createSignal(false),
     [error, setError] = createSignal("");
   const [images, setImages] = createStore<Record<string, string | undefined>>({}),
     [imageErrors, setImageErrors] = createStore<Record<string, string | undefined>>({}),
     [annotations, setAnnotations] = createStore<Record<string, Annotation | undefined>>({});
   const [mediaProgress, setMediaProgress] = createSignal<readonly [number, number]>([0, 0]);
+  const connection = connectionMonitor(async () => {
+    const current = session();
+    if (!current) throw new Error("Session absente.");
+    const account = await requestAede<{ id: string; enabled: boolean }>("/api/auth/v1/session");
+    if (account.id !== current.account.id || !account.enabled) throw new Error("Session invalide.");
+  }, setConnected);
   const tasks = createJobs(() => !!session());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
@@ -201,6 +210,7 @@ export function LibraryProvider(props: ParentProps) {
     setError("");
     try {
       setSession(await loginAede(server, username, password));
+      connection.start();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Connexion impossible.");
     } finally {
@@ -215,6 +225,7 @@ export function LibraryProvider(props: ParentProps) {
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Déconnexion interrompue.");
     } finally {
+      connection.stop();
       setSession(undefined);
       for (const ref of Object.keys(annotations)) setAnnotations(ref, undefined);
     }
@@ -231,7 +242,10 @@ export function LibraryProvider(props: ParentProps) {
       setError(failure instanceof Error ? failure.message : "Cache inaccessible.");
     }
   });
-  onCleanup(clearMedia);
+  onCleanup(() => {
+    connection.stop();
+    clearMedia();
+  });
   const value: Library = {
     tasks,
     artists,
@@ -239,6 +253,7 @@ export function LibraryProvider(props: ParentProps) {
     demo,
     session,
     busy,
+    connected,
     error,
     snapshot,
     connect,
