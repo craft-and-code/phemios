@@ -2,8 +2,6 @@
   "identifier": "main",
   "description": "Local main window only. No shell, HTTP or filesystem plugin.",
   "local": true,
-  "windows": [
-    "main"
-  ],
+  "windows": ["main"],
   "permissions": []
 }

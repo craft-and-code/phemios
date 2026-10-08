@@ -1,3 +1,7 @@
 # Phémios — Codex instructions
 
-Read README.md and the current design before changes. Preserve the separation between Aède domain rules, the framework-independent client core and Tauri commands. Keep Rust tests in sibling *_tests.rs files. Run npm run check before every commit. Never modify music files or silently ignore unsupported operations. Repository-facing prose is English. Markdown has no maximum line length.
+Follow `CLAUDE.md`. At the start of a task read `docs/coding/current-state.md` and the relevant design documentation. Inspect existing abstractions before changing code.
+
+Keep Rust unit tests in sibling `*_tests.rs` files declared with `#[cfg(test)]` and `#[path = "..."]`. Keep TypeScript tests and fixtures in separate test-only files. Preserve test behavior when moving suites; check orphaned tests.
+
+Run `tools/check.sh` before every commit. Never claim native, cross-platform, audio or server acceptance without executing the corresponding checks. Markdown has no maximum line length.

@@ -27,14 +27,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "app"
-    ],
-    "icon": [
-      "icons/icon.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
+    "targets": ["app"],
+    "icon": ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

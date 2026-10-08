@@ -1,28 +1,42 @@
 # Phémios
 
-Phémios is the local-first desktop client for Aède, built with SolidJS, TypeScript and Tauri 2. The initial application is an offline foundation; it does not connect to a server or play music yet.
+Phémios is the local-first desktop client for Aède, built with SolidJS, TypeScript and Tauri 2. It presents Aède's graph and capabilities without duplicating the engine or changing source music files.
 
-## Development
+## Start
 
-Use Node.js 22.12 or later and Rust 1.89 or later, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
+Use Node.js 22.12+ and a recent Rust toolchain, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). Rust 1.89 is the project's intended minimum; acceptance against the newly resolved dependency graph is still pending.
 
 ```sh
 npm ci
 npm run dev
 npm run tauri dev
-npm run check
-npm run tauri build -- --bundles app
 ```
 
-The browser preview reports that native capabilities are absent. The desktop bridge is typed and versioned. The webview has no shell, network or arbitrary filesystem permissions.
+`npm run dev` opens a browser-only offline preview at `http://127.0.0.1:1420`. `npm run tauri dev` starts the native window with its typed bridge. No server connection or audio playback starts automatically.
 
-## Structure
+## Verify and build
 
-- `src/`: SolidJS interface and centralized typed desktop calls.
-- `core/`: framework-independent Rust client policies; no Aède domain duplication.
-- `src-tauri/`: minimal desktop entry point, commands and capabilities.
-- `scripts/`: lockfile bridge compatibility checks.
+```sh
+npm run format
+npm run check
+npm run build:native
+```
 
-## Licensing
+`tools/check.sh` is authoritative and runs formatting, correctness lint, behavior tests, frontend type checking/build, Tauri bridge-version validation, Rust formatting/tests/Clippy/Rustdoc and native executable compilation. Native bundling is separate. `npm run build:native` builds the host platform's app bundle. The checked-in configuration enables no arbitrary shell, HTTP or filesystem plugin. Windows distribution will require an explicit offline-WebView2 packaging decision.
 
-Project sources use MPL-2.0, matching Aède. The starter derives from the tauri-project-start template; its upstream FlacCompagnon MIT notice is retained under `licenses/`.
+## Project map
+
+- `src/`: SolidJS views, pure filtering/presentation policies and centralized native calls.
+- `core/`: framework-independent Rust client policies, with no Tauri or catalog dependency.
+- `src-tauri/`: native wiring, typed commands, minimum capabilities and app icons.
+- `tools/check.sh`: authoritative verification gate.
+- `docs/coding/current-state.md`: current implementation and verified limits.
+- `docs/design/interface.md`: accepted interaction and capability contracts.
+- `docs/design/roadmap.md`: coherent implementation phases.
+- `docs/coding/dependencies.md`: dependency purpose, sources and compatibility evidence.
+
+See the current-state document before claiming server, artwork, playback, physical output or device-copy support.
+
+## License
+
+Project sources use MPL-2.0, matching Aède. The starter derives from the tauri-project-start template; its upstream FlacCompagnon MIT notice is retained under `licenses/`. App identity derives from Aède's source assets.
