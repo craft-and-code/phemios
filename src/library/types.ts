@@ -4,6 +4,7 @@ export interface Artist {
   name: string;
   genre: string;
   country: string | null;
+  countryCode?: string;
   biography: string;
   artwork: boolean;
 }

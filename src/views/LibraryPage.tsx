@@ -1,4 +1,5 @@
 import { createMemo, For, Show } from "solid-js";
+import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { Artwork } from "../components/Artwork";
 import { demoAlbums, demoArtists } from "../demo/catalog";
@@ -42,10 +43,7 @@ export function LibraryPage(props: {
         <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
       </div>
       <Show when={props.section === "countries"}>
-        <p class="notice">
-          Le globe rotatif et zoomable sera ajouté avec ses frontières géographiques locales. Cette
-          première étape propose la sélection par pays.
-        </p>
+        <CountryGlobe artists={demoArtists} selected={country()} onSelect={setCountry} />
         <div class="choices" aria-label="Pays d’origine">
           <button aria-pressed={country() === undefined} onClick={() => setCountry(undefined)}>
             Tous
