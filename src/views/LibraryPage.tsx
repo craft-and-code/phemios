@@ -2,18 +2,21 @@ import { createMemo, For, Show } from "solid-js";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { Artwork } from "../components/Artwork";
-import { demoAlbums, demoArtists } from "../demo/catalog";
+import { useLibrary } from "../library/context";
+import { catalogIndex } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName } from "../library/filtering";
 import type { Filters } from "../library/types";
 import type { Section } from "../navigation/routes";
 
-/** Only sourced demo origins are grouped; unknown values have their own choice. */
+/** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
   section: Section;
   filters: Filters;
   setFilters: (filters: Filters) => void;
   reverse: boolean;
 }) {
+  const library = useLibrary();
+  const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
   const country = () => props.filters.country;
   const setCountry = (country: string | null | undefined) =>
     props.setFilters({ ...props.filters, country });
@@ -22,17 +25,11 @@ export function LibraryPage(props: {
   const compare = (a: string, b: string) =>
     normalizeName(a).localeCompare(normalizeName(b), "fr") * (props.reverse ? -1 : 1);
   const artists = createMemo(() => {
-    const matched = filterArtists(demoArtists, demoAlbums, props.filters);
-    return [...matched]
-      .filter(
-        (item) =>
-          props.section !== "countries" || country() === undefined || item.country === country(),
-      )
-      .filter((item) => props.section !== "genres" || !genre() || item.genre === genre())
-      .sort((a, b) => compare(a.name, b.name));
+    const matched = filterArtists(library.artists(), library.albums(), props.filters);
+    return [...matched].sort((a, b) => compare(a.name, b.name));
   });
   const albums = createMemo(() =>
-    [...filterAlbums(demoAlbums, demoArtists, props.filters)]
+    [...filterAlbums(library.albums(), library.artists(), props.filters)]
       .filter((item) => props.section !== "compilations" || item.compilation)
       .sort((a, b) => compare(a.title, b.title)),
   );
@@ -43,12 +40,12 @@ export function LibraryPage(props: {
         <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
       </div>
       <Show when={props.section === "countries"}>
-        <CountryGlobe artists={demoArtists} selected={country()} onSelect={setCountry} />
+        <CountryGlobe artists={library.artists()} selected={country()} onSelect={setCountry} />
         <div class="choices" aria-label="Pays d’origine">
           <button aria-pressed={country() === undefined} onClick={() => setCountry(undefined)}>
             Tous
           </button>
-          <For each={[...new Set(demoArtists.map((item) => item.country))]}>
+          <For each={[...new Set(library.artists().map((item) => item.country))]}>
             {(value) => (
               <button aria-pressed={country() === value} onClick={() => setCountry(value)}>
                 {value ?? "Origine inconnue"}
@@ -62,7 +59,11 @@ export function LibraryPage(props: {
           <button aria-pressed={!genre()} onClick={() => setGenre(undefined)}>
             Tous
           </button>
-          <For each={[...new Set(demoArtists.map((item) => item.genre))]}>
+          <For
+            each={[
+              ...new Set(library.artists().flatMap((item) => item.genres ?? [item.genre])),
+            ].filter(Boolean)}
+          >
             {(value) => (
               <button aria-pressed={genre() === value} onClick={() => setGenre(value)}>
                 {value}
@@ -75,20 +76,41 @@ export function LibraryPage(props: {
         <ul class="artist-grid">
           <For each={artists()}>
             {(artist) => {
-              const cover = demoAlbums.find((item) => item.artist === artist.reference);
+              const releases = index().albumsByArtist.get(artist.reference) ?? [];
+              const cover = releases.find((item) => item.cover) ?? releases[0];
               return (
                 <li>
-                  <a class="artist-card" href={`#/artist/${artist.reference}`}>
-                    <Show when={cover}>{(album) => <Artwork album={album()} />}</Show>
+                  <a class="artist-card" href={`#/artist/${encodeURIComponent(artist.reference)}`}>
+                    <Show
+                      when={library.image(artist.reference, "portrait")}
+                      fallback={
+                        <Show
+                          when={cover}
+                          fallback={
+                            <div
+                              class="artwork missing-art"
+                              aria-label="Pas de pochette disponible"
+                            >
+                              ♪
+                            </div>
+                          }
+                        >
+                          {(album) => <Artwork album={album()} />}
+                        </Show>
+                      }
+                    >
+                      {(url) => (
+                        <div class="artwork real-art">
+                          <img src={url()} alt={`Portrait de ${artist.name}`} />
+                        </div>
+                      )}
+                    </Show>
                     <div>
                       <h2>{artist.name}</h2>
                       <p>
                         {artist.genre} · {artist.country ?? "Origine inconnue"}
                       </p>
-                      <small>
-                        {demoAlbums.filter((item) => item.artist === artist.reference).length}{" "}
-                        albums · ouvrir la page
-                      </small>
+                      <small>{releases.length} albums · ouvrir la page</small>
                     </div>
                   </a>
                 </li>
@@ -102,10 +124,12 @@ export function LibraryPage(props: {
           </p>
         </Show>
       </Show>
-      <p class="demo-note">
-        Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la recherche
-        globale d’Aède reste à raccorder.
-      </p>
+      <Show when={library.demo}>
+        <p class="demo-note">
+          Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la
+          recherche globale d’Aède reste à raccorder.
+        </p>
+      </Show>
     </section>
   );
 }

@@ -12,4 +12,4 @@
 
 Each coherent part gets its own verified commit. These phases are implementation boundaries, not claims that server or physical acceptance already passed.
 
-Phases 1–3 are implemented as an offline demonstration foundation. Later-phase pages have navigation/form previews where useful, with connected actions unavailable. They remain pending integration and acceptance.
+Phases 1–3 are complete. Phase 4 has authenticated paging, native projections and persistent artwork; events, cache quotas, virtualization and scrolling benchmarks remain pending. Phase 5 has connected annotations, favourites, collection rules, history and album M3U save/download; evaluated/manual collections and richer credit pages remain pending. Phase 6 has the geographic globe and bounded local collaboration graph; dated membership provenance remains pending. Phase 7 has explicit analysis/spectrum jobs and direct results; playback/output/lyrics/effects are still unavailable. Phases 8–9 remain acceptance work. Read current-state and native-integration before inferring broader support.

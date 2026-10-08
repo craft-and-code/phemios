@@ -352,3 +352,200 @@
     height: 280px;
   }
 }
+.real-art {
+  background: #202526 !important;
+  padding: 0;
+}
+.real-art::before,
+.real-art::after {
+  display: none;
+}
+.real-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.artwork .cover-fallback {
+  font-size: 9px;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: auto;
+  text-align: center;
+  padding: 8px;
+  color: #9daba5;
+}
+.missing-art {
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: var(--accent);
+}
+.artist-hero {
+  background-size: cover;
+  background-position: center;
+}
+.job-controls {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.job-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.job-actions label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.job-result {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.job-result button {
+  margin-left: 12px;
+  font-size: 11px;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 400px;
+  overflow: auto;
+  font-size: 11px;
+  color: #c8d7c4;
+  padding: 16px;
+  background: #151a18;
+}
+.track-list {
+  padding: 0;
+  list-style-position: inside;
+}
+.track-list > li {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.track-heading {
+  display: inline-flex;
+  width: 95%;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.track-heading strong {
+  flex: 1;
+  font-weight: 500;
+}
+.track-heading button {
+  font-size: 11px;
+  padding: 6px 9px;
+}
+.spectrum {
+  display: block;
+  width: 100%;
+  max-width: 1000px;
+  margin: 16px 0;
+}
+.m3u-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+.m3u-export button {
+  font-size: 11px;
+}
+
+.collection-form {
+  max-width: 700px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.collection-form label,
+.album-selection {
+  display: grid;
+  gap: 8px;
+}
+.collection-form .primary {
+  justify-self: start;
+}
+.album-selection {
+  margin-bottom: 24px;
+  max-width: 700px;
+}
+.personal-list {
+  padding: 0;
+  list-style: none;
+}
+.personal-list li {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.personal-list li strong,
+.personal-list li > a {
+  flex: 1;
+}
+.personal-list code {
+  flex: 1;
+  color: var(--muted);
+}
+.personal-list button {
+  font-size: 11px;
+}
+.favourite-artist {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.relation-graph {
+  width: 100%;
+  max-height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: radial-gradient(ellipse, #123436 0%, #101719 70%);
+}
+.relation-graph line {
+  stroke: #4abac6;
+  opacity: 0.48;
+}
+.relation-graph text {
+  fill: #e3ecec;
+  font-size: 14px;
+}
+.relation-graph .edge-weight {
+  fill: #86cbd0;
+  font-size: 12px;
+}
+.relation-node {
+  cursor: pointer;
+  outline: none;
+}
+.relation-node circle {
+  fill: #142d30;
+  stroke: #74e7ed;
+  stroke-width: 2;
+}
+.relation-node:focus circle,
+.relation-node:hover circle {
+  fill: #395451;
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+.relation-center {
+  fill: #263b2b;
+  stroke: var(--accent);
+  stroke-width: 3;
+}

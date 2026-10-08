@@ -4,7 +4,9 @@ import {
   matchesYear,
   searchAlbum,
   initialIndex,
+  searchArtist,
 } from "./filtering";
+import { catalogIndex } from "./index";
 import type { Album, Artist, Filters, RailMode } from "./types";
 
 export interface CountBin {
@@ -29,25 +31,42 @@ export function distributions(
 ) {
   const years = new Map<number, Set<string>>();
   const letters = new Map<number, Set<string>>();
+  const index = catalogIndex(artists, albums);
   for (const album of albums) {
-    const artist = artists.find((item) => item.reference === album.artist);
-    if (!artist || !matchesFacets(artist, filters) || !searchAlbum(album, artist, filters.query))
-      continue;
-    const name = artistView ? artist.name : album.title;
-    const identity = artistView ? artist.reference : album.reference;
-    if (album.year !== null && matchesAlphabet(name, filters)) {
-      const bin = years.get(album.year) ?? new Set<string>();
-      bin.add(identity);
-      years.set(album.year, bin);
-    }
-    if (matchesYear(album, filters)) {
-      const index = initialIndex(name);
-      const bin = letters.get(index) ?? new Set<string>();
-      bin.add(identity);
-      letters.set(index, bin);
+    const related = index.artistsByAlbum.get(album.reference) ?? [];
+    for (const artist of related) {
+      if (!matchesFacets(artist, filters) || !searchAlbum(album, artist, filters.query)) continue;
+      const name = artistView ? artist.name : album.title;
+      const identity = artistView ? artist.reference : album.reference;
+      if (album.year !== null && matchesAlphabet(name, filters)) {
+        const bin = years.get(album.year) ?? new Set<string>();
+        bin.add(identity);
+        years.set(album.year, bin);
+      }
+      if (matchesYear(album, filters)) {
+        const index = initialIndex(name);
+        const bin = letters.get(index) ?? new Set<string>();
+        bin.add(identity);
+        letters.set(index, bin);
+      }
     }
   }
+  if (artistView)
+    for (const artist of artists) {
+      if (
+        index.albumsByArtist.has(artist.reference) ||
+        !matchesFacets(artist, filters) ||
+        !searchArtist(artist, filters.query) ||
+        (filters.mode !== "alphabet" && !filters.includeUnknownYear)
+      )
+        continue;
+      const initial = initialIndex(artist.name),
+        bin = letters.get(initial) ?? new Set<string>();
+      bin.add(artist.reference);
+      letters.set(initial, bin);
+    }
   const rows = (map: Map<number, Set<string>>): CountBin[] =>
     [...map].map(([value, ids]) => ({ value, count: ids.size }));
+
   return { years: rows(years), alphabet: rows(letters) };
 }

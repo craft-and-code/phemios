@@ -19,3 +19,34 @@ export async function getRuntimeInfo(): Promise<RuntimeInfo> {
   }
   return info;
 }
+
+/** All native data operations carry the bridge version and stay on typed IPC. */
+export const isNative = () => isTauri();
+async function nativeCall<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
+  if (!isTauri()) throw new Error("La connexion Aède nécessite l’application desktop.");
+  try {
+    return await invoke<T>(command, { version: 1, ...args });
+  } catch (error) {
+    throw new Error(typeof error === "string" ? error : "Opération native impossible.");
+  }
+}
+export const loginAede = (server: string, username: string, password: string) =>
+  nativeCall<import("../library/server").AccountSession>("aede_login", {
+    server,
+    username,
+    password,
+  });
+export const downloadAede = (id: string) => nativeCall<string>("aede_download", { id });
+export const logoutAede = () => nativeCall<void>("aede_logout");
+export const syncAede = () => nativeCall<unknown>("aede_sync");
+export const cachedAede = () => nativeCall<unknown | null>("aede_cache");
+export const artworkAede = (reference: string, kind: string) =>
+  nativeCall<ArrayBuffer>("aede_artwork", { reference, kind });
+export function requestAede<T>(
+  path: string,
+  query: Record<string, string> = {},
+  method = "GET",
+  body: unknown = null,
+): Promise<T> {
+  return nativeCall<T>("aede_request", { path, query, method, body });
+}

@@ -14,7 +14,7 @@ Year bounds are inclusive and come from the available catalog. Alphabet initials
 
 ## Countries and relations
 
-Countries will use a rotatable, zoomable globe with actual geographic boundaries bundled locally, country picking and a keyboard-accessible country list. Unknown origin remains explicit. Country counts follow sourced artist origins, never pressing countries. Define the geography renderer and its dependency/asset licensing before introducing it.
+Countries use a rotatable, zoomable globe with actual geographic boundaries bundled locally, country picking and a keyboard-accessible country list. Unknown origin remains explicit. Country counts follow sourced artist origins, never pressing countries. The renderer and public-domain asset are documented in `geography.md`.
 
 Relationship discovery uses the existing graph: performers, collaborators, credited roles and dated membership. A collaboration does not become band membership. Edges retain roles, periods and provenance. Provide keyboard/list navigation alongside the graph and bound visible graph work.
 
@@ -28,6 +28,6 @@ Lyrics follow consumed playback time; simulations and physical-output evidence s
 
 Separate audio-output devices from mounted storage destinations. The export page selects an existing attached player/card/drive, selection or collection, sidecars, verification of newly written and existing files, optional supported conversion and destination playlists. Preview before transfer. A disconnected destination must never become a new local folder. Preserve Aède's path/overlap, source-integrity, atomic-publication and explicit replacement rules. Lossy conversion is not byte equality with the source. Do not duplicate these rules in a browser-only copier.
 
-## Contracts still required
+## Integration boundaries
 
-Native artist artwork/prose, broad authenticated search including private fields, collection evaluation, credit/relation details, playlist storage/export, analysis/generation tasks, device control/registry and mounted-player copy orchestration require defined server/native contracts. Never infer HTTP endpoints from CLI availability. Downloaded M3U paths/URLs must match the intended local/remote client and authorization context.
+Native artwork/prose, paged tag search/current-owner annotations, private M3U publication and scoped analysis tasks are defined in `native-integration.md`. Collection evaluation, richer dated credits/relations, device control/registry, native playback and mounted-player copy still require their own frontend/native orchestration. Never infer HTTP endpoints from CLI availability. Downloaded M3U paths/URLs must match the intended local/remote client and authorization context.

@@ -1,3 +1,4 @@
+import { catalogIndex } from "./index";
 import type { Album, Artist, Filters, Interval } from "./types";
 
 /** Accent/case/Latin-ligature folding used only for presentation search. */
@@ -47,25 +48,66 @@ export function matchesAlphabet(name: string, filters: Filters): boolean {
   return index >= filters.alphabet[0] && index <= filters.alphabet[1];
 }
 
-/** Search all fields supplied to this preview; backend broad search is separate. */
+const albumText = new WeakMap<Album, string>(),
+  artistText = new WeakMap<Artist, string>();
+function searchableArtist(artist: Artist): string {
+  let text = artistText.get(artist);
+  if (text !== undefined) return text;
+  text = normalizeName(
+    [
+      artist.name,
+      artist.genre,
+      artist.country ?? "",
+      artist.biography,
+      ...(artist.searchFields ?? []),
+    ].join(" "),
+  );
+  artistText.set(artist, text);
+  return text;
+}
+function searchableAlbum(album: Album): string {
+  let text = albumText.get(album);
+  if (text !== undefined) return text;
+  text = normalizeName(
+    [
+      album.title,
+      album.year ?? "",
+      ...album.tags,
+      ...(album.searchFields ?? []),
+      album.note ?? "",
+      album.rating ?? "",
+      album.favourite ? "favori" : "",
+    ].join(" "),
+  );
+  albumText.set(album, text);
+  return text;
+}
+/** Search indexes cover supplied tags, fetched presentation fields and loaded own annotations. */
 export function searchAlbum(album: Album, artist: Artist, query: string): boolean {
-  const text = [
-    album.title,
-    album.year ?? "",
-    ...album.tags,
-    artist.name,
-    artist.genre,
-    artist.country ?? "",
-    artist.biography,
-  ].join(" ");
-  return normalizeName(text).includes(normalizeName(query));
+  const term = normalizeName(query);
+  return !term || searchableAlbum(album).includes(term) || searchableArtist(artist).includes(term);
+}
+export function searchArtist(artist: Artist, query: string): boolean {
+  const term = normalizeName(query);
+  return !term || searchableArtist(artist).includes(term);
 }
 
 /** Facets remain visible in the filter bar when the navigation view changes. */
 export function matchesFacets(artist: Artist, filters: Filters): boolean {
   return (
     (filters.country === undefined || artist.country === filters.country) &&
-    (filters.genre === undefined || artist.genre === filters.genre)
+    (filters.genre === undefined ||
+      artist.genre === filters.genre ||
+      artist.genres?.includes(filters.genre) === true)
+  );
+}
+
+/** Contributions retain the credited artist without changing an album's primary artist. */
+export function belongsToArtist(album: Album, artist: Artist): boolean {
+  return (
+    album.artist === artist.reference ||
+    album.contributors?.includes(artist.reference) === true ||
+    artist.releaseRefs?.includes(album.reference) === true
   );
 }
 
@@ -75,17 +117,17 @@ export function filterArtists(
   albums: readonly Album[],
   filters: Filters,
 ) {
-  return artists.filter(
-    (artist) =>
-      matchesFacets(artist, filters) &&
-      matchesAlphabet(artist.name, filters) &&
-      albums.some(
-        (album) =>
-          album.artist === artist.reference &&
-          matchesYear(album, filters) &&
-          searchAlbum(album, artist, filters.query),
-      ),
-  );
+  const index = catalogIndex(artists, albums);
+  return artists.filter((artist) => {
+    if (!matchesFacets(artist, filters) || !matchesAlphabet(artist.name, filters)) return false;
+    const releases = index.albumsByArtist.get(artist.reference) ?? [];
+    return releases.length
+      ? releases.some(
+          (album) => matchesYear(album, filters) && searchAlbum(album, artist, filters.query),
+        )
+      : (filters.mode === "alphabet" || filters.includeUnknownYear) &&
+          searchArtist(artist, filters.query);
+  });
 }
 
 /** Album filtering never mutates the catalog and preserves each edition. */
@@ -94,14 +136,27 @@ export function filterAlbums(
   artists: readonly Artist[],
   filters: Filters,
 ) {
+  const index = catalogIndex(artists, albums);
   return albums.filter((album) => {
-    const artist = artists.find((candidate) => candidate.reference === album.artist);
+    const related = index.artistsByAlbum.get(album.reference) ?? [];
+    const fallback: Artist = {
+      reference: "",
+      name: "Artistes divers",
+      genre: "",
+      country: null,
+      biography: "",
+      artwork: false,
+    };
     return (
-      artist !== undefined &&
-      matchesFacets(artist, filters) &&
       matchesYear(album, filters) &&
       matchesAlphabet(album.title, filters) &&
-      searchAlbum(album, artist, filters.query)
+      (related.length
+        ? related.some(
+            (artist) => matchesFacets(artist, filters) && searchAlbum(album, artist, filters.query),
+          )
+        : filters.country === undefined &&
+          filters.genre === undefined &&
+          searchAlbum(album, fallback, filters.query))
     );
   });
 }

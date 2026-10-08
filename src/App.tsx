@@ -1,9 +1,20 @@
-import { createMemo, createResource, createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
+import { catalogIndex } from "./library/index";
 import { distributions } from "./library/distribution";
 import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
 import { Icon } from "./components/Icon";
-import { demoAlbums, demoArtists, demoYearDomain } from "./demo/catalog";
+import { useLibrary } from "./library/context";
+import { ConnectionPanel } from "./components/ConnectionPanel";
 import type { Filters } from "./library/types";
 import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
@@ -14,15 +25,32 @@ import { WorkspacePage } from "./views/WorkspacePage";
 
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
+  const library = useLibrary();
+  const [connectionPanel, setConnectionPanel] = createSignal(false);
+  const yearDomain = createMemo(() => {
+    const values = library.snapshot()?.albums ?? (library.demo ? library.albums() : []);
+    let low = Infinity,
+      high = -Infinity;
+    for (const album of values)
+      if (album.year !== null) {
+        low = Math.min(low, album.year);
+        high = Math.max(high, album.year);
+      }
+    return Number.isFinite(low) ? ([low, high] as const) : ([0, 0] as const);
+  });
   const [runtime] = createResource(getRuntimeInfo);
   const [route, setRoute] = createSignal(parseRoute(window.location.hash));
   const [sidebar, setSidebar] = createSignal(true);
   const [filters, setFilters] = createSignal<Filters>({
     mode: "both",
-    years: demoYearDomain,
+    years: [0, 0],
     alphabet: [0, 26],
     includeUnknownYear: true,
     query: "",
+  });
+  createEffect(() => {
+    const domain = yearDomain();
+    if (Number.isFinite(domain[0])) setFilters((previous) => ({ ...previous, years: domain }));
   });
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
@@ -31,6 +59,25 @@ export function App() {
     const value = current();
     return value.kind === "section" ? value.section : "artists";
   };
+  const selectedArtist = createMemo(() => {
+    const value = current();
+    return value.kind === "artist"
+      ? library.artists().find((item) => item.reference === value.reference)
+      : undefined;
+  });
+  const selectedAlbum = createMemo(() => {
+    const value = current();
+    return value.kind === "album"
+      ? library.albums().find((item) => item.reference === value.reference)
+      : undefined;
+  });
+  const artistReleases = createMemo(() => {
+    const route = current();
+    return route.kind === "artist"
+      ? (catalogIndex(library.artists(), library.albums()).albumsByArtist.get(route.reference) ??
+          [])
+      : library.albums();
+  });
   const context = () =>
     ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
       ? "Initiale de l’artiste · année de ses albums"
@@ -62,13 +109,19 @@ export function App() {
           <Icon name="search" />
           <input
             type="search"
-            aria-label="Rechercher dans le catalogue de démonstration"
+            aria-label="Rechercher dans tous les champs du catalogue"
             placeholder="Artiste, titre, pays, genre, tag…"
             value={filters().query}
             onInput={(event) => setFilters({ ...filters(), query: event.currentTarget.value })}
           />
         </label>
+        <button class="server-button" onClick={() => setConnectionPanel(!connectionPanel())}>
+          {library.session() ? "Aède connecté" : "Connexion Aède"}
+        </button>
       </header>
+      <Show when={connectionPanel()}>
+        <ConnectionPanel onClose={() => setConnectionPanel(false)} />
+      </Show>
       <Show when={sidebar()}>
         <aside class="sidebar" aria-label="Navigation principale">
           <p class="nav-label">BIBLIOTHÈQUE</p>
@@ -95,7 +148,24 @@ export function App() {
           </nav>
           <div class="connection">
             <span class="status-dot" />
-            Catalogue fictif, hors ligne
+            {library.demo
+              ? "Aperçu hors ligne"
+              : library.session()
+                ? "Bibliothèque Aède"
+                : "Cache local · hors ligne"}
+            <small>
+              {library.artists().length} artistes · {library.albums().length} albums
+            </small>
+            <Show when={library.mediaProgress()[1]}>
+              <small>
+                Images {library.mediaProgress()[0]} / {library.mediaProgress()[1]}
+              </small>
+            </Show>
+            <Show when={library.mediaErrors()}>
+              <small role="status">
+                {library.mediaErrors()} image(s) indisponible(s) · resynchronisez pour réessayer
+              </small>
+            </Show>
             <small>
               <Show when={runtime()} fallback="Initialisation du pont…">
                 {runtime()?.native ? "Application desktop" : "Aperçu navigateur"}
@@ -108,20 +178,28 @@ export function App() {
         </aside>
       </Show>
       <main id="content">
-        <Show when={hasFilters()}>
+        <Show when={library.error() && !connectionPanel()}>
+          <p class="notice" role="alert">
+            {library.error()}
+          </p>
+        </Show>
+        <Show when={!library.artists().length && !library.busy()}>
+          <div class="empty">
+            <p>Connectez votre serveur Aède pour synchroniser la bibliothèque.</p>
+            <button class="primary" onClick={() => setConnectionPanel(true)}>
+              Configurer la connexion
+            </button>
+          </div>
+        </Show>
+        <Show when={hasFilters() && library.artists().length}>
           <FilterBar
             value={filters()}
             setValue={setFilters}
             context={context()}
-            yearDomain={demoYearDomain}
+            yearDomain={yearDomain()}
             histogram={distributions(
-              demoArtists,
-              current().kind === "artist"
-                ? demoAlbums.filter((album) => {
-                    const route = current();
-                    return route.kind === "artist" && album.artist === route.reference;
-                  })
-                : demoAlbums,
+              library.artists(),
+              artistReleases(),
               filters(),
               current().kind === "section" &&
                 ["artists", "countries", "genres"].includes(section()),
@@ -133,7 +211,7 @@ export function App() {
             }
           />
           <div class="catalog-tools">
-            <span>Les pochettes restent visibles dans les deux densités.</span>
+            <span>{library.busy() ? "Synchronisation…" : ""}</span>
             <button
               class="icon-button"
               title="Inverser l’ordre alphabétique"
@@ -157,7 +235,7 @@ export function App() {
         <Show when={current().kind === "section"}>
           <Show
             when={["artists", "albums", "compilations", "countries", "genres"].includes(section())}
-            fallback={<WorkspacePage section={section()} />}
+            fallback={<WorkspacePage section={section()} query={filters().query} />}
           >
             <LibraryPage
               section={section()}
@@ -168,26 +246,14 @@ export function App() {
           </Show>
         </Show>
         <Show when={current().kind === "artist"}>
-          {(() => {
-            const value = current();
-            const artist = demoArtists.find(
-              (item) => value.kind === "artist" && item.reference === value.reference,
-            );
-            return artist ? (
-              <ArtistPage artist={artist} filters={filters()} reverse={reverse()} />
-            ) : (
-              <p class="empty">Artiste introuvable.</p>
-            );
-          })()}
+          <Show when={selectedArtist()} fallback={<p class="empty">Artiste introuvable.</p>}>
+            {(artist) => <ArtistPage artist={artist()} filters={filters()} reverse={reverse()} />}
+          </Show>
         </Show>
         <Show when={current().kind === "album"}>
-          {(() => {
-            const value = current();
-            const album = demoAlbums.find(
-              (item) => value.kind === "album" && item.reference === value.reference,
-            );
-            return album ? <AlbumPage album={album} /> : <p class="empty">Album introuvable.</p>;
-          })()}
+          <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
+            {(album) => <AlbumPage album={album()} />}
+          </Show>
         </Show>
         <Show when={current().kind === "not-found"}>
           <div class="empty">

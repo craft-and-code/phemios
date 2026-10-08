@@ -1,0 +1,72 @@
+import { createRoot } from "solid-js";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createJobs } from "./jobs";
+import { requestAede } from "../platform/desktop";
+vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
+const request = vi.mocked(requestAede);
+let dispose: () => void;
+function controller(connected = () => true) {
+  return createRoot((cleanup) => {
+    dispose = cleanup;
+    return createJobs(connected);
+  });
+}
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.stubGlobal("window", {
+    setTimeout: globalThis.setTimeout,
+    clearTimeout: globalThis.clearTimeout,
+  });
+});
+afterEach(() => {
+  dispose?.();
+  vi.clearAllTimers();
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  request.mockReset();
+});
+it("retains release and task kind while polling server completion", async () => {
+  request.mockResolvedValueOnce({ task_id: 1, status: "queued" }).mockResolvedValueOnce({
+    task_id: 1,
+    status: "completed",
+    task_kind: "analysis",
+    result: { exit_code: 0, stdout: "ok", stderr: "", output_truncated: false },
+  });
+  const tasks = controller();
+  await tasks.start("analyze", "release:one", false);
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.jobs()[0]).toMatchObject({
+    release: "release:one",
+    kind: "analyze",
+    status: "completed",
+    result: { exit_code: 0 },
+  });
+  expect(request).toHaveBeenNthCalledWith(1, "/api/admin/v1/analyze", {}, "POST", {
+    release: "release:one",
+    force: false,
+    threads: 2,
+  });
+  expect(vi.getTimerCount()).toBe(0);
+});
+it("limits explicitly started active tasks and does not silently start a fifth", async () => {
+  let id = 0;
+  request.mockImplementation(async () => ({ task_id: ++id, status: "queued" }));
+  const tasks = controller();
+  for (let i = 0; i < 4; i++) await tasks.start("spectrum", "release:one", true);
+  await expect(tasks.start("spectrum", "release:one", true)).rejects.toThrow("Quatre tâches");
+  expect(request).toHaveBeenCalledTimes(4);
+});
+it("stops network polling when disconnected and surfaces server errors", async () => {
+  let connected = true;
+  request
+    .mockResolvedValueOnce({ task_id: 9, status: "queued" })
+    .mockRejectedValueOnce(new Error("Session expirée"));
+  const tasks = controller(() => connected);
+  await tasks.start("analyze", "release:one", false);
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.error()).toBe("Session expirée");
+  connected = false;
+  await vi.advanceTimersByTimeAsync(1200);
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(vi.getTimerCount()).toBe(0);
+});

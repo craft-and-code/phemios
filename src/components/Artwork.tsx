@@ -1,20 +1,42 @@
+import { Show } from "solid-js";
 import type { Album } from "../library/types";
-import { demoArtists } from "../demo/catalog";
-
-/** Bundled fictional art keeps every density mode visual and fully offline. */
+import { useLibrary } from "../library/context";
+/** Stable squares reuse resident object URLs; scrolling never fetches a cover. */
 export function Artwork(props: { album: Album; compact?: boolean }) {
+  const library = useLibrary();
   const index = () =>
     ["blue", "islands", "edges", "dawn", "first", "lines"].indexOf(props.album.reference);
   return (
     <div
       class="artwork"
-      classList={{ compact: props.compact ?? false }}
+      classList={{ compact: props.compact ?? false, "real-art": !library.demo }}
       data-palette={Math.max(0, index()) % 6}
       role="img"
-      aria-label={`Pochette fictive : ${props.album.title}`}
+      aria-label={`Pochette : ${props.album.title}`}
     >
-      <span>{props.album.title}</span>
-      <small>{demoArtists.find((a) => a.reference === props.album.artist)?.name}</small>
+      <Show
+        when={library.demo}
+        fallback={
+          <Show
+            when={library.image(props.album.reference, "cover")}
+            fallback={
+              <span
+                class="cover-fallback"
+                title={library.imageError(props.album.reference, "cover")}
+              >
+                {props.album.cover && !library.imageError(props.album.reference, "cover")
+                  ? "Chargement de la pochette…"
+                  : "Pochette indisponible"}
+              </span>
+            }
+          >
+            {(url) => <img src={url()} alt="" decoding="async" />}
+          </Show>
+        }
+      >
+        <span>{props.album.title}</span>
+        <small>{library.artists().find((a) => a.reference === props.album.artist)?.name}</small>
+      </Show>
     </div>
   );
 }

@@ -7,16 +7,35 @@ export interface Artist {
   countryCode?: string;
   biography: string;
   artwork: boolean;
+  genres?: readonly string[];
+  releaseRefs?: readonly string[];
+  searchFields?: readonly string[];
+  biographyCredit?: { url: string; lang: string; licence: string };
+  media?: { banner: boolean; background: boolean; portrait: boolean };
+  relations?: readonly {
+    reference: string;
+    name: string;
+    weight: number;
+    kind: string;
+    source: string;
+  }[];
 }
 
 /** A release edition, kept distinct from a recording or composition. */
 export interface Album {
   reference: string;
-  artist: string;
+  artist: string | null;
   title: string;
   year: number | null;
   compilation: boolean;
   tags: readonly string[];
+  contributors?: readonly string[];
+  searchFields?: readonly string[];
+  cover?: boolean;
+  trackCount?: number;
+  note?: string;
+  rating?: number;
+  favourite?: boolean;
 }
 
 export type Interval = readonly [number, number];

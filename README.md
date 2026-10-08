@@ -14,7 +14,29 @@ npm run tauri dev
 
 `npm run dev` serves a browser-only offline preview at `http://127.0.0.1:1420`. `npm run tauri dev` starts the native window with its typed bridge. No server connection or audio playback starts automatically.
 
-The first interface uses a fictional bundled catalog: artists → artist page → album page, optional artist banner/background, draggable year/alphabet intervals, icon sorting, cover-preserving density modes and hideable navigation. Country/genre lists work in the demonstration. Album annotations and transfer options are temporary UI drafts; no server data or music files are written. The globe, relationship graph, persistent cache, playback, collections, M3U and real transfer/analysis services are next phases.
+The browser preview uses a fictional catalog and cannot authenticate. The native app starts empty, or reopens the last public catalog/artwork cache. Use **Connexion Aède** with an explicitly started Aède server and account; synchronization and available artwork prefetch then run natively. Aède must include the additive presentation/artwork/media-job/M3U contracts described in `docs/design/native-integration.md`; an older server reports unavailable services rather than substituting demonstration data.
+
+Artist/album pages, banner/background/portrait, histogram rails, the rotating country globe and compact cover rows are available. Native account actions include album ratings/favourites/tags/notes, favourite lists, collection rule creation/editing, listening-history reads, server M3U save/download, and explicit FlacCompagnon/spectrum jobs. The relationship graph presents bounded local collaborations with their source. Playback/output/lyrics/effects and external-drive transfer remain unavailable controls.
+
+## Native connection and storage
+
+Start Aède with its existing catalog and an initialized account (see Aède's account instructions):
+
+```sh
+aede serve --port 3412 --data /path/to/aede-data
+```
+
+Choose `http://127.0.0.1:3412` in the app. Remote access requires HTTPS; URLs with embedded credentials, paths, queries and redirects are refused. Passwords are discarded after authentication. Bearer tokens stay inside the native process and are never persisted or returned to the webview. An administrator on the local server is required for media jobs; ordinary users can change their own annotations, collections and playlists. Auditors have read-only controls and server enforcement.
+
+Public catalog and artwork live in Tauri's application data directory, under `cache/`. On macOS this is `~/Library/Application Support/fr.craftandcode.phemios/cache/`. Downloaded M3U files are saved in `~/Downloads/Phémios/` on macOS, with the exact server content; repeated downloads preserve existing files. Private annotations remain on Aède and are loaded into memory only for the current account. Offline navigation reuses synchronized images; unavailable or unreadable media are explicit. Cold prefetch and large-library behavior still need native scrolling measurements. Resynchronization reuses artwork for an unchanged catalog version; rescan Aède after replacing an existing image. There is no automatic cache quota/pruning yet.
+
+The read-only native smoke probe accepts a private JSON file with `server`, `username`, `password` on standard input (never use command-line passwords):
+
+```sh
+cargo run -p phemios-core --example probe --locked < /private/path/login.json
+```
+
+Keep that file outside the repository with mode `0600`. The probe prints only counts, authenticates, pages the real library, validates a cover and its disk-cache round trip, logs out and removes its own temporary cache. It does not run analyses or modify personal values.
 
 ## Verify and build
 
