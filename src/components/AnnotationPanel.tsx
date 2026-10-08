@@ -1,10 +1,21 @@
-import { createEffect, createResource, createSignal, For, Show, on } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  For,
+  Show,
+  on,
+  onCleanup,
+} from "solid-js";
 import { useLibrary } from "../library/context";
+import { annotationScope } from "../library/annotation-scope";
+import { annotationWriter, type AnnotationPatch } from "../library/annotation-writes";
 import { requestAede } from "../platform/desktop";
 import type { Annotation } from "../library/server";
 import { NoteEditor } from "./NoteEditor";
 import { Icon } from "./Icon";
-/** Shared current-owner artist/album drafts; writes happen only on explicit save. */
+/** Icons save their own fields immediately; notes/tags stay in an explicit draft. */
 export function AnnotationPanel(props: { reference: string }) {
   const library = useLibrary();
   const [editorUnavailable, setEditorUnavailable] = createSignal(true);
@@ -12,12 +23,46 @@ export function AnnotationPanel(props: { reference: string }) {
     [favourite, setFavourite] = createSignal(false),
     [tags, setTags] = createSignal(""),
     [note, setNote] = createSignal(""),
-    [saving, setSaving] = createSignal(false),
-    [message, setMessage] = createSignal("");
-  let readNote = () => note();
-  const [annotation, { refetch: refetchAnnotation, mutate: mutateAnnotation }] = createResource(
-    () => (library.session() ? props.reference : false),
-    (ref) => requestAede<{ annotation: Annotation | null }>("/api/me/v1/annotation", { ref }),
+    [pending, setPending] = createSignal(0),
+    [savingNotes, setSavingNotes] = createSignal(false),
+    [savedNote, setSavedNote] = createSignal(""),
+    [savedTags, setSavedTags] = createSignal(""),
+    [message, setMessage] = createSignal(""),
+    [failure, setFailure] = createSignal("");
+  let readNote = () => note(),
+    disposed = false;
+  const revisions = { rating: 0, loved: 0 };
+  onCleanup(() => {
+    disposed = true;
+  });
+  const scope = annotationScope(() => props.reference, library.session);
+  const writer = createMemo(() => {
+    const { session, reference } = scope();
+    const current = () => !disposed && writer() === controller;
+    const controller = annotationWriter({
+      active: () => !!session && session === library.session(),
+      request: async (patch) =>
+        (
+          await requestAede<{ annotation: Annotation | null }>(
+            "/api/me/v1/annotation",
+            { ref: reference },
+            "PUT",
+            patch,
+          )
+        ).annotation,
+      publish: (saved) => library.updateAnnotation(reference, saved),
+      pending: (count) => {
+        if (current()) setPending(count);
+      },
+    });
+    return controller;
+  });
+  const [annotation, { refetch }] = createResource(
+    () => (scope().session ? scope() : false),
+    (scope) =>
+      requestAede<{ annotation: Annotation | null }>("/api/me/v1/annotation", {
+        ref: scope.reference,
+      }),
   );
   createEffect(
     on(annotation, (answer) => {
@@ -27,45 +72,63 @@ export function AnnotationPanel(props: { reference: string }) {
       setFavourite(saved?.loved ?? false);
       setTags(saved?.tags.join(", ") ?? "");
       setNote(saved?.note ?? "");
+      setSavedNote(note());
+      setSavedTags(tags());
+      setMessage("");
+      setFailure("");
+      setPending(0);
+      setSavingNotes(false);
       if (saved) library.updateAnnotation(props.reference, saved);
     }),
   );
-  async function save() {
-    setSaving(true);
+  const current = (held: ReturnType<typeof annotationWriter>) => !disposed && held === writer();
+  async function quickSave(field: "rating" | "loved", value: number | boolean | null) {
+    const held = writer(),
+      revision = ++revisions[field];
     setMessage("");
-    const account = library.session()?.account.id;
-    const reference = props.reference;
-    const currentNote = readNote();
+    setFailure("");
     try {
-      const answer = await requestAede<{ annotation: Annotation | null }>(
-        "/api/me/v1/annotation",
-        { ref: reference },
-        "PUT",
-        {
-          loved: favourite(),
-          rating: rating(),
-          note: currentNote || null,
-          tags: [
-            ...new Set(
-              tags()
-                .split(",")
-                .map((value) => value.trim())
-                .filter(Boolean),
-            ),
-          ],
-        },
-      );
-      if (account === library.session()?.account.id) {
-        library.updateAnnotation(reference, answer.annotation);
-        if (reference === props.reference) {
-          mutateAnnotation(answer);
-          setMessage("Enregistré dans votre compte Aède.");
-        }
+      await held.write({ [field]: value } as AnnotationPatch);
+      if (current(held)) setMessage("Étoiles et favori enregistrés dans Aède.");
+    } catch (error) {
+      if (!current(held)) return;
+      if (revision === revisions[field]) {
+        const saved = library.annotations[props.reference];
+        if (field === "rating") setRating(saved?.rating ?? null);
+        else setFavourite(saved?.loved ?? false);
       }
-    } catch (failure) {
-      setMessage(failure instanceof Error ? failure.message : "Enregistrement impossible.");
+      setFailure(error instanceof Error ? error.message : "Enregistrement impossible.");
+    }
+  }
+  async function saveNotes() {
+    const held = writer(),
+      currentNote = readNote(),
+      currentTags = tags();
+    setSavingNotes(true);
+    setMessage("");
+    setFailure("");
+    try {
+      await held.write({
+        note: currentNote || null,
+        tags: [
+          ...new Set(
+            currentTags
+              .split(",")
+              .map((value) => value.trim())
+              .filter(Boolean),
+          ),
+        ],
+      });
+      if (current(held)) {
+        setSavedNote(currentNote);
+        setSavedTags(currentTags);
+        setMessage("Notes et tags enregistrés dans votre compte Aède.");
+      }
+    } catch (error) {
+      if (current(held))
+        setFailure(error instanceof Error ? error.message : "Enregistrement impossible.");
     } finally {
-      setSaving(false);
+      if (current(held)) setSavingNotes(false);
     }
   }
   const blocked = () =>
@@ -73,6 +136,7 @@ export function AnnotationPanel(props: { reference: string }) {
     library.session()?.account.role === "auditor" ||
     annotation.loading ||
     !!annotation.error;
+  const dirty = () => note() !== savedNote() || tags() !== savedTags();
   return (
     <section class="annotation-panel">
       <h2>Vos annotations</h2>
@@ -81,18 +145,10 @@ export function AnnotationPanel(props: { reference: string }) {
       </Show>
       <Show when={annotation.error}>
         <p role="alert">Annotations illisibles : {String(annotation.error)}</p>
-        <button onClick={() => refetchAnnotation()}>Réessayer les annotations</button>
+        <button onClick={() => refetch()}>Réessayer les annotations</button>
       </Show>
       <div class="annotation-controls">
-        <fieldset
-          aria-label="Note personnelle"
-          disabled={
-            !library.session() ||
-            !!annotation.error ||
-            annotation.loading ||
-            library.session()?.account.role === "auditor"
-          }
-        >
+        <fieldset aria-label="Note personnelle" disabled={blocked()}>
           <div class="stars">
             <For each={[1, 2, 3, 4, 5]}>
               {(value) => (
@@ -100,7 +156,11 @@ export function AnnotationPanel(props: { reference: string }) {
                   aria-label={`${value} étoile(s)`}
                   aria-pressed={rating() === value}
                   classList={{ selected: value <= (rating() ?? 0) }}
-                  onClick={() => setRating(rating() === value ? null : value)}
+                  onClick={() => {
+                    const selected = rating() === value ? null : value;
+                    setRating(selected);
+                    void quickSave("rating", selected);
+                  }}
                 >
                   <Icon name="star" />
                 </button>
@@ -109,17 +169,16 @@ export function AnnotationPanel(props: { reference: string }) {
           </div>
         </fieldset>
         <button
-          disabled={
-            !library.session() ||
-            library.session()?.account.role === "auditor" ||
-            annotation.loading ||
-            !!annotation.error
-          }
+          disabled={blocked()}
           class="annotation-heart"
           aria-label={favourite() ? "Retirer des favoris" : "Ajouter aux favoris"}
           title={favourite() ? "Retirer des favoris" : "Ajouter aux favoris"}
           aria-pressed={favourite()}
-          onClick={() => setFavourite(!favourite())}
+          onClick={() => {
+            const selected = !favourite();
+            setFavourite(selected);
+            void quickSave("loved", selected);
+          }}
         >
           <Icon name="heart" />
         </button>
@@ -127,14 +186,12 @@ export function AnnotationPanel(props: { reference: string }) {
       <label>
         Tags
         <input
-          disabled={
-            !library.session() ||
-            !!annotation.error ||
-            annotation.loading ||
-            library.session()?.account.role === "auditor"
-          }
+          disabled={blocked()}
           value={tags()}
-          onInput={(event) => setTags(event.currentTarget.value)}
+          onInput={(event) => {
+            setTags(event.currentTarget.value);
+            setMessage("");
+          }}
           placeholder="Séparez les tags par des virgules"
         />
       </label>
@@ -143,7 +200,10 @@ export function AnnotationPanel(props: { reference: string }) {
         <NoteEditor
           value={note()}
           disabled={blocked()}
-          onChange={setNote}
+          onChange={(value) => {
+            setNote(value);
+            setMessage("");
+          }}
           onUnavailable={setEditorUnavailable}
           onRead={(read) => {
             readNote = read;
@@ -152,19 +212,21 @@ export function AnnotationPanel(props: { reference: string }) {
       </div>
       <button
         class="primary"
-        disabled={
-          !library.session() ||
-          library.session()?.account.role === "auditor" ||
-          annotation.loading ||
-          !!annotation.error ||
-          saving() ||
-          editorUnavailable()
-        }
-        onClick={save}
+        disabled={blocked() || savingNotes() || editorUnavailable()}
+        onClick={saveNotes}
       >
-        Enregistrer mes annotations
+        Enregistrer les notes et tags
       </button>
-      <p role="status">{message()}</p>
+      <p role="status">
+        {pending()
+          ? "Enregistrement dans Aède…"
+          : dirty()
+            ? "Notes et tags non enregistrés."
+            : message()}
+      </p>
+      <Show when={failure()}>
+        <p role="alert">{failure()} Les notes en cours sont conservées.</p>
+      </Show>
     </section>
   );
 }
