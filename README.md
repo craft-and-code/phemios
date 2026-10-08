@@ -4,7 +4,7 @@ Phémios is the local-first desktop client for Aède, built with SolidJS, TypeSc
 
 ## Start
 
-Use Node.js 22.12+ and a recent Rust toolchain, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). Rust 1.89 is the project's intended minimum; acceptance against the newly resolved dependency graph is still pending.
+Use Node.js 22.12+ within major 22, major 24 or 26+, and Rust 1.90+, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). The resolved Tauri crates declare Rust 1.90; builds here were verified with Rust 1.99. Execution on the minimum toolchain is still pending.
 
 ```sh
 npm ci

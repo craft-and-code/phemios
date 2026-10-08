@@ -18,7 +18,7 @@ Keep UI rendering pure and reactive. Use effects for external synchronization, n
 
 ## Rust and TypeScript
 
-Rust 1.89+ baseline, subject to dependency/MSRV validation. Follow `rustfmt.toml` and `clippy.toml`. Prefer minimum visibility, borrowed values and readable code. Library code must not use `unwrap` or `expect`. No unsafe code without explicit justification. TypeScript is strict, including unchecked-index and optional-property checks. Handle malformed data and storage failures visibly.
+Rust 1.90+ baseline, matching the declared requirement of the resolved Tauri dependencies; execution on that minimum toolchain remains pending. Follow `rustfmt.toml` and `clippy.toml`. Prefer minimum visibility, borrowed values and readable code. Library code must not use `unwrap` or `expect`. No unsafe code without explicit justification. TypeScript is strict, including unchecked-index and optional-property checks. Handle malformed data and storage failures visibly.
 
 ## Dependencies and network
 
