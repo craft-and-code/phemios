@@ -88,9 +88,13 @@ function searchableAlbum(album: Album): string {
   return text;
 }
 /** Search indexes cover supplied tags, fetched presentation fields and loaded own annotations. */
-export function searchAlbum(album: Album, artist: Artist, query: string): boolean {
+export function searchAlbum(album: Album, artist: Artist | undefined, query: string): boolean {
   const term = normalizeName(query);
-  return !term || searchableAlbum(album).includes(term) || searchableArtist(artist).includes(term);
+  return (
+    !term ||
+    searchableAlbum(album).includes(term) ||
+    (artist !== undefined && searchableArtist(artist).includes(term))
+  );
 }
 export function searchArtist(artist: Artist, query: string): boolean {
   const term = normalizeName(query);

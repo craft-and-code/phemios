@@ -26,3 +26,9 @@ it("retains the server order and per-album positions across a discography", () =
   rows.items[0]!.number = 4;
   expect(() => playbackSelection(rows, [album], [])).toThrow();
 });
+
+it("plays a track without inventing an album, but rejects missing release identities", () => {
+  const row = { reference: "track:solo", title: "Solo", release: null, number: 1, album_total: 1 };
+  expect(playbackSelection({ items: [row] }, [], [])[0]?.album).toBeNull();
+  expect(() => playbackSelection({ items: [{ ...row, release: undefined }] }, [], [])).toThrow();
+});

@@ -26,7 +26,7 @@ export function PlayerBar() {
     <footer class="player-bar" aria-label="Lecture">
       <div class="now-playing">
         <Show
-          when={player.current()}
+          when={player.current()?.album}
           fallback={
             <div class="idle-cover">
               <Icon name="disc" />
@@ -36,10 +36,10 @@ export function PlayerBar() {
           {(current) => (
             <a
               class="playing-cover"
-              href={`#/album/${encodeURIComponent(current().album.reference)}`}
-              aria-label={`Ouvrir ${current().album.title}`}
+              href={`#/album/${encodeURIComponent(current().reference)}`}
+              aria-label={`Ouvrir ${current().title}`}
             >
-              <Artwork album={current().album} />
+              <Artwork album={current()} />
             </a>
           )}
         </Show>

@@ -18,7 +18,7 @@ import { tagVocabulary } from "../library/tags";
 import { NoteEditor } from "./NoteEditor";
 import { Icon } from "./Icon";
 /** Icons save their own fields immediately; notes/tags stay in an explicit draft. */
-export function AnnotationPanel(props: { reference: string; kind: "artist" | "album" }) {
+export function AnnotationPanel(props: { reference: string; kind: "artist" | "album" | "track" }) {
   const library = useLibrary();
   const [editorUnavailable, setEditorUnavailable] = createSignal(true);
   const [rating, setRating] = createSignal<number | null>(null),
@@ -95,7 +95,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       await held.write({ [field]: value } as AnnotationPatch);
       if (current(held))
         setMessage(
-          `Étoiles et favori de ${props.kind === "artist" ? "cet artiste" : "cet album"} enregistrés dans Aède.`,
+          `Étoiles et favori de ${props.kind === "artist" ? "cet artiste" : props.kind === "track" ? "ce titre" : "cet album"} enregistrés dans Aède.`,
         );
     } catch (error) {
       if (!current(held)) return;
@@ -142,7 +142,10 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     JSON.stringify(tags()) !== JSON.stringify(savedTags());
   return (
     <section class="annotation-panel">
-      <h2>Annotations de {props.kind === "artist" ? "l’artiste" : "l’album"}</h2>
+      <h2>
+        Annotations de{" "}
+        {props.kind === "artist" ? "l’artiste" : props.kind === "track" ? "la piste" : "l’album"}
+      </h2>
       <Show when={!library.session()}>
         <p class="notice">Connectez-vous pour enregistrer vos annotations.</p>
       </Show>

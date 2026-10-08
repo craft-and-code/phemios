@@ -30,3 +30,8 @@ it("keeps every dense-graph label readable and darkens spatially remote nodes", 
   expect(relationBrightness(450, 255)).toBeGreaterThan(relationBrightness(800, 400));
   expect(relationLabels([])).toEqual([]);
 });
+it("gives rear spheres an explicitly darker palette even at the projected centre", async () => {
+  const { relationTone } = await import("./relation-space");
+  expect(relationTone(-1, 450, 255).highlight).not.toBe(relationTone(1, 450, 255).highlight);
+  expect(relationTone(-1, 450, 255).brightness).toBeLessThan(relationTone(1, 450, 255).brightness);
+});

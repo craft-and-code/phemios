@@ -1,13 +1,15 @@
 import { createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { searchArtist } from "../library/filtering";
+import { AlbumGrid } from "../components/AlbumGrid";
 import { RelationGraph } from "../components/RelationGraph";
 import { neighbours } from "../library/relations";
 /** A bounded, keyboard-accessible view of Aède's actual local collaborations. */
 export function RelationsPage(props: { query: string }) {
   const library = useLibrary(),
     [reference, setReference] = createSignal(""),
-    [search, setSearch] = createSignal("");
+    [search, setSearch] = createSignal(""),
+    [mode, setMode] = createSignal<"artist" | "album">("artist");
   const choices = createMemo(() =>
     library
       .artists()
@@ -28,6 +30,32 @@ export function RelationsPage(props: { query: string }) {
     const artist = selected();
     return artist ? neighbours(library.artists(), artist) : [];
   });
+  const albums = createMemo(() =>
+    library
+      .albums()
+      .filter((a) => selected()?.releaseRefs?.includes(a.reference))
+      .sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999) || a.title.localeCompare(b.title, "fr")),
+  );
+  const graphNodes = createMemo(() =>
+    mode() === "album"
+      ? albums()
+          .slice(0, 16)
+          .map((a) => ({
+            reference: a.reference,
+            name: a.title,
+            weight: 1,
+            source: "catalogue Aède",
+            kind: "album" as const,
+            href: `#/album/${encodeURIComponent(a.reference)}`,
+          }))
+      : edges().map((e) => ({
+          reference: e.artist.reference,
+          name: e.artist.name,
+          weight: e.weight,
+          source: e.source,
+          kind: "artist" as const,
+        })),
+  );
   return (
     <section class="page relations-page">
       <div class="relation-picker">
@@ -64,34 +92,57 @@ export function RelationsPage(props: { query: string }) {
       <Show when={selected()} fallback={<p class="empty">Aucun artiste disponible.</p>}>
         {(artist) => (
           <>
-            <h2>Collaborations de {artist().name}</h2>
+            <div class="section-heading">
+              <h2>
+                {mode() === "album" ? "Albums associés à" : "Collaborations de"} {artist().name}
+              </h2>
+              <div class="choices">
+                <button aria-pressed={mode() === "artist"} onClick={() => setMode("artist")}>
+                  Artistes liés
+                </button>
+                <button aria-pressed={mode() === "album"} onClick={() => setMode("album")}>
+                  Albums liés
+                </button>
+              </div>
+            </div>
             <Show
-              when={edges().length}
+              when={graphNodes().length}
               fallback={
                 <p class="empty">Aucune collaboration locale connue pour {artist().name}.</p>
               }
             >
-              <RelationGraph name={artist().name} edges={edges()} onSelect={setReference} />
-              <p class="muted">
-                Les 16 liens les plus forts sont affichés. Choisissez un voisin pour continuer
-                l’exploration.
-              </p>
-              <ul class="personal-list">
-                <For each={edges()}>
-                  {(edge) => (
-                    <li>
-                      <a href={`#/artist/${encodeURIComponent(edge.artist.reference)}`}>
-                        {edge.artist.name}
-                      </a>
-                      <small>
-                        {edge.weight} pistes communes · Source :{" "}
-                        {edge.source === "tags" ? "crédits des fichiers" : edge.source}
-                      </small>
-                      <button onClick={() => setReference(edge.artist.reference)}>Explorer</button>
-                    </li>
-                  )}
-                </For>
-              </ul>
+              <RelationGraph name={artist().name} edges={graphNodes()} onSelect={setReference} />
+              <Show when={mode() === "artist"}>
+                <p class="muted">
+                  Les 16 liens les plus forts sont affichés. Choisissez un voisin pour continuer
+                  l’exploration.
+                </p>
+                <ul class="personal-list">
+                  <For each={edges()}>
+                    {(edge) => (
+                      <li>
+                        <a href={`#/artist/${encodeURIComponent(edge.artist.reference)}`}>
+                          {edge.artist.name}
+                        </a>
+                        <small>
+                          {edge.weight} pistes communes · Source :{" "}
+                          {edge.source === "tags" ? "crédits des fichiers" : edge.source}
+                        </small>
+                        <button onClick={() => setReference(edge.artist.reference)}>
+                          Explorer
+                        </button>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </Show>
+              <Show when={mode() === "album"}>
+                <p class="muted">
+                  Discographie et participations issues du catalogue. Le graphe affiche les 16
+                  premiers albums ; les pochettes ci-dessous donnent accès à l’ensemble.
+                </p>
+                <AlbumGrid albums={albums()} />
+              </Show>
             </Show>
             <a href={`#/artist/${encodeURIComponent(artist().reference)}`}>
               Ouvrir la page de {artist().name}

@@ -22,6 +22,9 @@ import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
 import { ArtistPage } from "./views/ArtistPage";
+import { TracksPage } from "./views/TracksPage";
+import { TrackPage } from "./views/TrackPage";
+import { RecentPage } from "./views/RecentPage";
 import { AlbumPage } from "./views/AlbumPage";
 import { WorkspacePage } from "./views/WorkspacePage";
 
@@ -81,7 +84,11 @@ export function App() {
       : undefined;
   });
   createEffect(() => {
-    library.player.setTarget(selectedAlbum()?.reference ?? selectedArtist()?.reference ?? "");
+    library.player.setTarget(
+      selectedAlbum()?.reference ??
+        selectedArtist()?.reference ??
+        (current().kind === "track" ? (current() as { reference: string }).reference : ""),
+    );
   });
   const backLink = navigation.backLink;
   const context = () =>
@@ -157,12 +164,12 @@ export function App() {
           <p class="nav-label">BIBLIOTHÈQUE</p>
           <nav>
             <For each={sections}>
-              {(item, index) => (
+              {(item) => (
                 <>
-                  <Show when={index() === 5}>
+                  <Show when={item.id === "favourites"}>
                     <p class="nav-label">VOTRE MUSIQUE</p>
                   </Show>
-                  <Show when={index() === 9}>
+                  <Show when={item.id === "analysis"}>
                     <p class="nav-label">OUTILS</p>
                   </Show>
                   <a
@@ -292,7 +299,21 @@ export function App() {
                   when={["artists", "albums", "compilations", "countries", "genres"].includes(
                     section(),
                   )}
-                  fallback={<WorkspacePage section={section()} query={filters().query} />}
+                  fallback={
+                    <Show
+                      when={section() === "tracks"}
+                      fallback={
+                        <Show
+                          when={section() === "recent"}
+                          fallback={<WorkspacePage section={section()} query={filters().query} />}
+                        >
+                          <RecentPage query={filters().query} />
+                        </Show>
+                      }
+                    >
+                      <TracksPage query={filters().query} />
+                    </Show>
+                  }
                 >
                   <LibraryPage
                     section={section()}
@@ -311,6 +332,9 @@ export function App() {
                 <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
                   {(album) => <AlbumPage album={album()} />}
                 </Show>
+              </Show>
+              <Show when={route.kind === "track"}>
+                <TrackPage reference={(route as { reference: string }).reference} />
               </Show>
               <Show when={route.kind === "not-found"}>
                 <div class="empty">

@@ -33,6 +33,7 @@ export interface Album {
   searchFields?: readonly string[];
   cover?: boolean;
   trackCount?: number;
+  addedAt?: number | null;
   note?: string;
   rating?: number;
   favourite?: boolean;

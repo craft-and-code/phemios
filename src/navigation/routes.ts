@@ -1,6 +1,8 @@
 export type Section =
   | "artists"
   | "albums"
+  | "tracks"
+  | "recent"
   | "compilations"
   | "countries"
   | "genres"
@@ -14,12 +16,14 @@ export type Section =
   | "statistics";
 export type Route =
   | { kind: "section"; section: Section }
-  | { kind: "artist" | "album"; reference: string }
+  | { kind: "artist" | "album" | "track"; reference: string }
   | { kind: "not-found" };
 
 export const sections: readonly { id: Section; label: string; symbol: string }[] = [
   { id: "artists", label: "Artistes", symbol: "users" },
   { id: "albums", label: "Albums", symbol: "disc" },
+  { id: "tracks", label: "Pistes", symbol: "list" },
+  { id: "recent", label: "Nouveautés", symbol: "history" },
   { id: "compilations", label: "Compilations", symbol: "layers" },
   { id: "countries", label: "Pays", symbol: "globe" },
   { id: "genres", label: "Genres", symbol: "tags" },
@@ -39,10 +43,13 @@ export function parseRoute(hash: string): Route {
   if (!path) return { kind: "section", section: "artists" };
   const section = sections.find((candidate) => candidate.id === path);
   if (section) return { kind: "section", section: section.id };
-  const match = /^(artist|album)\/([^/]+)$/.exec(path);
+  const match = /^(artist|album|track)\/([^/]+)$/.exec(path);
   if (match?.[1] && match[2]) {
     try {
-      return { kind: match[1] as "artist" | "album", reference: decodeURIComponent(match[2]) };
+      return {
+        kind: match[1] as "artist" | "album" | "track",
+        reference: decodeURIComponent(match[2]),
+      };
     } catch {
       return { kind: "not-found" };
     }

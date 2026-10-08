@@ -2,7 +2,7 @@ import type { Album, Artist } from "./types";
 export interface PlayableSelection {
   reference: string;
   title: string;
-  album: Album;
+  album: Album | null;
   artist: string;
   number: number;
   albumTotal: number;
@@ -21,9 +21,9 @@ export function playbackSelection(
   return rows.map((value) => {
     if (!value || typeof value !== "object") throw new Error("Piste Aède invalide.");
     const r = value as Record<string, unknown>,
-      album = releases.get(String(r.release));
+      album = r.release === null ? null : releases.get(String(r.release));
     if (
-      !album ||
+      album === undefined ||
       typeof r.reference !== "string" ||
       !r.reference.startsWith("track:") ||
       typeof r.title !== "string" ||
@@ -37,7 +37,9 @@ export function playbackSelection(
       reference: r.reference,
       title: r.title,
       album,
-      artist: artists.find((a) => a.reference === album.artist)?.name ?? "Artistes divers",
+      artist:
+        artists.find((a) => a.reference === album?.artist)?.name ??
+        (album ? "Artistes divers" : "Titre sans album"),
       number: Number(r.number),
       albumTotal: Number(r.album_total),
     };

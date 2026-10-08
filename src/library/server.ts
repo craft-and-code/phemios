@@ -106,7 +106,10 @@ export function parseSnapshot(value: unknown): Snapshot {
       (!Number.isInteger(row.year) || Number(row.year) < 1 || Number(row.year) > 9999)
     )
       throw new Error("Année Aède invalide.");
+    if (row.added_at != null && (!Number.isSafeInteger(row.added_at) || Number(row.added_at) < 0))
+      throw new Error("Date d’ajout Aède invalide.");
     return {
+      addedAt: row.added_at == null ? null : Number(row.added_at),
       reference: string(row.reference),
       artist: row.artist === null ? null : string(row.artist),
       title: string(row.title),

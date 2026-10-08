@@ -59,3 +59,18 @@ export function relationLabels(points: readonly ProjectedNode[]) {
 export function relationBrightness(x: number, y: number) {
   return 1 - 0.6 * Math.min(1, Math.hypot(x - 450, y - 255) / 400);
 }
+
+/** Explicit depth and radial shading remain visible even where rear nodes project near the centre. */
+export function relationTone(depth: number, x: number, y: number) {
+  if (![depth, x, y].every(Number.isFinite)) throw new Error("Position de relation invalide.");
+  const distance = Math.min(1, Math.hypot(x - 450, y - 255) / 400);
+  const brightness = Math.max(0.08, Math.min(1, 0.22 + (0.68 * (depth + 1)) / 2 - 0.25 * distance));
+  const mix = (dark: readonly number[], light: readonly number[]) =>
+    `rgb(${dark.map((v, i) => Math.round(v + (light[i]! - v) * brightness)).join(" ")})`;
+  return {
+    brightness,
+    highlight: mix([25, 56, 69], [231, 255, 162]),
+    middle: mix([12, 31, 45], [120, 167, 70]),
+    edge: mix([4, 12, 22], [40, 71, 40]),
+  };
+}

@@ -1,3 +1,4 @@
+import type { JSX } from "solid-js";
 import { createResource, createSignal, createUniqueId, For, Show } from "solid-js";
 import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
@@ -11,6 +12,7 @@ export function TrackResults(props: {
   track: Track & { spectrum_available: boolean };
   number: number;
   onPlay: () => void;
+  context?: JSX.Element;
 }) {
   const library = useLibrary(),
     id = createUniqueId(),
@@ -35,7 +37,9 @@ export function TrackResults(props: {
     <li>
       <div class="track-heading">
         <span class="track-number">{props.number}.</span>
-        <strong>{props.track.title}</strong>
+        <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
+          {props.track.title}
+        </a>
         <small>
           {duration() === null
             ? "Durée inconnue"
@@ -82,6 +86,9 @@ export function TrackResults(props: {
           </Show>
         </div>
       </div>
+      <Show when={props.context}>
+        <div class="track-context">{props.context}</div>
+      </Show>
       <Show when={analysis()}>
         <div id={`${id}-analysis`} class="track-analysis">
           <div class="analysis-result-heading">

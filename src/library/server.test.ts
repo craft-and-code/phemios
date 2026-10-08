@@ -77,3 +77,18 @@ it("rejects malformed relationship provenance instead of drawing invented edges"
     }),
   ).toThrow();
 });
+
+it("retains optional catalog addition dates without guessing legacy dates", () => {
+  const data = {
+    artists: [artist],
+    albums: [album],
+    server: "http://localhost",
+    accountId: "test",
+    scannedAt: 1,
+  };
+  expect(parseSnapshot(data).albums[0]?.addedAt).toBeNull();
+  expect(parseSnapshot({ ...data, albums: [{ ...album, added_at: 123 }] }).albums[0]?.addedAt).toBe(
+    123,
+  );
+  expect(() => parseSnapshot({ ...data, albums: [{ ...album, added_at: -1 }] })).toThrow();
+});

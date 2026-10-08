@@ -939,9 +939,6 @@ pre {
   color: var(--muted);
 }
 
-.relation-space .relation-node circle {
-  filter: brightness(var(--node-brightness, 1));
-}
 .relation-label {
   cursor: pointer;
 }
@@ -973,4 +970,89 @@ pre {
 .m3u-export > p,
 .m3u-export small {
   font-size: 11px;
+}
+
+.track-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  text-decoration: none;
+}
+.track-context {
+  border: 0 !important;
+  margin: -4px 0 8px 38px;
+  padding: 0 !important;
+  font-size: 12px;
+  color: var(--muted);
+}
+.track-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 18px;
+}
+.track-facts dt,
+.file-tags dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.track-facts dd,
+.file-tags dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+.file-tags {
+  display: grid;
+  gap: 12px;
+}
+.file-tags > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.3fr) 1fr;
+  gap: 18px;
+}
+.track-path {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.page-controls {
+  display: flex;
+  gap: 8px;
+}
+.relation-space .relation-node circle {
+  filter: none;
+}
+.relation-label-leader {
+  stroke: #6a909a;
+  stroke-width: 1;
+  opacity: 0.65;
+}
+.relation-label-end {
+  fill: #9abaad;
+}
+.relation-label.highlighted text {
+  fill: var(--accent);
+}
+.relation-label.highlighted .relation-label-leader,
+.relation-graph g.highlighted > line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 1;
+}
+.relation-graph g.highlighted .relation-node circle {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.track-context {
+  margin: 2px 0 0 38px;
 }

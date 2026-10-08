@@ -1,15 +1,23 @@
-import { createMemo, createSignal, For, Show, createUniqueId } from "solid-js";
-import type { Neighbour } from "../library/relations";
-import { relationSpace, relationLabels, relationBrightness } from "../library/relation-space";
+import { createMemo, createSignal, For, Show, createUniqueId, onCleanup } from "solid-js";
+export interface RelationNode {
+  reference: string;
+  name: string;
+  weight: number;
+  source: string;
+  kind: "artist" | "album";
+  href?: string;
+}
+import { relationSpace, relationLabels, relationTone } from "../library/relation-space";
 /** Rotatable 3D geometry with SVG perspective, accessible neighbours and no idle animation. */
 export function RelationGraph(props: {
   name: string;
-  edges: readonly Neighbour[];
+  edges: readonly RelationNode[];
   onSelect: (reference: string) => void;
 }) {
   const [yaw, setYaw] = createSignal(-0.35),
     [pitch, setPitch] = createSignal(0.2),
-    [zoom, setZoom] = createSignal(1);
+    [zoom, setZoom] = createSignal(1),
+    [focused, setFocused] = createSignal<number | null>(null);
   const gradient = createUniqueId(),
     nodes = createMemo(() =>
       relationSpace(props.edges.length, yaw(), pitch(), zoom()).map((p) => ({
@@ -26,11 +34,16 @@ export function RelationGraph(props: {
     setPitch(0.2);
     setZoom(1);
   };
+  const links = new Map<string, HTMLAnchorElement>();
+  function activate(node: RelationNode) {
+    if (node.href) links.get(node.reference)?.click();
+    else props.onSelect(node.reference);
+  }
   function layer(front: boolean) {
     return (
       <For each={nodes().filter((n) => n.depth >= 0 === front)}>
         {(node) => (
-          <g opacity={0.65 + (0.35 * (node.depth + 1)) / 2}>
+          <g classList={{ highlighted: focused() === node.index }}>
             <line
               x1="450"
               y1="255"
@@ -38,34 +51,47 @@ export function RelationGraph(props: {
               y2={node.y}
               stroke-width={Math.min(3, 1 + Math.log2(node.edge.weight + 1) / 2)}
             />
-            <text class="edge-weight" x={(450 + node.x) / 2} y={(255 + node.y) / 2}>
-              {node.edge.weight}
-            </text>
+            <Show when={node.edge.kind === "artist"}>
+              <text class="edge-weight" x={(450 + node.x) / 2} y={(255 + node.y) / 2}>
+                {node.edge.weight}
+              </text>
+            </Show>
             <g
               class="relation-node"
+              onMouseEnter={() => setFocused(node.index)}
+              onMouseLeave={() => setFocused(null)}
+              onFocus={() => setFocused(node.index)}
+              onBlur={() => setFocused(null)}
               transform={`translate(${node.x} ${node.y})`}
               tabindex="0"
               role="button"
-              aria-label={`Explorer ${node.edge.artist.name}, ${node.edge.weight} pistes communes`}
+              aria-label={
+                node.edge.kind === "album"
+                  ? `Ouvrir l’album ${node.edge.name}`
+                  : `Explorer ${node.edge.name}, ${node.edge.weight} pistes communes`
+              }
               onClick={() => {
-                if (!suppressClick) props.onSelect(node.edge.artist.reference);
+                if (!suppressClick) activate(node.edge);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   e.stopPropagation();
-                  props.onSelect(node.edge.artist.reference);
+                  activate(node.edge);
                 }
               }}
             >
               <title>
-                {node.edge.artist.name} · {node.edge.weight} pistes · {node.edge.source}
+                {node.edge.name} ·{" "}
+                {node.edge.kind === "album"
+                  ? "album associé"
+                  : `${node.edge.weight} pistes communes`}{" "}
+                · {node.edge.source}
               </title>
               <circle
                 r={19 * node.scale}
                 style={{
-                  "--node-fill": `url(#${gradient})`,
-                  "--node-brightness": relationBrightness(node.x, node.y),
+                  "--node-fill": `url(#${gradient}-${node.index})`,
                 }}
               />
             </g>
@@ -76,6 +102,22 @@ export function RelationGraph(props: {
   }
   return (
     <div class="relation-space">
+      <For each={props.edges.filter((n) => n.href)}>
+        {(node) => (
+          <a
+            class="sr-only"
+            href={node.href}
+            ref={(el) => {
+              links.set(node.reference, el);
+              onCleanup(() => {
+                if (links.get(node.reference) === el) links.delete(node.reference);
+              });
+            }}
+          >
+            Ouvrir {node.name}
+          </a>
+        )}
+      </For>
       <svg
         class="relation-graph"
         classList={{ dense: props.edges.length > 6 }}
@@ -132,6 +174,18 @@ export function RelationGraph(props: {
         }}
       >
         <defs>
+          <For each={nodes()}>
+            {(node) => {
+              const tone = () => relationTone(node.depth, node.x, node.y);
+              return (
+                <radialGradient id={`${gradient}-${node.index}`} cx="30%" cy="20%">
+                  <stop offset="0" stop-color={tone().highlight} />
+                  <stop offset="0.5" stop-color={tone().middle} />
+                  <stop offset="1" stop-color={tone().edge} />
+                </radialGradient>
+              );
+            }}
+          </For>
           <radialGradient id={gradient} cx="35%" cy="25%">
             <stop offset="0" stop-color="#ecffad" />
             <stop offset="0.5" stop-color="#64843b" />
@@ -170,26 +224,33 @@ export function RelationGraph(props: {
             return (
               <g
                 class="relation-label"
+                classList={{ highlighted: focused() === label.index }}
+                onMouseEnter={() => setFocused(label.index)}
+                onMouseLeave={() => setFocused(null)}
                 aria-hidden="true"
                 onClick={() => {
-                  if (!suppressClick) props.onSelect(node().edge.artist.reference);
+                  if (!suppressClick) activate(node().edge);
                 }}
               >
                 <Show when={props.edges.length > 6}>
-                  <line
+                  <path
                     class="relation-label-leader"
-                    x1={node().x}
-                    y1={node().y}
-                    x2={label.anchor === "start" ? 220 : 680}
-                    y2={label.y - 4}
+                    fill="none"
+                    d={`M ${node().x} ${node().y} L ${label.anchor === "start" ? 230 : 670} ${label.y - 4} L ${label.anchor === "start" ? 205 : 695} ${label.y - 4}`}
+                  />
+                  <circle
+                    class="relation-label-end"
+                    cx={label.anchor === "start" ? 205 : 695}
+                    cy={label.y - 4}
+                    r="2"
                   />
                 </Show>
                 <text x={label.x} y={label.y} text-anchor={label.anchor}>
-                  {node().edge.artist.name.length > 26
-                    ? `${node().edge.artist.name.slice(0, 25)}…`
-                    : node().edge.artist.name}
+                  {node().edge.name.length > 26
+                    ? `${node().edge.name.slice(0, 25)}…`
+                    : node().edge.name}
                 </text>
-                <title>{node().edge.artist.name}</title>
+                <title>{node().edge.name}</title>
               </g>
             );
           }}
@@ -210,8 +271,8 @@ export function RelationGraph(props: {
       </div>
       <Show when={props.edges.length}>
         <small>
-          La couleur suit l’éloignement visuel du centre ; la disposition ne mesure pas la proximité
-          artistique.
+          La couleur s’assombrit avec la profondeur et l’éloignement du centre ; la disposition ne
+          mesure pas la proximité artistique.
         </small>
       </Show>
     </div>

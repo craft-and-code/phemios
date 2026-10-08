@@ -94,12 +94,14 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
     return true;
   }
   const backLink = () => {
-    if (!["album", "artist"].includes(route().kind)) return undefined;
+    if (!["album", "artist", "track"].includes(route().kind)) return undefined;
     return (
       entry().origin ??
-      (route().kind === "album"
-        ? { href: "#/albums", label: "Tous les albums" }
-        : { href: "#/artists", label: "Tous les artistes" })
+      (route().kind === "track"
+        ? { href: "#/tracks", label: "Toutes les pistes" }
+        : route().kind === "album"
+          ? { href: "#/albums", label: "Tous les albums" }
+          : { href: "#/artists", label: "Tous les artistes" })
     );
   };
   function goBack() {
