@@ -1,5 +1,6 @@
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createMemo, Show } from "solid-js";
+import { PlayingBars } from "../components/PlayingBars";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { useLibrary } from "../library/context";
 import { belongsToArtist } from "../library/filtering";
@@ -88,6 +89,27 @@ export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
               <small>Texte fictif pour l’aperçu.</small>
             </Show>
           </section>
+          <Show
+            when={
+              library.player.current()?.album?.artist === props.artist.reference &&
+              ["playing", "paused"].includes(library.player.state().status)
+            }
+          >
+            <div class="artist-playing track-heading">
+              <span class="track-number">{library.player.current()?.number}.</span>
+              <PlayingBars reference={library.player.current()?.reference ?? ""} />
+              <a
+                class="track-title"
+                href={`#/track/${encodeURIComponent(library.player.current()?.reference ?? "")}`}
+              >
+                {library.player.current()?.title}
+              </a>
+              <small>
+                En {library.player.state().status === "paused" ? "pause" : "lecture"} ·{" "}
+                {library.player.current()?.album?.title}
+              </small>
+            </div>
+          </Show>
           <div class="section-heading">
             <h2>Discographie</h2>
             <span role="status">{albums().length} albums dans la sélection</span>

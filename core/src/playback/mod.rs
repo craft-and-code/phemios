@@ -89,8 +89,16 @@ impl Player {
     /// Return public player state, never source paths, session credentials or buffered PCM.
     pub fn snapshot(&self) -> Result<Value, String> {
         let s = self.state.lock().map_err(|_| "État audio indisponible.")?;
+        let levels = if s.status == "playing" && !self.signals.paused.load(Ordering::Relaxed) {
+            self.signals
+                .levels
+                .each_ref()
+                .map(|v| f32::from_bits(v.load(Ordering::Relaxed)))
+        } else {
+            [0.; 4]
+        };
         Ok(
-            json!({"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.

@@ -39,3 +39,12 @@ describe("native player state", () => {
     ).toThrow();
   });
 });
+
+it("rejects invalid meters and preserves measured levels without inventing activity", () => {
+  expect(parsePlayback({ ...state, levels: [0.1, 0.4, 0.2, 0.7] }).levels).toEqual([
+    0.1, 0.4, 0.2, 0.7,
+  ]);
+  expect(() => parsePlayback({ ...state, levels: [0.1, 0.2] })).toThrow();
+  expect(() => parsePlayback({ ...state, levels: [0, 0, 0, 1.1] })).toThrow();
+  expect(parsePlayback(state).levels).toEqual([0, 0, 0, 0]);
+});

@@ -11,6 +11,7 @@ export interface PlaybackState {
   history_confirmed: boolean;
   device: string;
   error: string;
+  levels: readonly number[];
 }
 export interface AudioOutput {
   id: string;
@@ -29,6 +30,7 @@ export const idlePlayback: PlaybackState = {
   history_confirmed: false,
   device: "",
   error: "",
+  levels: [0, 0, 0, 0],
 };
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -55,7 +57,14 @@ export function parsePlayback(value: unknown): PlaybackState {
     typeof v.history_confirmed !== "boolean"
   )
     throw new Error("État audio invalide.");
-  return v as unknown as PlaybackState;
+  if (
+    v.levels !== undefined &&
+    (!Array.isArray(v.levels) ||
+      v.levels.length !== 4 ||
+      !v.levels.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1))
+  )
+    throw new Error("Niveaux audio invalides.");
+  return { ...v, levels: v.levels ?? [0, 0, 0, 0] } as unknown as PlaybackState;
 }
 /** Outputs are explicitly discovered on the native host, never guessed from the catalog. */
 export function parseOutputs(value: unknown): AudioOutput[] {

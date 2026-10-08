@@ -1056,3 +1056,31 @@ pre {
 .track-context {
   margin: 2px 0 0 38px;
 }
+.playing-bars {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 20px;
+  height: 18px;
+  vertical-align: middle;
+  flex: 0 0 20px;
+  margin-right: 5px;
+}
+.playing-bars > span {
+  display: block;
+  width: 3px;
+  border-radius: 1px;
+  background: var(--accent);
+  transition: height 120ms linear;
+}
+.artist-playing {
+  padding: 14px 0;
+  border-block: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .playing-bars > span {
+    transition: none;
+  }
+}

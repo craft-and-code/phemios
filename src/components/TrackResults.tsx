@@ -1,5 +1,6 @@
 import type { JSX } from "solid-js";
 import { createResource, createSignal, createUniqueId, For, Show } from "solid-js";
+import { PlayingBars } from "./PlayingBars";
 import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
@@ -37,6 +38,7 @@ export function TrackResults(props: {
     <li>
       <div class="track-heading">
         <span class="track-number">{props.number}.</span>
+        <PlayingBars reference={props.track.reference} />
         <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
           {props.track.title}
         </a>

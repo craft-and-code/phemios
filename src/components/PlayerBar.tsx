@@ -1,5 +1,6 @@
 import { For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
+import { PlayingBars } from "./PlayingBars";
 import { Artwork } from "./Artwork";
 import { Icon } from "./Icon";
 const time = (ms: number | null) =>
@@ -52,6 +53,7 @@ export function PlayerBar() {
                 </span>
               )}
             </Show>
+            <PlayingBars reference={player.current()?.reference ?? ""} />
             {player.current()?.title ?? "Aucun morceau en lecture"}
           </strong>
           <small>

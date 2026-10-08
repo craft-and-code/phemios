@@ -9,12 +9,14 @@ use std::sync::{
 pub(super) struct Signals {
     pub volume: AtomicU32,
     pub paused: AtomicBool,
+    pub levels: [AtomicU32; 4],
 }
 impl Default for Signals {
     fn default() -> Self {
         Self {
             volume: AtomicU32::new(0.5_f32.to_bits()),
             paused: AtomicBool::new(true),
+            levels: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
         }
     }
 }
@@ -74,6 +76,8 @@ fn render<T: SizedSample + FromSample<f32>>(
 ) {
     let gain = f32::from_bits(signals.volume.load(Ordering::Relaxed));
     let mut frames = 0;
+    let mut squares = [0_f64; 2];
+    let mut peaks = [0_f32; 2];
     for target in output.chunks_exact_mut(channels) {
         let sample = if signals.paused.load(Ordering::Relaxed) {
             [0., 0.]
@@ -86,12 +90,34 @@ fn render<T: SizedSample + FromSample<f32>>(
                 Err(_) => [0., 0.],
             }
         };
+        // Measure only PCM actually taken from the ring, before the local volume gain.
+        // Stereo RMS/peak pairs do not pretend to be frequency-spectrum bands.
+        for channel in 0..2 {
+            let magnitude = sample[channel].abs().min(1.);
+            squares[channel] += f64::from(magnitude).powi(2);
+            peaks[channel] = peaks[channel].max(magnitude);
+        }
         if channels == 1 {
             target[0] = T::from_sample((sample[0] + sample[1]) * 0.5 * gain);
         } else {
             target[0] = T::from_sample(sample[0] * gain);
             target[1] = T::from_sample(sample[1] * gain);
         }
+    }
+    let count = (output.len() / channels) as f64;
+    let rms = |channel: usize| {
+        if count == 0. {
+            0.
+        } else {
+            (squares[channel] / count).sqrt() as f32
+        }
+    };
+    for (target, value) in signals
+        .levels
+        .iter()
+        .zip([rms(0), peaks[0], rms(1), peaks[1]])
+    {
+        target.store(value.to_bits(), Ordering::Relaxed);
     }
     consumed.fetch_add(frames, Ordering::Relaxed);
 }
@@ -102,6 +128,9 @@ impl Output {
             .map_err(|_| "Impossible de suspendre la sortie audio.".into())
     }
     pub fn open(id: &str, signals: Arc<Signals>) -> Result<Self, String> {
+        for level in &signals.levels {
+            level.store(0_f32.to_bits(), Ordering::Relaxed);
+        }
         let (device, supported) = select(id)?;
         let rate = supported.sample_rate();
         let format = supported.sample_format();
