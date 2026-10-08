@@ -36,15 +36,7 @@ export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
       ? "/demo/landscape.svg"
       : library.image(props.artist.reference, "background");
   return (
-    <article
-      class="artist-page"
-      classList={{ "has-backdrop": !!background() }}
-      style={
-        background()
-          ? { "background-image": `linear-gradient(#111213ad,#111213d4),url("${background()}")` }
-          : {}
-      }
-    >
+    <article class="artist-page">
       <header
         class="artist-hero"
         classList={{ "has-banner": !!banner() }}
@@ -64,38 +56,49 @@ export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
           </p>
         </div>
       </header>
-      <div class="page artist-content">
-        <section class="biography">
-          <h2>Biographie</h2>
-          <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
-          <Show when={props.artist.biographyCredit}>
-            {(credit) => (
-              <small>
-                <Show when={sourceLink(credit().url)} fallback={credit().url}>
-                  {(url) => (
-                    <a href={url()} target="_blank" rel="noreferrer">
-                      Source de la biographie
-                    </a>
-                  )}
-                </Show>{" "}
-                · {credit().lang} · {credit().licence}
-              </small>
-            )}
-          </Show>
-          <Show when={library.demo}>
-            <small>Texte fictif pour l’aperçu.</small>
-          </Show>
-        </section>
-        <div class="section-heading">
-          <h2>Discographie</h2>
-          <span role="status">{albums().length} albums dans la sélection</span>
-        </div>
-        <AlbumGrid albums={albums()} />
-        <Show when={appearances().length}>
-          <h2>Participations</h2>
-          <AlbumGrid albums={appearances()} />
+      <div class="artist-body">
+        <Show when={background()}>
+          {(url) => (
+            <div
+              class="artist-backdrop"
+              aria-hidden="true"
+              style={{ "background-image": `linear-gradient(#11121383,#111213bf),url("${url()}")` }}
+            />
+          )}
         </Show>
-        <AnnotationPanel reference={props.artist.reference} kind="artist" />
+        <div class="page artist-content">
+          <section class="biography">
+            <h2>Biographie</h2>
+            <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
+            <Show when={props.artist.biographyCredit}>
+              {(credit) => (
+                <small>
+                  <Show when={sourceLink(credit().url)} fallback={credit().url}>
+                    {(url) => (
+                      <a href={url()} target="_blank" rel="noreferrer">
+                        Source de la biographie
+                      </a>
+                    )}
+                  </Show>{" "}
+                  · {credit().lang} · {credit().licence}
+                </small>
+              )}
+            </Show>
+            <Show when={library.demo}>
+              <small>Texte fictif pour l’aperçu.</small>
+            </Show>
+          </section>
+          <div class="section-heading">
+            <h2>Discographie</h2>
+            <span role="status">{albums().length} albums dans la sélection</span>
+          </div>
+          <AlbumGrid albums={albums()} />
+          <Show when={appearances().length}>
+            <h2>Participations</h2>
+            <AlbumGrid albums={appearances()} />
+          </Show>
+          <AnnotationPanel reference={props.artist.reference} kind="artist" />
+        </div>
       </div>
     </article>
   );

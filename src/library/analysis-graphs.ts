@@ -114,6 +114,11 @@ export function analysisGraphs(value: unknown) {
     detail: text(detections.detail ?? row.detail),
     error: text(data.error ?? row.error),
     md5: text(object(data.flac_md5).state ?? row.md5_state),
-    clipped: clipping.clipped === true || row.clipped === true,
+    clipped:
+      typeof clipping.clipped === "boolean"
+        ? clipping.clipped
+        : typeof row.clipped === "boolean"
+          ? row.clipped
+          : undefined,
   };
 }

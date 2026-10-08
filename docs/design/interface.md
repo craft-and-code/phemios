@@ -61,3 +61,13 @@ Personal tags use removable pills, committed with Enter/comma or an explicit not
 Album track rows expose compact labelled analysis/spectrum icon toggles. Expanded analysis contains its JSON download icon; collapsed rows have no redundant result label or large vertical gap. Measurements use larger numeric typography and SVG dimensions independent of icons. Spectra can be hidden/reopened while their resident image is reused. Album analysis/generation controls and the complete-report download sit after the track list.
 
 The connection form remembers only the last successful server/username in a versioned local preference, preserving malformed records and reporting storage failure. Passwords/tokens remain ephemeral. Tag tokens appear below their text field, with individual removal crosses. Only the field wrapper has a focus border; the inner native input has none. Restored album-cover keyboard focus follows the image edge with an inset outline.
+
+## Detail backdrops, relations and analysis reading
+
+Artist backgrounds start after the banner and use a sticky layer within the artist body: they scroll to the content viewport top, then remain there until the artist body's bottom. The banner stays sharp; only the no-banner header uses backdrop blur.
+
+Relations use bounded Fibonacci-sphere geometry with yaw/pitch/perspective/depth ordering, pointer rotation, wheel/button zoom and keyboard alternatives. SVG rendering remains local and idle without an animation loop or new dependency. Depth/orbits are decorative placement, not a musical-proximity metric; edge weights and provenance retain Aède's collaboration meaning and the link list remains accessible.
+
+FlacCompagnon reading separates MD5 integrity, authenticity-detection findings and passages to audition. Missing checks stay unknown; obsolete/unconfirmed reports never verify the current source. Clean means no finding in completed checks, not proof of provenance or perceived quality. Values and neutral measurement bars describe level/dynamics rather than a score. Definitions are taken from the local FlacCompagnon source contract, including `Match`, `Mismatch`, `NoSignature`, `Present`, `Error` and `Clean`/`Flagged`/`Not analyzed`.
+
+Dense relationship graphs reveal neighbour labels on pointer hover or keyboard focus; the accessible list keeps every identity readable. The centre label paints above projected neighbours. This avoids overlapping names in the 16-node projection without removing any sourced collaboration.

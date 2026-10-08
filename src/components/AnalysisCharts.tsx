@@ -1,4 +1,5 @@
 import { createMemo, For, Show } from "solid-js";
+import { analysisReading, measurementHelp } from "../library/analysis-reading";
 import { analysisGraphs } from "../library/analysis-graphs";
 const format = (value: number) =>
   new Intl.NumberFormat("fr", { maximumFractionDigits: 2 }).format(value);
@@ -18,20 +19,27 @@ export function AnalysisCharts(props: { analysis: unknown }) {
     >
       {(data) => (
         <div class="analysis-charts" classList={{ stale: data().stale === true }}>
-          <p class="analysis-verdict">
-            FlacCompagnon · {data().summary || "Mesures conservées"}
-            {data().stale
-              ? " · analyse ancienne"
-              : data().stale === undefined
-                ? " · validité inconnue"
-                : ""}
-          </p>
+          <div class="analysis-reading">
+            <For each={analysisReading(data())}>
+              {(reading) => (
+                <section class={`analysis-reading-card ${reading.tone}`}>
+                  <strong>{reading.label}</strong>
+                  <p>{reading.detail}</p>
+                </section>
+              )}
+            </For>
+          </div>
+          <p class="analysis-verdict">FlacCompagnon · {data().summary || "Mesures conservées"}</p>
           <Show when={data().error}>
             <p role="alert">{data().error}</p>
           </Show>
           <Show when={data().detail}>
             <p class="muted">{data().detail}</p>
           </Show>
+          <p class="analysis-scale-note">
+            Les barres situent les mesures sur une échelle ; elles ne représentent pas un score.
+            Survolez une mesure pour son explication.
+          </p>
           <div class="analysis-gauges">
             <For each={data().gauges}>
               {(gauge) => {
@@ -41,7 +49,12 @@ export function AnalysisCharts(props: { analysis: unknown }) {
                     Math.min(100, ((gauge.value - gauge.low) / (gauge.high - gauge.low)) * 100),
                   );
                 return (
-                  <figure>
+                  <figure
+                    title={
+                      measurementHelp[gauge.label] ??
+                      "Mesure de phase locale, à interpréter selon l’enregistrement."
+                    }
+                  >
                     <figcaption>
                       {gauge.label}
                       <strong>

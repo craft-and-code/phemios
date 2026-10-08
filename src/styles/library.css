@@ -782,3 +782,153 @@ pre {
 .history-confirm button {
   margin-right: 12px;
 }
+.artist-body {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 180px);
+}
+.artist-backdrop {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 172px);
+  margin-bottom: calc(172px - 100vh);
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  z-index: -1;
+}
+.artist-content {
+  position: relative;
+}
+.relation-space {
+  background: radial-gradient(ellipse at center, #18352980, #0d141bd9 70%);
+  border: 1px solid #49633e60;
+  border-radius: 16px;
+  padding: 12px;
+  overflow: hidden;
+}
+.relation-space .relation-graph {
+  touch-action: none;
+  cursor: grab;
+  width: 100%;
+}
+.relation-space .relation-graph:active {
+  cursor: grabbing;
+}
+.relation-space .relation-orbit {
+  fill: none;
+  stroke: #bde87624;
+  stroke-dasharray: 3 8;
+}
+.relation-space .relation-node circle,
+.relation-space .relation-center {
+  stroke: #cde894bb;
+}
+.relation-space .relation-node {
+  cursor: pointer;
+}
+.relation-space .relation-node text {
+  fill: #e0e8dd;
+  font-size: 14px;
+  paint-order: stroke;
+  stroke: #10171b;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.relation-space .relation-node:focus-visible circle {
+  stroke: #fff;
+  stroke-width: 4px;
+}
+.relation-space .relation-core-glow {
+  fill: #b9e3600f;
+  stroke: #b9e36035;
+}
+.relation-space .relation-core-label {
+  fill: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+.relation-space .relation-space-tools {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.relation-space-tools > span {
+  margin-right: auto;
+}
+.relation-space small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.relation-space .relation-node circle,
+.relation-space .relation-center {
+  fill: var(--node-fill);
+}
+.analysis-gauges strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.analysis-charts .graph-value {
+  fill: #789496;
+}
+.analysis-scale-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+.analysis-reading {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.analysis-reading-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.analysis-reading-card strong {
+  font-size: 13px;
+}
+.analysis-reading-card p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+.analysis-reading-card.good {
+  border-color: #d8f36a70;
+}
+.analysis-reading-card.good strong {
+  color: var(--accent);
+}
+.analysis-reading-card.warning {
+  border-color: #dcb46b70;
+}
+.analysis-reading-card.warning strong {
+  color: #dfbd7e;
+}
+.analysis-reading-card.bad {
+  border-color: #e18b8b80;
+}
+.analysis-reading-card.bad strong {
+  color: #f59d9d;
+}
+
+/* Dense graphs reveal names on demand; the list preserves every readable identity. */
+.relation-graph.dense .relation-node text {
+  opacity: 0;
+}
+.relation-graph.dense .relation-node:hover text,
+.relation-graph.dense .relation-node:focus-visible text {
+  opacity: 1;
+}
+.relation-space .relation-core-label {
+  paint-order: stroke;
+  stroke: #10171b;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
