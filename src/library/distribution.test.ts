@@ -32,7 +32,9 @@ describe("rail distributions", () => {
     expect(distributions(artists, albums, { ...filters, alphabet: [5, 5] }, true).alphabet).toEqual(
       [{ value: 5, count: 1 }],
     );
-    expect(distributions(artists, albums, { ...filters, country: null }, true).years).toEqual([]);
+    expect(distributions(artists, albums, { ...filters, countries: [null] }, true).years).toEqual(
+      [],
+    );
     expect(distributions(artists, albums, { ...filters, alphabet: [2, 2] }, false).years).toEqual([
       { value: 2000, count: 1 },
     ]);
@@ -41,8 +43,11 @@ describe("rail distributions", () => {
         .alphabet,
     ).toHaveLength(3);
   });
-  it("keeps at least one rail visible while allowing either or both", () => {
-    expect(toggleRail("years", "years")).toBe("years");
+  it("allows each rail to be independently disabled, including both", () => {
+    expect(toggleRail("years", "years")).toBe("none");
+    expect(toggleRail("alphabet", "alphabet")).toBe("none");
+    expect(toggleRail("none", "years")).toBe("years");
+    expect(toggleRail("none", "alphabet")).toBe("alphabet");
     expect(toggleRail("years", "alphabet")).toBe("both");
     expect(toggleRail("both", "years")).toBe("alphabet");
     expect(toggleRail("both", "alphabet")).toBe("years");

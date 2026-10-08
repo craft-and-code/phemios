@@ -136,3 +136,21 @@ small,
     scroll-behavior: auto !important;
   }
 }
+
+/* Field focus follows its complete rounded edge, including native WebKit controls. */
+input:not([type="range"], [type="checkbox"]),
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+input:not([type="range"], [type="checkbox"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 0;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.search input:focus-visible {
+  box-shadow: none;
+}

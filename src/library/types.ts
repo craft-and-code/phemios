@@ -39,7 +39,7 @@ export interface Album {
 }
 
 export type Interval = readonly [number, number];
-export type RailMode = "years" | "alphabet" | "both";
+export type RailMode = "years" | "alphabet" | "both" | "none";
 
 /** Both active intervals intersect; hidden rails do not filter results. */
 export interface Filters {
@@ -48,6 +48,6 @@ export interface Filters {
   alphabet: Interval;
   includeUnknownYear: boolean;
   query: string;
-  country?: string | null | undefined;
+  countries?: readonly (string | null)[];
   genre?: string | undefined;
 }

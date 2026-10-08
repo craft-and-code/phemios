@@ -6,6 +6,7 @@ import {
   type Country,
   type Point,
 } from "../geography/projection";
+import { additiveCountrySelection, isMac } from "../library/selection";
 import { drawGlobe } from "../geography/draw";
 import type { Artist } from "../library/types";
 const names = new Intl.DisplayNames(["fr"], { type: "region" });
@@ -13,8 +14,8 @@ const countryName = (code: string) => (/^[A-Z]{2}$/.test(code) ? names.of(code) 
 /** Locally bundled borders and a manual, keyboard-accessible globe. */
 export function CountryGlobe(props: {
   artists: readonly Artist[];
-  selected: string | null | undefined;
-  onSelect: (value: string | undefined) => void;
+  selected: readonly (string | null)[];
+  onSelect: (value: string | undefined, additive?: boolean) => void;
 }) {
   const [countries] = createResource(async () => {
     const response = await fetch("/geography/countries.json");
@@ -33,20 +34,21 @@ export function CountryGlobe(props: {
       ?.code;
   const available = () =>
     new Set(props.artists.map(codeFor).filter((code): code is string => !!code));
-  const selectedCode = () =>
-    typeof props.selected === "string"
-      ? countries()?.find(
-          (c) =>
-            c.name === props.selected ||
-            countryName(c.code) === props.selected ||
-            c.code === props.selected,
-        )?.code
-      : undefined;
+  const selectedCodes = () =>
+    new Set(
+      (countries() ?? [])
+        .filter((c) =>
+          props.selected.some(
+            (value) => value === c.name || value === countryName(c.code) || value === c.code,
+          ),
+        )
+        .map((c) => c.code),
+    );
   const redraw = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
       if (canvas)
-        drawGlobe(canvas, countries() ?? [], center(), zoom(), selectedCode(), available());
+        drawGlobe(canvas, countries() ?? [], center(), zoom(), selectedCodes(), available());
     });
   };
   createEffect(() => {
@@ -94,7 +96,10 @@ export function CountryGlobe(props: {
       const country = pick(event);
       if (country) {
         const match = props.artists.find((a) => codeFor(a) === country.code);
-        props.onSelect(match?.country ?? countryName(country.code) ?? country.name);
+        props.onSelect(
+          match?.country ?? countryName(country.code) ?? country.name,
+          additiveCountrySelection(event, isMac()),
+        );
         setHover(country.name);
       }
     }
@@ -109,7 +114,7 @@ export function CountryGlobe(props: {
           }}
           tabindex="0"
           role="img"
-          aria-label="Globe des pays. Glissez pour tourner, molette pour zoomer. Flèches au clavier, plus et moins pour le zoom. Les boutons Pays offrent la sélection au clavier."
+          aria-label="Globe des pays. Glissez pour tourner, molette pour zoomer. Flèches au clavier, plus et moins pour le zoom. Command-clic sur Mac, Control-clic ailleurs pour sélectionner plusieurs pays. Les boutons Pays offrent la sélection au clavier."
           onPointerDown={(event) => {
             if (event.button !== 0) return;
             event.currentTarget.focus();
@@ -172,7 +177,8 @@ export function CountryGlobe(props: {
         </p>
         <p>
           Tournez le globe, zoomez et choisissez un pays. Les pays représentés dans la bibliothèque
-          sont illuminés.
+          sont illuminés. {isMac() ? "⌘ + clic" : "Ctrl + clic"} pour ajouter ou retirer un pays de
+          la sélection.
         </p>
         <small>L’origine vient des informations d’artiste disponibles dans Aède.</small>
         <Show when={countries.error}>

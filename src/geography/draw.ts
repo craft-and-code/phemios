@@ -5,7 +5,7 @@ export function drawGlobe(
   countries: readonly Country[],
   center: Point,
   zoom: number,
-  selected: string | undefined,
+  selected: ReadonlySet<string>,
   available: ReadonlySet<string>,
 ) {
   const ctx = canvas.getContext("2d");
@@ -53,11 +53,14 @@ export function drawGlobe(
         ctx.closePath();
       }
     if (!visible) continue;
-    ctx.fillStyle =
-      country.code === selected ? "#d8f36a" : available.has(country.code) ? "#317d6a" : "#153740";
+    ctx.fillStyle = selected.has(country.code)
+      ? "#d8f36a"
+      : available.has(country.code)
+        ? "#317d6a"
+        : "#153740";
     ctx.fill("evenodd");
-    ctx.strokeStyle = country.code === selected ? "#ecffa0" : "#42949c";
-    ctx.lineWidth = country.code === selected ? 1.5 : 0.55;
+    ctx.strokeStyle = selected.has(country.code) ? "#ecffa0" : "#42949c";
+    ctx.lineWidth = selected.has(country.code) ? 1.5 : 0.55;
     ctx.stroke();
   }
   ctx.strokeStyle = "#4acbd02b";

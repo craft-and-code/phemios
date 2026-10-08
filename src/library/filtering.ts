@@ -35,7 +35,7 @@ export function shiftInterval(range: Interval, delta: number, domain: Interval):
 
 /** Inclusive year matching; unknown years remain an explicit opt-in. */
 export function matchesYear(album: Album, filters: Filters): boolean {
-  if (filters.mode === "alphabet") return true;
+  if (["alphabet", "none"].includes(filters.mode)) return true;
   return album.year === null
     ? filters.includeUnknownYear
     : album.year >= filters.years[0] && album.year <= filters.years[1];
@@ -43,7 +43,7 @@ export function matchesYear(album: Album, filters: Filters): boolean {
 
 /** Alphabet intervals apply to the entity names in the current list. */
 export function matchesAlphabet(name: string, filters: Filters): boolean {
-  if (filters.mode === "years") return true;
+  if (["years", "none"].includes(filters.mode)) return true;
   const index = initialIndex(name);
   return index >= filters.alphabet[0] && index <= filters.alphabet[1];
 }
@@ -95,7 +95,7 @@ export function searchArtist(artist: Artist, query: string): boolean {
 /** Facets remain visible in the filter bar when the navigation view changes. */
 export function matchesFacets(artist: Artist, filters: Filters): boolean {
   return (
-    (filters.country === undefined || artist.country === filters.country) &&
+    (!filters.countries?.length || filters.countries.includes(artist.country)) &&
     (filters.genre === undefined ||
       artist.genre === filters.genre ||
       artist.genres?.includes(filters.genre) === true)
@@ -125,7 +125,7 @@ export function filterArtists(
       ? releases.some(
           (album) => matchesYear(album, filters) && searchAlbum(album, artist, filters.query),
         )
-      : (filters.mode === "alphabet" || filters.includeUnknownYear) &&
+      : (["alphabet", "none"].includes(filters.mode) || filters.includeUnknownYear) &&
           searchArtist(artist, filters.query);
   });
 }
@@ -154,7 +154,7 @@ export function filterAlbums(
         ? related.some(
             (artist) => matchesFacets(artist, filters) && searchAlbum(album, artist, filters.query),
           )
-        : filters.country === undefined &&
+        : !filters.countries?.length &&
           filters.genre === undefined &&
           searchAlbum(album, fallback, filters.query))
     );

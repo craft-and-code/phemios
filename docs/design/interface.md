@@ -31,3 +31,11 @@ Separate audio-output devices from mounted storage destinations. The export page
 ## Integration boundaries
 
 Native artwork/prose, paged tag search/current-owner annotations, private M3U publication and scoped analysis tasks are defined in `native-integration.md`. Collection evaluation, richer dated credits/relations, device control/registry, native playback and mounted-player copy still require their own frontend/native orchestration. Never infer HTTP endpoints from CLI availability. Downloaded M3U paths/URLs must match the intended local/remote client and authorization context.
+
+## Browsing controls
+
+Years are the sole default rail. Each visibility icon toggles independently, including neither; hidden intervals never keep filtering. Date-unknown inclusion is shown only when undated releases exist and the year rail is active. Country selection is a union, intersected with other facets: ordinary activation replaces it, Command on macOS or Control on Windows/Linux toggles individual countries. Globe and keyboard-accessible country buttons share this policy.
+
+The main artist/country/genre catalog lists only artists referenced by Aède's canonical album-artist field, matching singular Submariner browsing. Supporting credits remain in the full catalog for search, participations, favourites and relation exploration; a supporting musician with their own release is also a principal artist. Names and external person/group classifications never decide inclusion.
+
+Connection popovers close via outside pointer activation or Escape, keep focus within while open and restore trigger focus on dismissal. Field focus uses the whole input edge rather than an offset partial outline.

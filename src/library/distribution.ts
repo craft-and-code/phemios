@@ -14,10 +14,11 @@ export interface CountBin {
   count: number;
 }
 
-/** The last visible rail stays enabled; two icon toggles also express both. */
+/** Each icon independently toggles its rail; none disables both interval filters. */
 export function toggleRail(mode: RailMode, rail: "years" | "alphabet"): RailMode {
   if (mode === "both") return rail === "years" ? "alphabet" : "years";
-  return mode === rail ? mode : "both";
+  if (mode === "none") return rail;
+  return mode === rail ? "none" : "both";
 }
 
 /** Each histogram ignores its own interval and respects the other visible filters.
@@ -57,7 +58,7 @@ export function distributions(
         index.albumsByArtist.has(artist.reference) ||
         !matchesFacets(artist, filters) ||
         !searchArtist(artist, filters.query) ||
-        (filters.mode !== "alphabet" && !filters.includeUnknownYear)
+        (["years", "both"].includes(filters.mode) && !filters.includeUnknownYear)
       )
         continue;
       const initial = initialIndex(artist.name),

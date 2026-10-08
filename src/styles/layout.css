@@ -388,3 +388,12 @@ legend {
   font-size: 11px;
   padding: 6px 8px;
 }
+
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+}
+.connection-panel input {
+  width: 100%;
+}

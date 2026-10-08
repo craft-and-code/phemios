@@ -8,6 +8,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
+import { browseArtists } from "./library/selection";
 import { catalogIndex } from "./library/index";
 import { distributions } from "./library/distribution";
 import { PlayerBar } from "./components/PlayerBar";
@@ -27,6 +28,7 @@ import { WorkspacePage } from "./views/WorkspacePage";
 export function App() {
   const library = useLibrary();
   const [connectionPanel, setConnectionPanel] = createSignal(false);
+  const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
   const yearDomain = createMemo(() => {
     const values = library.snapshot()?.albums ?? (library.demo ? library.albums() : []);
     let low = Infinity,
@@ -42,7 +44,7 @@ export function App() {
   const [route, setRoute] = createSignal(parseRoute(window.location.hash));
   const [sidebar, setSidebar] = createSignal(true);
   const [filters, setFilters] = createSignal<Filters>({
-    mode: "both",
+    mode: "years",
     years: [0, 0],
     alphabet: [0, 26],
     includeUnknownYear: true,
@@ -154,7 +156,7 @@ export function App() {
                 ? "Bibliothèque Aède"
                 : "Cache local · hors ligne"}
             <small>
-              {library.artists().length} artistes · {library.albums().length} albums
+              {principalArtists().length} artistes d’album · {library.albums().length} albums
             </small>
             <Show when={library.mediaProgress()[1]}>
               <small>
@@ -197,8 +199,11 @@ export function App() {
             setValue={setFilters}
             context={context()}
             yearDomain={yearDomain()}
+            hasUnknownYear={artistReleases().some((album) => album.year === null)}
             histogram={distributions(
-              library.artists(),
+              current().kind === "section" && ["artists", "countries", "genres"].includes(section())
+                ? principalArtists()
+                : library.artists(),
               artistReleases(),
               filters(),
               current().kind === "section" &&

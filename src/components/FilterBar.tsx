@@ -1,4 +1,4 @@
-import { Show } from "solid-js";
+import { For, Show } from "solid-js";
 import type { Filters, Interval } from "../library/types";
 import { toggleRail, type CountBin } from "../library/distribution";
 import { Icon } from "./Icon";
@@ -6,7 +6,7 @@ import { RangeRail } from "./RangeRail";
 
 const letters = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/** Years/alphabet/both are explicit modes, rather than hidden active filters. */
+/** Visible rails are explicit modes, rather than hidden active filters. */
 export function FilterBar(props: {
   yearDomain: Interval;
   value: Filters;
@@ -14,6 +14,7 @@ export function FilterBar(props: {
   context: string;
   histogram: { years: CountBin[]; alphabet: CountBin[] };
   countLabel: string;
+  hasUnknownYear: boolean;
 }) {
   const update = (patch: Partial<Filters>) => props.setValue({ ...props.value, ...patch });
   const interval = (kind: "years" | "alphabet", value: Interval) => update({ [kind]: value });
@@ -25,7 +26,7 @@ export function FilterBar(props: {
             class="icon-button"
             title="Réglette des années"
             aria-label="Réglette des années"
-            aria-pressed={props.value.mode !== "alphabet"}
+            aria-pressed={["years", "both"].includes(props.value.mode)}
             onClick={() => update({ mode: toggleRail(props.value.mode, "years") })}
           >
             <Icon name="calendar" />
@@ -34,31 +35,40 @@ export function FilterBar(props: {
             class="icon-button"
             title="Réglette alphabétique"
             aria-label="Réglette alphabétique"
-            aria-pressed={props.value.mode !== "years"}
+            aria-pressed={["alphabet", "both"].includes(props.value.mode)}
             onClick={() => update({ mode: toggleRail(props.value.mode, "alphabet") })}
           >
             <Icon name="alphabet" />
           </button>
         </div>
         <span class="filter-context">{props.context}</span>
-        <Show when={props.value.country !== undefined}>
-          <button class="facet" onClick={() => update({ country: undefined })}>
-            {props.value.country ?? "Origine inconnue"} ×
-          </button>
-        </Show>
+        <For each={props.value.countries ?? []}>
+          {(country) => (
+            <button
+              class="facet"
+              onClick={() =>
+                update({
+                  countries: props.value.countries?.filter((value) => value !== country) ?? [],
+                })
+              }
+            >
+              {country ?? "Origine inconnue"} ×
+            </button>
+          )}
+        </For>
         <Show when={props.value.genre}>
           <button class="facet" onClick={() => update({ genre: undefined })}>
             {props.value.genre} ×
           </button>
         </Show>
-        <Show when={props.value.mode !== "alphabet"}>
-          <label>
+        <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
+          <label title="Inclure les albums dont l’année de sortie n’est pas renseignée.">
             <input
               type="checkbox"
               checked={props.value.includeUnknownYear}
               onChange={(e) => update({ includeUnknownYear: e.currentTarget.checked })}
             />
-            Sans année
+            Inclure les dates inconnues
           </label>
         </Show>
         <button
@@ -70,7 +80,7 @@ export function FilterBar(props: {
               alphabet: [0, 26],
               includeUnknownYear: true,
               query: "",
-              country: undefined,
+              countries: [],
               genre: undefined,
             })
           }
@@ -78,7 +88,7 @@ export function FilterBar(props: {
           Tout afficher
         </button>
       </div>
-      <Show when={props.value.mode !== "alphabet"}>
+      <Show when={["years", "both"].includes(props.value.mode)}>
         <RangeRail
           label="Années"
           domain={props.yearDomain}
@@ -98,7 +108,7 @@ export function FilterBar(props: {
           onChange={(value) => interval("years", value)}
         />
       </Show>
-      <Show when={props.value.mode !== "years"}>
+      <Show when={["alphabet", "both"].includes(props.value.mode)}>
         <RangeRail
           label="Alphabet"
           domain={[0, 26]}

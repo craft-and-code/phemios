@@ -3,6 +3,12 @@ import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { Artwork } from "../components/Artwork";
 import { useLibrary } from "../library/context";
+import {
+  browseArtists,
+  selectCountries,
+  additiveCountrySelection,
+  isMac,
+} from "../library/selection";
 import { catalogIndex } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName } from "../library/filtering";
 import type { Filters } from "../library/types";
@@ -17,15 +23,19 @@ export function LibraryPage(props: {
 }) {
   const library = useLibrary();
   const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
-  const country = () => props.filters.country;
-  const setCountry = (country: string | null | undefined) =>
-    props.setFilters({ ...props.filters, country });
+  const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
+  const countries = () => props.filters.countries ?? [];
+  const setCountry = (value: string | null | undefined, additive = false) =>
+    props.setFilters({
+      ...props.filters,
+      countries: selectCountries(countries(), value, additive),
+    });
   const genre = () => props.filters.genre;
   const setGenre = (genre: string | undefined) => props.setFilters({ ...props.filters, genre });
   const compare = (a: string, b: string) =>
     normalizeName(a).localeCompare(normalizeName(b), "fr") * (props.reverse ? -1 : 1);
   const artists = createMemo(() => {
-    const matched = filterArtists(library.artists(), library.albums(), props.filters);
+    const matched = filterArtists(principals(), library.albums(), props.filters);
     return [...matched].sort((a, b) => compare(a.name, b.name));
   });
   const albums = createMemo(() =>
@@ -40,14 +50,17 @@ export function LibraryPage(props: {
         <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
       </div>
       <Show when={props.section === "countries"}>
-        <CountryGlobe artists={library.artists()} selected={country()} onSelect={setCountry} />
+        <CountryGlobe artists={principals()} selected={countries()} onSelect={setCountry} />
         <div class="choices" aria-label="Pays d’origine">
-          <button aria-pressed={country() === undefined} onClick={() => setCountry(undefined)}>
+          <button aria-pressed={countries().length === 0} onClick={() => setCountry(undefined)}>
             Tous
           </button>
-          <For each={[...new Set(library.artists().map((item) => item.country))]}>
+          <For each={[...new Set(principals().map((item) => item.country))]}>
             {(value) => (
-              <button aria-pressed={country() === value} onClick={() => setCountry(value)}>
+              <button
+                aria-pressed={countries().includes(value)}
+                onClick={(event) => setCountry(value, additiveCountrySelection(event, isMac()))}
+              >
                 {value ?? "Origine inconnue"}
               </button>
             )}
@@ -60,9 +73,9 @@ export function LibraryPage(props: {
             Tous
           </button>
           <For
-            each={[
-              ...new Set(library.artists().flatMap((item) => item.genres ?? [item.genre])),
-            ].filter(Boolean)}
+            each={[...new Set(principals().flatMap((item) => item.genres ?? [item.genre]))].filter(
+              Boolean,
+            )}
           >
             {(value) => (
               <button aria-pressed={genre() === value} onClick={() => setGenre(value)}>

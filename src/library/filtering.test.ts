@@ -91,3 +91,27 @@ describe("library filtering", () => {
     ).toEqual(["two"]);
   });
 });
+
+it("disabling both rails releases narrowed bounds and unknown-year exclusion", () => {
+  const hidden = {
+    ...defaults,
+    mode: "none" as const,
+    years: [0, 0] as const,
+    alphabet: [0, 0] as const,
+  };
+  expect(filterAlbums(albums, artists, hidden)).toHaveLength(3);
+  expect(filterArtists(artists, albums, hidden)).toHaveLength(2);
+});
+
+it("selected countries are a union intersected with genre and query", () => {
+  expect(filterArtists(artists, albums, { ...defaults, countries: [null, "France"] })).toHaveLength(
+    2,
+  );
+  expect(
+    filterArtists(artists, albums, { ...defaults, countries: [null, "France"], genre: "Rock" }),
+  ).toHaveLength(1);
+  expect(
+    filterArtists(artists, albums, { ...defaults, countries: ["France"], query: "PIANO" }),
+  ).toHaveLength(0);
+  expect(filterArtists(artists, albums, { ...defaults, countries: [] })).toHaveLength(2);
+});
