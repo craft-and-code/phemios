@@ -1,5 +1,5 @@
 import { AnnotationPanel } from "../components/AnnotationPanel";
-import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { TrackResults } from "../components/TrackResults";
 import { AnalysisDownload } from "../components/AnalysisDownload";
 import { CoverPreview } from "../components/CoverPreview";
@@ -7,12 +7,8 @@ import { Artwork } from "../components/Artwork";
 import { JobControls } from "../components/JobControls";
 import { M3UExport } from "../components/M3UExport";
 import { useLibrary } from "../library/context";
-import { requestAede } from "../platform/desktop";
-import type { Track } from "../library/server";
+import { albumTracks, discGroups } from "../library/album-tracks";
 import type { Album } from "../library/types";
-interface AvailableTrack extends Track {
-  spectrum_available: boolean;
-}
 /** Read/edit current-account annotations; save failure never discards the draft. */
 export function AlbumPage(props: { album: Album }) {
   const library = useLibrary();
@@ -20,14 +16,9 @@ export function AlbumPage(props: { album: Album }) {
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
   const [tracks, { refetch }] = createResource(
     () => (library.session() ? props.album.reference : false),
-    async (ref) => {
-      const album = await requestAede<{ tracks: string[] }>("/api/v1/album", { ref });
-      const rows: AvailableTrack[] = [];
-      for (const ref of album.tracks)
-        rows.push(await requestAede<AvailableTrack>("/api/v1/track", { ref }));
-      return rows;
-    },
+    albumTracks,
   );
+  const discs = createMemo(() => discGroups(tracks() ?? []));
   const completed = () => library.tasks.jobs().filter((job) => job.status === "completed").length;
   let lastCompleted = completed();
   createEffect(() => {
@@ -58,7 +49,17 @@ export function AlbumPage(props: { album: Album }) {
           <p class="eyebrow">{props.album.compilation ? "COMPILATION" : "ALBUM"}</p>
           <h1>{props.album.title}</h1>
           <p>
-            {artist()?.name ?? "Artistes divers"} · {props.album.year ?? "Année inconnue"}
+            <Show when={artist()} fallback="Artistes divers">
+              {(row) => (
+                <a
+                  class="album-artist-link"
+                  href={`#/artist/${encodeURIComponent(row().reference)}`}
+                >
+                  {row().name}
+                </a>
+              )}
+            </Show>{" "}
+            · {props.album.year ?? "Année inconnue"}
           </p>
           <button
             class="primary"
@@ -90,24 +91,39 @@ export function AlbumPage(props: { album: Album }) {
         <Show when={tracks.loading}>
           <p class="muted">Chargement des pistes…</p>
         </Show>
-        <ol class="track-list">
-          <For each={tracks()}>
-            {(track, index) => (
-              <TrackResults
-                track={track}
-                number={index() + 1}
-                onPlay={() =>
-                  void library.player.start(
-                    tracks() ?? [],
-                    props.album,
-                    artist()?.name ?? "Artistes divers",
-                    index(),
-                  )
-                }
-              />
-            )}
-          </For>
-        </ol>
+        <Show when={!library.session()}>
+          <p class="muted">Connectez Aède pour consulter les pistes.</p>
+        </Show>
+        <Show when={tracks() && !tracks.loading && !tracks()?.length}>
+          <p class="muted">Aucune piste dans cet album.</p>
+        </Show>
+        <For each={discs()}>
+          {(disc) => (
+            <section class="album-disc">
+              <Show when={discs().length > 1}>
+                <h3>{disc.disc === null ? "Disque non renseigné" : `CD ${disc.disc}`}</h3>
+              </Show>
+              <ol class="track-list">
+                <For each={disc.tracks}>
+                  {(row) => (
+                    <TrackResults
+                      track={row.track}
+                      number={row.number}
+                      onPlay={() =>
+                        void library.player.start(
+                          tracks() ?? [],
+                          props.album,
+                          artist()?.name ?? "Artistes divers",
+                          row.index,
+                        )
+                      }
+                    />
+                  )}
+                </For>
+              </ol>
+            </section>
+          )}
+        </For>
       </section>
       <section class="album-analysis-jobs">
         <div class="section-heading">
@@ -115,7 +131,7 @@ export function AlbumPage(props: { album: Album }) {
           <AnalysisDownload
             reference={props.album.reference}
             album
-            available={!!tracks()?.length && tracks()!.every((track) => track.analyses.length > 0)}
+            available={!!tracks()?.length && tracks()!.every((track) => track.analysis_available)}
           />
         </div>
         <JobControls release={props.album.reference} />

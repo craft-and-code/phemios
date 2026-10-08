@@ -222,3 +222,48 @@ fn collection_evaluation_selection_and_confirmed_reset_have_narrow_capabilities(
     assert!(!allowed("DELETE", "/api/admin/v1/history"));
     assert!(!allowed("PUT", "/api/v1/presentation/playback"));
 }
+
+#[test]
+fn light_disc_pages_and_capability_reads_remain_read_only() {
+    assert!(allowed("GET", "/api/v1/status"));
+    assert!(allowed("GET", "/api/v1/presentation/tracks"));
+    assert!(!allowed("POST", "/api/v1/presentation/tracks"));
+    assert!(!allowed("PUT", "/api/v1/status"));
+}
+#[test]
+fn old_routes_and_name_collisions_are_distinct_from_missing_entities_or_busy_stores() {
+    let route = json!({"error":{"code":"not_found","message":"private credential"}});
+    assert!(
+        errors::request_failure(
+            404,
+            "GET",
+            "/api/v1/presentation/tracks",
+            false,
+            Some(&route)
+        )
+        .contains("redémarrez")
+    );
+    let missing = json!({"error":{"code":"entity_not_found"}});
+    assert!(
+        !errors::request_failure(
+            404,
+            "GET",
+            "/api/v1/presentation/tracks",
+            false,
+            Some(&missing)
+        )
+        .contains("redémarrez")
+    );
+    let collision = json!({"error":{"code":"collection_exists"}});
+    assert!(
+        errors::request_failure(409, "PUT", "/api/me/v1/collection", true, Some(&collision))
+            .contains("nom")
+    );
+    assert!(
+        !errors::request_failure(409, "PUT", "/api/me/v1/collection", true, None).contains("nom")
+    );
+    assert!(
+        !errors::request_failure(500, "PUT", "/api/me/v1/collection", true, Some(&route))
+            .contains("private credential")
+    );
+}

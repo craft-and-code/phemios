@@ -19,6 +19,7 @@ export interface Track {
   title: string;
   duration_ms: number | null;
   analyses: unknown[];
+  analysis_available?: boolean;
   path?: string;
 }
 export interface AccountSession {

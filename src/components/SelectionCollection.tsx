@@ -1,7 +1,7 @@
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
-import { requestAede } from "../platform/desktop";
+import { saveBrowsingCollection } from "../library/collection-save";
 import type { Filters } from "../library/types";
 /** Freeze the criteria at opening; Aède evaluates their future catalog matches. */
 export function SelectionCollection(props: { section: string; filters: Filters }) {
@@ -16,20 +16,16 @@ export function SelectionCollection(props: { section: string; filters: Filters }
   async function save() {
     const expression = draft();
     if (!expression || busy()) return;
-    const account = library.session()?.account.id;
+    const account = library.session();
     setBusy(true);
     setError("");
     try {
-      await requestAede("/api/me/v1/collection", { name: name() }, "PUT", {
-        expression,
-        create_only: true,
-      });
-      if (account !== library.session()?.account.id) return;
+      await saveBrowsingCollection(name(), expression, () => account === library.session());
+      if (account !== library.session()) return;
       setDraft(undefined);
       setMessage(`Collection « ${name()} » enregistrée. Elle suit ces filtres.`);
     } catch (e) {
-      if (account === library.session()?.account.id)
-        setError(e instanceof Error ? e.message : String(e));
+      if (account === library.session()) setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }

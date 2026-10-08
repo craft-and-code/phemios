@@ -5,10 +5,9 @@ import {
   createResource,
   createSignal,
   For,
-  onCleanup,
-  onMount,
   Show,
 } from "solid-js";
+import { createNavigation, browserNavigationHost } from "./navigation/history";
 import { browseArtists } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
@@ -43,7 +42,16 @@ export function App() {
     return Number.isFinite(low) ? ([low, high] as const) : ([0, 0] as const);
   });
   const [runtime] = createResource(getRuntimeInfo);
-  const [route, setRoute] = createSignal(parseRoute(window.location.hash));
+  const navigation = createNavigation(browserNavigationHost(), (hash) => {
+    const source = parseRoute(hash);
+    if (source.kind === "section")
+      return sections.find((s) => s.id === source.section)?.label ?? "Catalogue";
+    if (source.kind === "artist")
+      return library.artists().find((a) => a.reference === source.reference)?.name ?? "Artiste";
+    if (source.kind === "album")
+      return library.albums().find((a) => a.reference === source.reference)?.title ?? "Album";
+    return "Catalogue";
+  });
   const [sidebar, setSidebar] = createSignal(true);
   const [filters, setFilters] = createSignal<Filters>({
     mode: "years",
@@ -58,11 +66,8 @@ export function App() {
   });
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
-  const current = createMemo(() => route());
-  const section = () => {
-    const value = current();
-    return value.kind === "section" ? value.section : "artists";
-  };
+  const current = navigation.route,
+    section = navigation.section;
   const selectedArtist = createMemo(() => {
     const value = current();
     return value.kind === "artist"
@@ -78,30 +83,36 @@ export function App() {
   createEffect(() => {
     library.player.setTarget(selectedAlbum()?.reference ?? selectedArtist()?.reference ?? "");
   });
-  const backLink = createMemo(() => {
-    if (selectedArtist()) return { href: "#/artists", label: "Tous les artistes" };
-    const album = selectedAlbum();
-    if (!album) return undefined;
-    const artist = library.artists().find((item) => item.reference === album.artist);
-    return artist
-      ? { href: `#/artist/${encodeURIComponent(artist.reference)}`, label: artist.name }
-      : { href: "#/albums", label: "Tous les albums" };
-  });
+  const backLink = navigation.backLink;
   const context = () =>
     ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
       ? "Initiale de l’artiste · année de ses albums"
       : "Initiale du titre · année de l’album";
   const hasFilters = () => catalogRails(current());
-  onMount(() => {
-    const sync = () => {
-      setRoute(parseRoute(window.location.hash));
-      document.getElementById("content")?.scrollTo({ top: 0 });
-    };
-    window.addEventListener("hashchange", sync);
-    onCleanup(() => window.removeEventListener("hashchange", sync));
-  });
   return (
-    <div class="app" classList={{ "sidebar-hidden": !sidebar(), "density-compact": compact() }}>
+    <div
+      class="app"
+      classList={{ "sidebar-hidden": !sidebar(), "density-compact": compact() }}
+      onClick={(event) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
+        const anchor =
+          event.target instanceof Element ? event.target.closest("a[href^='#/']") : null;
+        if (!anchor || anchor.getAttribute("target")) return;
+        const href = anchor.getAttribute("href");
+        if (anchor.hasAttribute("data-navigation-back")) {
+          event.preventDefault();
+          navigation.goBack();
+        } else if (href && navigation.navigate(href)) event.preventDefault();
+      }}
+    >
       <header class="topbar">
         <button
           class="icon-button"
@@ -236,7 +247,7 @@ export function App() {
           <div class="catalog-tools">
             <Show when={backLink()}>
               {(link) => (
-                <a class="back" href={link().href}>
+                <a class="back" href={link().href} data-navigation-back>
                   ← {link().label}
                 </a>
               )}

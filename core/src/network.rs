@@ -1,6 +1,8 @@
 //! Bounded HTTP client for one explicit Aède authority; sessions stay in memory.
 use serde_json::{Value, json};
 use std::time::Duration;
+#[path = "network_errors.rs"]
+mod errors;
 
 const JSON_LIMIT: u64 = 16 * 1024 * 1024;
 /// Trusted native session; never serialize or log this value.
@@ -183,12 +185,23 @@ impl Client {
             request.send(data.as_bytes())
         }
         .map_err(|_| "Impossible de joindre Aède.".to_string())?;
-        if method == "PUT"
-            && path == "/api/me/v1/collection"
-            && body.is_some_and(|v| v["create_only"] == true)
-            && response.status().as_u16() == 409
-        {
-            return Err("Une collection porte déjà ce nom. Choisissez un autre nom.".into());
+        if !response.status().is_success() {
+            let status = response.status().as_u16();
+            let mut response = response;
+            let detail = response
+                .body_mut()
+                .with_config()
+                .limit(8192)
+                .read_to_vec()
+                .ok()
+                .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+            return Err(errors::request_failure(
+                status,
+                method,
+                path,
+                body.is_some_and(|v| v["create_only"] == true),
+                detail.as_ref(),
+            ));
         }
         decode(&bytes(response, JSON_LIMIT)?)
     }
@@ -295,6 +308,8 @@ fn allowed(method: &str, path: &str) -> bool {
             matches!(
                 path,
                 "/api/auth/v1/session"
+                    | "/api/v1/status"
+                    | "/api/v1/presentation/tracks"
                     | "/api/v1/presentation/artists"
                     | "/api/v1/presentation/albums"
                     | "/api/v1/presentation/playback"
