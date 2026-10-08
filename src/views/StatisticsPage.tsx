@@ -96,6 +96,79 @@ export function StatisticsPage() {
           )}
         </For>
       </div>
+      <Show when={library.session()}>
+        <section>
+          <h2>Intégrité et analyses enregistrées</h2>
+          <Show when={doctor.error}>
+            <p role="alert">Diagnostic indisponible : {String(doctor.error)}</p>
+          </Show>
+          <Show when={doctor.loading}>
+            <p>Chargement du diagnostic…</p>
+          </Show>
+          <Show when={doctor()}>
+            {(result) => (
+              <div class="stat-tiles">
+                <For
+                  each={
+                    [
+                      ["Erreurs", result().summary.error ?? 0],
+                      ["Avertissements", result().summary.warning ?? 0],
+                      ["Informations", result().summary.info ?? 0],
+                      ["Fichiers non vérifiés", result().unverified_files],
+                      ["Analyses en attente", result().pending_analyses],
+                    ] as const
+                  }
+                >
+                  {(item) => (
+                    <div>
+                      <span>{item[0]}</span>
+                      <strong>{numberLabel(item[1])}</strong>
+                    </div>
+                  )}
+                </For>
+              </div>
+            )}
+          </Show>
+          <small>
+            Lecture des résultats existants ; aucun contrôle audio ni analyse n’est lancé.
+          </small>
+        </section>
+        <section>
+          <h2>Votre musique</h2>
+          <div class="stat-tiles">
+            <For
+              each={
+                [
+                  ["Favoris", own().filter((value) => value?.loved).length],
+                  ["Notes personnelles", own().filter((value) => value?.note).length],
+                  ["Entités notées", ratings().length],
+                  [
+                    "Tags personnels distincts",
+                    new Set(own().flatMap((value) => value?.tags ?? [])).size,
+                  ],
+                ] as const
+              }
+            >
+              {(item) => (
+                <div>
+                  <span>{item[0]}</span>
+                  <strong>{numberLabel(item[1])}</strong>
+                </div>
+              )}
+            </For>
+          </div>
+          <Show when={ratings().length}>
+            <p>
+              Note moyenne :{" "}
+              {(
+                ratings().reduce((sum, value) => sum + (value?.rating ?? 0), 0) / ratings().length
+              ).toLocaleString("fr", { maximumFractionDigits: 2 })}{" "}
+              / 5
+            </p>
+          </Show>
+          <p class="muted">Annotations de votre compte chargées en mémoire.</p>
+        </section>
+      </Show>
       <Show when={currentReport()} keyed>
         {(value) => (
           <>
@@ -258,79 +331,6 @@ export function StatisticsPage() {
           </For>
         </div>
       </section>
-      <Show when={library.session()}>
-        <section>
-          <h2>Intégrité et analyses enregistrées</h2>
-          <Show when={doctor.error}>
-            <p role="alert">Diagnostic indisponible : {String(doctor.error)}</p>
-          </Show>
-          <Show when={doctor.loading}>
-            <p>Chargement du diagnostic…</p>
-          </Show>
-          <Show when={doctor()}>
-            {(result) => (
-              <div class="stat-tiles">
-                <For
-                  each={
-                    [
-                      ["Erreurs", result().summary.error ?? 0],
-                      ["Avertissements", result().summary.warning ?? 0],
-                      ["Informations", result().summary.info ?? 0],
-                      ["Fichiers non vérifiés", result().unverified_files],
-                      ["Analyses en attente", result().pending_analyses],
-                    ] as const
-                  }
-                >
-                  {(item) => (
-                    <div>
-                      <span>{item[0]}</span>
-                      <strong>{numberLabel(item[1])}</strong>
-                    </div>
-                  )}
-                </For>
-              </div>
-            )}
-          </Show>
-          <small>
-            Lecture des résultats existants ; aucun contrôle audio ni analyse n’est lancé.
-          </small>
-        </section>
-        <section>
-          <h2>Votre musique</h2>
-          <div class="stat-tiles">
-            <For
-              each={
-                [
-                  ["Favoris", own().filter((value) => value?.loved).length],
-                  ["Notes personnelles", own().filter((value) => value?.note).length],
-                  ["Entités notées", ratings().length],
-                  [
-                    "Tags personnels distincts",
-                    new Set(own().flatMap((value) => value?.tags ?? [])).size,
-                  ],
-                ] as const
-              }
-            >
-              {(item) => (
-                <div>
-                  <span>{item[0]}</span>
-                  <strong>{numberLabel(item[1])}</strong>
-                </div>
-              )}
-            </For>
-          </div>
-          <Show when={ratings().length}>
-            <p>
-              Note moyenne :{" "}
-              {(
-                ratings().reduce((sum, value) => sum + (value?.rating ?? 0), 0) / ratings().length
-              ).toLocaleString("fr", { maximumFractionDigits: 2 })}{" "}
-              / 5
-            </p>
-          </Show>
-          <p class="muted">Annotations de votre compte chargées en mémoire.</p>
-        </section>
-      </Show>
     </section>
   );
 }

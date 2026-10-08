@@ -1,10 +1,15 @@
 import { onMount, onCleanup } from "solid-js";
 import type { Album } from "../library/types";
+import { Icon } from "./Icon";
 import { Artwork } from "./Artwork";
 /** Native dialog provides Escape, keyboard focus containment and trigger restoration. */
 export function CoverPreview(props: { album: Album; onClose: () => void }) {
   let dialog: HTMLDialogElement | undefined;
-  onMount(() => dialog?.showModal());
+  let heading: HTMLHeadingElement | undefined;
+  onMount(() => {
+    dialog?.showModal();
+    heading?.focus();
+  });
   onCleanup(() => dialog?.close());
   return (
     <dialog
@@ -23,9 +28,16 @@ export function CoverPreview(props: { album: Album; onClose: () => void }) {
     >
       <div>
         <div class="cover-dialog-heading">
-          <h2>{props.album.title}</h2>
-          <button aria-label="Fermer la pochette" onClick={props.onClose}>
-            ×
+          <h2
+            ref={(element) => {
+              heading = element;
+            }}
+            tabindex="-1"
+          >
+            {props.album.title}
+          </h2>
+          <button class="icon-button quiet" aria-label="Fermer la pochette" onClick={props.onClose}>
+            <Icon name="close" />
           </button>
         </div>
         <Artwork album={props.album} />

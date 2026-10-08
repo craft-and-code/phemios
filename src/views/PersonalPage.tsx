@@ -1,10 +1,12 @@
-import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { normalizeName, filterAlbums } from "../library/filtering";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { JobControls } from "../components/JobControls";
 import { M3UExport, downloadM3U, type M3UFile } from "../components/M3UExport";
 import { requestAede } from "../platform/desktop";
+import { favouriteAlbums } from "../library/favourites";
+import { createPersonalReads } from "../library/personal-reads";
 import type { Section } from "../navigation/routes";
 interface Collection {
   name: string;
@@ -14,16 +16,6 @@ interface Playlist {
   id: string;
   name: string;
   track_count: number;
-}
-interface Play {
-  track: string;
-  at: number;
-  ms_played: number | null;
-  completed: boolean | null;
-}
-interface Page {
-  items: unknown[];
-  total: number;
 }
 /** Existing owner-scoped services, with explicit save and download actions. */
 export function PersonalPage(props: { section: Section; query: string }) {
@@ -40,40 +32,15 @@ export function PersonalPage(props: { section: Section; query: string }) {
     setSelected("");
     setMessage("");
   });
-  const path = () =>
-    ({
-      collections: "/api/me/v1/collections",
-      history: "/api/me/v1/history",
-      playlists: "/api/me/v1/m3u",
-    })[props.section as "collections" | "history" | "playlists"];
-  const [page, { refetch }] = createResource(
-    () => (library.session() && path() ? { path: path(), offset: offset() } : false),
-    async (input) => requestAede<Page>(input.path, { offset: String(input.offset), limit: "50" }),
+  const reads = createPersonalReads(
+    () => props.section,
+    library.session,
+    offset,
+    (path, query) => requestAede(path, query),
   );
-  const [history] = createResource(
-    () => (props.section === "history" ? page() : undefined),
-    async (value) => {
-      const rows = value.items as Play[];
-      const result: (Play & { title: string; release: string | null; error?: string })[] = [];
-      for (const row of rows) {
-        try {
-          const track = await requestAede<{ title: string; release: string | null }>(
-            "/api/v1/track",
-            { ref: row.track },
-          );
-          result.push({ ...row, ...track });
-        } catch (failure) {
-          result.push({
-            ...row,
-            title: "Piste indisponible",
-            release: null,
-            error: String(failure),
-          });
-        }
-      }
-      return result;
-    },
-  );
+  const page = () => reads.page()?.data;
+  const history = reads.history;
+  const refetch = reads.refetch;
   const album = () => library.albums().find((item) => item.reference === selected());
   const matches = (value: string) => normalizeName(value).includes(normalizeName(props.query));
   async function save() {
@@ -103,13 +70,13 @@ export function PersonalPage(props: { section: Section; query: string }) {
     }
   }
   const favourites = () =>
-    filterAlbums(library.albums(), library.artists(), {
+    filterAlbums(favouriteAlbums(library.albums(), library.annotations), library.artists(), {
       mode: "alphabet",
       years: [0, 9999],
       alphabet: [0, 26],
       includeUnknownYear: true,
       query: props.query,
-    }).filter((album) => library.annotations[album.reference]?.loved);
+    });
   return (
     <section class="page personal-page">
       <Show when={!library.session() && !library.demo}>
@@ -117,21 +84,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
       </Show>
       <Show when={props.section === "favourites"}>
         <AlbumGrid albums={favourites()} />
-        <div class="choices">
-          <For
-            each={library
-              .artists()
-              .filter(
-                (artist) => library.annotations[artist.reference]?.loved && matches(artist.name),
-              )}
-          >
-            {(artist) => (
-              <a class="favourite-artist" href={`#/artist/${encodeURIComponent(artist.reference)}`}>
-                ♥ {artist.name}
-              </a>
-            )}
-          </For>
-        </div>
+        <Show when={!favourites().length}>
+          <p class="empty">Aucun album favori dans cette sélection.</p>
+        </Show>
       </Show>
       <Show when={props.section === "collections"}>
         <form
@@ -260,11 +215,11 @@ export function PersonalPage(props: { section: Section; query: string }) {
           </For>
         </ul>
       </Show>
-      <Show when={page.loading || history.loading}>
+      <Show when={reads.loading()}>
         <p role="status">Chargement…</p>
       </Show>
-      <Show when={page.error || history.error}>
-        <p role="alert">{String(page.error ?? history.error)}</p>
+      <Show when={reads.page()?.error}>
+        <p role="alert">{reads.page()?.error}</p>
       </Show>
       <Show when={page() && !page()?.items.length}>
         <p class="empty">Aucun élément enregistré dans cette rubrique.</p>

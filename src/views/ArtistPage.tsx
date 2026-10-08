@@ -2,39 +2,29 @@ import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createMemo, Show } from "solid-js";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { useLibrary } from "../library/context";
-import { belongsToArtist, filterAlbums } from "../library/filtering";
+import { belongsToArtist } from "../library/filtering";
 import { sourceLink } from "../library/server";
-import type { Artist, Filters } from "../library/types";
+import type { Artist } from "../library/types";
 /** Present local editions and contributions without inventing a principal credit. */
-export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: boolean }) {
+export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
   const library = useLibrary();
   const sort = (items: readonly import("../library/types").Album[]) =>
     [...items].sort((a, b) => a.title.localeCompare(b.title, "fr") * (props.reverse ? -1 : 1));
   const albums = createMemo(() =>
-    sort(
-      filterAlbums(
-        library.albums().filter((album) => album.artist === props.artist.reference),
-        library.artists(),
-        props.filters,
-      ),
-    ),
+    sort(library.albums().filter((album) => album.artist === props.artist.reference)),
   );
   const appearances = createMemo(() =>
     sort(
-      filterAlbums(
-        library
-          .albums()
-          .filter(
-            (album) =>
-              album.artist !== props.artist.reference &&
-              (belongsToArtist(album, props.artist) ||
-                (library.demo &&
-                  props.artist.reference === "oree" &&
-                  album.reference === "meetings")),
-          ),
-        library.artists(),
-        props.filters,
-      ),
+      library
+        .albums()
+        .filter(
+          (album) =>
+            album.artist !== props.artist.reference &&
+            (belongsToArtist(album, props.artist) ||
+              (library.demo &&
+                props.artist.reference === "oree" &&
+                album.reference === "meetings")),
+        ),
     ),
   );
   const banner = () =>
@@ -57,6 +47,7 @@ export function ArtistPage(props: { artist: Artist; filters: Filters; reverse: b
     >
       <header
         class="artist-hero"
+        classList={{ "has-banner": !!banner() }}
         style={
           banner()
             ? {

@@ -161,3 +161,10 @@ select:focus-visible {
 .primary:hover:not(:disabled) {
   color: #161913;
 }
+
+/* Icon focus follows the complete rounded border; pointer activation does not add a ring. */
+.icon-button:focus-visible {
+  outline: 0;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}

@@ -13,3 +13,7 @@
 Each coherent part gets its own verified commit. These phases are implementation boundaries, not claims that server or physical acceptance already passed.
 
 Phases 1–3 are complete. Phase 4 has authenticated paging, native projections and persistent artwork; events, cache quotas, virtualization and scrolling benchmarks remain pending. Phase 5 has connected visual artist/album annotations, detailed statistics and diagnosis reads, favourites, collection rules, history and album M3U save/download; evaluated/manual collections and richer credit pages remain pending. Phase 6 has the geographic globe and bounded local collaboration graph; dated membership provenance remains pending. Phase 7 has explicit analysis/spectrum jobs and direct results; playback/output/lyrics/effects are still unavailable. Phases 8–9 remain acceptance work. Read current-state and native-integration before inferring broader support.
+
+## Dedicated playback work
+
+Playback is a separate implementation milestone, with coherent verified commits for Aède playback/state capabilities, narrow native wiring, player UI/queue/transport, physical output/volume, then consumed-time lyrics/visual effects. First document the available Aède routes and route-specific capabilities; do not infer a playable frontend service from CLI support. Verify actual consumed PCM, output selection, pause/seek/queue, disconnect/cancellation and confirmed history on the host before enabling their controls. Analysis presentation changes do not claim playback integration.

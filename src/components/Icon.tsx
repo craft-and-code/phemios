@@ -1,4 +1,7 @@
 const paths: Record<string, string> = {
+  close: "M6 6l12 12M6 18 18 6",
+  download: "M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4",
+  spectrum: "M3 20h18M5 16v-4M9 16V5M13 16V9M17 16V3M21 16v-6",
   star: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z",
   bold: "M7 4h6a4 4 0 0 1 0 8H7V4ZM7 12h7a4 4 0 0 1 0 8H7v-8Z",
   italic: "M10 4h8M6 20h8M14 4 10 20",

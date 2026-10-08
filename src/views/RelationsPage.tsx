@@ -5,9 +5,17 @@ import { neighbours } from "../library/relations";
 /** A bounded, keyboard-accessible view of Aède's actual local collaborations. */
 export function RelationsPage(props: { query: string }) {
   const library = useLibrary(),
-    [reference, setReference] = createSignal("");
+    [reference, setReference] = createSignal(""),
+    [search, setSearch] = createSignal("");
   const choices = createMemo(() =>
-    library.artists().filter((artist) => searchArtist(artist, props.query)),
+    library
+      .artists()
+      .filter((artist) => searchArtist(artist, props.query) && searchArtist(artist, search()))
+      .sort(
+        (a, b) =>
+          (b.relations?.length ?? 0) - (a.relations?.length ?? 0) ||
+          a.name.localeCompare(b.name, "fr"),
+      ),
   );
   const selected = createMemo(
     () =>
@@ -27,17 +35,33 @@ export function RelationsPage(props: { query: string }) {
   );
   return (
     <section class="page relations-page">
-      <label class="album-selection">
-        Artiste de départ
-        <select
-          value={selected()?.reference ?? ""}
-          onChange={(event) => setReference(event.currentTarget.value)}
-        >
-          <For each={choices()}>
-            {(artist) => <option value={artist.reference}>{artist.name}</option>}
+      <div class="relation-picker">
+        <label>
+          Artiste de départ
+          <input
+            type="search"
+            aria-label="Chercher un artiste de départ"
+            placeholder="Chercher un artiste ou un musicien…"
+            value={search()}
+            onInput={(event) => setSearch(event.currentTarget.value)}
+          />
+        </label>
+        <div class="choices" aria-label="Artistes de départ proposés">
+          <For each={choices().slice(0, 8)}>
+            {(artist) => (
+              <button
+                aria-pressed={selected()?.reference === artist.reference}
+                onClick={() => setReference(artist.reference)}
+              >
+                {artist.name}
+              </button>
+            )}
           </For>
-        </select>
-      </label>
+        </div>
+        <Show when={!choices().length}>
+          <p class="muted">Aucun artiste correspondant.</p>
+        </Show>
+      </div>
       <p class="muted">
         Liens de collaboration issus des crédits du catalogue Aède. Le nombre indique les pistes
         jouées ensemble ; il ne désigne pas une appartenance à un groupe.
@@ -45,6 +69,7 @@ export function RelationsPage(props: { query: string }) {
       <Show when={selected()} fallback={<p class="empty">Aucun artiste disponible.</p>}>
         {(artist) => (
           <>
+            <h2>Collaborations de {artist().name}</h2>
             <Show
               when={edges().length}
               fallback={

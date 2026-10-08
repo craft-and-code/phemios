@@ -1,5 +1,6 @@
 import {
   createEffect,
+  ErrorBoundary,
   createMemo,
   createResource,
   createSignal,
@@ -9,7 +10,7 @@ import {
   Show,
 } from "solid-js";
 import { browseArtists } from "./library/selection";
-import { catalogIndex } from "./library/index";
+import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
 import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
@@ -82,21 +83,11 @@ export function App() {
       ? { href: `#/artist/${encodeURIComponent(artist.reference)}`, label: artist.name }
       : { href: "#/albums", label: "Tous les albums" };
   });
-  const artistReleases = createMemo(() => {
-    const route = current();
-    return route.kind === "artist"
-      ? (catalogIndex(library.artists(), library.albums()).albumsByArtist.get(route.reference) ??
-          [])
-      : library.albums();
-  });
   const context = () =>
     ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
       ? "Initiale de l’artiste · année de ses albums"
       : "Initiale du titre · année de l’album";
-  const hasFilters = () =>
-    current().kind === "artist" ||
-    (current().kind === "section" &&
-      ["artists", "albums", "compilations", "countries", "genres"].includes(section()));
+  const hasFilters = () => catalogRails(current());
   onMount(() => {
     const sync = () => {
       setRoute(parseRoute(window.location.hash));
@@ -220,12 +211,12 @@ export function App() {
             setValue={setFilters}
             context={context()}
             yearDomain={yearDomain()}
-            hasUnknownYear={artistReleases().some((album) => album.year === null)}
+            hasUnknownYear={library.albums().some((album) => album.year === null)}
             histogram={distributions(
               current().kind === "section" && ["artists", "countries", "genres"].includes(section())
                 ? principalArtists()
                 : library.artists(),
-              artistReleases(),
+              library.albums(),
               filters(),
               current().kind === "section" &&
                 ["artists", "countries", "genres"].includes(section()),
@@ -269,34 +260,49 @@ export function App() {
             </Show>
           </div>
         </Show>
-        <Show when={current().kind === "section"}>
-          <Show
-            when={["artists", "albums", "compilations", "countries", "genres"].includes(section())}
-            fallback={<WorkspacePage section={section()} query={filters().query} />}
-          >
-            <LibraryPage
-              section={section()}
-              filters={filters()}
-              setFilters={setFilters}
-              reverse={reverse()}
-            />
-          </Show>
-        </Show>
-        <Show when={current().kind === "artist"}>
-          <Show when={selectedArtist()} fallback={<p class="empty">Artiste introuvable.</p>}>
-            {(artist) => <ArtistPage artist={artist()} filters={filters()} reverse={reverse()} />}
-          </Show>
-        </Show>
-        <Show when={current().kind === "album"}>
-          <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
-            {(album) => <AlbumPage album={album()} />}
-          </Show>
-        </Show>
-        <Show when={current().kind === "not-found"}>
-          <div class="empty">
-            <h1>Page introuvable</h1>
-            <a href="#/artists">Revenir aux artistes</a>
-          </div>
+        <Show when={current()} keyed>
+          {(route) => (
+            <ErrorBoundary
+              fallback={(error) => (
+                <div class="page" role="alert">
+                  <p>Cette page est indisponible : {String(error)}</p>
+                  <a href="#/artists">Revenir aux artistes</a>
+                </div>
+              )}
+            >
+              <Show when={route.kind === "section"}>
+                <Show
+                  when={["artists", "albums", "compilations", "countries", "genres"].includes(
+                    section(),
+                  )}
+                  fallback={<WorkspacePage section={section()} query={filters().query} />}
+                >
+                  <LibraryPage
+                    section={section()}
+                    filters={filters()}
+                    setFilters={setFilters}
+                    reverse={reverse()}
+                  />
+                </Show>
+              </Show>
+              <Show when={route.kind === "artist"}>
+                <Show when={selectedArtist()} fallback={<p class="empty">Artiste introuvable.</p>}>
+                  {(artist) => <ArtistPage artist={artist()} reverse={reverse()} />}
+                </Show>
+              </Show>
+              <Show when={route.kind === "album"}>
+                <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
+                  {(album) => <AlbumPage album={album()} />}
+                </Show>
+              </Show>
+              <Show when={route.kind === "not-found"}>
+                <div class="empty">
+                  <h1>Page introuvable</h1>
+                  <a href="#/artists">Revenir aux artistes</a>
+                </div>
+              </Show>
+            </ErrorBoundary>
+          )}
         </Show>
       </main>
       <PlayerBar />
