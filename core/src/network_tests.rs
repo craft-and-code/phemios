@@ -267,3 +267,39 @@ fn old_routes_and_name_collisions_are_distinct_from_missing_entities_or_busy_sto
             .contains("private credential")
     );
 }
+
+#[test]
+fn spectrum_exports_request_original_dimensions_and_preserve_response_bytes() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let server = format!("http://{}", listener.local_addr().unwrap());
+    let worker = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let mut request = Vec::new();
+        while !request.ends_with(b"\r\n\r\n") {
+            let mut byte = [0];
+            stream.read_exact(&mut byte).unwrap();
+            request.push(byte[0]);
+            assert!(request.len() < 8192);
+        }
+        let request = String::from_utf8(request).unwrap();
+        assert!(request.starts_with("GET /api/v1/artwork?"));
+        assert!(request.contains("kind=spectrum"));
+        assert!(!request.contains("size="));
+        stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nContent-Type: image/png\r\nConnection: close\r\n\r\n\x89PNG\r\n\x1a\n").unwrap();
+    });
+    let client = Client {
+        agent: agent(),
+        server,
+        token: "fictional".into(),
+        account: json!({}),
+    };
+    assert_eq!(
+        client.spectrum_download("track:fictional").unwrap(),
+        b"\x89PNG\r\n\x1a\n"
+    );
+    worker.join().unwrap();
+}

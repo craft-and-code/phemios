@@ -205,7 +205,7 @@ pub(crate) async fn aede_download_spectrum(
     let client = client(&state)?;
     let folder = state.downloads.clone();
     blocking(move || {
-        let bytes = client.artwork(&reference, "spectrum")?;
+        let bytes = client.spectrum_download(&reference)?;
         let path = phemios_core::download::publish_spectrum(&folder, &reference, &bytes)?;
         Ok(path.to_string_lossy().into_owned())
     })

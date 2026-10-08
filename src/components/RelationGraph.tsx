@@ -92,6 +92,7 @@ export function RelationGraph(props: {
                 r={19 * node.scale}
                 style={{
                   "--node-fill": `url(#${gradient}-${node.index})`,
+                  "--node-stroke": relationTone(node.depth, node.x, node.y).highlight,
                 }}
               />
             </g>
@@ -106,6 +107,8 @@ export function RelationGraph(props: {
         {(node) => (
           <a
             class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
             href={node.href}
             ref={(el) => {
               links.set(node.reference, el);

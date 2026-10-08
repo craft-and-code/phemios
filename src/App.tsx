@@ -22,6 +22,7 @@ import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
 import { ArtistPage } from "./views/ArtistPage";
+import { createTrackPaging } from "./navigation/track-paging";
 import { TracksPage } from "./views/TracksPage";
 import { TrackPage } from "./views/TrackPage";
 import { RecentPage } from "./views/RecentPage";
@@ -67,6 +68,7 @@ export function App() {
     const domain = yearDomain();
     if (Number.isFinite(domain[0])) setFilters((previous) => ({ ...previous, years: domain }));
   });
+  const trackPaging = createTrackPaging(() => filters().query, library.session);
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
@@ -311,7 +313,11 @@ export function App() {
                         </Show>
                       }
                     >
-                      <TracksPage query={filters().query} />
+                      <TracksPage
+                        query={filters().query}
+                        offset={trackPaging.offset()}
+                        setOffset={trackPaging.setOffset}
+                      />
                     </Show>
                   }
                 >

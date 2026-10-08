@@ -125,7 +125,9 @@ small,
   color: var(--muted);
 }
 .back {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--muted);
   margin-bottom: 24px;
 }

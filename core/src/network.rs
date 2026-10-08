@@ -271,12 +271,31 @@ impl Client {
         } else {
             "1920"
         };
+        self.read_artwork(reference, kind, Some(size))
+    }
+    /// Export a retained track spectrum at its original dimensions, without thumbnail rendering.
+    pub fn spectrum_download(&self, reference: &str) -> Result<Vec<u8>, String> {
+        if !reference.starts_with("track:") || reference.len() > 4096 {
+            return Err("Référence de spectre invalide.".into());
+        }
+        self.read_artwork(reference, "spectrum", None)
+    }
+    fn read_artwork(
+        &self,
+        reference: &str,
+        kind: &str,
+        size: Option<&str>,
+    ) -> Result<Vec<u8>, String> {
         let response = read_response(|| {
-            self.agent
+            let mut request = self
+                .agent
                 .get(format!("{}/api/v1/artwork", self.server))
                 .query("ref", reference)
-                .query("kind", kind)
-                .query("size", size)
+                .query("kind", kind);
+            if let Some(size) = size {
+                request = request.query("size", size);
+            }
+            request
                 .header("Authorization", format!("Bearer {}", self.token))
                 .call()
         })

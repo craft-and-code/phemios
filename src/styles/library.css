@@ -226,7 +226,10 @@
   margin-top: 32px;
 }
 .section-heading h2 {
-  margin-top: 0;
+  margin: 0;
+}
+.section-heading {
+  margin-bottom: 18px;
 }
 .biography {
   max-width: 750px;
@@ -956,11 +959,6 @@ pre {
   pointer-events: none;
 }
 
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
 .m3u-export {
   display: flex;
   align-items: center;
@@ -1083,4 +1081,10 @@ pre {
   .playing-bars > span {
     transition: none;
   }
+}
+.relation-space .relation-node circle {
+  stroke: var(--node-stroke);
+}
+.relation-graph g.highlighted .relation-node circle {
+  stroke: var(--accent);
 }

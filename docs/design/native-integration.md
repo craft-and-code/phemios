@@ -86,3 +86,7 @@ Relations can switch between proven artist collaborations and catalog-associated
 ## Consumed-sample level indicators
 
 Four compact bars report left RMS, left peak, right RMS and right peak from the PCM frames actually consumed by the CPAL callback. Their block measurements include underrun silence and precede the local volume gain, so muting does not fabricate a stop. They are amplitude meters, not four spectral bands. Work is bounded to each output block, with fixed accumulators and relaxed atomics; no callback allocation, lock, network request or logging is introduced. Snapshot levels are zero outside active, unpaused playback. Display follows only the current stable track reference in album/all-track rows, the artist's current-track strip and the footer. Height transitions respect reduced motion; there is no free-running animation.
+
+Spectrum downloads request `/api/v1/artwork` without `size`, so the exported file keeps the retained image's original dimensions; resident previews may still be resized. The native export preserves the authenticated response bytes and publishes only confined, private, collision-safe PNG/JPEG paths. Track-list paging belongs to the shell so opening and returning from a detail retains the selected fifty-row window; a changed query or session resets it.
+
+The relation graph's focused exception to the usual module-size guideline keeps the SVG layers, accessible node actions, labels and one pointer/keyboard rotation state together. Its geometry and palette policies remain separately testable in `relation-space.ts`.

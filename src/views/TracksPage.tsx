@@ -1,18 +1,17 @@
-import { createEffect, createResource, createSignal, For, Show, on } from "solid-js";
+import { createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { parseTrackPage } from "../library/track-page";
 import { TrackResults } from "../components/TrackResults";
 /** All catalog placements, including albumless tracks, use bounded server search pages. */
-export function TracksPage(props: { query: string }) {
+export function TracksPage(props: {
+  query: string;
+  offset: number;
+  setOffset: (value: number) => void;
+}) {
   const library = useLibrary(),
-    [offset, setOffset] = createSignal(0);
-  createEffect(
-    on(
-      () => [props.query, library.session()],
-      () => setOffset(0),
-    ),
-  );
+    offset = () => props.offset,
+    setOffset = props.setOffset;
   const [page] = createResource(
     () =>
       library.session()
@@ -49,8 +48,8 @@ export function TracksPage(props: { query: string }) {
           <>
             <div class="section-heading">
               <p class="muted">
-                {value().total} pistes · {value().total ? offset() + 1 : 0}–
-                {Math.min(offset() + 50, value().total)}
+                {value().total} piste{value().total > 1 ? "s" : ""} ·{" "}
+                {value().total ? offset() + 1 : 0}–{Math.min(offset() + 50, value().total)}
               </p>
               <div class="page-controls">
                 <button disabled={!offset()} onClick={() => setOffset(Math.max(0, offset() - 50))}>

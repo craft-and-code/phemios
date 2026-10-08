@@ -20,7 +20,8 @@ export function RecentPage(props: { query: string }) {
   return (
     <section class="page recent-page">
       <p class="muted">
-        30 derniers jours · date d’entrée dans le catalogue · {albums().length} albums
+        30 derniers jours · date d’entrée dans le catalogue · {albums().length} album
+        {albums().length > 1 ? "s" : ""}
       </p>
       <Show when={unknown()}>
         <p class="notice">
