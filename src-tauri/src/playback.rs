@@ -27,13 +27,14 @@ pub(crate) async fn playback_start(
     tracks: Vec<String>,
     device: String,
     index: usize,
+    policy: String,
     player: State<'_, Arc<Player>>,
     state: State<'_, Aede>,
 ) -> Result<(), String> {
     bridge(version)?;
     let client = client(&state)?;
     let player = player.inner().clone();
-    blocking(move || player.start(client, tracks, device, index)).await
+    blocking(move || player.start(client, tracks, device, index, &policy)).await
 }
 #[tauri::command]
 pub(crate) async fn playback_control(

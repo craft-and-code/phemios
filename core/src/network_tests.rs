@@ -213,3 +213,12 @@ fn analysis_report_is_a_read_only_scoped_capability() {
     assert!(!allowed("POST", "/api/v1/analysis/report"));
     assert!(!allowed("GET", "/api/v1/analysis/report/../../private"));
 }
+#[test]
+fn collection_evaluation_selection_and_confirmed_reset_have_narrow_capabilities() {
+    assert!(allowed("GET", "/api/v1/presentation/playback"));
+    assert!(allowed("GET", "/api/me/v1/collection/albums"));
+    assert!(allowed("DELETE", "/api/me/v1/history"));
+    assert!(!allowed("POST", "/api/me/v1/history"));
+    assert!(!allowed("DELETE", "/api/admin/v1/history"));
+    assert!(!allowed("PUT", "/api/v1/presentation/playback"));
+}

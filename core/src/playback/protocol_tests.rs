@@ -13,9 +13,26 @@ fn pcm_accepts_only_complete_finite_mono_or_stereo_frames() {
 }
 #[test]
 fn start_is_catalog_scoped_and_preserves_the_server_control_budget() {
-    assert!(start("/music/private.flac", 48000).is_err());
-    assert!(start(&format!("track:{}", "a".repeat(4096)), 48000).is_err());
-    let value: Value = serde_json::from_str(&start("track:sample", 48000).unwrap()).unwrap();
+    assert!(
+        start(
+            "/music/private.flac",
+            48000,
+            super::super::Policy::WithoutEffects
+        )
+        .is_err()
+    );
+    assert!(
+        start(
+            &format!("track:{}", "a".repeat(4096)),
+            48000,
+            super::super::Policy::WithoutEffects
+        )
+        .is_err()
+    );
+    let value: Value = serde_json::from_str(
+        &start("track:sample", 48000, super::super::Policy::WithoutEffects).unwrap(),
+    )
+    .unwrap();
     assert_eq!(value["interactive"], true);
     assert_eq!(value["normalize"], "off");
     assert_eq!(value["sample_rate"], 48000);
@@ -33,4 +50,13 @@ fn format_preserves_source_offset_but_refuses_wrong_track_rate_or_channels() {
         broken["channels"] = invalid;
         assert!(format(&broken, "track:one", 48000).is_err());
     }
+}
+
+#[test]
+fn dsp_settings_are_explicit_and_strict_policy_is_refused() {
+    let v: Value =
+        serde_json::from_str(&start("track:sample", 48000, super::super::Policy::Dsp).unwrap())
+            .unwrap();
+    assert_eq!(v["normalize"], "album");
+    assert!(super::super::Policy::parse("bit-perfect").is_err());
 }

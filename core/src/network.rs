@@ -152,7 +152,18 @@ impl Client {
             for (key, value) in query {
                 request = request.query(key, value);
             }
-            request.call()
+            if path == "/api/me/v1/history" {
+                let data = body.unwrap_or(&Value::Null).to_string();
+                if data.len() > 1024 {
+                    return Err("Confirmation trop grande.".into());
+                }
+                request
+                    .force_send_body()
+                    .header("Content-Type", "application/json")
+                    .send(data.as_bytes())
+            } else {
+                request.call()
+            }
         } else {
             let data = body.unwrap_or(&Value::Null).to_string();
             if data.len() > 16 * 1024 {
@@ -172,6 +183,13 @@ impl Client {
             request.send(data.as_bytes())
         }
         .map_err(|_| "Impossible de joindre Aède.".to_string())?;
+        if method == "PUT"
+            && path == "/api/me/v1/collection"
+            && body.is_some_and(|v| v["create_only"] == true)
+            && response.status().as_u16() == 409
+        {
+            return Err("Une collection porte déjà ce nom. Choisissez un autre nom.".into());
+        }
         decode(&bytes(response, JSON_LIMIT)?)
     }
     /// Synchronize complete pages with a bounded retry when a scan changes their epoch.
@@ -279,6 +297,7 @@ fn allowed(method: &str, path: &str) -> bool {
                 "/api/auth/v1/session"
                     | "/api/v1/presentation/artists"
                     | "/api/v1/presentation/albums"
+                    | "/api/v1/presentation/playback"
                     | "/api/v1/stats"
                     | "/api/v1/doctor"
                     | "/api/v1/analysis/report"
@@ -292,12 +311,16 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/m3u"
                     | "/api/me/v1/collections"
                     | "/api/me/v1/collection"
+                    | "/api/me/v1/collection/albums"
                     | "/api/me/v1/history"
             ) || task_path(path, false)
                 || playlist_path(path)
         }
         "PUT" => matches!(path, "/api/me/v1/annotation" | "/api/me/v1/collection"),
-        "DELETE" => matches!(path, "/api/auth/v1/session" | "/api/me/v1/collection"),
+        "DELETE" => matches!(
+            path,
+            "/api/auth/v1/session" | "/api/me/v1/collection" | "/api/me/v1/history"
+        ),
         "POST" => {
             matches!(
                 path,

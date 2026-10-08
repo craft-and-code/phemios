@@ -1,5 +1,5 @@
 use serde_json::{Value, json};
-pub(super) fn start(reference: &str, rate: u32) -> Result<String, String> {
+pub(super) fn start(reference: &str, rate: u32, policy: super::Policy) -> Result<String, String> {
     if !reference
         .strip_prefix("track:")
         .is_some_and(|key| !key.is_empty())
@@ -7,7 +7,7 @@ pub(super) fn start(reference: &str, rate: u32) -> Result<String, String> {
     {
         return Err("Sélection audio invalide.".into());
     }
-    let value=json!({"type":"start","track":reference,"interactive":true,"normalize":"off","sample_rate":rate,"bass":0,"treble":0}).to_string();
+    let value=json!({"type":"start","track":reference,"interactive":true,"normalize":match policy { super::Policy::WithoutEffects => "off", super::Policy::Dsp => "album" },"sample_rate":rate,"bass":0,"treble":0}).to_string();
     if value.len() > 4096 {
         return Err("Référence audio trop longue pour Aède.".into());
     }

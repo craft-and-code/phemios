@@ -28,7 +28,7 @@ describe("native player state", () => {
       { volume: 2 },
       { duration_ms: "0" },
       { status: "unknown" },
-      { total: 65 },
+      { total: 4097 },
     ])
       expect(() => parsePlayback({ ...state, ...change })).toThrow();
     expect(() =>

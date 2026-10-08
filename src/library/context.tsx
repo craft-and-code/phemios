@@ -67,6 +67,7 @@ export function LibraryProvider(props: ParentProps) {
   }, setConnected);
   const player = createPlayback(
     () => connected() && ["user", "admin"].includes(session()?.account.role ?? ""),
+    () => ({ albums: albums(), artists: artists() }),
   );
   const tasks = createJobs(() => !!session());
   const pending = new Map<string, Promise<void>>(),
@@ -215,6 +216,7 @@ export function LibraryProvider(props: ParentProps) {
     setError("");
     try {
       setSession(await loginAede(server, username, password));
+      player.identify(`${session()?.server}:${session()?.account.id}`);
       connection.start();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Connexion impossible.");

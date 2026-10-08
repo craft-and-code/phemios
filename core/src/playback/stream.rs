@@ -56,16 +56,21 @@ pub(super) fn stream(
     client: &Client,
     reference: &str,
     initial: u64,
-    device: &str,
+    output_settings: (&str, super::Policy),
     commands: &Receiver<Command>,
     state: &Mutex<State>,
     signals: &Arc<Signals>,
 ) -> Result<Option<Command>, String> {
+    let (device, policy) = output_settings;
     signals.paused.store(true, Ordering::Relaxed);
     let mut output = Output::open(device, signals.clone())?;
     let mut socket = socket::connect(client)?;
     socket
-        .send(Message::Text(protocol::start(reference, output.rate)?))
+        .send(Message::Text(protocol::start(
+            reference,
+            output.rate,
+            policy,
+        )?))
         .map_err(|_| "Lancement audio interrompu.")?;
     let mut epoch = 0;
     let mut channels = None;

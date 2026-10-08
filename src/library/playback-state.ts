@@ -45,7 +45,7 @@ export function parsePlayback(value: unknown): PlaybackState {
     ) ||
     ![v.reference, v.device, v.error].every((s) => typeof s === "string") ||
     ![v.index, v.total, v.position_ms, v.sample_rate].every(count) ||
-    Number(v.total) > 64 ||
+    Number(v.total) > 4096 ||
     (Number(v.total) > 0 && Number(v.index) >= Number(v.total)) ||
     (v.duration_ms !== null && !count(v.duration_ms)) ||
     typeof v.volume !== "number" ||

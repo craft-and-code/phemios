@@ -468,3 +468,81 @@ legend {
   color: #efb6aa;
   white-space: normal;
 }
+
+.player-options {
+  flex: 0 0 auto;
+}
+.speaker-button,
+.time-toggle {
+  border: 0;
+  background: transparent;
+  padding: 4px;
+}
+.time-toggle {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.playing-position {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.audio-settings {
+  position: relative;
+}
+.audio-settings > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.audio-settings > summary::-webkit-details-marker {
+  display: none;
+}
+.audio-settings-panel {
+  position: absolute;
+  bottom: 48px;
+  right: 0;
+  width: min(340px, 80vw);
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: #171d1c;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px #0008;
+  display: grid;
+  gap: 12px;
+  z-index: 20;
+}
+.audio-settings-panel label {
+  display: grid;
+  gap: 6px;
+}
+.audio-settings-panel select {
+  display: block;
+  width: 100%;
+}
+.audio-settings-panel small {
+  white-space: normal;
+  line-height: 1.5;
+}
+@media (max-width: 780px) {
+  .player-options {
+    display: flex !important;
+  }
+  .player-options > input {
+    display: none;
+  }
+  .player-bar .transport {
+    display: flex;
+    min-width: 160px;
+  }
+  .transport-buttons > button:nth-child(1),
+  .transport-buttons > button:nth-child(5) {
+    display: none;
+  }
+}
+
+/* Keep the transport glyph visible on its accent tile during pointer hover. */
+.play-button:hover:not(:disabled) {
+  color: #161913;
+  background: var(--accent);
+}

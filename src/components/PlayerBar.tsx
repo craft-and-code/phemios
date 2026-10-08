@@ -34,13 +34,26 @@ export function PlayerBar() {
           }
         >
           {(current) => (
-            <div class="playing-cover">
+            <a
+              class="playing-cover"
+              href={`#/album/${encodeURIComponent(current().album.reference)}`}
+              aria-label={`Ouvrir ${current().album.title}`}
+            >
               <Artwork album={current().album} />
-            </div>
+            </a>
           )}
         </Show>
         <span>
-          <strong>{player.current()?.title ?? "Aucun morceau en lecture"}</strong>
+          <strong>
+            <Show when={player.current()}>
+              {(row) => (
+                <span class="playing-position">
+                  {row().number}/{row().albumTotal} ·{" "}
+                </span>
+              )}
+            </Show>
+            {player.current()?.title ?? "Aucun morceau en lecture"}
+          </strong>
           <small>
             {player.current()?.artist} {player.current() ? "· " : ""}
             {status()}
@@ -72,9 +85,27 @@ export function PlayerBar() {
           </button>
           <button
             class="play-button"
-            disabled={player.busy() || !["playing", "paused", "ended"].includes(state().status)}
-            aria-label={state().status === "playing" ? "Mettre en pause" : "Reprendre la lecture"}
-            onClick={() => void player.action(state().status === "playing" ? "pause" : "resume")}
+            disabled={
+              player.busy() ||
+              (!player.ready() && !active()) ||
+              (!active() && state().status !== "ended" && !player.target())
+            }
+            aria-label={
+              state().status === "playing"
+                ? "Mettre en pause"
+                : active()
+                  ? "Reprendre la lecture"
+                  : "Lancer la lecture"
+            }
+            onClick={() =>
+              void (state().status === "playing"
+                ? player.action("pause")
+                : state().status === "paused"
+                  ? player.action("resume")
+                  : player.target()
+                    ? player.startReference()
+                    : player.action("resume"))
+            }
           >
             <Icon name={state().status === "playing" ? "pause" : "play"} />
           </button>
@@ -118,50 +149,101 @@ export function PlayerBar() {
             aria-label="Position de lecture"
             onChange={(event) => void player.action("seek", Number(event.currentTarget.value))}
           />
-          <small>{time(state().duration_ms)}</small>
+          <button
+            class="time-toggle"
+            aria-label={
+              player.remaining() ? "Afficher la durée totale" : "Afficher le temps restant"
+            }
+            aria-pressed={player.remaining()}
+            onClick={player.toggleTime}
+          >
+            {player.remaining() && state().duration_ms !== null
+              ? `−${time(Math.max(0, state().duration_ms! - state().position_ms))}`
+              : time(state().duration_ms)}
+          </button>
         </div>
       </div>
       <div class="player-options">
+        <details class="audio-settings">
+          <summary
+            class="icon-button"
+            aria-label="Réglages audio"
+            title="Sortie et mode de lecture"
+          >
+            <Icon name="settings" />
+          </summary>
+          <div class="audio-settings-panel">
+            <label>
+              Sortie audio
+              <select
+                aria-label="Sortie audio"
+                disabled={!player.ready() || player.busy()}
+                value={player.device()}
+                onFocus={() => {
+                  if (!player.outputs().length) void player.discover();
+                }}
+                onChange={(e) => void player.chooseOutput(e.currentTarget.value)}
+              >
+                <option value="">Sortie système</option>
+                <For each={player.outputs()}>
+                  {(output) => (
+                    <option value={output.id}>
+                      {output.name}
+                      {output.default ? " (par défaut)" : ""}
+                    </option>
+                  )}
+                </For>
+              </select>
+            </label>
+            <button
+              class="icon-button"
+              aria-label="Actualiser les sorties audio"
+              title="Actualiser les sorties audio"
+              disabled={!player.ready() || player.busy()}
+              onClick={() => void player.discover()}
+            >
+              <Icon name="refresh" />
+            </button>
+            <label>
+              Mode de lecture
+              <select
+                aria-label="Mode de lecture"
+                disabled={!player.ready() || player.busy()}
+                value={player.policy()}
+                onChange={(e) => void player.choosePolicy(e.currentTarget.value)}
+              >
+                <option value="without-effects">Sans DSP</option>
+                <option value="dsp">DSP · normalisation album</option>
+                <option value="bit-perfect" disabled>
+                  Bit-perfect · indisponible sur ce flux
+                </option>
+              </select>
+            </label>
+            <small>
+              Sans DSP : effets désactivés ; adaptation au format de la sortie et volume restent
+              actifs. Le flux PCM distant et la sortie système ne garantissent pas le bit-perfect.
+            </small>
+          </div>
+        </details>
         <button
-          class="icon-button"
-          aria-label="Actualiser les sorties audio"
-          disabled={!player.ready() || player.busy()}
-          onClick={() => void player.discover()}
+          class="speaker-button"
+          disabled={!player.ready() && !active()}
+          aria-label={state().volume === 0 ? "Rétablir le son" : "Couper le son"}
+          aria-pressed={state().volume === 0}
+          onClick={() => void player.toggleMute()}
         >
-          <Icon name="volume" />
+          <Icon name={state().volume === 0 ? "muted" : "volume"} />
         </button>
-        <select
-          aria-label="Sortie audio"
-          disabled={!player.ready() || player.busy()}
-          value={player.device()}
-          onFocus={() => {
-            if (!player.outputs().length) void player.discover();
-          }}
-          onChange={(event) => void player.chooseOutput(event.currentTarget.value)}
-        >
-          <option value="">Sortie système</option>
-          <For each={player.outputs()}>
-            {(output) => (
-              <option value={output.id}>
-                {output.name}
-                {output.default ? " (par défaut)" : ""}
-              </option>
-            )}
-          </For>
-        </select>
-        <label>
-          <Icon name="volume" />
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={state().volume}
-            disabled={!player.ready() || player.busy()}
-            aria-label="Volume"
-            onInput={(event) => void player.volume(Number(event.currentTarget.value))}
-          />
-        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={state().volume}
+          disabled={!player.ready() && !active()}
+          aria-label="Volume"
+          onInput={(e) => void player.volume(Number(e.currentTarget.value))}
+        />
       </div>
     </footer>
   );

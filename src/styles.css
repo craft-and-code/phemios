@@ -6,9 +6,10 @@
 
 :root {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: #f1f0eb;
+  color: var(--text);
   background: #111213;
   color-scheme: dark;
+  --text: #f1f0eb;
   --accent: #d8f36a;
   --muted: #a4a6a7;
   --border: #303234;

@@ -7,6 +7,11 @@ export function normalizeName(value: string): string {
     .trim()
     .replaceAll(/œ/gi, "oe")
     .replaceAll(/æ/gi, "ae")
+    .replaceAll(/ø/gi, "o")
+    .replaceAll(/ł/gi, "l")
+    .replaceAll(/[đð]/gi, "d")
+    .replaceAll(/ß/gi, "ss")
+    .replaceAll(/þ/gi, "th")
     .normalize("NFD")
     .replaceAll(/[\u0300-\u036f]/g, "")
     .toLocaleUpperCase("fr");

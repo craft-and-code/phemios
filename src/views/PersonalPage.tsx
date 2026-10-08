@@ -1,4 +1,6 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
+import { HistoryReset } from "../components/HistoryReset";
+import { CollectionAlbums } from "../components/CollectionAlbums";
 import { useLibrary } from "../library/context";
 import { normalizeName, filterAlbums } from "../library/filtering";
 import { AlbumGrid } from "../components/AlbumGrid";
@@ -41,6 +43,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
   const page = () => reads.page()?.data;
   const history = reads.history;
   const refetch = reads.refetch;
+  const [openedCollection, setOpenedCollection] = createSignal("");
   const album = () => library.albums().find((item) => item.reference === selected());
   const matches = (value: string) => normalizeName(value).includes(normalizeName(props.query));
   async function save() {
@@ -134,8 +137,19 @@ export function PersonalPage(props: { section: Section; query: string }) {
             {(row) => (
               <li>
                 <strong>{row.name}</strong>
-                <code>{row.expression}</code>
+                <small>
+                  {row.expression.startsWith("browse-v1:")
+                    ? "Collection dynamique · filtres du catalogue"
+                    : row.expression}
+                </small>
+                <button onClick={() => setOpenedCollection(row.name)}>Voir les albums</button>
                 <button
+                  disabled={row.expression.startsWith("browse-v1:")}
+                  title={
+                    row.expression.startsWith("browse-v1:")
+                      ? "Créez une nouvelle collection depuis les filtres pour choisir d’autres critères"
+                      : "Modifier la règle"
+                  }
                   onClick={() => {
                     setName(row.name);
                     setExpression(row.expression);
@@ -147,6 +161,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
             )}
           </For>
         </ul>
+      </Show>
+      <Show when={props.section === "collections" && openedCollection()}>
+        <CollectionAlbums name={openedCollection()} />
       </Show>
       <Show when={props.section === "analysis" || props.section === "playlists"}>
         <label class="album-selection">
@@ -189,6 +206,12 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
+        <HistoryReset
+          onReset={() => {
+            setOffset(0);
+            void refetch();
+          }}
+        />
         <p class="muted">
           Historique confirmé par Aède ; aucun événement d’écoute n’est inventé par cette vue.
         </p>

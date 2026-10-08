@@ -15,6 +15,7 @@ use std::sync::{
 use std::thread::JoinHandle;
 #[derive(Clone)]
 enum Command {
+    Policy(Policy),
     Pause,
     Resume,
     Next,
@@ -22,6 +23,27 @@ enum Command {
     Seek(u64),
     Stop,
     Output(String),
+}
+#[derive(Clone, Copy, Default)]
+pub(super) enum Policy {
+    #[default]
+    WithoutEffects,
+    Dsp,
+}
+impl Policy {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "without-effects" => Ok(Self::WithoutEffects),
+            "dsp" => Ok(Self::Dsp),
+            _ => Err("Le flux PCM ne prend pas en charge ce mode de lecture.".into()),
+        }
+    }
+    fn name(self) -> &'static str {
+        match self {
+            Self::WithoutEffects => "without-effects",
+            Self::Dsp => "dsp",
+        }
+    }
 }
 struct Worker {
     commands: SyncSender<Command>,
@@ -39,6 +61,7 @@ struct State {
     error: String,
     confirmed: bool,
     device: String,
+    policy: Policy,
 }
 /// One bounded actor owns the socket and device; no credential enters the UI or audio callback.
 pub struct Player {
@@ -67,7 +90,7 @@ impl Player {
     pub fn snapshot(&self) -> Result<Value, String> {
         let s = self.state.lock().map_err(|_| "État audio indisponible.")?;
         Ok(
-            json!({"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -77,14 +100,20 @@ impl Player {
         tracks: Vec<String>,
         device: String,
         index: usize,
+        policy: &str,
     ) -> Result<(), String> {
+        let policy = Policy::parse(policy)?;
         if tracks.is_empty()
-            || tracks.len() > 64
+            || tracks.len() > 4096
             || index >= tracks.len()
             || device.len() > 2048
-            || tracks.iter().any(|r| protocol::start(r, 48000).is_err())
+            || tracks
+                .iter()
+                .any(|r| protocol::start(r, 48000, policy).is_err())
         {
-            return Err("Sélection audio invalide ou trop volumineuse (64 pistes maximum).".into());
+            return Err(
+                "Sélection audio invalide ou trop volumineuse (4096 pistes maximum).".into(),
+            );
         }
         if !matches!(
             client.account()["account"]["role"].as_str(),
@@ -107,10 +136,19 @@ impl Player {
             status: "connecting",
             total: tracks.len(),
             device: device.clone(),
+            policy,
             ..State::default()
         };
         let handle = std::thread::spawn(move || {
-            if let Err(error) = actor::run(client, tracks, index, device, rx, &state, &signals) {
+            if let Err(error) = actor::run(
+                client,
+                tracks,
+                index,
+                (device, policy),
+                rx,
+                &state,
+                &signals,
+            ) {
                 signals.paused.store(true, Ordering::Relaxed);
                 if let Ok(mut s) = state.lock() {
                     s.status = "error";
@@ -157,6 +195,7 @@ impl Player {
             return Ok(());
         }
         let command = match action {
+            "policy" => Command::Policy(Policy::parse(value.as_str().ok_or("Mode invalide.")?)?),
             "pause" => Command::Pause,
             "resume" => Command::Resume,
             "next" => Command::Next,

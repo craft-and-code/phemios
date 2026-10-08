@@ -7,11 +7,12 @@ pub(super) fn run(
     client: Client,
     tracks: Vec<String>,
     mut index: usize,
-    mut device: String,
+    output: (String, super::Policy),
     commands: Receiver<Command>,
     state: &Mutex<State>,
     signals: &Arc<Signals>,
 ) -> Result<(), String> {
+    let (mut device, mut policy) = output;
     let mut position = 0;
     let mut paused = false;
     loop {
@@ -31,7 +32,7 @@ pub(super) fn run(
                 &client,
                 &tracks[index],
                 position,
-                &device,
+                (&device, policy),
                 &commands,
                 state,
                 signals,
@@ -54,6 +55,10 @@ pub(super) fn run(
             .map_err(|_| "État audio indisponible.")?
             .position;
         match action {
+            Command::Policy(value) => {
+                policy = value;
+                update(state, |s| s.policy = value)?;
+            }
             Command::Stop => {
                 update(state, |s| s.status = "idle")?;
                 return Ok(());

@@ -4,26 +4,79 @@ import {
   playbackOutputs,
   playbackStart,
   playbackState,
+  requestAede,
 } from "../platform/desktop";
 import { idlePlayback, parseOutputs, parsePlayback, type AudioOutput } from "./playback-state";
 import type { Track } from "./server";
-import type { Album } from "./types";
-interface Selection {
-  reference: string;
-  title: string;
-  album: Album;
-  artist: string;
-}
+import { playbackSelection, type PlayableSelection } from "./playback-selection";
+import type { Artist, Album } from "./types";
 const message = (failure: unknown) =>
   failure instanceof Error ? failure.message : "Lecture indisponible.";
 /** Explicit playback owns one serialized poll; it never starts during offline browsing. */
-export function createPlayback(ready: Accessor<boolean>) {
+export function createPlayback(
+  ready: Accessor<boolean>,
+  catalog?: () => { albums: readonly Album[]; artists: readonly Artist[] },
+) {
   const [state, setState] = createSignal(idlePlayback),
     [outputs, setOutputs] = createSignal<AudioOutput[]>([]),
     [device, setDevice] = createSignal(""),
-    [selection, setSelection] = createSignal<Selection[]>([]),
+    [selection, setSelection] = createSignal<PlayableSelection[]>([]),
     [error, setError] = createSignal(""),
-    [busy, setBusy] = createSignal(false);
+    [busy, setBusy] = createSignal(false),
+    [target, setTarget] = createSignal(""),
+    [remaining, setRemaining] = createSignal(false),
+    [policy, setPolicy] = createSignal("without-effects");
+  let audibleVolume = 0.5,
+    preferenceKey = "";
+  function identify(key: string) {
+    preferenceKey = `phemios.playback-time:${key}`;
+    try {
+      setRemaining(sessionStorage.getItem(preferenceKey) === "remaining");
+    } catch {
+      setError("Préférence de durée indisponible.");
+    }
+  }
+  function toggleTime() {
+    const next = !remaining();
+    setRemaining(next);
+    if (preferenceKey)
+      try {
+        sessionStorage.setItem(preferenceKey, next ? "remaining" : "duration");
+      } catch {
+        setError("Préférence de durée non mémorisée.");
+      }
+  }
+  async function choosePolicy(value: string) {
+    if (!["without-effects", "dsp"].includes(value) || busy()) return;
+    setPolicy(value);
+    if (["playing", "paused"].includes(state().status)) await action("policy", value);
+  }
+  async function startReference(reference = target()) {
+    if (!ready() || busy() || !reference || !catalog) return;
+    setBusy(true);
+    setError("");
+    cancel();
+    const epoch = generation;
+    try {
+      const response = await requestAede("/api/v1/presentation/playback", { ref: reference });
+      if (epoch !== generation) return;
+      const data = catalog(),
+        rows = playbackSelection(response, data.albums, data.artists);
+      await playbackStart(
+        rows.map((r) => r.reference),
+        device(),
+        0,
+        policy(),
+      );
+      if (epoch !== generation) return;
+      setSelection(rows);
+      await refresh(epoch);
+    } catch (failure) {
+      if (epoch === generation) setError(message(failure));
+    } finally {
+      if (epoch === generation) setBusy(false);
+    }
+  }
   let timer: ReturnType<typeof setTimeout> | undefined,
     generation = 0,
     lifetime = 0;
@@ -68,15 +121,25 @@ export function createPlayback(ready: Accessor<boolean>) {
     cancel();
     const epoch = generation;
     try {
-      if (!tracks.length || tracks.length > 64 || index < 0 || index >= tracks.length)
-        throw new Error("Sélection limitée à 64 pistes.");
+      if (!tracks.length || tracks.length > 4096 || index < 0 || index >= tracks.length)
+        throw new Error("Sélection limitée à 4096 pistes.");
       await playbackStart(
         tracks.map((t) => t.reference),
         device(),
         index,
+        policy(),
       );
       if (epoch !== generation) return;
-      setSelection(tracks.map((t) => ({ reference: t.reference, title: t.title, album, artist })));
+      setSelection(
+        tracks.map((t, i) => ({
+          reference: t.reference,
+          title: t.title,
+          album,
+          artist,
+          number: i + 1,
+          albumTotal: tracks.length,
+        })),
+      );
       await refresh(epoch);
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
@@ -97,6 +160,7 @@ export function createPlayback(ready: Accessor<boolean>) {
   let pendingVolume: number | undefined,
     volumeRunning = false;
   async function volume(value: number) {
+    if (value > 0) audibleVolume = value;
     pendingVolume = value;
     if (volumeRunning) return;
     volumeRunning = true;
@@ -113,6 +177,9 @@ export function createPlayback(ready: Accessor<boolean>) {
     } finally {
       volumeRunning = false;
     }
+  }
+  async function toggleMute() {
+    await volume(state().volume > 0 ? 0 : audibleVolume);
   }
   async function chooseOutput(id: string) {
     if (busy()) return;
@@ -133,12 +200,25 @@ export function createPlayback(ready: Accessor<boolean>) {
     setOutputs([]);
     setDevice("");
     setError("");
+    setTarget("");
+    setRemaining(false);
+    preferenceKey = "";
+    setPolicy("without-effects");
   }
   onCleanup(() => {
     lifetime++;
     cancel();
   });
   return {
+    target,
+    setTarget,
+    startReference,
+    identify,
+    remaining,
+    toggleTime,
+    policy,
+    choosePolicy,
+    toggleMute,
     state,
     outputs,
     device,
@@ -151,6 +231,9 @@ export function createPlayback(ready: Accessor<boolean>) {
     chooseOutput,
     volume,
     reset,
-    current: () => selection().find((t) => t.reference === state().reference),
+    current: () => {
+      const row = selection()[state().index];
+      return row?.reference === state().reference ? row : undefined;
+    },
   };
 }

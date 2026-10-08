@@ -12,6 +12,7 @@ import {
 import { browseArtists } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
+import { SelectionCollection } from "./components/SelectionCollection";
 import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
 import { Icon } from "./components/Icon";
@@ -73,6 +74,9 @@ export function App() {
     return value.kind === "album"
       ? library.albums().find((item) => item.reference === value.reference)
       : undefined;
+  });
+  createEffect(() => {
+    library.player.setTarget(selectedAlbum()?.reference ?? selectedArtist()?.reference ?? "");
   });
   const backLink = createMemo(() => {
     if (selectedArtist()) return { href: "#/artists", label: "Tous les artistes" };
@@ -239,6 +243,7 @@ export function App() {
             </Show>
             <span>{library.busy() ? "Synchronisation…" : ""}</span>
             <Show when={hasFilters()}>
+              <SelectionCollection section={section()} filters={filters()} />
               <button
                 class="icon-button"
                 title="Inverser l’ordre alphabétique"

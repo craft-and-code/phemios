@@ -1,4 +1,7 @@
 const paths: Record<string, string> = {
+  muted: "M3 9h4l5-4v14l-5-4H3V9ZM17 9l5 6M22 9l-5 6",
+  refresh: "M3 12a9 9 0 1 0 3-6.7M3 3v6h6",
+  settings: "M4 6h16M4 12h16M4 18h16M9 3v6M16 9v6M7 15v6",
   stop: "M6 6h12v12H6V6Z",
   close: "M6 6l12 12M6 18 18 6",
   download: "M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4",
