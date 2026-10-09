@@ -3,12 +3,12 @@ import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { normalizeName } from "../library/filtering";
 import { tagCatalog, taggedEntries, taggedTrackWindow } from "../library/tag-catalog";
-import { parseTrackDetail } from "../library/track-detail";
+import { cachedTagCard, parseTagCard } from "../library/tag-cards";
 import { requestAede } from "../platform/desktop";
-import { AlbumGrid } from "../components/AlbumGrid";
+import { referenceSource } from "../library/sources";
 import { SourceBadge } from "../components/SourceBadge";
-import { TrackResults } from "../components/TrackResults";
-/** Personal tags join the two signed-in owners without copying tags into audio metadata. */
+import { Icon } from "../components/Icon";
+/** Every personal tagged target gets a card; unavailable references remain visible in the result count. */
 export function TagsPage(props: {
   query: string;
   selected: string;
@@ -16,57 +16,71 @@ export function TagsPage(props: {
   offset: number;
   setOffset: (offset: number) => void;
 }) {
-  const library = useLibrary();
-  const annotations = () => Object.values(library.annotations);
+  const library = useLibrary(),
+    annotations = () => Object.values(library.annotations);
   const vocabulary = createMemo(() => tagCatalog(annotations()));
-  const visibleTags = () =>
-    vocabulary().filter((tag) => normalizeName(tag.label).includes(normalizeName(props.query)));
   const entries = createMemo(() => taggedEntries(annotations(), props.selected, props.query));
-  const references = createMemo(() => new Set(entries().map((row) => row.reference)));
-  const artists = () => library.artists().filter((row) => references().has(row.reference));
-  const albums = () => library.albums().filter((row) => references().has(row.reference));
-  const tracks = createMemo(() =>
-    entries()
-      .filter((row) => row.reference.startsWith("track:"))
-      .map((row) => row.reference),
-  );
   const offset = () =>
-    Math.min(props.offset, Math.max(0, Math.ceil(tracks().length / 10) - 1) * 10);
-  const unresolved = () => entries().length - artists().length - albums().length - tracks().length;
+    Math.min(props.offset, Math.max(0, Math.ceil(entries().length / 10) - 1) * 10);
+  const targets = () => entries().slice(offset(), offset() + 10);
+  const cached = (reference: string) =>
+    cachedTagCard(reference, library.artists(), library.albums());
   const [details, { refetch }] = createResource(
     () => ({
-      references: tracks(),
+      references: entries().map((row) => row.reference),
       offset: offset(),
       local: library.localSession(),
       server: library.serverSession(),
+      snapshot: library.snapshot(),
     }),
     (key) =>
       taggedTrackWindow(key.references, key.offset, async (reference) => {
+        const known = cached(reference);
+        if (known) return known;
         const session = library.sessionFor(reference);
-        if (!session) throw new Error(t("Connectez Aède pour consulter ce titre."));
-        const detail = parseTrackDetail(
-          await requestAede("/api/v1/track", { ref: reference }),
+        if (!session)
+          throw new Error(t("Connectez-vous pour accéder aux données de votre compte."));
+        const path = reference.startsWith("artist:")
+          ? "artist"
+          : reference.startsWith("release:")
+            ? "album"
+            : reference.startsWith("track:")
+              ? "track"
+              : undefined;
+        if (!path) throw new Error(t("Cet élément n’a pas encore de vue dédiée."));
+        const card = parseTagCard(
+          await requestAede(`/api/v1/${path}`, { ref: reference }),
           reference,
         );
         if (session !== library.sessionFor(reference)) throw new Error(t("Session invalide."));
-        return detail;
+        return card;
       }),
   );
+  const result = (reference: string) => details()?.find((row) => row.reference === reference);
+  const card = (reference: string) => {
+    const row = result(reference);
+    return cached(reference) ?? (row && "track" in row ? row.track : undefined);
+  };
   return (
     <section class="page tags-page">
       <Show when={!library.localSession() && !library.serverSession()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
-      <p class="muted">{t("Tags personnels enregistrés sur vos artistes, albums et pistes.")}</p>
+      <p class="muted">{t("Une carte par élément tagué : artiste, album ou piste.")}</p>
       <div class="tag-choices" aria-label={t("Choisir un tag")}>
         <button aria-pressed={!props.selected} onClick={() => props.onSelect("")}>
           {t("Tous les tags")}
         </button>
-        <For each={visibleTags()}>
+        <For
+          each={vocabulary().filter((tag) =>
+            normalizeName(tag.label).includes(normalizeName(props.query)),
+          )}
+        >
           {(tag) => (
             <button
               aria-pressed={props.selected === tag.key}
               onClick={() => props.onSelect(props.selected === tag.key ? "" : tag.key)}
+              title={t("{0} élément(s) tagué(s)", tag.count)}
             >
               {tag.label}
               <span class="tag-count">{tag.count}</span>
@@ -77,105 +91,96 @@ export function TagsPage(props: {
       <Show when={!entries().length}>
         <p class="empty">{t("Aucun élément tagué dans cette sélection.")}</p>
       </Show>
-      <Show when={artists().length}>
-        <section>
-          <h2>{t("Artistes")}</h2>
-          <ul class="personal-list tagged-artists">
-            <For each={artists()}>
-              {(artist) => (
-                <li>
-                  <a href={`#/artist/${encodeURIComponent(artist.reference)}`}>{artist.name}</a>
-                  <SourceBadge reference={artist.reference} />
-                </li>
-              )}
-            </For>
-          </ul>
-        </section>
+      <Show when={details.loading}>
+        <p role="status">{t("Chargement…")}</p>
       </Show>
-      <Show when={albums().length}>
-        <section>
-          <h2>{t("Albums")}</h2>
-          <AlbumGrid albums={albums()} />
-        </section>
+      <Show when={details.error}>
+        <p role="alert">{String(details.error)}</p>
+        <button onClick={() => refetch()}>{t("Réessayer")}</button>
       </Show>
-      <Show when={tracks().length}>
-        <section>
-          <div class="section-heading">
-            <h2>{t("Pistes")}</h2>
-            <div class="page-controls">
-              <button
-                disabled={!offset()}
-                onClick={() => props.setOffset(Math.max(0, offset() - 10))}
+      <div class="album-grid tagged-grid">
+        <For each={targets()}>
+          {(target) => (
+            <div class="tagged-card">
+              <Show
+                when={card(target.reference)}
+                fallback={
+                  <div class="tagged-placeholder">
+                    <Icon name="tags" />
+                    <strong>{t("Élément tagué indisponible.")}</strong>
+                    <Show when={result(target.reference)}>
+                      {(row) => (
+                        <p role="alert">
+                          {(() => {
+                            const value = row();
+                            return "error" in value ? value.error : "";
+                          })()}
+                        </p>
+                      )}
+                    </Show>
+                    <button onClick={() => refetch()}>{t("Réessayer")}</button>
+                  </div>
+                }
               >
-                {t("Précédentes")}
-              </button>
-              <span>
-                {offset() + 1}–{Math.min(offset() + 10, tracks().length)} / {tracks().length}
-              </span>
-              <button
-                disabled={offset() + 10 >= tracks().length}
-                onClick={() => props.setOffset(offset() + 10)}
-              >
-                {t("Suivantes")}
-              </button>
-            </div>
-          </div>
-          <Show when={details.loading}>
-            <p role="status">{t("Chargement des pistes…")}</p>
-          </Show>
-          <Show when={details.error}>
-            <p role="alert">{String(details.error)}</p>
-            <button onClick={() => refetch()}>{t("Réessayer")}</button>
-          </Show>
-          <Show when={!details.loading && !details.error}>
-            <ol class="track-list">
-              <For each={details()}>
-                {(row, index) => (
-                  <Show
-                    when={"track" in row ? row.track : undefined}
-                    fallback={
-                      <li class="tagged-unavailable">
-                        <a href={`#/track/${encodeURIComponent(row.reference)}`}>
-                          {t("Titre indisponible")}
-                        </a>
-                        <SourceBadge reference={row.reference} />
-                        <p role="alert">{"error" in row ? row.error : ""}</p>
-                        <button onClick={() => refetch()}>{t("Réessayer")}</button>
-                      </li>
-                    }
+                {(value) => (
+                  <a
+                    class="album-card"
+                    href={`#/${value().kind}/${encodeURIComponent(target.reference)}`}
                   >
-                    {(track) => (
-                      <TrackResults
-                        track={track()}
-                        number={offset() + index() + 1}
-                        origin
-                        onPlay={() => void library.player.startReference(row.reference)}
-                        context={
-                          <Show when={track().release}>
-                            {(reference) => (
-                              <a href={`#/album/${encodeURIComponent(reference())}`}>
-                                {library.albums().find((album) => album.reference === reference())
-                                  ?.title ?? t("Album")}
-                              </a>
-                            )}
-                          </Show>
+                    <div class="artwork real-art tagged-artwork">
+                      <Show
+                        when={
+                          library.image(target.reference, "portrait") ??
+                          (value().cover ? library.image(value().cover!, "cover") : undefined)
                         }
-                      />
-                    )}
-                  </Show>
+                        fallback={
+                          <Icon
+                            name={
+                              value().kind === "artist"
+                                ? "users"
+                                : value().kind === "track"
+                                  ? "genres"
+                                  : "disc"
+                            }
+                          />
+                        }
+                      >
+                        {(url) => <img src={url()} alt="" decoding="async" />}
+                      </Show>
+                    </div>
+                    <strong>{value().label}</strong>
+                  </a>
                 )}
-              </For>
-            </ol>
-          </Show>
-        </section>
-      </Show>
-      <Show when={unresolved() > 0}>
-        <p class="notice">
-          {t(
-            "{0} élément(s) tagué(s) absent(s) du catalogue en cache. Synchronisez la bibliothèque pour les retrouver.",
-            unresolved(),
+              </Show>
+              <SourceBadge reference={target.reference} />
+              <Show when={!cached(target.reference) && !target.reference.startsWith("track:")}>
+                <button
+                  class="metadata-link"
+                  disabled={!library.sessionFor(target.reference) || library.busy()}
+                  onClick={() => void library.sync(referenceSource(target.reference))}
+                >
+                  {t("Synchroniser la bibliothèque")}
+                </button>
+              </Show>
+            </div>
           )}
-        </p>
+        </For>
+      </div>
+      <Show when={entries().length > 10}>
+        <div class="page-controls">
+          <button disabled={!offset()} onClick={() => props.setOffset(Math.max(0, offset() - 10))}>
+            {t("Précédentes")}
+          </button>
+          <span>
+            {offset() + 1}–{Math.min(offset() + 10, entries().length)} / {entries().length}
+          </span>
+          <button
+            disabled={offset() + 10 >= entries().length}
+            onClick={() => props.setOffset(offset() + 10)}
+          >
+            {t("Suivantes")}
+          </button>
+        </div>
       </Show>
     </section>
   );

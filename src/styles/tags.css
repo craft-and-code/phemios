@@ -30,3 +30,35 @@
   color: var(--accent-text);
   border-color: var(--accent);
 }
+.tagged-card {
+  min-width: 0;
+}
+.tagged-card > .source-badge {
+  display: inline-block;
+  margin-top: 6px;
+}
+.tagged-grid .tagged-artwork {
+  display: grid;
+  place-items: center;
+}
+.tagged-artwork > svg {
+  width: 42px;
+  height: 42px;
+  color: var(--muted);
+}
+.tagged-placeholder {
+  min-height: 180px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.tagged-placeholder svg {
+  width: 28px;
+  height: 28px;
+}
+.tagged-placeholder p {
+  font-size: 12px;
+}

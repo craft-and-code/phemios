@@ -31,7 +31,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "recent", label: t("Nouveautés"), symbol: "sparkles" },
   { id: "compilations", label: t("Compilations"), symbol: "layers" },
   { id: "countries", label: t("Pays"), symbol: "globe" },
-  { id: "genres", label: t("Genres"), symbol: "tags" },
+  { id: "genres", label: t("Genres"), symbol: "genres" },
   { id: "favourites", label: t("Favoris"), symbol: "heart" },
   { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
