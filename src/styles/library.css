@@ -1014,7 +1014,10 @@ pre {
 }
 .page-controls {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
 }
 .relation-space .relation-node circle {
   filter: none;

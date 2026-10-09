@@ -28,18 +28,21 @@ interface Playlist {
 /** Existing owner-scoped services, with explicit save and download actions. */
 export function PersonalPage(props: { section: Section; query: string }) {
   const library = useLibrary(),
+    [editingCollection, setEditingCollection] = createSignal(false),
     [name, setName] = createSignal(""),
     [expression, setExpression] = createSignal(""),
     [selected, setSelected] = createSignal(""),
     [message, setMessage] = createSignal(""),
     [saving, setSaving] = createSignal(false),
     [offset, setOffset] = createSignal(0);
+  let nameInput: HTMLInputElement | undefined;
   createEffect(() => {
     void props.section;
     void library.source();
     setOffset(0);
     setSelected("");
     setMessage("");
+    setEditingCollection(false);
   });
   const reads = createPersonalReads(
     () => props.section,
@@ -54,15 +57,26 @@ export function PersonalPage(props: { section: Section; query: string }) {
   const album = () => library.albums().find((item) => item.reference === selected());
   const matches = (value: string) => normalizeName(value).includes(normalizeName(props.query));
   async function save() {
+    const session = library.session(),
+      source = library.source();
+    if (!session || session.account.role === "auditor") return;
     setSaving(true);
     setMessage("");
     try {
-      await requestAede("/api/me/v1/collection", { name: name() }, "PUT", {
-        expression: expression(),
-      });
+      await requestAede(
+        "/api/me/v1/collection",
+        { name: name() },
+        "PUT",
+        {
+          expression: expression(),
+        },
+        source,
+      );
+      if (session !== library.session() || source !== library.source()) return;
       setMessage(t("Collection enregistrée dans votre compte."));
       setName("");
       setExpression("");
+      setEditingCollection(false);
       void refetch();
     } catch (failure) {
       setMessage(failure instanceof Error ? failure.message : t("Enregistrement impossible."));
@@ -112,40 +126,70 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
-        <form
-          class="collection-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save();
+        <button
+          class="collection-create"
+          aria-expanded={editingCollection()}
+          aria-controls="collection-editor"
+          disabled={!library.session() || library.session()?.account.role === "auditor"}
+          onClick={() => {
+            setName("");
+            setExpression("");
+            setEditingCollection(true);
+            queueMicrotask(() => nameInput?.focus());
           }}
         >
-          <label>
-            {t("Nom de la collection")}{" "}
-            <input
-              required
-              value={name()}
-              onInput={(event) => setName(event.currentTarget.value)}
-            />
-          </label>
-          <label>
-            {t("Règle Aède")}{" "}
-            <input
-              required
-              value={expression()}
-              placeholder="genre:Jazz"
-              onInput={(event) => setExpression(event.currentTarget.value)}
-            />
-          </label>
-          <small>{t("La règle est validée et enregistrée par le moteur Aède.")}</small>
-          <button
-            class="primary"
-            disabled={
-              !library.session() || library.session()?.account.role === "auditor" || saving()
-            }
+          {t("Créer une collection")}
+        </button>
+        <Show when={editingCollection()}>
+          <form
+            id="collection-editor"
+            class="collection-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
           >
-            {t("Enregistrer la collection")}{" "}
-          </button>
-        </form>
+            <label>
+              {t("Nom de la collection")}{" "}
+              <input
+                ref={(element) => {
+                  nameInput = element;
+                }}
+                required
+                value={name()}
+                onInput={(event) => setName(event.currentTarget.value)}
+              />
+            </label>
+            <label>
+              {t("Règle Aède")}{" "}
+              <input
+                required
+                value={expression()}
+                placeholder="genre:Jazz"
+                onInput={(event) => setExpression(event.currentTarget.value)}
+              />
+            </label>
+            <small>{t("La règle est validée et enregistrée par le moteur Aède.")}</small>
+            <div class="annotation-edit-actions">
+              <button
+                class="primary"
+                disabled={
+                  !library.session() || library.session()?.account.role === "auditor" || saving()
+                }
+              >
+                {t("Enregistrer la collection")}{" "}
+              </button>
+              <button
+                type="button"
+                class="quiet"
+                disabled={saving()}
+                onClick={() => setEditingCollection(false)}
+              >
+                {t("Annuler")}
+              </button>
+            </div>
+          </form>
+        </Show>
         <ul class="personal-list">
           <For
             each={(page()?.items as Collection[] | undefined)?.filter((row) =>
@@ -175,6 +219,8 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   onClick={() => {
                     setName(row.name);
                     setExpression(row.expression);
+                    setEditingCollection(true);
+                    queueMicrotask(() => nameInput?.focus());
                   }}
                 >
                   {t("Modifier")}{" "}

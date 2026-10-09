@@ -63,6 +63,26 @@ export function setTagExcluded(
   storage.setItem(key, encoded);
   return next;
 }
+/** Explicitly re-entered, successfully saved tags become suggestions again in this scope only. */
+export function rememberEnteredTags(
+  storage: Store,
+  session: AccountSession,
+  tags: readonly string[],
+  source: SourceId = "server",
+): Entry[] {
+  const entries = readTagPreferences(storage),
+    id = scope(session, source),
+    entered = new Set(tags.map(normalizeName));
+  const next = entries
+    .map((row) =>
+      row.scope === id
+        ? { ...row, tags: row.tags.filter((tag) => !entered.has(normalizeName(tag))) }
+        : row,
+    )
+    .filter((row) => row.tags.length);
+  storage.setItem(key, JSON.stringify(next));
+  return next;
+}
 export function suggestionVocabulary(
   vocabulary: readonly string[],
   entries: readonly Entry[],
@@ -84,6 +104,14 @@ export function createTagPreferences(storage: Store = localStorage) {
   return {
     entries,
     error,
+    remember: (session: AccountSession, tags: readonly string[], source: SourceId = "server") => {
+      try {
+        setEntries(rememberEnteredTags(storage, session, tags, source));
+        setError("");
+      } catch (failure) {
+        setError(String(failure));
+      }
+    },
     update: (
       session: AccountSession,
       tag: string,

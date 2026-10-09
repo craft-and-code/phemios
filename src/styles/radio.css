@@ -201,7 +201,12 @@
 .radio-stations li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding-right: 8px;
+  overflow: hidden;
+  background: var(--surface);
 }
 .radio-stations .radio-station {
   flex: 1;
@@ -213,4 +218,17 @@
 }
 .radio-favourites {
   margin-bottom: 28px;
+}
+
+.radio-stations .radio-station {
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.radio-stations li.selected {
+  border-color: var(--accent);
+  background: #23291d;
+}
+.radio-stations .radio-favourite {
+  flex-shrink: 0;
 }

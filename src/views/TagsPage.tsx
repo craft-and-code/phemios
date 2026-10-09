@@ -68,7 +68,6 @@ export function TagsPage(props: {
       <Show when={!library.localSession() && !library.serverSession()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
-      <p class="muted">{t("Une carte par élément tagué : artiste, album ou piste.")}</p>
       <Show when={vocabulary().length}>
         <div class="tag-choices" aria-label={t("Choisir un tag")}>
           <button aria-pressed={!props.selected.length} onClick={() => props.onSelect([])}>

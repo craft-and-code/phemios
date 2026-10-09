@@ -1,3 +1,4 @@
+import { normalizeName } from "../library/filtering";
 import { suggestionVocabulary } from "../library/tag-preferences";
 import { referenceSource } from "../library/sources";
 import { StarRating } from "./StarRating";
@@ -39,7 +40,8 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     [failure, setFailure] = createSignal("");
   let readTags = () => tags(),
     readNote = () => note(),
-    disposed = false;
+    disposed = false,
+    enteredTags: string[] = [];
   const revisions = { rating: 0, loved: 0 };
   onCleanup(() => {
     disposed = true;
@@ -138,6 +140,15 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       if (current(held)) {
         setSavedNote(currentNote);
         setSavedTags(currentTags);
+        const session = library.sessionFor(props.reference);
+        if (session && enteredTags.length)
+          library.tagPreferences.remember(
+            session,
+            enteredTags.filter((tag) =>
+              currentTags.some((value) => normalizeName(value) === normalizeName(tag)),
+            ),
+            referenceSource(props.reference),
+          );
         setMessage(t("Notes et tags enregistrés dans votre compte Aède."));
         setEditing(false);
       }
@@ -211,6 +222,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
             aria-label={t("Modifier les tags et notes")}
             title={t("Modifier les tags et notes")}
             onClick={() => {
+              enteredTags = [];
               setEditorUnavailable(true);
               setEditing(true);
             }}
@@ -224,7 +236,12 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         fallback={
           <div class="annotation-reading">
             <div class="tag-pills" aria-label={t("Tags enregistrés")}>
-              <For each={savedTags()}>{(tag) => <span class="tag-pill">{tag}</span>}</For>
+              <Show
+                when={savedTags().length}
+                fallback={<p class="muted">{t("Aucun tag personnel.")}</p>}
+              >
+                <For each={savedTags()}>{(tag) => <span class="tag-pill">{tag}</span>}</For>
+              </Show>
             </div>
             <Show
               when={savedNote()}
@@ -243,6 +260,10 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         }
       >
         <TagInput
+          autofocus
+          onEntered={(value) => {
+            enteredTags.push(...value);
+          }}
           value={tags()}
           vocabulary={suggestionVocabulary(
             tagVocabulary(
@@ -302,6 +323,9 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
             {t("Annuler")}{" "}
           </button>
         </div>
+      </Show>
+      <Show when={library.tagPreferences.error()}>
+        <p role="alert">{library.tagPreferences.error()}</p>
       </Show>
       <p role="status">
         {pending()

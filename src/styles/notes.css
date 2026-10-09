@@ -170,6 +170,8 @@
   align-items: center;
   gap: 4px;
   border-radius: 20px;
+  height: 28px;
+  box-sizing: border-box;
   padding: 3px 10px;
   background: #303a24;
   color: var(--accent);
@@ -179,8 +181,10 @@
   display: grid;
   place-items: center;
   padding: 2px;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  flex-shrink: 0;
   border: 0;
   border-radius: 50%;
   background: transparent;

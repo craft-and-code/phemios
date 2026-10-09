@@ -106,18 +106,27 @@ export function LabelsPage(props: { query: string }) {
         <EmptyState icon="label">{t("Aucun label dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={current().some((page) => page.total > 50) || offset()}>
-        <div class="page-controls">
-          <button disabled={!offset()} onClick={() => setOffset(Math.max(0, offset() - 50))}>
-            {t("Précédent")}
+        <nav class="page-controls" aria-label={t("Pages des labels")}>
+          <button
+            class="icon-button quiet"
+            aria-label={t("Précédent")}
+            title={t("Précédent")}
+            disabled={!offset()}
+            onClick={() => setOffset(Math.max(0, offset() - 50))}
+          >
+            <Icon name="back" />
           </button>
           <span>{t("Page {0}", offset() / 50 + 1)}</span>
           <button
+            class="icon-button quiet"
+            aria-label={t("Suivant")}
+            title={t("Suivant")}
             disabled={!current().some((page) => page.total > offset() + 50)}
             onClick={() => setOffset(offset() + 50)}
           >
-            {t("Suivant")}
+            <Icon name="forward" />
           </button>
-        </div>
+        </nav>
       </Show>
     </section>
   );

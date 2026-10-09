@@ -41,29 +41,42 @@ export function DeleteCollection(props: { name: string; onDeleted: () => void })
   }
   return (
     <div class="collection-delete">
-      <button
-        class="icon-button quiet"
-        aria-label={t("Supprimer la collection {0}", props.name)}
-        disabled={!writable() || busy()}
-        onClick={() => setConfirm(true)}
+      <Show
+        when={confirm()}
+        fallback={
+          <button
+            class="icon-button quiet"
+            aria-label={t("Supprimer la collection {0}", props.name)}
+            disabled={!writable() || busy()}
+            onClick={() => setConfirm(true)}
+          >
+            <Icon name="trash" />
+          </button>
+        }
       >
-        <Icon name="trash" />
-      </button>
-      <Show when={confirm()}>
         <div
-          class="history-confirm"
+          class="collection-delete-confirm"
           role="group"
           aria-label={t("Supprimer la collection {0}", props.name)}
         >
-          <p>{t("Supprimer cette collection ? Les albums et les fichiers sont conservés.")}</p>
-          <div class="choices">
-            <button disabled={busy()} onClick={() => void remove()}>
-              {t("Supprimer")}
-            </button>
-            <button disabled={busy()} onClick={() => setConfirm(false)}>
-              {t("Annuler")}
-            </button>
-          </div>
+          <span>{t("Supprimer ?")}</span>
+          <button
+            class="icon-button quiet"
+            disabled={busy()}
+            aria-label={t("Confirmer la suppression de {0}", props.name)}
+            title={t("Supprimer la collection uniquement")}
+            onClick={() => void remove()}
+          >
+            <Icon name="trash" />
+          </button>
+          <button
+            class="icon-button quiet"
+            disabled={busy()}
+            aria-label={t("Annuler")}
+            onClick={() => setConfirm(false)}
+          >
+            <Icon name="close" />
+          </button>
         </div>
       </Show>
       <Show when={error()}>

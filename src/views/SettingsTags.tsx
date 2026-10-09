@@ -2,8 +2,7 @@ import { createMemo, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { tagVocabulary } from "../library/tags";
-import { excludedTags } from "../library/tag-preferences";
-import { normalizeName } from "../library/filtering";
+import { suggestionVocabulary } from "../library/tag-preferences";
 import { referenceSource, sourceLabel } from "../library/sources";
 import { Icon } from "../components/Icon";
 import { EmptyState } from "../components/EmptyState";
@@ -11,7 +10,6 @@ import { EmptyState } from "../components/EmptyState";
 export function SettingsTags() {
   const library = useLibrary(),
     preferences = library.tagPreferences;
-  const excluded = () => excludedTags(preferences.entries(), library.session(), library.source());
   const vocabulary = createMemo(() =>
     tagVocabulary(
       Object.values(library.annotations).filter(
@@ -20,13 +18,9 @@ export function SettingsTags() {
     ),
   );
   const rows = () =>
-    [
-      ...new Map([...vocabulary(), ...excluded()].map((tag) => [normalizeName(tag), tag])).values(),
-    ].sort((a, b) => a.localeCompare(b));
-  const suppressed = (tag: string) =>
-    excluded().some((value) => normalizeName(value) === normalizeName(tag));
+    suggestionVocabulary(vocabulary(), preferences.entries(), library.session(), library.source());
   return (
-    <section class="settings-tags">
+    <section class="settings-tags settings-card">
       <Show when={library.origins().length > 1}>
         <div class="choices">
           <For each={library.origins()}>
@@ -44,7 +38,7 @@ export function SettingsTags() {
       <h2>{t("Tags proposés")}</h2>
       <p class="muted">
         {t(
-          "Retirer un tag des suggestions conserve ce tag sur vos artistes, albums et pistes. Vous pouvez le réactiver ici.",
+          "Supprimer un tag le retire du vocabulaire et de l’autocomplétion. Les annotations existantes sont conservées. Une nouvelle saisie du tag le réintroduit.",
         )}
       </p>
       <Show when={preferences.error()}>
@@ -62,23 +56,16 @@ export function SettingsTags() {
             {(tag) => (
               <li>
                 <strong>{tag}</strong>
-                <small>
-                  {suppressed(tag) ? t("Retiré des suggestions") : t("Proposé en autocomplétion")}
-                </small>
+                <small>{t("Proposé en autocomplétion")}</small>
                 <button
                   class="icon-button quiet"
-                  aria-label={
-                    suppressed(tag)
-                      ? t("Réactiver le tag {0}", tag)
-                      : t("Retirer le tag {0} des suggestions", tag)
-                  }
+                  aria-label={t("Supprimer le tag {0} du vocabulaire", tag)}
                   onClick={() => {
                     const session = library.session();
-                    if (session)
-                      preferences.update(session, tag, !suppressed(tag), library.source());
+                    if (session) preferences.update(session, tag, true, library.source());
                   }}
                 >
-                  <Icon name={suppressed(tag) ? "refresh" : "close"} />
+                  <Icon name="trash" />
                 </button>
               </li>
             )}

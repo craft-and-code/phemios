@@ -216,7 +216,7 @@ export function RadioPage(props: { query: string }) {
         <ul class="radio-stations">
           <For each={stations()}>
             {(station, i) => (
-              <li>
+              <li classList={{ selected: selected() === i() }}>
                 <button
                   class="radio-station"
                   aria-pressed={selected() === i()}

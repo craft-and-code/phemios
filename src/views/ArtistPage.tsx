@@ -1,6 +1,5 @@
 import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { SourceBadge } from "../components/SourceBadge";
-import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createMemo, For, Show } from "solid-js";
@@ -13,29 +12,22 @@ import type { Artist } from "../library/types";
 /** Present local editions and contributions without inventing a principal credit. */
 export function ArtistPage(props: {
   artist: Artist;
-  reverse: boolean;
   onGenres: (genres: readonly string[]) => void;
   onCountry: (country: string) => void;
 }) {
   const library = useLibrary();
-  const sort = (items: readonly import("../library/types").Album[]) =>
-    [...items].sort((a, b) => a.title.localeCompare(b.title, locale()) * (props.reverse ? -1 : 1));
   const albums = createMemo(() =>
-    sort(library.albums().filter((album) => album.artist === props.artist.reference)),
+    library.albums().filter((album) => album.artist === props.artist.reference),
   );
   const appearances = createMemo(() =>
-    sort(
-      library
-        .albums()
-        .filter(
-          (album) =>
-            album.artist !== props.artist.reference &&
-            (belongsToArtist(album, props.artist) ||
-              (library.demo &&
-                props.artist.reference === "oree" &&
-                album.reference === "meetings")),
-        ),
-    ),
+    library
+      .albums()
+      .filter(
+        (album) =>
+          album.artist !== props.artist.reference &&
+          (belongsToArtist(album, props.artist) ||
+            (library.demo && props.artist.reference === "oree" && album.reference === "meetings")),
+      ),
   );
   const banner = () =>
     library.demo && props.artist.artwork
@@ -153,12 +145,12 @@ export function ArtistPage(props: {
             missing={library.missing
               .rows()
               .filter((row) => !row.set_aside && row.artist === props.artist.reference)}
-            reverse={props.reverse}
+            chronological
           />
           <MissingAlbumsStatus artist={props.artist.reference} />
           <Show when={appearances().length}>
             <h2>{t("Participations")}</h2>
-            <AlbumGrid albums={appearances()} />
+            <AlbumGrid albums={appearances()} chronological />
           </Show>
           <AnnotationPanel reference={props.artist.reference} kind="artist" />
         </div>

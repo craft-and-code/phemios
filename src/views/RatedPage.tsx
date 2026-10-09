@@ -33,7 +33,6 @@ export function RatedPage(props: { query: string }) {
       );
   return (
     <section class="page rated-page">
-      <p class="muted">{t("Albums notés et discographies des artistes notés.")}</p>
       <div class="rating-filter">
         <span>{t("Note minimale")}</span>
         <StarRating

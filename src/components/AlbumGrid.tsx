@@ -1,7 +1,7 @@
 import { EmptyState } from "./EmptyState";
 import { MissingAlbumCard } from "./MissingAlbumCard";
-import { missingAlbum, type MissingAlbum } from "../library/missing";
-import { normalizeName } from "../library/filtering";
+import type { MissingAlbum } from "../library/missing";
+import { albumEntries } from "../library/album-order";
 import { t } from "../i18n";
 import { SourceBadge } from "./SourceBadge";
 import { For, Show } from "solid-js";
@@ -13,22 +13,13 @@ export function AlbumGrid(props: {
   albums: readonly Album[];
   missing?: readonly MissingAlbum[];
   reverse?: boolean;
+  chronological?: boolean;
   emptyIcon?: string;
   rating?: (album: Album) => number;
   ratingFromArtist?: (album: Album) => boolean;
 }) {
-  const entries = (): { album: Album; missing?: MissingAlbum }[] => {
-    const owned = props.albums.map((album) => ({ album }));
-    if (!props.missing?.length) return owned;
-    return [
-      ...owned,
-      ...props.missing.map((missing) => ({ album: missingAlbum(missing), missing })),
-    ].sort(
-      (a, b) =>
-        normalizeName(a.album.title).localeCompare(normalizeName(b.album.title)) *
-        (props.reverse ? -1 : 1),
-    );
-  };
+  const entries = () =>
+    albumEntries(props.albums, props.missing, props.chronological, props.reverse);
   return (
     <Show
       when={props.albums.length || props.missing?.length}

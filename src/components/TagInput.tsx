@@ -18,9 +18,12 @@ export function TagInput(props: {
   disabled: boolean;
   resetKey: string;
   onChange: (tags: string[]) => void;
+  autofocus?: boolean;
+  onEntered?: (tags: string[]) => void;
   onPending: (pending: boolean) => void;
   onRead: (read: () => string[]) => void;
 }) {
+  let input: HTMLInputElement | undefined;
   const id = createUniqueId(),
     [draft, setDraft] = createSignal(""),
     [open, setOpen] = createSignal(false),
@@ -33,6 +36,7 @@ export function TagInput(props: {
   };
   const commit = (value = draft()) => {
     const tags = commitTags(props.value, value);
+    props.onEntered?.(commitTags([], value));
     props.onChange(tags);
     fragment("");
     setOpen(false);
@@ -47,12 +51,18 @@ export function TagInput(props: {
       },
     ),
   );
-  onMount(() => props.onRead(() => commit()));
+  onMount(() => {
+    props.onRead(() => commit());
+    if (props.autofocus) input?.focus();
+  });
   return (
     <div class="tag-editor">
       <label for={id}>{t("Tags")}</label>
       <div class="tag-field" classList={{ disabled: props.disabled }}>
         <input
+          ref={(element) => {
+            input = element;
+          }}
           id={id}
           role="combobox"
           aria-autocomplete="list"
@@ -73,7 +83,9 @@ export function TagInput(props: {
             const value = event.currentTarget.value,
               pieces = value.split(",");
             if (pieces.length > 1) {
-              props.onChange(commitTags(props.value, pieces.slice(0, -1).join(",")));
+              const entered = pieces.slice(0, -1).join(",");
+              props.onEntered?.(commitTags([], entered));
+              props.onChange(commitTags(props.value, entered));
               event.currentTarget.value = pieces.at(-1) ?? "";
             }
             fragment(pieces.at(-1) ?? "");

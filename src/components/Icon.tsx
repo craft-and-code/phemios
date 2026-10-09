@@ -57,6 +57,7 @@ const paths: Record<string, string> = {
   search: "m21 21-5-5",
   sidebar: "M9 3v18M3 3h18v18H3V3Z",
   play: "m8 5 11 7-11 7V5Z",
+  forward: "M5 12h14m-7-7 7 7-7 7",
   back: "M19 12H5m7-7-7 7 7 7",
 };
 

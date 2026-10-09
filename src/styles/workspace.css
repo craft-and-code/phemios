@@ -51,6 +51,24 @@
 .collection-delete {
   position: relative;
 }
-.collection-delete .history-confirm {
-  min-width: 220px;
+.collection-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.collection-delete-confirm button:first-of-type {
+  color: #ef7777;
+}
+.collection-delete [role="alert"] {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+.collection-create {
+  align-self: flex-start;
+  margin-bottom: 16px;
+}
+.collection-form {
+  margin-bottom: 20px;
 }

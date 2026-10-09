@@ -1046,5 +1046,13 @@
   "Détection des lecteurs interrompue.": "Player discovery interrupted.",
   "Détection des lecteurs indisponible sur cette plateforme.": "Player discovery unavailable on this platform.",
   "Métadonnées des lecteurs invalides.": "Invalid player metadata.",
-  "Pochettes chargées : {0} · indisponibles : {1} · échecs : {2}": "Loaded covers: {0} · unavailable: {1} · failures: {2}"
+  "Pochettes chargées : {0} · indisponibles : {1} · échecs : {2}": "Loaded covers: {0} · unavailable: {1} · failures: {2}",
+  "Aucun tag personnel.": "No personal tags.",
+  "Supprimer un tag le retire du vocabulaire et de l’autocomplétion. Les annotations existantes sont conservées. Une nouvelle saisie du tag le réintroduit.": "Deleting a tag removes it from the vocabulary and autocomplete. Existing annotations are retained. Entering the tag again adds it back.",
+  "Supprimer le tag {0} du vocabulaire": "Delete tag {0} from the vocabulary",
+  "Pages des labels": "Label pages",
+  "Supprimer ?": "Delete?",
+  "Confirmer la suppression de {0}": "Confirm deletion of {0}",
+  "Supprimer la collection uniquement": "Delete the collection only",
+  "Créer une collection": "Create a collection"
 }

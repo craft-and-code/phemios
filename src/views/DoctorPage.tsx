@@ -29,7 +29,6 @@ export function DoctorPage() {
   return (
     <section class="page doctor-page">
       <div class="section-heading">
-        <p class="intro">{t("Diagnostic de la bibliothèque, sans modification des fichiers.")}</p>
         <button
           class="icon-button quiet"
           aria-label={t("Actualiser Doctor")}

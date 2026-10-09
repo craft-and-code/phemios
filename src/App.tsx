@@ -458,7 +458,6 @@ export function App() {
                   {(artist) => (
                     <ArtistPage
                       artist={artist()}
-                      reverse={reverse()}
                       onGenres={(genres) => {
                         scopedFilters.select("genres", {
                           mode: "none",
