@@ -32,15 +32,15 @@ export function JobControls(props: { release: string }) {
         >
           Générer les spectres
         </button>
-        <label>
-          <input
-            type="checkbox"
-            checked={force()}
-            onChange={(event) => setForce(event.currentTarget.checked)}
-          />{" "}
-          Recalculer les résultats existants
-        </label>
       </div>
+      <label class="job-force">
+        <input
+          type="checkbox"
+          checked={force()}
+          onChange={(event) => setForce(event.currentTarget.checked)}
+        />{" "}
+        Recalculer les résultats existants
+      </label>
       <small>
         Ces travaux s’exécutent sur Aède. Un compte administrateur et le serveur local sont requis.
       </small>

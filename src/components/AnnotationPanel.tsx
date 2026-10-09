@@ -20,6 +20,7 @@ import { Icon } from "./Icon";
 /** Icons save their own fields immediately; notes/tags stay in an explicit draft. */
 export function AnnotationPanel(props: { reference: string; kind: "artist" | "album" | "track" }) {
   const library = useLibrary();
+  const [editing, setEditing] = createSignal(false);
   const [editorUnavailable, setEditorUnavailable] = createSignal(true);
   const [rating, setRating] = createSignal<number | null>(null),
     [favourite, setFavourite] = createSignal(false),
@@ -82,6 +83,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       setFailure("");
       setPending(0);
       setSavingNotes(false);
+      setEditing(false);
       if (saved) library.updateAnnotation(props.reference, saved);
     }),
   );
@@ -123,6 +125,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         setSavedNote(currentNote);
         setSavedTags(currentTags);
         setMessage("Notes et tags enregistrés dans votre compte Aède.");
+        setEditing(false);
       }
     } catch (error) {
       if (current(held))
@@ -189,42 +192,93 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
           <Icon name="heart" />
         </button>
       </div>
-      <TagInput
-        value={tags()}
-        vocabulary={tagVocabulary(Object.values(library.annotations))}
-        disabled={blocked()}
-        resetKey={`${library.session()?.account.id ?? ""}:${props.reference}`}
-        onChange={(value) => {
-          setTags(value);
-          setMessage("");
-        }}
-        onPending={setPendingTag}
-        onRead={(read) => {
-          readTags = read;
-        }}
-      />
-      <div class="annotation-note">
-        <p>Notes personnelles</p>
-        <NoteEditor
-          value={note()}
+      <div class="section-heading annotation-text-heading">
+        <h3>Tags et notes personnelles</h3>
+        <Show when={!editing()}>
+          <button
+            class="icon-button quiet"
+            disabled={blocked()}
+            aria-label="Modifier les tags et notes"
+            title="Modifier les tags et notes"
+            onClick={() => {
+              setEditorUnavailable(true);
+              setEditing(true);
+            }}
+          >
+            <Icon name="edit" />
+          </button>
+        </Show>
+      </div>
+      <Show
+        when={editing()}
+        fallback={
+          <div class="annotation-reading">
+            <div class="tag-pills" aria-label="Tags enregistrés">
+              <For each={savedTags()}>{(tag) => <span class="tag-pill">{tag}</span>}</For>
+            </div>
+            <Show when={savedNote()} fallback={<p class="muted">Aucune note personnelle.</p>}>
+              <NoteEditor
+                value={savedNote()}
+                disabled
+                viewOnly
+                onChange={() => {}}
+                onUnavailable={() => {}}
+                onRead={() => {}}
+              />
+            </Show>
+          </div>
+        }
+      >
+        <TagInput
+          value={tags()}
+          vocabulary={tagVocabulary(Object.values(library.annotations))}
           disabled={blocked()}
+          resetKey={`${library.session()?.account.id ?? ""}:${props.reference}`}
           onChange={(value) => {
-            setNote(value);
+            setTags(value);
             setMessage("");
           }}
-          onUnavailable={setEditorUnavailable}
+          onPending={setPendingTag}
           onRead={(read) => {
-            readNote = read;
+            readTags = read;
           }}
         />
-      </div>
-      <button
-        class="primary"
-        disabled={blocked() || savingNotes() || editorUnavailable()}
-        onClick={saveNotes}
-      >
-        Enregistrer les notes et tags
-      </button>
+        <div class="annotation-note">
+          <p>Notes personnelles</p>
+          <NoteEditor
+            value={note()}
+            disabled={blocked()}
+            onChange={(value) => {
+              setNote(value);
+              setMessage("");
+            }}
+            onUnavailable={setEditorUnavailable}
+            onRead={(read) => {
+              readNote = read;
+            }}
+          />
+        </div>
+        <button
+          class="primary"
+          disabled={blocked() || savingNotes() || editorUnavailable()}
+          onClick={saveNotes}
+        >
+          Enregistrer les notes et tags
+        </button>
+        <button
+          class="quiet"
+          disabled={savingNotes()}
+          onClick={() => {
+            setTags(savedTags().slice());
+            setNote(savedNote());
+            setPendingTag(false);
+            setFailure("");
+            setEditing(false);
+          }}
+        >
+          Annuler
+        </button>
+      </Show>
       <p role="status">
         {pending()
           ? "Enregistrement dans Aède…"

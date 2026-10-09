@@ -16,6 +16,7 @@ const commands: readonly { name: NoteCommand; label: string; icon: string }[] = 
 export function NoteEditor(props: {
   value: string;
   disabled: boolean;
+  viewOnly?: boolean;
   onChange: (value: string) => void;
   onRead: (read: () => string) => void;
   onUnavailable: (value: boolean) => void;
@@ -53,25 +54,30 @@ export function NoteEditor(props: {
     void editor?.destroy();
   });
   return (
-    <div class="note-editor" classList={{ "note-readonly": props.disabled }}>
-      <div class="note-toolbar" role="toolbar" aria-label="Mise en forme des notes">
-        <For each={commands}>
-          {(item) => (
-            <button
-              type="button"
-              class="icon-button"
-              title={item.label}
-              aria-label={item.label}
-              aria-pressed={(revision(), ready() && editor?.active(item.name)) ?? false}
-              disabled={props.disabled || !ready()}
-              onPointerDown={(event) => event.preventDefault()}
-              onClick={() => editor?.command(item.name)}
-            >
-              <Icon name={item.icon} />
-            </button>
-          )}
-        </For>
-      </div>
+    <div
+      class="note-editor"
+      classList={{ "note-readonly": props.disabled, "note-view": props.viewOnly ?? false }}
+    >
+      <Show when={!props.viewOnly}>
+        <div class="note-toolbar" role="toolbar" aria-label="Mise en forme des notes">
+          <For each={commands}>
+            {(item) => (
+              <button
+                type="button"
+                class="icon-button"
+                title={item.label}
+                aria-label={item.label}
+                aria-pressed={(revision(), ready() && editor?.active(item.name)) ?? false}
+                disabled={props.disabled || !ready()}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => editor?.command(item.name)}
+              >
+                <Icon name={item.icon} />
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
       <div
         ref={(element) => {
           host = element;

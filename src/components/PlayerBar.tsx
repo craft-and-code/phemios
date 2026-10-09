@@ -41,7 +41,7 @@ export function PlayerBar() {
               href={`#/album/${encodeURIComponent(current().reference)}`}
               aria-label={`Ouvrir ${current().title}`}
             >
-              <Artwork album={current()} />
+              <Artwork album={current()} thumbnail />
             </a>
           )}
         </Show>

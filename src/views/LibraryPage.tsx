@@ -45,7 +45,11 @@ export function LibraryPage(props: {
   );
   const artistView = () => ["artists", "countries", "genres"].includes(props.section);
   return (
-    <section class="page library-page" aria-label="Catalogue">
+    <section
+      class="page library-page"
+      classList={{ "country-library": props.section === "countries" }}
+      aria-label="Catalogue"
+    >
       <div class="page-heading">
         <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
       </div>

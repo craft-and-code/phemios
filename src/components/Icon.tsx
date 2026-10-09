@@ -1,4 +1,7 @@
 const paths: Record<string, string> = {
+  edit: "m15 4 5 5M3 21l1-6L16 3l5 5L9 20l-6 1Z",
+  doctor: "M6 3v7a6 6 0 0 0 12 0V3M4 3h4M16 3h4M12 16v2a4 4 0 0 0 8 0v-3",
+  radio: "M4 8h16v13H4V8ZM7 8 18 3M7 12h6M16 12h1M7 17h3M14 17h3",
   muted: "M3 9h4l5-4v14l-5-4H3V9ZM17 9l5 6M22 9l-5 6",
   refresh: "M3 12a9 9 0 1 0 3-6.7M3 3v6h6",
   settings: "M4 6h16M4 12h16M4 18h16M9 3v6M16 9v6M7 15v6",

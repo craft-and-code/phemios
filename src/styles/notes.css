@@ -232,3 +232,23 @@
 .tag-field input[role="combobox"] {
   width: 100%;
 }
+
+.annotation-text-heading {
+  margin-top: 20px;
+}
+.annotation-text-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.note-view {
+  background: transparent;
+  border: 0;
+}
+.note-view .ProseMirror {
+  min-height: 0;
+  padding: 8px 0;
+}
+.annotation-reading .tag-pills {
+  margin-bottom: 12px;
+}

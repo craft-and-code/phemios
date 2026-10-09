@@ -1,8 +1,9 @@
+import { Icon } from "./Icon";
 import { Show } from "solid-js";
 import type { Album } from "../library/types";
 import { useLibrary } from "../library/context";
 /** Stable squares reuse resident object URLs; scrolling never fetches a cover. */
-export function Artwork(props: { album: Album; compact?: boolean }) {
+export function Artwork(props: { album: Album; compact?: boolean; thumbnail?: boolean }) {
   const library = useLibrary();
   const index = () =>
     ["blue", "islands", "edges", "dawn", "first", "lines"].indexOf(props.album.reference);
@@ -24,9 +25,16 @@ export function Artwork(props: { album: Album; compact?: boolean }) {
                 class="cover-fallback"
                 title={library.imageError(props.album.reference, "cover")}
               >
-                {props.album.cover && !library.imageError(props.album.reference, "cover")
-                  ? "Chargement de la pochette…"
-                  : "Pochette indisponible"}
+                <Show
+                  when={props.thumbnail}
+                  fallback={
+                    props.album.cover && !library.imageError(props.album.reference, "cover")
+                      ? "Chargement de la pochette…"
+                      : "Pochette indisponible"
+                  }
+                >
+                  <Icon name="disc" />
+                </Show>
               </span>
             }
           >
