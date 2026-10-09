@@ -54,7 +54,7 @@ export function createMissingCatalog(
       (["local", "server"] as const).map(async (source) => {
         const session = key[source];
         const rows: MissingAlbum[] = [];
-        if (!session) return { source, session, rows, error: "" };
+        if (!session) return { source, session, rows, error: "", covers: false };
         try {
           const status = await requestAede<{ capabilities: string[] }>(
             "/api/v1/status",
@@ -99,9 +99,21 @@ export function createMissingCatalog(
           } while (rows.length < total);
           if (new Set(rows.map((row) => `${row.artist}:${row.release_group}`)).size !== rows.length)
             throw new Error(t("Pagination Aède invalide."));
-          return { source, session, rows, error: "" };
+          return {
+            source,
+            session,
+            rows,
+            error: "",
+            covers: status.capabilities.includes("missing_album_covers"),
+          };
         } catch (failure) {
-          return { source, session, rows: [], error: String(failure) };
+          return {
+            source,
+            session,
+            covers: false,
+            rows: [],
+            error: failure instanceof Error ? failure.message : String(failure),
+          };
         }
       }),
     );
@@ -112,6 +124,10 @@ export function createMissingCatalog(
       (row) => row.session && row.session === (row.source === "local" ? local() : server()),
     ) ?? [];
   return {
+    supportsCover: (artist: string) =>
+      current().some(
+        (row) => row.source === referenceSource(artist) && "covers" in row && row.covers,
+      ),
     rows: () => current().flatMap((row) => row.rows),
     errors: () => current().flatMap((row) => (row.error ? [row.error] : [])),
     loading: () => value.loading,

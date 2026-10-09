@@ -275,6 +275,58 @@ impl Client {
         };
         self.read_artwork(reference, kind, Some(size))
     }
+    /// Read an unowned group's cached cover or explicitly request archive acquisition on Aède.
+    pub fn missing_cover(
+        &self,
+        artist: &str,
+        group: &str,
+        download: bool,
+    ) -> Result<Vec<u8>, String> {
+        if !artist.starts_with("artist:")
+            || artist.len() > 4096
+            || group.len() != 36
+            || !group.bytes().enumerate().all(|(i, b)| {
+                if [8, 13, 18, 23].contains(&i) {
+                    b == b'-'
+                } else {
+                    b.is_ascii_hexdigit()
+                }
+            })
+        {
+            return Err("Album manquant Aède invalide.".into());
+        }
+        let agent: ureq::Agent = ureq::Agent::config_builder()
+            .timeout_global(Some(Duration::from_secs(60)))
+            .max_redirects(0)
+            .http_status_as_error(false)
+            .build()
+            .into();
+        let url = format!("{}/api/me/v1/missing/cover", self.server);
+        let response = if download {
+            agent
+                .post(url)
+                .query("artist", artist)
+                .query("release_group", group)
+                .header("Authorization", format!("Bearer {}", self.token))
+                .send_empty()
+        } else {
+            agent
+                .get(url)
+                .query("artist", artist)
+                .query("release_group", group)
+                .header("Authorization", format!("Bearer {}", self.token))
+                .call()
+        }
+        .map_err(|_| "Image Aède inaccessible.".to_string())?;
+        let data = bytes(response, 32 * 1024 * 1024)?;
+        if !data.is_empty()
+            && !data.starts_with(&[0xff, 0xd8, 0xff])
+            && !data.starts_with(b"\x89PNG\r\n\x1a\n")
+        {
+            return Err("Format d’image Aède invalide.".into());
+        }
+        Ok(data)
+    }
     /// Export a retained track spectrum at its original dimensions, without thumbnail rendering.
     pub fn spectrum_download(&self, reference: &str) -> Result<Vec<u8>, String> {
         if !reference.starts_with("track:") || reference.len() > 4096 {
@@ -315,7 +367,7 @@ fn read_response(
 ) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
     for attempt in 0..4 {
         let response = call()?;
-        if !matches!(response.status().as_u16(), 429 | 503) {
+        if !matches!(response.status().as_u16(), 409 | 429 | 503) {
             return Ok(response);
         }
         drop(response);

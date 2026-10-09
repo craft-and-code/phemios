@@ -331,3 +331,80 @@ fn label_reads_and_private_missing_decisions_have_narrow_methods() {
     assert!(!allowed("POST", "/api/me/v1/missing"));
     assert!(!allowed("GET", "/api/me/v1/missing/../../private"));
 }
+
+#[test]
+fn missing_cover_selectors_refuse_paths_urls_and_invalid_groups_before_network_access() {
+    let client = Client {
+        agent: agent(),
+        server: "http://127.0.0.1:1".into(),
+        token: "0".repeat(64),
+        account: json!({}),
+    };
+    for (artist, group) in [
+        ("release:any", "12345678-1234-1234-1234-123456789abc"),
+        ("https://private/", "12345678-1234-1234-1234-123456789abc"),
+        ("artist:signal", "../../private"),
+        ("artist:signal", "12345678-1234-1234-1234-123456789abg"),
+    ] {
+        assert_eq!(
+            client.missing_cover(artist, group, true).unwrap_err(),
+            "Album manquant Aède invalide."
+        );
+    }
+}
+
+#[test]
+fn idempotent_reads_retry_temporary_personal_store_contention() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let server = format!("http://{}", listener.local_addr().unwrap());
+    let worker = std::thread::spawn(move || {
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        let mut count = 0;
+        while count < 2 && std::time::Instant::now() < deadline {
+            let (mut stream, _) = match listener.accept() {
+                Ok(value) => value,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    std::thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(error) => panic!("{error}"),
+            };
+            stream
+                .set_read_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            let mut header = Vec::new();
+            while !header.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                stream.read_exact(&mut byte).unwrap();
+                header.push(byte[0]);
+                assert!(header.len() < 8192);
+            }
+            assert!(header.starts_with(b"GET /api/v1/status "));
+            let (status, body) = if count == 0 {
+                ("409 Conflict", r#"{"error":{"code":"store_busy"}}"#)
+            } else {
+                ("200 OK", r#"{"status":"ok"}"#)
+            };
+            write!(
+                stream,
+                "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .unwrap();
+            count += 1;
+        }
+        count
+    });
+    let client = Client {
+        agent: agent(),
+        server,
+        token: "fictional".into(),
+        account: json!({}),
+    };
+    let answer = client.request("GET", "/api/v1/status", &[], None);
+    let count = worker.join().unwrap();
+    assert_eq!(answer.unwrap()["status"], "ok");
+    assert_eq!(count, 2);
+}

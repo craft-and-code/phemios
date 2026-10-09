@@ -1,3 +1,4 @@
+import { StarRating } from "./StarRating";
 import { t } from "../i18n";
 import {
   createEffect,
@@ -175,24 +176,14 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       </Show>
       <div class="annotation-controls">
         <fieldset aria-label={t("Note personnelle")} disabled={blocked()}>
-          <div class="stars">
-            <For each={[1, 2, 3, 4, 5]}>
-              {(value) => (
-                <button
-                  aria-label={t("{0} étoile(s)", value)}
-                  aria-pressed={rating() === value}
-                  classList={{ selected: value <= (rating() ?? 0) }}
-                  onClick={() => {
-                    const selected = rating() === value ? null : value;
-                    setRating(selected);
-                    void quickSave("rating", selected);
-                  }}
-                >
-                  <Icon name="star" />
-                </button>
-              )}
-            </For>
-          </div>
+          <StarRating
+            value={rating()}
+            label={t("Note personnelle")}
+            onChange={(selected) => {
+              setRating(selected);
+              void quickSave("rating", selected);
+            }}
+          />
         </fieldset>
         <button
           disabled={blocked()}

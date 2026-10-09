@@ -14,8 +14,8 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
     <div class="missing-status">
       <For each={library.missing.errors()}>
         {(message) => (
-          <p class="notice" role="status">
-            {message}
+          <p class="notice missing-notice" role="status">
+            <span>{message}</span>
             <button onClick={() => library.missing.refetch()}>{t("Réessayer")}</button>
           </p>
         )}

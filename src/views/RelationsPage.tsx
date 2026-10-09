@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { createMemo, createSignal, For, Show } from "solid-js";
@@ -94,7 +95,10 @@ export function RelationsPage(props: { query: string }) {
           "Liens de collaboration issus des crédits du catalogue Aède. Le nombre indique les pistes jouées ensemble ; il ne désigne pas une appartenance à un groupe.",
         )}{" "}
       </p>
-      <Show when={selected()} fallback={<p class="empty">{t("Aucun artiste disponible.")}</p>}>
+      <Show
+        when={selected()}
+        fallback={<EmptyState icon="graph">{t("Aucun artiste disponible.")}</EmptyState>}
+      >
         {(artist) => (
           <>
             <div class="section-heading">
@@ -114,9 +118,9 @@ export function RelationsPage(props: { query: string }) {
             <Show
               when={graphNodes().length}
               fallback={
-                <p class="empty">
+                <EmptyState icon="graph">
                   {t("Aucune collaboration locale connue pour")} {artist().name}.
-                </p>
+                </EmptyState>
               }
             >
               <RelationGraph name={artist().name} edges={graphNodes()} onSelect={setReference} />

@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createMemo, createResource, For, Show } from "solid-js";
@@ -106,7 +107,7 @@ export function TracksPage(props: {
               </div>
             </div>
             <Show when={!value().items.length}>
-              <p class="empty">{t("Aucune piste dans cette recherche.")}</p>
+              <EmptyState icon="list">{t("Aucune piste dans cette recherche.")}</EmptyState>
             </Show>
             <ol class="track-list">
               <For each={value().items}>

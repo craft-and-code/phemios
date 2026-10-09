@@ -1,4 +1,6 @@
-import { createSignal, For, Show } from "solid-js";
+import { EmptyState } from "../components/EmptyState";
+import { StarRating } from "../components/StarRating";
+import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { ratedAlbums, albumRating } from "../library/rated";
@@ -30,14 +32,15 @@ export function RatedPage(props: { query: string }) {
   return (
     <section class="page rated-page">
       <p class="muted">{t("Albums notés et discographies des artistes notés.")}</p>
-      <label class="rating-filter">
-        {t("Note minimale")}{" "}
-        <select value={minimum()} onChange={(e) => setMinimum(Number(e.currentTarget.value))}>
-          <For each={[1, 2, 3, 4, 5]}>
-            {(rating) => <option value={rating}>{"★".repeat(rating)}</option>}
-          </For>
-        </select>
-      </label>
+      <div class="rating-filter">
+        <span>{t("Note minimale")}</span>
+        <StarRating
+          value={minimum()}
+          floor={1}
+          label={t("Note minimale")}
+          onChange={(value) => setMinimum(value ?? 1)}
+        />
+      </div>
       <Show
         when={library.session()}
         fallback={
@@ -46,7 +49,9 @@ export function RatedPage(props: { query: string }) {
       >
         <Show
           when={albums().length}
-          fallback={<p class="empty">{t("Aucun album noté dans cette sélection.")}</p>}
+          fallback={
+            <EmptyState icon="star">{t("Aucun album noté dans cette sélection.")}</EmptyState>
+          }
         >
           <AlbumGrid
             albums={albums()}

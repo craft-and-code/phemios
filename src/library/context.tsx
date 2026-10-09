@@ -1,3 +1,5 @@
+import { createMissingCoverLoader } from "./missing-artwork";
+import { missingCoverAede } from "../platform/desktop";
 import { createMissingCatalog } from "./missing";
 import { t } from "../i18n";
 import { catalogOrigins, effectiveSource, referenceSource, type SourceId } from "./sources";
@@ -33,6 +35,11 @@ import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } fr
 import type { Artist, Album } from "./types";
 interface Library {
   missing: ReturnType<typeof createMissingCatalog>;
+  missingArtwork: {
+    image: (row: import("./missing").MissingAlbum) => string | undefined;
+    error: (row: import("./missing").MissingAlbum) => string | undefined;
+    load: (row: import("./missing").MissingAlbum) => Promise<void>;
+  };
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
   tasks: ReturnType<typeof createJobs>;
@@ -378,8 +385,33 @@ export function LibraryProvider(props: ParentProps) {
     clearMedia();
   });
   const missing = createMissingCatalog(localSession, serverSession, snapshot);
+  const [missingImageVersion, bumpMissingImages] = createSignal(0);
+  const missingArtwork = createMissingCoverLoader(
+    sessionFor,
+    missing.supportsCover,
+    missingCoverAede,
+    () => bumpMissingImages((v) => v + 1),
+  );
+  createEffect(() => {
+    localSession();
+    serverSession();
+    missingArtwork.prune();
+  });
+  onCleanup(missingArtwork.dispose);
+
   const value: Library = {
     missing,
+    missingArtwork: {
+      image: (row) => {
+        missingImageVersion();
+        return missingArtwork.image(row);
+      },
+      error: (row) => {
+        missingImageVersion();
+        return missingArtwork.error(row);
+      },
+      load: missingArtwork.load,
+    },
     tasks,
     radio,
     player,

@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { missingAlbum } from "../library/missing";
 import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { locale } from "../i18n";
@@ -177,11 +178,11 @@ export function LibraryPage(props: {
           </For>
         </ul>
         <Show when={!artists().length}>
-          <p class="empty">
+          <EmptyState icon="users">
             {t(
               "Aucun artiste dans cette sélection. Élargissez les bornes ou effacez la recherche.",
             )}{" "}
-          </p>
+          </EmptyState>
         </Show>
       </Show>
       <Show when={library.demo}>

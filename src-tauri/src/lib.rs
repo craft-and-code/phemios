@@ -68,6 +68,7 @@ pub fn run() -> Result<(), tauri::Error> {
             aede::aede_cache,
             aede::aede_request,
             aede::aede_artwork,
+            aede::aede_missing_cover,
             aede::aede_download,
             aede::aede_download_analysis,
             aede::aede_download_spectrum

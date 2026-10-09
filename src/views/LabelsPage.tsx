@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { createSignal, createResource, createEffect, on, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -102,7 +103,7 @@ export function LabelsPage(props: { query: string }) {
           current().every((page) => !page.total && !("error" in page))
         }
       >
-        <p class="empty">{t("Aucun label dans cette sélection.")}</p>
+        <EmptyState icon="label">{t("Aucun label dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={current().some((page) => page.total > 50) || offset()}>
         <div class="page-controls">

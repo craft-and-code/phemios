@@ -118,3 +118,7 @@ export const saveLocalKeys = (
   removeFanart: boolean,
   removeAcoustid: boolean,
 ) => nativeCall<void>("local_keys", { fanart, acoustid, removeFanart, removeAcoustid });
+
+/** Automatic missing covers follow the user's chosen policy; credentials stay on their Aède source. */
+export const missingCoverAede = (artist: string, group: string, download: boolean) =>
+  nativeCall<ArrayBuffer>("aede_missing_cover", { artist, group, download });

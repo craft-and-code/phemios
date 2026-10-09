@@ -1,3 +1,4 @@
+import { EmptyState } from "./EmptyState";
 import { MissingAlbumCard } from "./MissingAlbumCard";
 import { missingAlbum, type MissingAlbum } from "../library/missing";
 import { normalizeName } from "../library/filtering";
@@ -31,7 +32,7 @@ export function AlbumGrid(props: {
     <Show
       when={props.albums.length || props.missing?.length}
       fallback={
-        <p class="empty">{t("Aucun album dans cette sélection. Élargissez vos filtres.")}</p>
+        <EmptyState>{t("Aucun album dans cette sélection. Élargissez vos filtres.")}</EmptyState>
       }
     >
       <div class="album-grid">

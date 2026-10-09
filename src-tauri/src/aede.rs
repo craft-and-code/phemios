@@ -260,6 +260,63 @@ pub(crate) async fn aede_artwork(
 }
 
 #[tauri::command]
+pub(crate) async fn aede_missing_cover(
+    version: u32,
+    artist: String,
+    group: String,
+    download: bool,
+    state: State<'_, Aede>,
+) -> Result<tauri::ipc::Response, String> {
+    bridge(version)?;
+    let (origin, artist) = phemios_core::federation::resolve(&artist)?;
+    let state = state.owner(origin);
+    let cache = state.cache.clone();
+    let session = state
+        .session
+        .lock()
+        .map_err(|_| "Session native indisponible.".to_string())?
+        .clone();
+    let snapshot = state
+        .snapshot
+        .lock()
+        .map_err(|_| "Cache natif indisponible.".to_string())?
+        .clone()
+        .ok_or("Synchronisez le catalogue avant les images.")?;
+    blocking(move || {
+        if group.len() != 36
+            || !group.bytes().enumerate().all(|(i, b)| {
+                if [8, 13, 18, 23].contains(&i) {
+                    b == b'-'
+                } else {
+                    b.is_ascii_hexdigit()
+                }
+            })
+        {
+            return Err("Album manquant Aède invalide.".into());
+        }
+        let kind = format!("missing-cover:{group}");
+        if let Some(bytes) = cache.image(&snapshot, &artist, &kind)? {
+            return Ok(bytes);
+        }
+        let client = session
+            .ok_or("Cette image n’a pas encore été mise en cache. Connectez-vous à Aède.")?;
+        let account = client.account();
+        if snapshot["server"] != account["server"]
+            || snapshot["accountId"] != account["account"]["id"]
+        {
+            return Err("Synchronisez le compte connecté avant ses images.".into());
+        }
+        let bytes = client.missing_cover(&artist, &group, download)?;
+        if !bytes.is_empty() {
+            cache.save_image(&snapshot, &artist, &kind, &bytes)?;
+        }
+        Ok(bytes)
+    })
+    .await
+    .map(tauri::ipc::Response::new)
+}
+
+#[tauri::command]
 pub(crate) async fn aede_download(
     version: u32,
     id: String,

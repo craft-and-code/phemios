@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
@@ -99,7 +100,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
       <Show when={props.section === "favourites"}>
         <Show
           when={favourites().length}
-          fallback={<p class="empty">{t("Aucun album favori dans cette sélection.")}</p>}
+          fallback={
+            <EmptyState icon="library">{t("Aucun album favori dans cette sélection.")}</EmptyState>
+          }
         >
           <AlbumGrid albums={favourites()} />
         </Show>
@@ -266,7 +269,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <p role="alert">{reads.page()?.error}</p>
       </Show>
       <Show when={page() && !page()?.items.length}>
-        <p class="empty">{t("Aucun élément enregistré dans cette rubrique.")}</p>
+        <EmptyState icon="library">{t("Aucun élément enregistré dans cette rubrique.")}</EmptyState>
       </Show>
       <Show when={(page()?.total ?? 0) > 50}>
         <div class="choices">

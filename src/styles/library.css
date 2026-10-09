@@ -1126,12 +1126,15 @@ button.metadata-link:hover {
   display: grid;
   place-items: center;
   background: var(--surface);
-  filter: saturate(0.2);
-  opacity: 0.5;
+  padding: 0;
 }
 .missing-release-art > svg {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 .missing-mark {
   display: flex;
@@ -1139,6 +1142,9 @@ button.metadata-link:hover {
   gap: 5px;
   position: absolute;
   bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   font-size: 11px;
 }
 .missing-mark svg {
@@ -1148,12 +1154,34 @@ button.metadata-link:hover {
 .missing-album strong {
   color: var(--muted);
 }
-.missing-actions {
+.missing-cover {
+  position: relative;
+}
+.missing-cover > .missing-dismiss {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--surface);
+}
+.missing-dismiss svg {
+  width: 12px;
+  height: 12px;
+}
+.missing-notice {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-top: 6px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.missing-notice button {
+  flex-shrink: 0;
 }
 .missing-status {
   margin: 20px 0;
@@ -1197,4 +1225,15 @@ button.metadata-link:hover {
 }
 .label-biography {
   white-space: pre-line;
+}
+
+.rating-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.card-rating {
+  color: var(--accent) !important;
+  letter-spacing: -1px;
 }

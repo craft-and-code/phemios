@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
 import { createRadioFavourites } from "../radio/favourites";
@@ -253,7 +254,7 @@ export function RadioPage(props: { query: string }) {
         </div>
       </Show>
       <Show when={loaded() && !stations().length && !busy()}>
-        <p class="notice">{t("Aucune station pour ces critères.")}</p>
+        <EmptyState icon="radio">{t("Aucune station pour ces critères.")}</EmptyState>
       </Show>
       <p class="radio-credit">
         {t("Annuaire communautaire")}{" "}

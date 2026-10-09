@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { t } from "../i18n";
 import { createResource, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -95,7 +96,9 @@ export function DoctorPage() {
             </p>
             <Show
               when={report()!.total}
-              fallback={<p class="notice">{t("Aucun diagnostic dans cette sélection.")}</p>}
+              fallback={
+                <EmptyState icon="doctor">{t("Aucun diagnostic dans cette sélection.")}</EmptyState>
+              }
             >
               <ul class="doctor-issues">
                 <For each={report()!.items}>

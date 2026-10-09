@@ -1,3 +1,4 @@
+import { EmptyState } from "../components/EmptyState";
 import { createMemo, createResource, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -91,7 +92,7 @@ export function TagsPage(props: {
         </div>
       </Show>
       <Show when={!entries().length}>
-        <p class="empty">{t("Aucun élément tagué dans cette sélection.")}</p>
+        <EmptyState icon="tags">{t("Aucun élément tagué dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={details.loading}>
         <p role="status">{t("Chargement…")}</p>
