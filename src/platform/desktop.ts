@@ -125,3 +125,6 @@ export const missingCoverAede = (artist: string, group: string, download: boolea
 
 /** Read mounted player/card/drive destinations; this command cannot mount or write them. */
 export const discoverPlayers = () => nativeCall<unknown>("players_discover");
+
+/** Explicit, bounded public RSS retrieval has no access to Aède credentials. */
+export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed", { url });

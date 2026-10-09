@@ -93,3 +93,5 @@ Open **Radio** under **Sources Musicales**, then explicitly search the Radio Bro
 Track browsing offers remembered 25/50/100/200-row windows. Tags use one card grid for directly tagged artists, albums and tracks, with visible unresolved targets. Settings remembers scan/enrichment choices without starting jobs, in addition to immediate language/colour changes and explicitly saved connection/keys.
 
 Browse filters now belong to each view and show removable active criteria; Countries starts without rails. Albums/artist discographies include attributed missing studio albums with reversible private hiding on updated Aède. Rated albums and Labels add personal ratings and cached attributed label biographies. See [browsing state](docs/design/browsing-state.md). SVG brand proposals remain review assets under `assets/brand/proposals/`.
+
+Podcasts: add a public RSS feed in Music sources → Podcasts, select a subscription and explicitly play an episode. Refresh updates its retained episode list; subscriptions remain browsable offline. Audio uses system WebView codecs/output. See [the RSS contract](docs/design/podcasts.md).

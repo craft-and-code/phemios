@@ -32,7 +32,12 @@ const escape = (value) =>
     .replaceAll('"', "&quot;");
 const modules = [];
 for (const name of (await readdir(types, { recursive: true })).sort()) {
-  if (!name.endsWith(".d.ts") || name.endsWith(".test.d.ts") || name.includes("/node_modules/"))
+  if (
+    !name.endsWith(".d.ts") ||
+    name.endsWith(".test.d.ts") ||
+    name.endsWith("test-fixtures.d.ts") ||
+    name.includes("/node_modules/")
+  )
     continue;
   const source = await readFile(path.join(types, name), "utf8");
   if (source.trim() === "export {};") continue;

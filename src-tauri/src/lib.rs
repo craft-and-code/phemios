@@ -4,6 +4,7 @@ mod aede;
 mod commands;
 mod local;
 mod playback;
+mod podcast;
 mod radio;
 mod volumes;
 use tauri::Manager;
@@ -45,6 +46,9 @@ pub fn run() -> Result<(), tauri::Error> {
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
                 phemios_core::radio::Directory::default(),
             ))));
+            app.manage(podcast::Podcasts(std::sync::Arc::new(
+                std::sync::Mutex::new(phemios_core::podcast::FeedClient::default()),
+            )));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -57,6 +61,7 @@ pub fn run() -> Result<(), tauri::Error> {
             local::local_scan,
             local::local_root_action,
             local::local_keys,
+            podcast::podcast_feed,
             radio::radio_search,
             radio::radio_statistics,
             radio::radio_resolve,

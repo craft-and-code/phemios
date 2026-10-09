@@ -122,6 +122,10 @@ Artist-card playback now uses the artist reference rather than its illustration 
 
 The complete gate passes 164 TypeScript behavior tests, 12 Node tooling checks and 52 Rust core tests, with 129 declaration modules. Isolated macOS acceptance verifies principal artist queue ordering despite an older guest illustration, rounded-square list Play and real output discovery. Fake-clock regressions verify the one-second refresh state, duplicate refusal, failure and account-reset cancellation. Native capture settling exceeds this brief state; no spinner screenshot is claimed.
 
-## Personal collections and audio controls — 2026-10-10
+## Personal collections and RSS podcasts — 2026-10-10
 
 Rated albums and Favourites expose collection creation for their current owner-private criteria, with inclusive rating bounds kept in Aède’s evaluated rule. Existing catalog collection entry points remain available. Cards omit redundant dynamic/filter text and the disabled rule action; an adjacent pencil opens focused atomic name editing with collision/capability refusal. The audio settings summary aligns with volume and has accent hover.
+
+Podcasts adds explicit RSS/Atom subscriptions beside Radio, retained offline episode metadata, refresh/unsubscribe and finite WebView playback in the shared footer. Pause retains position; seek, mute/volume and Stop share the established controls. Bounded public native retrieval never sends Aède credentials; saved metadata remains independent from music identities/history. No dependency is added. See [podcasts](../design/podcasts.md).
+
+The complete gate passes 174 TypeScript behavior tests, 12 Node tooling checks and 54 independent Rust core tests; declaration documentation covers 137 modules. Isolated native acceptance verifies private rated collection creation/atomic rename, audio icon alignment/hover, real Radio France RSS parsing and muted finite playback with pause, seek and resume. Subscriptions survive restart without an Aède session. Other platforms and acoustic fidelity remain separate acceptance.

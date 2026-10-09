@@ -1,6 +1,7 @@
 import { Switch, Match } from "solid-js";
 import { type Section } from "../navigation/routes";
 import { RatedPage } from "./RatedPage";
+import { PodcastsPage } from "./PodcastsPage";
 import { RadioPage } from "./RadioPage";
 import { DoctorPage } from "./DoctorPage";
 import { StatisticsPage } from "./StatisticsPage";
@@ -14,6 +15,9 @@ export function WorkspacePage(props: { section: Section; query: string }) {
     <Switch>
       <Match when={props.section === "rated"}>
         <RatedPage query={props.query} />
+      </Match>
+      <Match when={props.section === "podcasts"}>
+        <PodcastsPage query={props.query} />
       </Match>
       <Match when={props.section === "radio"}>
         <RadioPage query={props.query} />

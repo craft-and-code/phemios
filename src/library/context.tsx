@@ -16,6 +16,7 @@ import {
   type ParentProps,
   type Accessor,
 } from "solid-js";
+import { createPodcastPlayback } from "../podcasts/playback";
 import { createRadioPlayback } from "../radio/playback";
 import { resolveRadio } from "../platform/desktop";
 import { createPlayback } from "./playback";
@@ -46,6 +47,7 @@ interface Library {
   };
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
+  podcast: ReturnType<typeof createPodcastPlayback>;
   tasks: ReturnType<typeof createJobs>;
   artists: Accessor<readonly Artist[]>;
   albums: Accessor<readonly Album[]>;
@@ -164,15 +166,28 @@ export function LibraryProvider(props: ParentProps) {
         (value) => value && ["user", "admin"].includes(value.account.role),
       ),
     () => ({ albums: albums(), artists: artists() }),
-    () => radio.stop(),
+    () => {
+      radio.stop();
+      podcast.stop();
+    },
   );
   const radio = createRadioPlayback(resolveRadio, async () => {
+    podcast.stop();
     if (["playing", "paused", "connecting"].includes(player.state().status)) {
       await player.action("stop");
       if (["playing", "paused", "connecting"].includes(player.state().status))
         throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
     }
   });
+  const podcast = createPodcastPlayback(async () => {
+    radio.stop();
+    if (["playing", "paused", "connecting"].includes(player.state().status)) {
+      await player.action("stop");
+      if (["playing", "paused", "connecting"].includes(player.state().status))
+        throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer le podcast."));
+    }
+  });
+
   const tasks = createJobs(() => !!localSession() || !!serverSession());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
@@ -424,6 +439,7 @@ export function LibraryProvider(props: ParentProps) {
     },
     tasks,
     radio,
+    podcast,
     player,
     artists,
     albums,

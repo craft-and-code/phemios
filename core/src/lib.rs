@@ -32,3 +32,5 @@ pub mod enrichment;
 
 /// Read-only discovery of OS-mounted player/card/drive destinations.
 pub mod volumes;
+
+pub mod podcast;

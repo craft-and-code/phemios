@@ -14,6 +14,7 @@ export type Section =
   | "collections"
   | "history"
   | "playlists"
+  | "podcasts"
   | "radio"
   | "doctor"
   | "analysis"
@@ -42,6 +43,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "history", label: t("Historique"), symbol: "history" },
   { id: "playlists", label: t("Listes M3U"), symbol: "list" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
+  { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
   { id: "analysis", label: t("Analyses"), symbol: "wave" },
   { id: "relations", label: t("Relations"), symbol: "graph" },

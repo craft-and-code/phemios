@@ -15,6 +15,7 @@ import { createNavigation, browserNavigationHost } from "./navigation/history";
 import { browseArtists, selectAlbumYear } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
+import { PodcastPlayerBar } from "./components/PodcastPlayerBar";
 import { SelectionCollection } from "./components/SelectionCollection";
 import { RadioPlayerBar } from "./components/RadioPlayerBar";
 import { PlayerBar } from "./components/PlayerBar";
@@ -260,7 +261,7 @@ export function App() {
           when={
             !library.artists().length &&
             !library.busy() &&
-            !["radio", "settings"].includes(section())
+            !["radio", "podcasts", "settings"].includes(section())
           }
         >
           <div class="empty">
@@ -273,7 +274,7 @@ export function App() {
         <Show
           when={
             current().kind === "section" &&
-            !["radio", "settings", "statistics", "doctor"].includes(section())
+            !["radio", "podcasts", "settings", "statistics", "doctor"].includes(section())
           }
         >
           <ActiveFilters
@@ -354,6 +355,7 @@ export function App() {
               "tags",
               "labels",
               "radio",
+              "podcasts",
               "settings",
               "relations",
               "players",
@@ -517,8 +519,15 @@ export function App() {
           )}
         </Show>
       </main>
-      <Show when={library.radio.station()} fallback={<PlayerBar />}>
-        <RadioPlayerBar />
+      <Show
+        when={library.podcast.episode()}
+        fallback={
+          <Show when={library.radio.station()} fallback={<PlayerBar />}>
+            <RadioPlayerBar />
+          </Show>
+        }
+      >
+        <PodcastPlayerBar />
       </Show>
     </div>
   );
