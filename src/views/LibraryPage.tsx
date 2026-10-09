@@ -1,6 +1,4 @@
 import { EmptyState } from "../components/EmptyState";
-import { missingAlbum } from "../library/missing";
-import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { SourceBadge } from "../components/SourceBadge";
@@ -18,7 +16,7 @@ import {
 import { catalogIndex } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Filters } from "../library/types";
-import type { Section } from "../navigation/routes";
+import { sectionIcon, type Section } from "../navigation/routes";
 
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
@@ -59,16 +57,6 @@ export function LibraryPage(props: {
       .filter((item) => props.section !== "compilations" || item.compilation)
       .sort((a, b) => compare(a.title, b.title)),
   );
-  const missing = createMemo(() => {
-    if (props.section !== "albums") return [];
-    const rows = library.missing.rows().filter((row) => !row.set_aside);
-    const refs = new Set(
-      filterAlbums(rows.map(missingAlbum), library.artists(), props.filters).map(
-        (row) => row.reference,
-      ),
-    );
-    return rows.filter((row) => refs.has(missingAlbum(row).reference));
-  });
   const artistView = () => ["artists", "countries", "genres"].includes(props.section);
   return (
     <section
@@ -78,7 +66,7 @@ export function LibraryPage(props: {
     >
       <div class="page-heading">
         <span role="status">
-          {artistView() ? artists().length : albums().length + missing().length} {t("résultat(s)")}
+          {artistView() ? artists().length : albums().length} {t("résultat(s)")}
         </span>
       </div>
       <Show when={props.section === "countries"}>
@@ -120,12 +108,11 @@ export function LibraryPage(props: {
       <Show
         when={artistView()}
         fallback={
-          <>
-            <AlbumGrid albums={albums()} missing={missing()} reverse={props.reverse} />
-            <Show when={props.section === "albums"}>
-              <MissingAlbumsStatus />
-            </Show>
-          </>
+          <AlbumGrid
+            albums={albums()}
+            reverse={props.reverse}
+            emptyIcon={sectionIcon(props.section)}
+          />
         }
       >
         <ul class="artist-grid">
@@ -178,10 +165,8 @@ export function LibraryPage(props: {
           </For>
         </ul>
         <Show when={!artists().length}>
-          <EmptyState icon="users">
-            {t(
-              "Aucun artiste dans cette sélection. Élargissez les bornes ou effacez la recherche.",
-            )}{" "}
+          <EmptyState icon={sectionIcon(props.section)}>
+            {t("Aucun artiste dans cette sélection.")}{" "}
           </EmptyState>
         </Show>
       </Show>

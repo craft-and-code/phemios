@@ -47,10 +47,7 @@ export function App() {
   };
   const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
   const yearDomain = createMemo(() => {
-    const values = [
-      ...(library.snapshot()?.albums ?? (library.demo ? library.albums() : [])),
-      ...library.missing.rows().filter((row) => !row.set_aside),
-    ];
+    const values = [...(library.snapshot()?.albums ?? (library.demo ? library.albums() : []))];
     let low = Infinity,
       high = -Infinity;
     for (const album of values)
@@ -82,7 +79,7 @@ export function App() {
     () => library.trackSources(),
     () => browsing.value().trackPageSize,
   );
-  const [selectedTag, setSelectedTag] = createSignal("");
+  const [selectedTag, setSelectedTag] = createSignal<readonly string[]>([]);
   const [tagOffset, setTagOffset] = createSignal(0);
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
@@ -169,7 +166,7 @@ export function App() {
             onInput={(event) => {
               setFilters({ ...filters(), query: event.currentTarget.value });
               if (section() === "tags") {
-                setSelectedTag("");
+                setSelectedTag([]);
                 setTagOffset(0);
               }
             }}

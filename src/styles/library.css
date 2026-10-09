@@ -1237,3 +1237,10 @@ button.metadata-link:hover {
   color: var(--accent) !important;
   letter-spacing: -1px;
 }
+
+.rating-filter {
+  flex-wrap: wrap;
+}
+.history-reset {
+  align-self: flex-start;
+}

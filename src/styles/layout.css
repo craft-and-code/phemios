@@ -572,26 +572,26 @@ legend {
   }
 }
 
-/* Play stays on the centre axis; Stop has its own lower-right hit area. */
-.player-bar {
+/* Stop belongs to Play, independent of the viewport's lower-right corner. */
+.play-control {
   position: relative;
+  width: 38px;
+  height: 38px;
 }
-.player-bar .player-options {
-  padding-right: 36px;
-}
-.player-bar > .transport-stop {
+.play-control > .transport-stop {
   position: absolute;
-  right: 16px;
-  bottom: 8px;
-  width: 28px;
-  height: 28px;
+  right: -10px;
+  bottom: -9px;
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
-  padding: 6px;
-  border: 0;
-  background: transparent;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
 }
 .transport-stop svg {
-  width: 14px;
-  height: 14px;
+  width: 11px;
+  height: 11px;
 }

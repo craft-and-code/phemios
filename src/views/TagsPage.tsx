@@ -6,14 +6,15 @@ import { normalizeName } from "../library/filtering";
 import { tagCatalog, taggedEntries, taggedTrackWindow } from "../library/tag-catalog";
 import { cachedTagCard, parseTagCard } from "../library/tag-cards";
 import { requestAede } from "../platform/desktop";
+import { selectTags, additiveCountrySelection, isMac } from "../library/selection";
 import { referenceSource } from "../library/sources";
 import { SourceBadge } from "../components/SourceBadge";
 import { Icon } from "../components/Icon";
 /** Every personal tagged target gets a card; unavailable references remain visible in the result count. */
 export function TagsPage(props: {
   query: string;
-  selected: string;
-  onSelect: (tag: string) => void;
+  selected: readonly string[];
+  onSelect: (tags: readonly string[]) => void;
   offset: number;
   setOffset: (offset: number) => void;
 }) {
@@ -70,7 +71,7 @@ export function TagsPage(props: {
       <p class="muted">{t("Une carte par élément tagué : artiste, album ou piste.")}</p>
       <Show when={vocabulary().length}>
         <div class="tag-choices" aria-label={t("Choisir un tag")}>
-          <button aria-pressed={!props.selected} onClick={() => props.onSelect("")}>
+          <button aria-pressed={!props.selected.length} onClick={() => props.onSelect([])}>
             {t("Tous les tags")}
           </button>
           <For
@@ -80,8 +81,12 @@ export function TagsPage(props: {
           >
             {(tag) => (
               <button
-                aria-pressed={props.selected === tag.key}
-                onClick={() => props.onSelect(props.selected === tag.key ? "" : tag.key)}
+                aria-pressed={props.selected.includes(tag.key)}
+                onClick={(event) =>
+                  props.onSelect(
+                    selectTags(props.selected, tag.key, additiveCountrySelection(event, isMac())),
+                  )
+                }
                 title={t("{0} élément(s) tagué(s)", tag.count)}
               >
                 {tag.label}

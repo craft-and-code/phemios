@@ -13,7 +13,7 @@ import { M3UExport, downloadM3U, type M3UFile } from "../components/M3UExport";
 import { requestAede } from "../platform/desktop";
 import { favouriteAlbums } from "../library/favourites";
 import { createPersonalReads } from "../library/personal-reads";
-import type { Section } from "../navigation/routes";
+import { sectionIcon, type Section } from "../navigation/routes";
 interface Collection {
   name: string;
   expression: string;
@@ -101,7 +101,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <Show
           when={favourites().length}
           fallback={
-            <EmptyState icon="library">{t("Aucun album favori dans cette sélection.")}</EmptyState>
+            <EmptyState icon={sectionIcon(props.section)}>
+              {t("Aucun album favori dans cette sélection.")}
+            </EmptyState>
           }
         >
           <AlbumGrid albums={favourites()} />
@@ -226,17 +228,16 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
-        <HistoryReset
-          onReset={() => {
-            setOffset(0);
-            void refetch();
-          }}
-        />
-        <p class="muted">
-          {t(
-            "Historique confirmé par Aède ; aucun événement d’écoute n’est inventé par cette vue.",
-          )}{" "}
-        </p>
+        <Show when={(page()?.total ?? 0) > 0}>
+          <div class="history-reset">
+            <HistoryReset
+              onReset={() => {
+                setOffset(0);
+                void refetch();
+              }}
+            />
+          </div>
+        </Show>
         <ul class="personal-list">
           <For
             each={history()?.filter((row) =>
@@ -269,7 +270,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <p role="alert">{reads.page()?.error}</p>
       </Show>
       <Show when={page() && !page()?.items.length}>
-        <EmptyState icon="library">{t("Aucun élément enregistré dans cette rubrique.")}</EmptyState>
+        <EmptyState icon={sectionIcon(props.section)}>
+          {t("Aucun élément enregistré dans cette rubrique.")}
+        </EmptyState>
       </Show>
       <Show when={(page()?.total ?? 0) > 50}>
         <div class="choices">

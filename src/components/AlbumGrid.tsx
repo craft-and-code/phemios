@@ -13,6 +13,7 @@ export function AlbumGrid(props: {
   albums: readonly Album[];
   missing?: readonly MissingAlbum[];
   reverse?: boolean;
+  emptyIcon?: string;
   rating?: (album: Album) => number;
   ratingFromArtist?: (album: Album) => boolean;
 }) {
@@ -32,7 +33,9 @@ export function AlbumGrid(props: {
     <Show
       when={props.albums.length || props.missing?.length}
       fallback={
-        <EmptyState>{t("Aucun album dans cette sélection. Élargissez vos filtres.")}</EmptyState>
+        <EmptyState icon={props.emptyIcon ?? "disc"}>
+          {t("Aucun album dans cette sélection.")}
+        </EmptyState>
       }
     >
       <div class="album-grid">

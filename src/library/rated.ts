@@ -15,6 +15,10 @@ export function ratedAlbums(
   albums: readonly Album[],
   annotations: Readonly<Record<string, Annotation | undefined>>,
   minimum: number,
+  maximum = 5,
 ): Album[] {
-  return albums.filter((album) => albumRating(album, annotations) >= Math.max(1, minimum));
+  return albums.filter((album) => {
+    const rating = albumRating(album, annotations);
+    return rating >= Math.max(1, minimum) && rating <= Math.min(5, maximum);
+  });
 }

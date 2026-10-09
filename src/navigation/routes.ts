@@ -69,3 +69,8 @@ export function parseRoute(hash: string): Route {
   }
   return { kind: "not-found" };
 }
+
+/** Result states use the same semantic glyph as their navigation section. */
+export function sectionIcon(section: Section): string {
+  return sections.find((item) => item.id === section)?.symbol ?? "disc";
+}

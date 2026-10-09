@@ -32,7 +32,7 @@ export function RecentPage(props: { query: string }) {
           )}{" "}
         </p>
       </Show>
-      <AlbumGrid albums={albums()} />
+      <AlbumGrid albums={albums()} emptyIcon="sparkles" />
     </section>
   );
 }

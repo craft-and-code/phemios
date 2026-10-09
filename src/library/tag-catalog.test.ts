@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { tagCatalog, taggedEntries, taggedTrackWindow } from "./tag-catalog";
+import { selectTags } from "./selection";
 import type { Annotation } from "./server";
 const row = (reference: string, tags: string[]): Annotation => ({
   reference,
@@ -7,6 +8,18 @@ const row = (reference: string, tags: string[]): Annotation => ({
   loved: false,
   rating: null,
   note: null,
+});
+it("combines selected tags across artists, albums and tracks without duplicate cards", () => {
+  const rows = [
+    row("artist:a", ["Singer"]),
+    row("release:a", ["music", "singer"]),
+    row("track:a", ["live"]),
+  ];
+  expect(taggedEntries(rows, ["SINGER", "MUSIC"], "")).toEqual(rows.slice(0, 2));
+  expect(selectTags(["SINGER"], "MUSIC", true)).toEqual(["SINGER", "MUSIC"]);
+  expect(selectTags(["SINGER", "MUSIC"], "SINGER", true)).toEqual(["MUSIC"]);
+  expect(selectTags(["SINGER"], "MUSIC", false)).toEqual(["MUSIC"]);
+  expect(selectTags(["SINGER"], undefined, false)).toEqual([]);
 });
 it("counts each tagged identity once and preserves both catalogs and first tag spelling", () => {
   const rows = [

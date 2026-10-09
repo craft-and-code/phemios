@@ -991,5 +991,8 @@
   "Rétablir": "Restore",
   "Suggestions masquées ({0})": "Hidden suggestions ({0})",
   "Tous les labels": "All labels",
-  "{0} albums": "{0} albums"
+  "{0} albums": "{0} albums",
+  "Note maximale": "Maximum rating",
+  "Aucun album dans cette sélection.": "No albums in this selection.",
+  "Aucun artiste dans cette sélection.": "No artists in this selection."
 }

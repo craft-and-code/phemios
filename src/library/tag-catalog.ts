@@ -18,17 +18,19 @@ export function tagCatalog(rows: readonly (Annotation | undefined)[]) {
 /** Tag search is explicit in this view; assigning a tag to an artist never assigns it to their releases. */
 export function taggedEntries(
   rows: readonly (Annotation | undefined)[],
-  selected: string,
+  selected: string | readonly string[],
   query: string,
 ) {
-  const key = normalizeName(selected),
+  const keys = new Set(
+      (typeof selected === "string" ? [selected] : selected).filter(Boolean).map(normalizeName),
+    ),
     search = normalizeName(query);
   return rows.filter(
     (row): row is Annotation =>
       !!row &&
       row.tags.some((tag) => {
         const value = normalizeName(tag);
-        return !!value && (!key || value === key) && value.includes(search);
+        return !!value && (!keys.size || keys.has(value)) && value.includes(search);
       }),
   );
 }

@@ -38,3 +38,14 @@ export function additiveCountrySelection(
   return mac ? event.metaKey : event.ctrlKey;
 }
 export const isMac = () => /Mac/i.test(navigator.platform);
+
+/** Tag clicks replace a selection; platform-modified clicks toggle a union. */
+export function selectTags(
+  current: readonly string[],
+  value: string | undefined,
+  additive: boolean,
+): readonly string[] {
+  if (value === undefined) return [];
+  if (!additive) return current.length === 1 && current[0] === value ? [] : [value];
+  return current.includes(value) ? current.filter((tag) => tag !== value) : [...current, value];
+}

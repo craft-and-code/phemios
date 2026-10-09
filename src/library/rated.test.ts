@@ -38,4 +38,7 @@ it("combines rated albums and principal artist albums without inheriting personn
   expect(ratedAlbums(albums, annotations, 1)).toEqual([albums[0], albums[2]]);
   expect(ratedAlbums(albums, annotations, 3)).toEqual([albums[0]]);
   expect(albumRating(albums[0]!, annotations)).toBe(5);
+  expect(ratedAlbums(albums, annotations, 2, 4)).toEqual([albums[2]]);
+  expect(ratedAlbums(albums, annotations, 5, 5)).toEqual([albums[0]]);
+  expect(ratedAlbums(albums, annotations, 4, 2)).toEqual([]);
 });

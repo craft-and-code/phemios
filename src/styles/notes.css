@@ -260,3 +260,7 @@
 .annotation-reading .tag-pills {
   margin-bottom: 12px;
 }
+
+.tag-pill:has(> .tag-remove) {
+  padding-right: 3px;
+}
