@@ -41,3 +41,12 @@ export function catalogIndex(artists: readonly Artist[], albums: readonly Album[
   byArtist.set(artists, index);
   return index;
 }
+
+/** Artist cards play the artist's principal discography; illustration never selects the queue. */
+export function artistCardSelection(artist: Artist, related: readonly Album[]) {
+  return {
+    reference: artist.reference,
+    title: artist.name,
+    cover: related.find((album) => album.cover) ?? related[0],
+  };
+}

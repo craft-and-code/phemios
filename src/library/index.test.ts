@@ -1,5 +1,5 @@
 import { it, expect } from "vitest";
-import { catalogIndex } from "./index";
+import { catalogIndex, artistCardSelection } from "./index";
 import { filterAlbums, filterArtists } from "./filtering";
 import type { Album, Artist, Filters } from "./types";
 const guest: Artist = {
@@ -88,4 +88,29 @@ it("searches favourite candidates only through their own credited artists", () =
   expect(filterAlbums([release], [guest, stranger], { ...filters, query: "Guest" })).toEqual([
     release,
   ]);
+});
+
+it("plays the principal artist's chronological discography instead of an earlier guest-credit cover", () => {
+  const artist = { ...guest, reference: "artist:signal", name: "Signal" };
+  const contribution = {
+    ...release,
+    reference: "release:guest",
+    artist: "artist:another",
+    year: 1980,
+    cover: true,
+    contributors: [artist.reference],
+  };
+  const newest = {
+    ...release,
+    reference: "release:newest",
+    artist: artist.reference,
+    year: 2000,
+    cover: true,
+  };
+  const oldest = { ...newest, reference: "release:oldest", year: 1990 };
+  const chosen = artistCardSelection(artist, [contribution, newest, oldest]);
+  expect(chosen.reference).toBe(artist.reference);
+  expect(chosen.title).toBe(artist.name);
+  expect(chosen.cover).toBe(contribution);
+  expect(artistCardSelection(artist, [contribution]).reference).toBe(artist.reference);
 });

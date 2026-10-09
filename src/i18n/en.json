@@ -1058,5 +1058,6 @@
   "Démarrage du traitement…": "Starting processing…",
   "Traitement en attente…": "Processing queued…",
   "Traitement en cours…": "Processing in progress…",
-  "Masquer la notification": "Dismiss notification"
+  "Masquer la notification": "Dismiss notification",
+  "Actualisation des sorties audio…": "Refreshing audio outputs…"
 }

@@ -115,3 +115,9 @@ Annotation editing focuses the tag input and shares saved/editable pill geometry
 Catalogue covers now expose independent small Play controls, preserving detail links and enlarged-cover behavior. Compact album rows align the year at the right before Play. Analysis actions expand inline beneath the selected album, expose starting/queued/running activity and avoid duplicate launches. Report paths appear in a wrapping, dismissible notice outside the coverage table.
 
 The complete control/coverage gate passes 161 TypeScript behavior tests, 12 Node tooling/style checks and 52 Rust core tests. Frontend declaration documentation covers 129 modules. New failing regressions cover chronological owned/missing interleaving, explicit vocabulary re-entry and source-scoped active analysis tasks. Existing playback, annotation and personal-owner regressions retain their behavior.
+
+## Artist Play and output refresh feedback — 2026-10-10
+
+Artist-card playback now uses the artist reference rather than its illustration album. Principal discography ordering remains Aède-owned and excludes incidental guest albums. List Play controls use rounded squares, with centred overlay glyphs. Audio output discovery exposes a separate one-second-minimum activity state, rejects duplicate/offline requests and discards late account-lifetime results; transport state remains independent. No dependency, server endpoint or source-audio mutation is introduced.
+
+The complete gate passes 164 TypeScript behavior tests, 12 Node tooling checks and 52 Rust core tests, with 129 declaration modules. Isolated macOS acceptance verifies principal artist queue ordering despite an older guest illustration, rounded-square list Play and real output discovery. Fake-clock regressions verify the one-second refresh state, duplicate refusal, failure and account-reset cancellation. Native capture settling exceeds this brief state; no spinner screenshot is claimed.

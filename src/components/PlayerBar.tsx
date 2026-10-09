@@ -190,7 +190,7 @@ export function PlayerBar() {
               {t("Sortie audio")}{" "}
               <select
                 aria-label={t("Sortie audio")}
-                disabled={!player.ready() || player.busy()}
+                disabled={!player.ready() || player.busy() || player.discovering()}
                 value={player.device()}
                 onFocus={() => {
                   if (!player.outputs().length) void player.discover();
@@ -210,13 +210,19 @@ export function PlayerBar() {
             </label>
             <button
               class="icon-button"
+              aria-busy={player.discovering()}
               aria-label={t("Actualiser les sorties audio")}
               title={t("Actualiser les sorties audio")}
-              disabled={!player.ready() || player.busy()}
+              disabled={!player.ready() || player.busy() || player.discovering()}
               onClick={() => void player.discover()}
             >
-              <Icon name="refresh" />
+              <Show when={player.discovering()} fallback={<Icon name="refresh" />}>
+                <span class="spinner" aria-hidden="true" />
+              </Show>
             </button>
+            <Show when={player.discovering()}>
+              <small role="status">{t("Actualisation des sorties audio…")}</small>
+            </Show>
             <label>
               {t("Mode de lecture")}{" "}
               <select

@@ -2,7 +2,13 @@ import { createRoot } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createPlayback } from "./playback";
 import { idlePlayback } from "./playback-state";
-import { playbackState, playbackStart, playbackControl, requestAede } from "../platform/desktop";
+import {
+  playbackState,
+  playbackStart,
+  playbackControl,
+  playbackOutputs,
+  requestAede,
+} from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({
   playbackState: vi.fn(),
   playbackStart: vi.fn(),
@@ -237,6 +243,55 @@ it("resumes the displayed paused album at its current track without restarting i
     expect(playbackStart).toHaveBeenCalledOnce();
     expect(requestAede).not.toHaveBeenCalled();
     expect(player.state().position_ms).toBe(2345);
+    dispose();
+  });
+});
+
+it("shows output refresh for at least a second and admits only one discovery, without polling offline", async () => {
+  await createRoot(async (dispose) => {
+    let ready = false;
+    const player = createPlayback(() => ready);
+    await player.discover();
+    expect(playbackOutputs).not.toHaveBeenCalled();
+    ready = true;
+    vi.mocked(playbackOutputs).mockResolvedValue([{ id: "one", name: "Output", default: true }]);
+    const pending = player.discover();
+    expect(player.discovering()).toBe(true);
+    await player.discover();
+    expect(playbackOutputs).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(999);
+    expect(player.discovering()).toBe(true);
+    expect(player.outputs()).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await pending;
+    expect(player.discovering()).toBe(false);
+    dispose();
+  });
+});
+it("ends refresh visibly on failure and discards an old session's late outputs", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    vi.mocked(playbackOutputs).mockRejectedValueOnce(Error("Host unavailable"));
+    const failed = player.discover();
+    await vi.advanceTimersByTimeAsync(1000);
+    await failed;
+    expect(player.error()).toBe("Host unavailable");
+    expect(player.discovering()).toBe(false);
+    let complete!: (value: unknown) => void;
+    vi.mocked(playbackOutputs).mockReturnValueOnce(
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+    );
+    const late = player.discover();
+    player.reset();
+    expect(player.discovering()).toBe(false);
+    complete([{ id: "old", name: "Old", default: false }]);
+    await vi.advanceTimersByTimeAsync(1000);
+    await late;
+    expect(player.outputs()).toEqual([]);
+    expect(player.error()).toBe("");
+    expect(vi.getTimerCount()).toBe(0);
     dispose();
   });
 });

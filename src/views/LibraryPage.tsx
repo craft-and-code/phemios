@@ -14,7 +14,7 @@ import {
   additiveCountrySelection,
   isMac,
 } from "../library/selection";
-import { catalogIndex } from "../library/index";
+import { catalogIndex, artistCardSelection } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Filters } from "../library/types";
 import { sectionIcon, type Section } from "../navigation/routes";
@@ -120,7 +120,8 @@ export function LibraryPage(props: {
           <For each={artists()}>
             {(artist) => {
               const releases = index().albumsByArtist.get(artist.reference) ?? [];
-              const cover = releases.find((item) => item.cover) ?? releases[0];
+              const selection = artistCardSelection(artist, releases),
+                cover = selection.cover;
               return (
                 <li>
                   <div class="artist-card">
@@ -164,10 +165,7 @@ export function LibraryPage(props: {
                         </small>
                       </div>
                     </a>
-                    <CoverPlay
-                      reference={cover?.reference ?? artist.reference}
-                      title={cover?.title ?? artist.name}
-                    />
+                    <CoverPlay reference={selection.reference} title={selection.title} />
                   </div>
                 </li>
               );

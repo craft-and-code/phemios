@@ -22,6 +22,7 @@ export function createPlayback(
 ) {
   const [state, setState] = createSignal(idlePlayback),
     [outputs, setOutputs] = createSignal<AudioOutput[]>([]),
+    [discovering, setDiscovering] = createSignal(false),
     [device, setDevice] = createSignal(""),
     [selection, setSelection] = createSignal<PlayableSelection[]>([]),
     [error, setError] = createSignal(""),
@@ -167,14 +168,32 @@ export function createPlayback(
       if (epoch === generation) setBusy(false);
     }
   }
+  let discoveryTimer: ReturnType<typeof setTimeout> | undefined,
+    finishDiscovery: (() => void) | undefined;
+  function cancelDiscovery() {
+    clearTimeout(discoveryTimer);
+    finishDiscovery?.();
+    discoveryTimer = undefined;
+    finishDiscovery = undefined;
+    setDiscovering(false);
+  }
   async function discover() {
-    const epoch = generation;
+    if (!ready() || discovering()) return;
+    const epoch = lifetime;
+    setDiscovering(true);
     setError("");
+    const minimum = new Promise<void>((resolve) => {
+      finishDiscovery = resolve;
+      discoveryTimer = setTimeout(resolve, 1000);
+    });
     try {
       const value = parseOutputs(await playbackOutputs());
-      if (epoch === generation) setOutputs(value);
+      if (epoch === lifetime) setOutputs(value);
     } catch (failure) {
-      if (epoch === generation) setError(message(failure));
+      if (epoch === lifetime) setError(message(failure));
+    } finally {
+      await minimum;
+      if (epoch === lifetime) cancelDiscovery();
     }
   }
   let pendingVolume: number | undefined,
@@ -213,6 +232,7 @@ export function createPlayback(
   function reset() {
     progress.reset();
     lifetime++;
+    cancelDiscovery();
     cancel();
     setBusy(false);
     pendingVolume = undefined;
@@ -229,6 +249,7 @@ export function createPlayback(
   onCleanup(() => {
     progress.reset();
     lifetime++;
+    cancelDiscovery();
     cancel();
   });
   return {
@@ -248,6 +269,7 @@ export function createPlayback(
     toggleMute,
     state,
     outputs,
+    discovering,
     device,
     error,
     busy,
