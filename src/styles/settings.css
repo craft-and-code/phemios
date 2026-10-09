@@ -3,8 +3,44 @@
   margin-inline: auto;
 }
 .settings-tabs {
+  display: grid;
+  max-width: 512px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
   margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
 }
+.settings-tabs [role="tab"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 12px;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+}
+.settings-tabs [role="tab"] svg {
+  width: 24px;
+  height: 24px;
+}
+.settings-tabs [role="tab"][aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.settings-tabs [role="tab"]:hover {
+  color: var(--text);
+}
+.settings-tabs [role="tab"][aria-selected="true"]:hover {
+  color: var(--accent-text);
+}
+
 .settings-card {
   padding: 24px;
   border: 1px solid var(--border);
@@ -126,4 +162,66 @@
   .root-list li > div {
     flex-basis: 100%;
   }
+}
+
+.settings-connection form {
+  gap: 12px;
+}
+.settings-connection .connection-panel label {
+  margin: 0;
+  gap: 5px;
+}
+.settings-connection .connection-panel .eyebrow {
+  margin-block: 0 4px;
+}
+.settings-connection .connection-panel small {
+  margin-top: 4px;
+}
+.detail-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.detail-title h1 {
+  margin-right: auto;
+}
+.detail-play {
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  background: var(--accent);
+  color: var(--accent-text);
+  flex-shrink: 0;
+}
+.service-key {
+  display: grid;
+  gap: 6px;
+}
+.service-key-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.service-key-header label {
+  margin: 0;
+}
+.service-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.service-targets .check {
+  margin-block: 4px;
+}
+@media (max-width: 850px) {
+  .settings-tabs {
+    max-width: 256px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.service-status {
+  white-space: pre-line;
 }

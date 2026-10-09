@@ -62,6 +62,14 @@ export function createPlayback(
   async function startReference(reference = target()) {
     if (!ready() || busy() || !reference || !catalog) return;
     beforeStart();
+    const current = selection()[state().index];
+    if (
+      state().status === "paused" &&
+      (current?.reference === reference || current?.album?.reference === reference)
+    ) {
+      await action("resume");
+      return;
+    }
     setBusy(true);
     setError("");
     cancel();

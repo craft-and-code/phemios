@@ -1,3 +1,4 @@
+import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
@@ -58,7 +59,10 @@ export function ArtistPage(props: {
       >
         <div>
           <p class="eyebrow">{t("ARTISTE")}</p>
-          <h1>{props.artist.name}</h1>
+          <div class="detail-title">
+            <h1>{props.artist.name}</h1>
+            <SourceBadge reference={props.artist.reference} />
+          </div>
           <p>
             <For each={props.artist.genres ?? (props.artist.genre ? [props.artist.genre] : [])}>
               {(genre, index) => (

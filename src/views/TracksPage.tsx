@@ -1,8 +1,9 @@
 import { t } from "../i18n";
-import { createResource, For, Show } from "solid-js";
+import { createMemo, createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { parseTrackPage } from "../library/track-page";
+import { combinedTrackReader } from "../library/combined-tracks";
+import { sourceLabel } from "../library/sources";
 import { TrackResults } from "../components/TrackResults";
 /** All catalog placements, including albumless tracks, use bounded server search pages. */
 export function TracksPage(props: {
@@ -13,29 +14,28 @@ export function TracksPage(props: {
   const library = useLibrary(),
     offset = () => props.offset,
     setOffset = props.setOffset;
-  const [page] = createResource(
-    () =>
-      library.session()
-        ? { session: library.session(), query: props.query, offset: offset() }
-        : false,
-    async (key) => {
-      const epoch = library.snapshot()?.scannedAt;
-      const result = parseTrackPage(
-        await requestAede("/api/v1/presentation/tracks", {
-          offset: String(key.offset),
-          limit: "50",
-          q: key.query,
-        }),
-        key.offset,
-      );
-      if (epoch !== undefined && result.scannedAt !== epoch)
-        throw new Error(t("Le catalogue a changé ; resynchronisez la bibliothèque."));
-      return result;
-    },
+  const reader = createMemo(() => {
+    const sources = library.trackSources(),
+      query = props.query;
+    return sources.length
+      ? combinedTrackReader(sources, (source, at) =>
+          requestAede(
+            "/api/v1/presentation/tracks",
+            { offset: String(at), limit: "50", q: query },
+            "GET",
+            null,
+            source,
+          ),
+        )
+      : undefined;
+  });
+  const [page, { refetch }] = createResource(
+    () => reader() && { read: reader()!, offset: offset() },
+    (key) => key.read(key.offset),
   );
   return (
     <section class="page tracks-page">
-      <Show when={!library.session()}>
+      <Show when={!reader()}>
         <p class="notice">{t("Connectez Aède pour consulter toutes les pistes.")}</p>
       </Show>
       <Show when={page.error}>
@@ -49,6 +49,25 @@ export function TracksPage(props: {
       <Show when={!page.loading && !page.error && page()}>
         {(value) => (
           <>
+            <For each={value().unavailable}>
+              {(issue) => (
+                <p role="alert">
+                  {sourceLabel(issue.source)} · {issue.error}{" "}
+                  <button onClick={() => refetch()}>{t("Réessayer")}</button>
+                </p>
+              )}
+            </For>
+            <Show
+              when={library
+                .origins()
+                .some((source) => !library.trackSources().some((row) => row.source === source))}
+            >
+              <p class="notice">
+                {t(
+                  "Les pistes de la bibliothèque déconnectée seront disponibles après reconnexion.",
+                )}
+              </p>
+            </Show>
             <div class="section-heading">
               <p class="muted">
                 {value().total} {t("piste")}
@@ -77,6 +96,7 @@ export function TracksPage(props: {
                     <TrackResults
                       track={track}
                       number={offset() + index() + 1}
+                      origin
                       onPlay={() => void library.player.startReference(track.reference)}
                       context={
                         <>

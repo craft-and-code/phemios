@@ -185,7 +185,27 @@ pub(crate) async fn aede_request(
         return Err("Le secret du moteur local est géré par Phémios.".into());
     }
     let client = client(state.owner(origin))?;
+    let engine = state.engine.clone();
     blocking(move || {
+        if method == "POST" && path == "/api/admin/v1/fetch" {
+            if client.account()["account"]["role"] != "admin" {
+                return Err("Un administrateur Aède est nécessaire.".into());
+            }
+            let keys = engine
+                .lock()
+                .map_err(|_| "Moteur local occupé.")?
+                .fetch_keys()?;
+            let status = if keys.as_object().is_some_and(|rows| !rows.is_empty()) {
+                client.request("GET", "/api/v1/status", &[], None)?
+            } else {
+                serde_json::json!({})
+            };
+            phemios_core::enrichment::attach_service_keys(
+                body.as_mut().ok_or("Demande d’enrichissement invalide.")?,
+                &keys,
+                &status,
+            )?;
+        }
         let query: Vec<_> = query
             .iter()
             .map(|(key, value)| (key.as_str(), value.as_str()))

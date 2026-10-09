@@ -1,96 +1,155 @@
 import { t } from "../i18n";
-import { createResource, createSignal, Show } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { localStatus, saveLocalKeys, requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
-/** Credentials stay native; enrichment requires an explicit user action. */
+import { sourceLabel, type SourceId } from "../library/sources";
+import { startEnrichment } from "../library/enrichment";
+import { Icon } from "../components/Icon";
+/** One private native key store serves explicit jobs on either library; no automatic enrichment. */
 export function SettingsServices() {
   const library = useLibrary(),
     [fanart, setFanart] = createSignal(""),
     [acoustid, setAcoustid] = createSignal(""),
-    [removeFanart, setRemoveFanart] = createSignal(false),
-    [removeAcoustid, setRemoveAcoustid] = createSignal(false),
     [message, setMessage] = createSignal(""),
     [busy, setBusy] = createSignal(false),
     [summaries, setSummaries] = createSignal(true),
     [covers, setCovers] = createSignal(true),
     [fanartPass, setFanartPass] = createSignal(false),
-    [lyrics, setLyrics] = createSignal(false);
+    [lyrics, setLyrics] = createSignal(false),
+    [excluded, setExcluded] = createSignal<SourceId[]>([]);
   const [status, { refetch }] = createResource(() => !library.demo, localStatus);
-  const administrative = () =>
-    library.session()?.account.role === "admin" && library.session()?.server.startsWith("http://");
+  let initialized = false;
+  createEffect(() => {
+    const configured = status()?.keys.fanart;
+    if (configured !== undefined && !initialized) {
+      initialized = true;
+      setFanartPass(configured);
+    }
+  });
+  const targets = createMemo(() =>
+    (["local", "server"] as const).filter((source) => {
+      const session = source === "local" ? library.localSession() : library.serverSession();
+      return session?.account.role === "admin" && session.server.startsWith("http://");
+    }),
+  );
+  async function save(remove?: "fanart" | "acoustid") {
+    const activateFanart = !remove && !!fanart().trim();
+    setBusy(true);
+    setMessage("");
+    try {
+      await saveLocalKeys(
+        remove ? "" : fanart(),
+        remove ? "" : acoustid(),
+        remove === "fanart",
+        remove === "acoustid",
+      );
+      if (!remove || remove === "fanart") setFanart("");
+      if (!remove || remove === "acoustid") setAcoustid("");
+      await refetch();
+      if (activateFanart) setFanartPass(true);
+      if (remove === "fanart") setFanartPass(false);
+      setMessage(
+        t("Clés communes enregistrées. Elles s’appliquent aux prochains enrichissements."),
+      );
+    } catch (error) {
+      setMessage(String(error));
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div class="settings-card">
       <h2>{t("Sources externes")}</h2>
       <p>
         {t(
-          "Les clés ci-dessous sont stockées dans les données privées de Phémios et utilisées uniquement par le moteur local. Les clés d’un serveur distant se configurent sur ce serveur.",
-        )}{" "}
+          "Une seule configuration pour vos bibliothèques. Les clés restent dans les données privées de Phémios et sont transmises uniquement lorsque vous lancez un enrichissement. La configuration propre du serveur est conservée.",
+        )}
       </p>
       <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setMessage("");
-          try {
-            await saveLocalKeys(fanart(), acoustid(), removeFanart(), removeAcoustid());
-            setFanart("");
-            setAcoustid("");
-            setRemoveFanart(false);
-            setRemoveAcoustid(false);
-            await refetch();
-            setMessage(
-              t("Clés enregistrées. Désactivez puis réactivez le moteur local pour les appliquer."),
-            );
-          } catch (error) {
-            setMessage(String(error));
-          } finally {
-            setBusy(false);
-          }
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save();
         }}
       >
-        <label>
-          {t("Fanart.tv ·")} {status()?.keys.fanart ? t("configurée") : t("absente")}
+        <div class="service-key">
+          <div class="service-key-header">
+            <label for="fanart-key">
+              {t("Fanart.tv ·")} {status()?.keys.fanart ? t("configurée") : t("absente")}
+            </label>
+            <button
+              type="button"
+              class="icon-button quiet"
+              aria-label={t("Supprimer la clé Fanart.tv")}
+              title={t("Supprimer la clé Fanart.tv")}
+              disabled={busy() || library.demo || !status()?.keys.fanart}
+              onClick={() => void save("fanart")}
+            >
+              <Icon name="trash" />
+            </button>
+          </div>
           <input
+            id="fanart-key"
             type="password"
             autocomplete="off"
             value={fanart()}
-            onInput={(e) => setFanart(e.currentTarget.value)}
+            onInput={(event) => setFanart(event.currentTarget.value)}
           />
-        </label>
-        <label class="check">
+        </div>
+        <div class="service-key">
+          <div class="service-key-header">
+            <label for="acoustid-key">
+              {t("AcoustID ·")} {status()?.keys.acoustid ? t("configurée") : t("absente")}
+            </label>
+            <button
+              type="button"
+              class="icon-button quiet"
+              aria-label={t("Supprimer la clé AcoustID")}
+              title={t("Supprimer la clé AcoustID")}
+              disabled={busy() || library.demo || !status()?.keys.acoustid}
+              onClick={() => void save("acoustid")}
+            >
+              <Icon name="trash" />
+            </button>
+          </div>
           <input
-            type="checkbox"
-            checked={removeFanart()}
-            onChange={(e) => setRemoveFanart(e.currentTarget.checked)}
-          />
-          {t("Supprimer la clé Fanart.tv")}{" "}
-        </label>
-        <label>
-          {t("AcoustID ·")} {status()?.keys.acoustid ? t("configurée") : t("absente")}
-          <input
+            id="acoustid-key"
             type="password"
             autocomplete="off"
             value={acoustid()}
-            onInput={(e) => setAcoustid(e.currentTarget.value)}
+            onInput={(event) => setAcoustid(event.currentTarget.value)}
           />
-        </label>
-        <label class="check">
-          <input
-            type="checkbox"
-            checked={removeAcoustid()}
-            onChange={(e) => setRemoveAcoustid(e.currentTarget.checked)}
-          />
-          {t("Supprimer la clé AcoustID")}{" "}
-        </label>
-        <button disabled={busy() || library.demo}>{t("Enregistrer les clés locales")}</button>
+        </div>
+        <button disabled={busy() || library.demo}>{t("Enregistrer les clés communes")}</button>
         <small>{t("Un champ vide conserve la clé existante.")}</small>
       </form>
       <p class="muted">
         {t(
           "MusicBrainz, Cover Art Archive, Wikipédia et Wikidata ne demandent pas de clé API pour les passes utilisées par Aède.",
-        )}{" "}
+        )}
       </p>
-      <h3>{t("Enrichir la bibliothèque sélectionnée")}</h3>
+      <h3>{t("Enrichir la bibliothèque")}</h3>
+      <Show when={library.origins().length > 1}>
+        <div class="service-targets" aria-label={t("Bibliothèques à enrichir")}>
+          <For each={targets()}>
+            {(source) => (
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={!excluded().includes(source)}
+                  onChange={(event) =>
+                    setExcluded((held) =>
+                      event.currentTarget.checked
+                        ? held.filter((s) => s !== source)
+                        : [...held, source],
+                    )
+                  }
+                />
+                {sourceLabel(source)}
+              </label>
+            )}
+          </For>
+        </div>
+      </Show>
       <div class="settings-actions">
         <label class="check">
           <input
@@ -98,7 +157,7 @@ export function SettingsServices() {
             checked={summaries()}
             onChange={(e) => setSummaries(e.currentTarget.checked)}
           />
-          {t("Biographies")}{" "}
+          {t("Biographies")}
         </label>
         <label class="check">
           <input
@@ -106,7 +165,7 @@ export function SettingsServices() {
             checked={covers()}
             onChange={(e) => setCovers(e.currentTarget.checked)}
           />
-          {t("Pochettes")}{" "}
+          {t("Pochettes")}
         </label>
         <label class="check">
           <input
@@ -114,7 +173,7 @@ export function SettingsServices() {
             checked={fanartPass()}
             onChange={(e) => setFanartPass(e.currentTarget.checked)}
           />
-          {t("Fanart.tv")}{" "}
+          {t("Fanart.tv")}
         </label>
         <label class="check">
           <input
@@ -122,61 +181,71 @@ export function SettingsServices() {
             checked={lyrics()}
             onChange={(e) => setLyrics(e.currentTarget.checked)}
           />
-          {t("Paroles")}{" "}
+          {t("Paroles")}
         </label>
       </div>
       <button
         disabled={
           busy() ||
-          !administrative() ||
+          !targets().some((s) => !excluded().includes(s)) ||
           ![summaries(), covers(), fanartPass(), lyrics()].some(Boolean)
         }
         onClick={async () => {
           setBusy(true);
+          setMessage("");
+          const options = {
+            summaries: summaries(),
+            covers: covers(),
+            images: covers(),
+            fanart: fanartPass(),
+            lyrics: lyrics(),
+            yes: true,
+          };
           try {
-            const job = await requestAede<{ task_id: number }>(
-              "/api/admin/v1/fetch",
-              {},
-              "POST",
-              {
-                summaries: summaries(),
-                covers: covers(),
-                images: covers(),
-                fanart: fanartPass(),
-                lyrics: lyrics(),
-                yes: true,
-              },
-              library.source(),
+            const results = await startEnrichment(
+              targets().filter((s) => !excluded().includes(s)),
+              (source) => requestAede("/api/admin/v1/fetch", {}, "POST", options, source),
             );
             setMessage(
-              t(
-                "Tâche #{0} lancée sur {1}.",
-                job.task_id,
-                library.source() === "local" ? "Local" : "Serveur",
-              ),
+              results
+                .map((result) =>
+                  "error" in result
+                    ? `${sourceLabel(result.source)} · ${result.error}`
+                    : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
+                )
+                .join("\n"),
             );
-          } catch (e) {
-            setMessage(String(e));
           } finally {
             setBusy(false);
           }
         }}
       >
-        {t("Lancer l’enrichissement")}{" "}
+        {t("Lancer l’enrichissement")}
       </button>
       <p class="muted">
         {t(
           "Cette action contacte les services externes. Aucun enrichissement n’est lancé en ouvrant la bibliothèque ou les Paramètres.",
-        )}{" "}
+        )}
       </p>
-      <Show when={!administrative()}>
+      <Show
+        when={
+          !targets().length ||
+          [library.localSession(), library.serverSession()].some(
+            (session) =>
+              session &&
+              (session.account.role !== "admin" || session.server.startsWith("https://")),
+          )
+        }
+      >
         <p class="notice">
           {t(
             "Un administrateur Aède HTTP local est nécessaire pour lancer une tâche. Sur un serveur HTTPS, utilisez la commande fetch du serveur.",
-          )}{" "}
+          )}
         </p>
       </Show>
-      <p role="status">{message()}</p>
+      <p class="service-status" role="status">
+        {message()}
+      </p>
     </div>
   );
 }

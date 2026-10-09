@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import { referenceSource, sourceLabel } from "../library/sources";
+import { SourceBadge } from "./SourceBadge";
 import { For, Show } from "solid-js";
 import type { Album } from "../library/types";
 import { Artwork } from "./Artwork";
@@ -20,8 +20,7 @@ export function AlbumGrid(props: { albums: readonly Album[] }) {
               <Artwork album={album} />
               <strong>{album.title}</strong>
               <small>
-                {album.year ?? t("Année inconnue")}{" "}
-                <span class="source-badge">{sourceLabel(referenceSource(album.reference))}</span>
+                {album.year ?? t("Année inconnue")} <SourceBadge reference={album.reference} />
               </small>
             </a>
           )}

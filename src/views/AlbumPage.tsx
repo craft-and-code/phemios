@@ -1,3 +1,5 @@
+import { Icon } from "../components/Icon";
+import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
@@ -48,7 +50,23 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
         </Show>
         <div>
           <p class="eyebrow">{props.album.compilation ? "COMPILATION" : "ALBUM"}</p>
-          <h1>{props.album.title}</h1>
+          <div class="detail-title">
+            <h1>{props.album.title}</h1>
+            <SourceBadge reference={props.album.reference} />
+            <button
+              class="icon-button detail-play"
+              aria-label={t("Lire l’album")}
+              title={t("Lire l’album")}
+              disabled={
+                !library.sessionFor(props.album.reference) ||
+                library.sessionFor(props.album.reference)?.account.role === "auditor" ||
+                library.player.busy()
+              }
+              onClick={() => void library.player.startReference(props.album.reference)}
+            >
+              <Icon name="play" />
+            </button>
+          </div>
           <p>
             <Show when={artist()} fallback={t("Artistes divers")}>
               {(row) => (

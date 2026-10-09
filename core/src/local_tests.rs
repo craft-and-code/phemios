@@ -54,6 +54,7 @@ fn api_keys_preserve_empty_inputs_and_support_explicit_removal() {
     let result = engine.status().unwrap();
     assert_eq!(result["keys"]["fanart"], false);
     assert_eq!(result["keys"]["acoustid"], true);
+    assert_eq!(engine.fetch_keys().unwrap(), json!({"acoustid":"second"}));
 }
 
 #[test]

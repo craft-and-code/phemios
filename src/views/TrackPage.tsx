@@ -1,3 +1,5 @@
+import { Icon } from "../components/Icon";
+import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { createResource, For, Show } from "solid-js";
@@ -44,7 +46,23 @@ export function TrackPage(props: { reference: string }) {
               </Show>
               <div>
                 <p class="eyebrow">{t("PISTE")}</p>
-                <h1>{row().title}</h1>
+                <div class="detail-title">
+                  <h1>{row().title}</h1>
+                  <SourceBadge reference={props.reference} />
+                  <button
+                    class="icon-button detail-play"
+                    aria-label={t("Lire ce titre")}
+                    title={t("Lire ce titre")}
+                    disabled={
+                      !library.sessionFor(props.reference) ||
+                      library.sessionFor(props.reference)?.account.role === "auditor" ||
+                      library.player.busy()
+                    }
+                    onClick={() => void library.player.startReference(props.reference)}
+                  >
+                    <Icon name="play" />
+                  </button>
+                </div>
                 <Show when={album()} fallback={<p>{t("Sans album")}</p>}>
                   {(a) => (
                     <p>

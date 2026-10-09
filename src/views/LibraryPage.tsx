@@ -1,6 +1,6 @@
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
-import { referenceSource, sourceLabel } from "../library/sources";
+import { SourceBadge } from "../components/SourceBadge";
 import { createMemo, For, Show } from "solid-js";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
@@ -139,10 +139,7 @@ export function LibraryPage(props: {
                     </Show>
                     <div>
                       <h2>
-                        {artist.name}{" "}
-                        <span class="source-badge">
-                          {sourceLabel(referenceSource(artist.reference))}
-                        </span>
+                        {artist.name} <SourceBadge reference={artist.reference} />
                       </h2>
                       <p>
                         {artist.genre} · {countryName(artist.countryCode, artist.country)}

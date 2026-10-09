@@ -8,6 +8,7 @@ import { useLibrary } from "../library/context";
 import type { Track } from "../library/server";
 import { AnalysisCharts } from "./AnalysisCharts";
 import { AnalysisDownload } from "./AnalysisDownload";
+import { SourceBadge } from "./SourceBadge";
 import { Icon } from "./Icon";
 /** Compact actions open retained analysis or explicitly fetched spectra independently. */
 export function TrackResults(props: {
@@ -16,6 +17,7 @@ export function TrackResults(props: {
   onPlay: () => void;
   context?: JSX.Element;
   expanded?: boolean;
+  origin?: boolean;
 }) {
   const library = useLibrary(),
     id = createUniqueId(),
@@ -49,6 +51,9 @@ export function TrackResults(props: {
         <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
           {props.track.title}
         </a>
+        <Show when={props.origin}>
+          <SourceBadge reference={props.track.reference} />
+        </Show>
         <small>
           {duration() === null
             ? t("Durée inconnue")
@@ -57,7 +62,11 @@ export function TrackResults(props: {
         <div class="track-actions">
           <button
             class="icon-button quiet"
-            disabled={!library.player.ready() || library.player.busy()}
+            disabled={
+              !library.sessionFor(props.track.reference) ||
+              library.sessionFor(props.track.reference)?.account.role === "auditor" ||
+              library.player.busy()
+            }
             aria-label={t("Lire {0}", props.track.title)}
             onClick={props.onPlay}
           >

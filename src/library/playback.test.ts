@@ -212,3 +212,31 @@ it("stops an external source only when starting music, never on transport stop",
     dispose();
   });
 });
+
+it("resumes the displayed paused album at its current track without restarting its queue", async () => {
+  await createRoot(async (dispose) => {
+    const current = {
+      ...idlePlayback,
+      reference: "track:two",
+      total: 2,
+      index: 1,
+      position_ms: 2345,
+    };
+    vi.mocked(playbackState)
+      .mockResolvedValueOnce({ ...current, status: "playing" })
+      .mockResolvedValueOnce({ ...current, status: "paused" })
+      .mockResolvedValue({ ...current, status: "playing" });
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album], artists: [] }),
+    );
+    await player.start(tracks, album, "Artist", 1);
+    await player.action("pause");
+    await player.startReference(album.reference);
+    expect(playbackControl).toHaveBeenLastCalledWith("resume", null);
+    expect(playbackStart).toHaveBeenCalledOnce();
+    expect(requestAede).not.toHaveBeenCalled();
+    expect(player.state().position_ms).toBe(2345);
+    dispose();
+  });
+});

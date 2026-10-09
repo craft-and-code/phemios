@@ -139,14 +139,9 @@ impl Engine {
             .env("AEDE_DESKTOP_LEASE", "1")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
-        for (name, key) in [
-            ("AEDE_FANARTTV_KEY", "fanart"),
-            ("AEDE_ACOUSTID_KEY", "acoustid"),
-        ] {
-            if let Some(secret) = value["keys"][key].as_str() {
-                command.env(name, secret);
-            }
-        }
+        command
+            .env_remove("AEDE_FANARTTV_KEY")
+            .env_remove("AEDE_ACOUSTID_KEY");
         let mut child = command
             .spawn()
             .map_err(|_| "Le moteur Aède embarqué ne peut pas démarrer.")?;
@@ -314,6 +309,10 @@ impl Engine {
             self.save(&value)?;
         }
         Ok(())
+    }
+    /// Retained service keys are private Rust data, attached only to explicit fetch requests.
+    pub fn fetch_keys(&self) -> Result<Value, String> {
+        Ok(self.config()?["keys"].clone())
     }
     /// Save explicitly supplied external keys; empty input preserves, removal is explicit.
     pub fn keys(

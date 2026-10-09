@@ -500,6 +500,7 @@
   "image(s) indisponible(s) · resynchronisez pour réessayer": "image(s) unavailable · sync again to retry",
   "l’album": "the album",
   "l’artiste": "the artist",
+  "la piste": "the track",
   "pistes communes · Source :": "shared tracks · Source:",
   "positions conservées ·": "retained positions ·",
   "pour ajouter ou retirer un pays de la sélection.": "to add or remove a country from the selection.",
@@ -923,5 +924,18 @@
   "{0} pistes communes": "{0} shared tracks",
   "Ouvrir {0}": "Open {0}",
   "⌘ + clic": "⌘ + click",
-  "Ctrl + clic": "Ctrl + click"
+  "Ctrl + clic": "Ctrl + click",
+  "Nombre de pistes invalide.": "Invalid track count.",
+  "Les pistes de la bibliothèque déconnectée seront disponibles après reconnexion.": "Tracks from the disconnected library will be available after reconnection.",
+  "Lire l’album": "Play album",
+  "Lire ce titre": "Play this track",
+  "Clés communes enregistrées. Elles s’appliquent aux prochains enrichissements.": "Shared keys saved. They apply to the next enrichment jobs.",
+  "Une seule configuration pour vos bibliothèques. Les clés restent dans les données privées de Phémios et sont transmises uniquement lorsque vous lancez un enrichissement. La configuration propre du serveur est conservée.": "One configuration for your libraries. Keys remain in Phémios private data and are sent only when you start enrichment. The server’s own configuration is retained.",
+  "Enregistrer les clés communes": "Save shared keys",
+  "Enrichir la bibliothèque": "Enrich the library",
+  "Bibliothèques à enrichir": "Libraries to enrich",
+  "Demande d’enrichissement invalide.": "Invalid enrichment request.",
+  "Les clés des sources externes restent dans la configuration native.": "External service keys remain in the native configuration.",
+  "Mettez à jour puis redémarrez Aède pour utiliser les clés communes.": "Update and restart Aède to use shared keys.",
+  "Un administrateur Aède est nécessaire.": "An Aède administrator is required."
 }

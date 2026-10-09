@@ -74,7 +74,10 @@ export function App() {
     const domain = yearDomain();
     if (Number.isFinite(domain[0])) setFilters((previous) => ({ ...previous, years: domain }));
   });
-  const trackPaging = createTrackPaging(() => filters().query, library.session);
+  const trackPaging = createTrackPaging(
+    () => filters().query,
+    () => library.trackSources(),
+  );
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
@@ -317,16 +320,17 @@ export function App() {
               "countries",
               "genres",
               "recent",
+              "tracks",
               "radio",
               "settings",
               "relations",
               "players",
             ].includes(section()) &&
-            (library.localSession() || library.serverSession())
+            library.origins().length > 1
           }
         >
           <div class="choices library-source" aria-label={t("Origine des données personnelles")}>
-            <For each={["local", "server"] as const}>
+            <For each={library.origins()}>
               {(source) => (
                 <button
                   aria-pressed={library.source() === source}

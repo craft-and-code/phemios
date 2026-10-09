@@ -161,7 +161,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         {props.kind === "artist"
           ? t("l’artiste")
           : props.kind === "track"
-            ? "la piste"
+            ? t("la piste")
             : t("l’album")}
       </h2>
       <Show when={!library.sessionFor(props.reference)}>

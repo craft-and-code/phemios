@@ -1,8 +1,9 @@
 import { t } from "../i18n";
-import { referenceSource, type SourceId } from "./sources";
+import { catalogOrigins, effectiveSource, referenceSource, type SourceId } from "./sources";
 import { startLocal, stopLocal, localStatus, setRequestSource } from "../platform/desktop";
 import {
   createContext,
+  createEffect,
   useContext,
   createSignal,
   createMemo,
@@ -40,6 +41,8 @@ interface Library {
   serverSession: Accessor<AccountSession | undefined>;
   localSession: Accessor<AccountSession | undefined>;
   source: Accessor<SourceId>;
+  origins: Accessor<readonly SourceId[]>;
+  trackSources: Accessor<readonly import("./combined-tracks").TrackSource[]>;
   chooseSource: (source: SourceId) => void;
   sessionFor: (reference: string) => AccountSession | undefined;
   enableLocal: () => Promise<void>;
@@ -67,10 +70,43 @@ export function LibraryProvider(props: ParentProps) {
     [localSnapshot, setLocalSnapshot] = createSignal<Snapshot>(),
     [serverSession, setSession] = createSignal<AccountSession>(),
     [localSession, setLocalSession] = createSignal<AccountSession>(),
-    [source, setSource] = createSignal<SourceId>("server"),
+    [selectedSource, setSource] = createSignal<SourceId>("server"),
     [busy, setBusy] = createSignal(false),
     [connected, setConnected] = createSignal(false),
     [error, setError] = createSignal("");
+  const origins = createMemo(() =>
+    catalogOrigins(
+      [
+        ...(localSnapshot()?.artists ?? []),
+        ...(localSnapshot()?.albums ?? []),
+        ...(serverSnapshot()?.artists ?? []),
+        ...(serverSnapshot()?.albums ?? []),
+      ].map((row) => row.reference),
+    ),
+  );
+  const trackSources = createMemo(() =>
+    (["local", "server"] as const).flatMap((owner) => {
+      const session = owner === "local" ? localSession() : serverSession();
+      const snapshot = owner === "local" ? localSnapshot() : serverSnapshot();
+      return session
+        ? [
+            {
+              source: owner,
+              identity: `${session.server}:${session.account.id}`,
+              ...(snapshot ? { scannedAt: snapshot.scannedAt } : {}),
+            },
+          ]
+        : [];
+    }),
+  );
+  const source = createMemo(() =>
+    effectiveSource(
+      selectedSource(),
+      trackSources().map((row) => row.source),
+      origins(),
+    ),
+  );
+  createEffect(() => setRequestSource(source()));
   const session = () => (source() === "local" ? localSession() : serverSession());
   const sessionFor = (reference: string) =>
     referenceSource(reference) === "local" ? localSession() : serverSession();
@@ -350,6 +386,8 @@ export function LibraryProvider(props: ParentProps) {
     serverSession,
     localSession,
     source,
+    origins,
+    trackSources,
     chooseSource,
     sessionFor,
     enableLocal,
