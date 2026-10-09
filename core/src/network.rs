@@ -419,7 +419,7 @@ fn allowed(method: &str, path: &str) -> bool {
                 | "/api/auth/v1/password"
                 | "/api/me/v1/missing"
         ),
-        "PATCH" => account_path(path, false),
+        "PATCH" => path == "/api/me/v1/collection" || account_path(path, false),
         "DELETE" => {
             account_path(path, true)
                 || matches!(

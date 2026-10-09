@@ -413,3 +413,10 @@ fn idempotent_reads_retry_temporary_personal_store_contention() {
     assert_eq!(answer.unwrap()["status"], "ok");
     assert_eq!(count, 2);
 }
+
+#[test]
+fn name_only_collection_edits_have_a_narrow_native_route() {
+    assert!(allowed("PATCH", "/api/me/v1/collection"));
+    assert!(!allowed("PATCH", "/api/admin/v1/collection"));
+    assert!(!allowed("PATCH", "/api/me/v1/collections"));
+}

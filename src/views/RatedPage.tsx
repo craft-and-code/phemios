@@ -1,3 +1,5 @@
+import { SelectionCollection } from "../components/SelectionCollection";
+import { personalCollectionExpression } from "../library/personal-collection";
 import { EmptyState } from "../components/EmptyState";
 import { StarRating } from "../components/StarRating";
 import { createSignal, Show } from "solid-js";
@@ -55,6 +57,9 @@ export function RatedPage(props: { query: string }) {
             setMaximum(next);
             if (next < minimum()) setMinimum(next);
           }}
+        />
+        <SelectionCollection
+          expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
         />
       </div>
       <Show

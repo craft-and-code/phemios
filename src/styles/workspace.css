@@ -120,3 +120,35 @@
     gap: 12px;
   }
 }
+
+.collection-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.collection-name > strong {
+  flex: 1;
+}
+.collection-name-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.collection-name-editor input {
+  min-width: 0;
+  flex: 1;
+}
+.collection-name [role="alert"] {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.personal-selection-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}

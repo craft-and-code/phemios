@@ -595,3 +595,24 @@ legend {
   width: 11px;
   height: 11px;
 }
+
+/* Summary and volume use the same box and centre axis; summaries need their own hover rule. */
+.player-options {
+  align-items: center;
+}
+.audio-settings > summary.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+.audio-settings > summary:hover {
+  color: var(--accent);
+}
+.player-options .speaker-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}

@@ -17,9 +17,8 @@ pub(super) fn request_failure(
         return "Mettez à jour puis redémarrez Aède pour afficher les disques et pistes de cet album.".into();
     }
     if status == 409
-        && method == "PUT"
+        && ((method == "PUT" && create_only) || method == "PATCH")
         && path == "/api/me/v1/collection"
-        && create_only
         && code == Some("collection_exists")
     {
         return "Une collection porte déjà ce nom. Choisissez un autre nom.".into();

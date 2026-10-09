@@ -55,3 +55,21 @@ it("refuses multi-genre rules on servers supporting only legacy browsing", async
     create_only: true,
   });
 });
+
+it("refuses personal browse criteria on legacy servers and preserves their rating bounds", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  const expression = 'browse-v1:{"view":"rated","ratings":[2,4]}';
+  await expect(saveBrowsingCollection("Rated", expression, () => true)).rejects.toThrow(
+    /notes|notés/,
+  );
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  vi.mocked(requestAede).mockResolvedValue({
+    capabilities: ["dynamic_browse_collections", "dynamic_browse_personal"],
+  });
+  await saveBrowsingCollection("Rated", expression, () => true);
+  expect(requestAede).toHaveBeenLastCalledWith("/api/me/v1/collection", { name: "Rated" }, "PUT", {
+    expression,
+    create_only: true,
+  });
+});

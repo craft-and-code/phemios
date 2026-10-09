@@ -1059,5 +1059,12 @@
   "Traitement en attente…": "Processing queued…",
   "Traitement en cours…": "Processing in progress…",
   "Masquer la notification": "Dismiss notification",
-  "Actualisation des sorties audio…": "Refreshing audio outputs…"
+  "Actualisation des sorties audio…": "Refreshing audio outputs…",
+  "Créer une collection depuis cette sélection": "Create a collection from this selection",
+  "La collection conservera les critères de cette sélection.": "The collection will retain the criteria of this selection.",
+  "Mettez à jour puis redémarrez Aède pour conserver les notes et favoris dans une collection.": "Update and restart Aède to retain ratings and favourites in a collection.",
+  "Mettez à jour puis redémarrez Aède pour renommer les collections.": "Update and restart Aède to rename collections.",
+  "Renommer {0}": "Rename {0}",
+  "Renommer la collection": "Rename collection",
+  "Enregistrer le nom": "Save name"
 }

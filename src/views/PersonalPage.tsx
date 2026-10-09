@@ -1,3 +1,6 @@
+import { RenameCollection } from "../components/RenameCollection";
+import { SelectionCollection } from "../components/SelectionCollection";
+import { personalCollectionExpression } from "../library/personal-collection";
 import { DeleteCollection } from "../components/DeleteCollection";
 import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
@@ -114,6 +117,11 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
       <Show when={props.section === "favourites"}>
+        <div class="personal-selection-actions">
+          <SelectionCollection
+            expression={personalCollectionExpression("favourites", props.query)}
+          />
+        </div>
         <Show
           when={favourites().length}
           fallback={
@@ -198,32 +206,15 @@ export function PersonalPage(props: { section: Section; query: string }) {
           >
             {(row) => (
               <li>
-                <strong>{row.name}</strong>
-                <small>
-                  {row.expression.startsWith("browse-v1:")
-                    ? t("Collection dynamique · filtres du catalogue")
-                    : row.expression}
-                </small>
+                <RenameCollection
+                  name={row.name}
+                  onRenamed={(name) => {
+                    if (openedCollection() === row.name) setOpenedCollection(name);
+                    void refetch();
+                  }}
+                />
                 <button onClick={() => setOpenedCollection(row.name)}>
                   {t("Voir les albums")}
-                </button>
-                <button
-                  disabled={row.expression.startsWith("browse-v1:")}
-                  title={
-                    row.expression.startsWith("browse-v1:")
-                      ? t(
-                          "Créez une nouvelle collection depuis les filtres pour choisir d’autres critères",
-                        )
-                      : t("Modifier la règle")
-                  }
-                  onClick={() => {
-                    setName(row.name);
-                    setExpression(row.expression);
-                    setEditingCollection(true);
-                    queueMicrotask(() => nameInput?.focus());
-                  }}
-                >
-                  {t("Modifier")}{" "}
                 </button>
                 <DeleteCollection
                   name={row.name}

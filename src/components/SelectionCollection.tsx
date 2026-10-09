@@ -5,7 +5,11 @@ import { useLibrary } from "../library/context";
 import { saveBrowsingCollection } from "../library/collection-save";
 import type { Filters } from "../library/types";
 /** Freeze the criteria at opening; Aède evaluates their future catalog matches. */
-export function SelectionCollection(props: { section: string; filters: Filters }) {
+export function SelectionCollection(props: {
+  section?: string;
+  filters?: Filters;
+  expression?: string;
+}) {
   const library = useLibrary(),
     [draft, setDraft] = createSignal<string>(),
     [name, setName] = createSignal(""),
@@ -36,7 +40,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
       <button
         class="icon-button"
         disabled={!writable()}
-        aria-label={t("Créer une collection dynamique depuis ces filtres")}
+        aria-label={t("Créer une collection depuis cette sélection")}
         title={t("Créer une collection depuis ces filtres")}
         onClick={() => {
           setName("");
@@ -44,7 +48,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
           setMessage("");
           const criteria = { ...props.filters, view: props.section };
           if (!criteria.genres?.length) delete criteria.genres;
-          setDraft(`browse-v1:${JSON.stringify(criteria)}`);
+          setDraft(props.expression ?? `browse-v1:${JSON.stringify(criteria)}`);
         }}
       >
         <Icon name="library" />
@@ -63,7 +67,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                 dialog = element;
               }}
               class="collection-dialog"
-              aria-label={t("Créer une collection dynamique")}
+              aria-label={t("Créer une collection")}
               onCancel={(e) => {
                 e.preventDefault();
                 if (!busy()) setDraft(undefined);
@@ -93,11 +97,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                     <Icon name="close" />
                   </button>
                 </div>
-                <p>
-                  {t(
-                    "Les années, lettres, pays, genre et recherche actuellement sélectionnés seront conservés. Les futurs albums correspondants rejoindront cette collection.",
-                  )}{" "}
-                </p>
+                <p>{t("La collection conservera les critères de cette sélection.")} </p>
                 <label>
                   {t("Nom")}{" "}
                   <input
