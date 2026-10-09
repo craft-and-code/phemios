@@ -1,3 +1,4 @@
+import { activeReleaseJob } from "../library/jobs";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -10,6 +11,7 @@ export function JobControls(props: {
     [force, setForce] = createSignal(false),
     [busy, setBusy] = createSignal(false),
     [error, setError] = createSignal("");
+  const active = () => activeReleaseJob(library.tasks.jobs(), props.release);
   async function start(kind: "analyze" | "spectrum") {
     setBusy(true);
     setError("");
@@ -22,13 +24,14 @@ export function JobControls(props: {
     }
   }
   return (
-    <section class="job-controls">
+    <section class="job-controls" aria-busy={busy() || !!active()}>
       <div class="job-actions">
         <button
           disabled={
             !library.sessionFor(props.release) ||
             library.sessionFor(props.release)?.account.role !== "admin" ||
             busy() ||
+            !!active() ||
             (!force() &&
               props.coverage !== undefined &&
               props.coverage.current === props.coverage.tracks)
@@ -42,6 +45,7 @@ export function JobControls(props: {
             !library.sessionFor(props.release) ||
             library.sessionFor(props.release)?.account.role !== "admin" ||
             busy() ||
+            !!active() ||
             (!force() &&
               props.coverage !== undefined &&
               props.coverage.spectra === props.coverage.tracks)
@@ -51,6 +55,16 @@ export function JobControls(props: {
           {t("Générer les spectres")}{" "}
         </button>
       </div>
+      <Show when={busy() || active()}>
+        <p class="job-activity" role="status">
+          <span class="spinner" aria-hidden="true" />
+          {busy()
+            ? t("Démarrage du traitement…")
+            : active()?.status === "queued"
+              ? t("Traitement en attente…")
+              : t("Traitement en cours…")}
+        </p>
+      </Show>
       <label class="job-force">
         <input
           type="checkbox"

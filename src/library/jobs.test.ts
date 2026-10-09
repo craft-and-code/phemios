@@ -1,6 +1,6 @@
 import { createRoot } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { createJobs } from "./jobs";
+import { activeReleaseJob, createJobs } from "./jobs";
 import { requestAede } from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 const request = vi.mocked(requestAede);
@@ -69,4 +69,27 @@ it("stops network polling when disconnected and surfaces server errors", async (
   await vi.advanceTimersByTimeAsync(1200);
   expect(request).toHaveBeenCalledTimes(2);
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it("shows activity only for queued or running work on the matching source release", () => {
+  const rows = [
+    { task_id: 1, status: "completed" as const, release: "release:a" },
+    { task_id: 2, status: "queued" as const, release: "release:b" },
+    { task_id: 3, status: "running" as const, release: "release:a", source: "server" as const },
+    {
+      task_id: 4,
+      status: "queued" as const,
+      release: "release:@phemios/local/a",
+      source: "local" as const,
+    },
+  ];
+  expect(activeReleaseJob(rows, "release:a")?.task_id).toBe(3);
+  expect(activeReleaseJob(rows, "release:b")?.task_id).toBe(2);
+  expect(activeReleaseJob(rows, "release:@phemios/local/a")?.task_id).toBe(4);
+  expect(
+    activeReleaseJob(
+      rows.filter((row) => row.status === "completed"),
+      "release:a",
+    ),
+  ).toBeUndefined();
 });

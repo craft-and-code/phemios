@@ -1054,5 +1054,9 @@
   "Supprimer ?": "Delete?",
   "Confirmer la suppression de {0}": "Confirm deletion of {0}",
   "Supprimer la collection uniquement": "Delete the collection only",
-  "Créer une collection": "Create a collection"
+  "Créer une collection": "Create a collection",
+  "Démarrage du traitement…": "Starting processing…",
+  "Traitement en attente…": "Processing queued…",
+  "Traitement en cours…": "Processing in progress…",
+  "Masquer la notification": "Dismiss notification"
 }

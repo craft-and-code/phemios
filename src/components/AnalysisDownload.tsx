@@ -8,19 +8,32 @@ export function AnalysisDownload(props: {
   reference: string;
   album?: boolean;
   available: boolean;
+  onStatus?: (message: string, failure: boolean) => void;
 }) {
   const library = useLibrary();
   const [busy, setBusy] = createSignal(false),
     [path, setPath] = createSignal(""),
     [failure, setFailure] = createSignal("");
   async function download() {
+    const reference = props.reference,
+      session = library.sessionFor(reference);
+    const current = () =>
+      reference === props.reference && session === library.sessionFor(reference);
     setBusy(true);
     setFailure("");
     setPath("");
     try {
-      setPath(await downloadAnalysisAede(props.reference));
+      const saved = await downloadAnalysisAede(reference);
+      if (current()) {
+        if (props.onStatus) props.onStatus(`${t("Enregistré :")} ${saved}`, false);
+        else setPath(saved);
+      }
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : t("Téléchargement impossible."));
+      if (current()) {
+        const message = error instanceof Error ? error.message : t("Téléchargement impossible.");
+        if (props.onStatus) props.onStatus(message, true);
+        else setFailure(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -39,7 +52,9 @@ export function AnalysisDownload(props: {
         }
         title={t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))}
       >
-        <Icon name="download" />
+        <Show when={busy()} fallback={<Icon name="download" />}>
+          <span class="spinner" aria-hidden="true" />
+        </Show>
       </button>
       <Show when={path()}>
         <small role="status">

@@ -72,3 +72,51 @@
 .collection-form {
   margin-bottom: 20px;
 }
+
+.analysis-table .analysis-expanded td {
+  white-space: normal;
+  padding: 16px;
+  background: var(--surface);
+}
+.analysis-expanded p:first-child {
+  margin-top: 0;
+}
+.analysis-expanded .job-force {
+  margin-block: 12px;
+}
+.job-activity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+}
+.analysis-download-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  margin-block: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.analysis-download-notice > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.analysis-download-notice > button {
+  flex-shrink: 0;
+}
+.analysis-download small {
+  max-width: min(360px, 100%);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .personal-page .personal-list li {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}

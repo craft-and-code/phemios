@@ -12,6 +12,15 @@ export interface Job {
   result?: { exit_code: number; stdout: string; stderr: string; output_truncated: boolean };
   error?: { message: string };
 }
+/** Activity is sourced from confirmed tasks, not a timer pretending to measure progress. */
+export function activeReleaseJob(jobs: readonly Job[], release: string): Job | undefined {
+  return jobs.find(
+    (job) =>
+      job.release === release &&
+      (job.source ?? "server") === referenceSource(release) &&
+      ["queued", "running"].includes(job.status),
+  );
+}
 /** Poll only explicitly started jobs, retaining their IDs across view navigation. */
 export function createJobs(connected: () => boolean) {
   const [jobs, setJobs] = createSignal<Job[]>([]),

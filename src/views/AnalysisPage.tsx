@@ -1,3 +1,4 @@
+import { activeReleaseJob } from "../library/jobs";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -12,13 +13,15 @@ export function AnalysisPage(props: { query: string }) {
   const library = useLibrary(),
     [offset, setOffset] = createSignal(0),
     [revision, setRevision] = createSignal(0),
-    [selected, setSelected] = createSignal("");
+    [selected, setSelected] = createSignal(""),
+    [notice, setNotice] = createSignal({ message: "", failure: false });
   createEffect(() => {
     void library.session();
     void library.source();
     void props.query;
     setOffset(0);
     setSelected("");
+    setNotice({ message: "", failure: false });
   });
   const [report, { refetch }] = createResource(
     () =>
@@ -65,7 +68,6 @@ export function AnalysisPage(props: { query: string }) {
     report()?.session === library.session() && report()?.source === library.source()
       ? report()?.data
       : undefined;
-  const chosen = () => page()?.items.find((row) => row.reference === selected());
   return (
     <section class="page analysis-page">
       <div class="page-heading">
@@ -77,6 +79,18 @@ export function AnalysisPage(props: { query: string }) {
           {t("Actualiser")}
         </button>
       </div>
+      <Show when={notice().message}>
+        <div class="analysis-download-notice" role={notice().failure ? "alert" : "status"}>
+          <span>{notice().message}</span>
+          <button
+            class="icon-button quiet"
+            aria-label={t("Masquer la notification")}
+            onClick={() => setNotice({ message: "", failure: false })}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+      </Show>
       <Show when={!library.session()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
@@ -133,37 +147,65 @@ export function AnalysisPage(props: { query: string }) {
                   <tbody>
                     <For each={value().items}>
                       {(row) => (
-                        <tr>
-                          <td>
-                            <a href={`#/album/${encodeURIComponent(row.reference)}`}>{row.title}</a>
-                            <small>{row.artist ?? t("Artistes divers")}</small>
-                          </td>
-                          <td>
-                            {row.current}/{row.tracks}
-                          </td>
-                          <td>{row.missing}</td>
-                          <td classList={{ "coverage-warning": row.stale > 0 }}>{row.stale}</td>
-                          <td classList={{ "coverage-warning": row.failed > 0 }}>{row.failed}</td>
-                          <td>
-                            {row.spectra}/{row.tracks}
-                          </td>
-                          <td>
-                            <div class="choices">
-                              <button
-                                class="icon-button quiet"
-                                aria-label={t("Gérer les analyses de {0}", row.title)}
-                                onClick={() =>
-                                  setSelected(selected() === row.reference ? "" : row.reference)
-                                }
-                              >
-                                <Icon name="wave" />
-                              </button>
-                              <Show when={row.current === row.tracks && row.tracks > 0}>
-                                <AnalysisDownload reference={row.reference} album available />
-                              </Show>
-                            </div>
-                          </td>
-                        </tr>
+                        <>
+                          <tr>
+                            <td>
+                              <a href={`#/album/${encodeURIComponent(row.reference)}`}>
+                                {row.title}
+                              </a>
+                              <small>{row.artist ?? t("Artistes divers")}</small>
+                            </td>
+                            <td>
+                              {row.current}/{row.tracks}
+                            </td>
+                            <td>{row.missing}</td>
+                            <td classList={{ "coverage-warning": row.stale > 0 }}>{row.stale}</td>
+                            <td classList={{ "coverage-warning": row.failed > 0 }}>{row.failed}</td>
+                            <td>
+                              {row.spectra}/{row.tracks}
+                            </td>
+                            <td>
+                              <div class="choices">
+                                <button
+                                  class="icon-button quiet"
+                                  aria-label={t("Gérer les analyses de {0}", row.title)}
+                                  aria-expanded={selected() === row.reference}
+                                  title={t("Gérer les analyses de {0}", row.title)}
+                                  onClick={() =>
+                                    setSelected(selected() === row.reference ? "" : row.reference)
+                                  }
+                                >
+                                  <Show
+                                    when={activeReleaseJob(library.tasks.jobs(), row.reference)}
+                                    fallback={<Icon name="wave" />}
+                                  >
+                                    <span class="spinner" aria-hidden="true" />
+                                  </Show>
+                                </button>
+                                <Show when={row.current === row.tracks && row.tracks > 0}>
+                                  <AnalysisDownload
+                                    reference={row.reference}
+                                    album
+                                    available
+                                    onStatus={(message, failure) => setNotice({ message, failure })}
+                                  />
+                                </Show>
+                              </div>
+                            </td>
+                          </tr>
+                          <Show when={selected() === row.reference}>
+                            <tr class="analysis-expanded">
+                              <td colSpan={7}>
+                                <p class="muted">
+                                  {t(
+                                    "Les analyses actuelles sont réutilisées. Le recalcul doit être demandé explicitement.",
+                                  )}
+                                </p>
+                                <JobControls release={row.reference} coverage={row} />
+                              </td>
+                            </tr>
+                          </Show>
+                        </>
                       )}
                     </For>
                   </tbody>
@@ -190,19 +232,6 @@ export function AnalysisPage(props: { query: string }) {
               </div>
             </Show>
           </>
-        )}
-      </Show>
-      <Show when={chosen()}>
-        {(row) => (
-          <section class="analysis-selected">
-            <h2>{row().title}</h2>
-            <p class="muted">
-              {t(
-                "Les analyses actuelles sont réutilisées. Le recalcul doit être demandé explicitement.",
-              )}
-            </p>
-            <JobControls release={row().reference} coverage={row()} />
-          </section>
         )}
       </Show>
     </section>
