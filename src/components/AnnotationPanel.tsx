@@ -252,6 +252,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
             ),
             library.tagPreferences.entries(),
             library.sessionFor(props.reference),
+            referenceSource(props.reference),
           )}
           disabled={blocked()}
           resetKey={`${library.sessionFor(props.reference)?.account.id ?? ""}:${props.reference}`}

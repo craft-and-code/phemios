@@ -11,7 +11,7 @@ import { EmptyState } from "../components/EmptyState";
 export function SettingsTags() {
   const library = useLibrary(),
     preferences = library.tagPreferences;
-  const excluded = () => excludedTags(preferences.entries(), library.session());
+  const excluded = () => excludedTags(preferences.entries(), library.session(), library.source());
   const vocabulary = createMemo(() =>
     tagVocabulary(
       Object.values(library.annotations).filter(
@@ -74,7 +74,8 @@ export function SettingsTags() {
                   }
                   onClick={() => {
                     const session = library.session();
-                    if (session) preferences.update(session, tag, !suppressed(tag));
+                    if (session)
+                      preferences.update(session, tag, !suppressed(tag), library.source());
                   }}
                 >
                   <Icon name={suppressed(tag) ? "refresh" : "close"} />

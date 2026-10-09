@@ -51,3 +51,18 @@ it("preserves corrupt preferences and reports refused writes", () => {
     ),
   ).toThrow("read only");
 });
+it("keeps managed-local exclusions across ephemeral port changes without sharing them with remote accounts", () => {
+  const storage = store(),
+    local = { ...session, server: "http://127.0.0.1:50001" };
+  setTagExcluded(storage, local, "music", true, "local");
+  const entries = readTagPreferences(storage);
+  expect(
+    suggestionVocabulary(
+      ["music"],
+      entries,
+      { ...local, server: "http://127.0.0.1:50002" },
+      "local",
+    ),
+  ).toEqual([]);
+  expect(suggestionVocabulary(["music"], entries, local, "server")).toEqual(["music"]);
+});

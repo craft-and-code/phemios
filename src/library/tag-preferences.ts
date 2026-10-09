@@ -1,3 +1,4 @@
+import type { SourceId } from "./sources";
 import { createSignal } from "solid-js";
 import { normalizeName } from "./filtering";
 import { t } from "../i18n";
@@ -8,7 +9,11 @@ interface Entry {
   tags: string[];
 }
 const key = "phemios.tag-suggestions.v1";
-const scope = (session: AccountSession) => JSON.stringify([session.server, session.account.id]);
+const scope = (session: AccountSession, source: SourceId) =>
+  JSON.stringify([
+    source === "local" ? "phemios-managed-local" : session.server,
+    session.account.id,
+  ]);
 /** Excluded suggestions never remove annotations; partitions retain authority and account identity. */
 export function readTagPreferences(storage: Pick<Storage, "getItem">): Entry[] {
   const raw = storage.getItem(key);
@@ -33,8 +38,9 @@ export function readTagPreferences(storage: Pick<Storage, "getItem">): Entry[] {
 export function excludedTags(
   entries: readonly Entry[],
   session: AccountSession | undefined,
+  source: SourceId = "server",
 ): readonly string[] {
-  return session ? (entries.find((row) => row.scope === scope(session))?.tags ?? []) : [];
+  return session ? (entries.find((row) => row.scope === scope(session, source))?.tags ?? []) : [];
 }
 /** Saved suppression is reversible and changes autocomplete only. */
 export function setTagExcluded(
@@ -42,10 +48,11 @@ export function setTagExcluded(
   session: AccountSession,
   tag: string,
   excluded: boolean,
+  source: SourceId = "server",
 ): Entry[] {
   const entries = readTagPreferences(storage),
-    id = scope(session),
-    tags = excludedTags(entries, session).filter(
+    id = scope(session, source),
+    tags = excludedTags(entries, session, source).filter(
       (value) => normalizeName(value) !== normalizeName(tag),
     );
   if (excluded) tags.push(tag.trim());
@@ -60,8 +67,9 @@ export function suggestionVocabulary(
   vocabulary: readonly string[],
   entries: readonly Entry[],
   session: AccountSession | undefined,
+  source: SourceId = "server",
 ): string[] {
-  const excluded = new Set(excludedTags(entries, session).map(normalizeName));
+  const excluded = new Set(excludedTags(entries, session, source).map(normalizeName));
   return vocabulary.filter((tag) => !excluded.has(normalizeName(tag)));
 }
 /** Failed storage writes leave the previous confirmed vocabulary intact. */
@@ -76,9 +84,14 @@ export function createTagPreferences(storage: Store = localStorage) {
   return {
     entries,
     error,
-    update: (session: AccountSession, tag: string, excluded: boolean) => {
+    update: (
+      session: AccountSession,
+      tag: string,
+      excluded: boolean,
+      source: SourceId = "server",
+    ) => {
       try {
-        setEntries(setTagExcluded(storage, session, tag, excluded));
+        setEntries(setTagExcluded(storage, session, tag, excluded, source));
         setError("");
       } catch (failure) {
         setError(String(failure));
