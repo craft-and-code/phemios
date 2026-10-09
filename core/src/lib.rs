@@ -29,3 +29,6 @@ pub mod local;
 
 /// Shared native service-key request policy.
 pub mod enrichment;
+
+/// Read-only discovery of OS-mounted player/card/drive destinations.
+pub mod volumes;

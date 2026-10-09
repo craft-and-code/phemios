@@ -5,6 +5,7 @@ mod commands;
 mod local;
 mod playback;
 mod radio;
+mod volumes;
 use tauri::Manager;
 
 /// Start the local desktop window with its minimal capability set.
@@ -48,6 +49,7 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            volumes::players_discover,
             local::local_status,
             local::local_start,
             local::local_stop,

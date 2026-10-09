@@ -2,7 +2,10 @@ import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 /** Explicit launch, force option and cancellable server status. */
-export function JobControls(props: { release: string }) {
+export function JobControls(props: {
+  release: string;
+  coverage?: { tracks: number; current: number; spectra: number };
+}) {
   const library = useLibrary(),
     [force, setForce] = createSignal(false),
     [busy, setBusy] = createSignal(false),
@@ -25,7 +28,10 @@ export function JobControls(props: { release: string }) {
           disabled={
             !library.sessionFor(props.release) ||
             library.sessionFor(props.release)?.account.role !== "admin" ||
-            busy()
+            busy() ||
+            (!force() &&
+              props.coverage !== undefined &&
+              props.coverage.current === props.coverage.tracks)
           }
           onClick={() => start("analyze")}
         >
@@ -35,7 +41,10 @@ export function JobControls(props: { release: string }) {
           disabled={
             !library.sessionFor(props.release) ||
             library.sessionFor(props.release)?.account.role !== "admin" ||
-            busy()
+            busy() ||
+            (!force() &&
+              props.coverage !== undefined &&
+              props.coverage.spectra === props.coverage.tracks)
           }
           onClick={() => start("spectrum")}
         >

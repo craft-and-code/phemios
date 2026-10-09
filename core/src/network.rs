@@ -386,6 +386,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/admin/v1/accounts"
                     | "/api/admin/v1/tasks"
                     | "/api/v1/presentation/tracks"
+                    | "/api/v1/presentation/analysis"
                     | "/api/v1/presentation/artists"
                     | "/api/v1/presentation/albums"
                     | "/api/v1/presentation/playback"

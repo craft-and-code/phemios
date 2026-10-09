@@ -122,3 +122,6 @@ export const saveLocalKeys = (
 /** Automatic missing covers follow the user's chosen policy; credentials stay on their Aède source. */
 export const missingCoverAede = (artist: string, group: string, download: boolean) =>
   nativeCall<ArrayBuffer>("aede_missing_cover", { artist, group, download });
+
+/** Read mounted player/card/drive destinations; this command cannot mount or write them. */
+export const discoverPlayers = () => nativeCall<unknown>("players_discover");
