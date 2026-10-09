@@ -1,3 +1,6 @@
+import { RadioSearch } from "../components/RadioSearch";
+import { RadioFavourites } from "../components/RadioFavourites";
+import { createRadioFavourites } from "../radio/favourites";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { createSignal, For, Show, onCleanup } from "solid-js";
@@ -8,6 +11,7 @@ import { parseStations, stationCount, type Station } from "../radio/directory";
 /** An Internet-station dial indexes the current directory page, without inventing FM frequencies. */
 export function RadioPage(props: { query: string }) {
   const radio = useLibrary().radio;
+  const favourites = createRadioFavourites();
   const [name, setName] = createSignal(props.query),
     [country, setCountry] = createSignal(""),
     [tag, setTag] = createSignal("");
@@ -64,53 +68,24 @@ export function RadioPage(props: { query: string }) {
   return (
     <section class="page radio-page">
       <p class="intro">{t("Explorez les radios Internet du monde entier.")}</p>
-      <form
-        class="radio-search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void search(0, true);
+      <RadioSearch
+        value={{ name: name(), country: country(), tag: tag(), secureOnly: secureOnly() }}
+        change={(value) => {
+          if (value.name !== undefined) setName(value.name);
+          if (value.country !== undefined) setCountry(value.country);
+          if (value.tag !== undefined) setTag(value.tag);
+          if (value.secureOnly !== undefined) setSecureOnly(value.secureOnly);
         }}
-      >
-        <label>
-          {t("Station")}{" "}
-          <input
-            type="search"
-            maxlength="256"
-            placeholder={t("Nom de la station…")}
-            value={name()}
-            onInput={(e) => setName(e.currentTarget.value)}
-          />
-        </label>
-        <label>
-          {t("Pays")}{" "}
-          <input
-            maxlength="256"
-            placeholder={t("France, Germany…")}
-            value={country()}
-            onInput={(e) => setCountry(e.currentTarget.value)}
-          />
-        </label>
-        <label>
-          {t("Style")}{" "}
-          <input
-            maxlength="256"
-            placeholder={t("rock, jazz, classical…")}
-            value={tag()}
-            onInput={(e) => setTag(e.currentTarget.value)}
-          />
-        </label>
-        <label class="radio-secure">
-          <input
-            type="checkbox"
-            checked={secureOnly()}
-            onChange={(e) => setSecureOnly(e.currentTarget.checked)}
-          />
-          {t("Flux HTTPS uniquement")}{" "}
-        </label>
-        <button class="primary" disabled={busy() || !isNative()}>
-          {busy() ? t("Recherche…") : t("Explorer les stations")}
-        </button>
-      </form>
+        submit={() => void search(0, true)}
+        busy={busy()}
+        available={isNative()}
+      />
+      <RadioFavourites
+        favourites={favourites}
+        play={(station) => void radio.start(station)}
+        busy={radio.status() === "connecting"}
+      />
+
       <Show when={!isNative()}>
         <p class="notice">
           {t("L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.")}{" "}
@@ -145,6 +120,23 @@ export function RadioPage(props: { query: string }) {
                 {chosen()?.bitrate ? ` · ${chosen()?.bitrate} kbit/s` : ""}
               </span>
             </div>
+            <Show when={chosen()}>
+              {(station) => (
+                <button
+                  type="button"
+                  class="icon-button quiet radio-favourite"
+                  aria-label={
+                    favourites.has(station().uuid)
+                      ? t("Retirer {0} des radios favorites", station().name)
+                      : t("Ajouter {0} aux radios favorites", station().name)
+                  }
+                  aria-pressed={favourites.has(station().uuid)}
+                  onClick={() => favourites.toggle(station())}
+                >
+                  <Icon name="heart" />
+                </button>
+              )}
+            </Show>
             <button
               class="play-button"
               aria-label={t("Écouter la station sélectionnée")}
@@ -227,6 +219,19 @@ export function RadioPage(props: { query: string }) {
                     {station.codec}
                     {station.bitrate ? ` · ${station.bitrate}k` : ""}
                   </small>
+                </button>
+                <button
+                  type="button"
+                  class="icon-button quiet radio-favourite"
+                  aria-label={
+                    favourites.has(station.uuid)
+                      ? t("Retirer {0} des radios favorites", station.name)
+                      : t("Ajouter {0} aux radios favorites", station.name)
+                  }
+                  aria-pressed={favourites.has(station.uuid)}
+                  onClick={() => favourites.toggle(station)}
+                >
+                  <Icon name="heart" />
                 </button>
               </li>
             )}

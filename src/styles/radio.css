@@ -174,3 +174,43 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.radio-search-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+.radio-search-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+.radio-search .radio-secure {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.radio-search .radio-secure input {
+  width: auto;
+}
+.radio-stations li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.radio-stations .radio-station {
+  flex: 1;
+  min-width: 0;
+}
+.radio-favourite[aria-pressed="true"] svg {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.radio-favourites {
+  margin-bottom: 28px;
+}

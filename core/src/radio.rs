@@ -65,6 +65,14 @@ fn valid_uuid(value: &str) -> bool {
             }
         })
 }
+// This retired RMC endpoint still appears in the directory; preserve the broadcast identity.
+fn preferred_stream(url: &str) -> &str {
+    if url.split('?').next() == Some("https://audio.bfmtv.com/rmcradio_128.mp3") {
+        "https://hls-rmc.nextradiotv.com/no_ssai/128k/media.m3u8"
+    } else {
+        url
+    }
+}
 impl Directory {
     fn read(&self, host: &str, path: &str, query: &[(&str, &str)]) -> Result<Value, String> {
         let mut request = self
@@ -162,7 +170,9 @@ impl Directory {
         {
             return Err("Le flux de cette station est indisponible.".into());
         }
-        Ok(json!({"stationuuid": uuid, "url": answer["url"]}))
+        Ok(
+            json!({"stationuuid": uuid, "url": preferred_stream(answer["url"].as_str().ok_or("Adresse du flux invalide.")?)}),
+        )
     }
 }
 #[cfg(test)]

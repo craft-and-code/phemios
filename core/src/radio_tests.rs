@@ -28,3 +28,18 @@ fn invalid_searches_and_station_ids_are_refused_without_network_access() {
     }
     assert!(valid_uuid("12345678-1234-1234-1234-123456789012"));
 }
+#[test]
+fn retired_rmc_mp3_uses_the_same_broadcaster_https_hls_without_touching_other_streams() {
+    assert_eq!(
+        preferred_stream("https://audio.bfmtv.com/rmcradio_128.mp3?aggregator=test"),
+        "https://hls-rmc.nextradiotv.com/no_ssai/128k/media.m3u8"
+    );
+    for url in [
+        "https://audio.bfmtv.com/other.mp3",
+        "https://audio.bfmtv.com.evil.test/rmcradio_128.mp3",
+        "https://other.test/rmcradio_128.mp3",
+        "https://audio.bfmtv.com/rmcradio_128.mp3/extra",
+    ] {
+        assert_eq!(preferred_stream(url), url);
+    }
+}
