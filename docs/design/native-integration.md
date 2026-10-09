@@ -128,3 +128,9 @@ The native WebView's HTML audio handles direct station streams; CSP grants HTTP/
 Tidal integration is deferred at the user's request. No SDK/dependency or dormant credential flow is added.
 
 `RadioPage.tsx` keeps one cohesive search/page/dial composition (~256 lines); parsing, playback lifecycle and native transport remain separate tested modules. This is a small exception to the usual 250-line guideline.
+
+## Personal tag browsing
+
+The Tags sidebar view indexes only the signed-in owners' retained in-memory annotations, shared with autocomplete. Case/accent folding groups equivalent display tokens; each namespaced target contributes once to its count. Tagging an artist does not tag their albums. The combined view keeps Local/Server identities distinct and uses badges only when both catalogs exist. Tags are never copied into audio metadata or the public cache. Logout/account changes retain the existing private-map clearing policy.
+
+Tag selection and track offset belong to the navigation shell, so a detail return keeps the selection. This view explicitly labels the shared search field as tag search; entity details keep the ordinary all-field search label. Artists/albums use cached public names and covers. Only ten visible tagged-track references are resolved through the existing singular track contract, with two concurrent reads, session validation and per-item errors/retry; there is no full-track download or new endpoint. Removed catalog entities remain an explicit missing-cache count rather than disappearing from the tag count.

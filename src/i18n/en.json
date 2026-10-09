@@ -937,5 +937,12 @@
   "Demande d’enrichissement invalide.": "Invalid enrichment request.",
   "Les clés des sources externes restent dans la configuration native.": "External service keys remain in the native configuration.",
   "Mettez à jour puis redémarrez Aède pour utiliser les clés communes.": "Update and restart Aède to use shared keys.",
-  "Un administrateur Aède est nécessaire.": "An Aède administrator is required."
+  "Un administrateur Aède est nécessaire.": "An Aède administrator is required.",
+  "Rechercher un tag": "Search tags",
+  "Tags personnels enregistrés sur vos artistes, albums et pistes.": "Personal tags saved on your artists, albums and tracks.",
+  "Choisir un tag": "Choose a tag",
+  "Tous les tags": "All tags",
+  "Aucun élément tagué dans cette sélection.": "No tagged items in this selection.",
+  "{0} élément(s) tagué(s) absent(s) du catalogue en cache. Synchronisez la bibliothèque pour les retrouver.": "{0} tagged item(s) missing from the cached catalog. Sync the library to find them.",
+  "Titre indisponible": "Track unavailable"
 }

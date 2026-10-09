@@ -7,6 +7,7 @@ export type Section =
   | "compilations"
   | "countries"
   | "genres"
+  | "tags"
   | "favourites"
   | "collections"
   | "history"
@@ -32,6 +33,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "countries", label: t("Pays"), symbol: "globe" },
   { id: "genres", label: t("Genres"), symbol: "tags" },
   { id: "favourites", label: t("Favoris"), symbol: "heart" },
+  { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
   { id: "history", label: t("Historique"), symbol: "history" },
   { id: "playlists", label: t("Listes M3U"), symbol: "list" },

@@ -1,0 +1,32 @@
+.tag-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 16px 28px;
+}
+.tag-choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 18px;
+  padding: 6px 12px;
+}
+.tag-count {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.tags-page > section {
+  margin-block: 28px;
+}
+.tagged-artists li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tag-choices button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}

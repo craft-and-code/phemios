@@ -28,6 +28,7 @@ import { ArtistPage } from "./views/ArtistPage";
 import { createTrackPaging } from "./navigation/track-paging";
 import { TracksPage } from "./views/TracksPage";
 import { TrackPage } from "./views/TrackPage";
+import { TagsPage } from "./views/TagsPage";
 import { RecentPage } from "./views/RecentPage";
 import { AlbumPage } from "./views/AlbumPage";
 import { WorkspacePage } from "./views/WorkspacePage";
@@ -78,6 +79,8 @@ export function App() {
     () => filters().query,
     () => library.trackSources(),
   );
+  const [selectedTag, setSelectedTag] = createSignal("");
+  const [tagOffset, setTagOffset] = createSignal(0);
   const [reverse, setReverse] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
@@ -149,10 +152,22 @@ export function App() {
           <Icon name="search" />
           <input
             type="search"
-            aria-label={t("Rechercher dans tous les champs du catalogue")}
-            placeholder={t("Artiste, titre, pays, genre, tag…")}
+            aria-label={
+              current().kind === "section" && section() === "tags"
+                ? t("Rechercher un tag")
+                : t("Rechercher dans tous les champs du catalogue")
+            }
+            placeholder={
+              current().kind === "section" && section() === "tags"
+                ? t("Rechercher un tag")
+                : t("Artiste, titre, pays, genre, tag…")
+            }
             value={filters().query}
-            onInput={(event) => setFilters({ ...filters(), query: event.currentTarget.value })}
+            onInput={(event) => {
+              setFilters({ ...filters(), query: event.currentTarget.value });
+              setSelectedTag("");
+              setTagOffset(0);
+            }}
           />
         </label>
         <a
@@ -321,6 +336,7 @@ export function App() {
               "genres",
               "recent",
               "tracks",
+              "tags",
               "radio",
               "settings",
               "relations",
@@ -369,7 +385,23 @@ export function App() {
                             <Show
                               when={section() === "settings"}
                               fallback={
-                                <WorkspacePage section={section()} query={filters().query} />
+                                <Show
+                                  when={section() === "tags"}
+                                  fallback={
+                                    <WorkspacePage section={section()} query={filters().query} />
+                                  }
+                                >
+                                  <TagsPage
+                                    query={filters().query}
+                                    selected={selectedTag()}
+                                    onSelect={(value) => {
+                                      setSelectedTag(value);
+                                      setTagOffset(0);
+                                    }}
+                                    offset={tagOffset()}
+                                    setOffset={setTagOffset}
+                                  />
+                                </Show>
                               }
                             >
                               <SettingsPage />
