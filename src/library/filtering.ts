@@ -103,11 +103,11 @@ export function searchArtist(artist: Artist, query: string): boolean {
 
 /** Facets remain visible in the filter bar when the navigation view changes. */
 export function matchesFacets(artist: Artist, filters: Filters): boolean {
+  const genres = selectedGenres(filters);
   return (
     (!filters.countries?.length || filters.countries.includes(artist.country)) &&
-    (filters.genre === undefined ||
-      artist.genre === filters.genre ||
-      artist.genres?.includes(filters.genre) === true)
+    (!genres.length ||
+      genres.some((genre) => artist.genre === genre || artist.genres?.includes(genre) === true))
   );
 }
 
@@ -164,8 +164,13 @@ export function filterAlbums(
             (artist) => matchesFacets(artist, filters) && searchAlbum(album, artist, filters.query),
           )
         : !filters.countries?.length &&
-          filters.genre === undefined &&
+          !selectedGenres(filters).length &&
           searchAlbum(album, fallback, filters.query))
     );
   });
+}
+
+/** Legacy scalar and current multi-selection share union semantics. */
+export function selectedGenres(filters: Filters): readonly string[] {
+  return [...new Set([...(filters.genres ?? []), ...(filters.genre ? [filters.genre] : [])])];
 }

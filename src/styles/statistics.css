@@ -108,3 +108,58 @@
     grid-template-columns: 1fr;
   }
 }
+
+.doctor-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.doctor-count {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 6px;
+}
+.doctor-count strong {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.doctor-count.error strong {
+  color: #ef9d9d;
+}
+.doctor-count.warning strong {
+  color: #e9cc8c;
+}
+.doctor-issues {
+  list-style: none;
+  padding: 0;
+}
+.doctor-issues > li {
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 18px;
+  margin: 16px 0;
+  background: var(--surface);
+}
+.doctor-issues > .error {
+  border-left-color: #ef9d9d;
+}
+.doctor-issues > .warning {
+  border-left-color: #e9cc8c;
+}
+.doctor-issues h2 {
+  font-size: 16px;
+  margin: 8px 0;
+}
+.doctor-severity {
+  color: var(--muted);
+  font-size: 11px;
+}
+.doctor-issues code {
+  overflow-wrap: anywhere;
+}
+.doctor-issues details ul {
+  padding-left: 20px;
+}

@@ -171,7 +171,7 @@ export function App() {
                   <Show when={item.id === "favourites"}>
                     <p class="nav-label">VOTRE MUSIQUE</p>
                   </Show>
-                  <Show when={item.id === "analysis"}>
+                  <Show when={item.id === "doctor"}>
                     <p class="nav-label">OUTILS</p>
                   </Show>
                   <a
@@ -332,7 +332,34 @@ export function App() {
               </Show>
               <Show when={route.kind === "artist"}>
                 <Show when={selectedArtist()} fallback={<p class="empty">Artiste introuvable.</p>}>
-                  {(artist) => <ArtistPage artist={artist()} reverse={reverse()} />}
+                  {(artist) => (
+                    <ArtistPage
+                      artist={artist()}
+                      reverse={reverse()}
+                      onGenres={(genres) => {
+                        setFilters({
+                          ...filters(),
+                          mode: "none",
+                          query: "",
+                          countries: [],
+                          genre: undefined,
+                          genres,
+                        });
+                        navigation.navigate("#/genres");
+                      }}
+                      onCountry={(country) => {
+                        setFilters({
+                          ...filters(),
+                          mode: "none",
+                          query: "",
+                          genre: undefined,
+                          genres: [],
+                          countries: [country],
+                        });
+                        navigation.navigate("#/countries");
+                      }}
+                    />
+                  )}
                 </Show>
               </Show>
               <Show when={route.kind === "album"}>

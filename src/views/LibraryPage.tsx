@@ -10,7 +10,7 @@ import {
   isMac,
 } from "../library/selection";
 import { catalogIndex } from "../library/index";
-import { filterAlbums, filterArtists, normalizeName } from "../library/filtering";
+import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Filters } from "../library/types";
 import type { Section } from "../navigation/routes";
 
@@ -30,8 +30,18 @@ export function LibraryPage(props: {
       ...props.filters,
       countries: selectCountries(countries(), value, additive),
     });
-  const genre = () => props.filters.genre;
-  const setGenre = (genre: string | undefined) => props.setFilters({ ...props.filters, genre });
+  const genres = () => selectedGenres(props.filters);
+  const setGenre = (genre: string | undefined) =>
+    props.setFilters({
+      ...props.filters,
+      genre: undefined,
+      genres:
+        genre === undefined
+          ? []
+          : genres().includes(genre)
+            ? genres().filter((value) => value !== genre)
+            : [...genres(), genre],
+    });
   const compare = (a: string, b: string) =>
     normalizeName(a).localeCompare(normalizeName(b), "fr") * (props.reverse ? -1 : 1);
   const artists = createMemo(() => {
@@ -73,7 +83,7 @@ export function LibraryPage(props: {
       </Show>
       <Show when={props.section === "genres"}>
         <div class="choices" aria-label="Genres">
-          <button aria-pressed={!genre()} onClick={() => setGenre(undefined)}>
+          <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>
             Tous
           </button>
           <For
@@ -82,7 +92,7 @@ export function LibraryPage(props: {
             )}
           >
             {(value) => (
-              <button aria-pressed={genre() === value} onClick={() => setGenre(value)}>
+              <button aria-pressed={genres().includes(value)} onClick={() => setGenre(value)}>
                 {value}
               </button>
             )}

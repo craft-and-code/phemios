@@ -41,7 +41,9 @@ export function SelectionCollection(props: { section: string; filters: Filters }
           setName("");
           setError("");
           setMessage("");
-          setDraft(`browse-v1:${JSON.stringify({ ...props.filters, view: props.section })}`);
+          const criteria = { ...props.filters, view: props.section };
+          if (!criteria.genres?.length) delete criteria.genres;
+          setDraft(`browse-v1:${JSON.stringify(criteria)}`);
         }}
       >
         <Icon name="library" />

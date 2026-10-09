@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js";
 import type { Filters, Interval } from "../library/types";
 import { toggleRail, type CountBin } from "../library/distribution";
+import { selectedGenres } from "../library/filtering";
 import { Icon } from "./Icon";
 import { RangeRail } from "./RangeRail";
 
@@ -56,11 +57,21 @@ export function FilterBar(props: {
             </button>
           )}
         </For>
-        <Show when={props.value.genre}>
-          <button class="facet" onClick={() => update({ genre: undefined })}>
-            {props.value.genre} ×
-          </button>
-        </Show>
+        <For each={selectedGenres(props.value)}>
+          {(genre) => (
+            <button
+              class="facet"
+              onClick={() =>
+                update({
+                  genre: undefined,
+                  genres: selectedGenres(props.value).filter((value) => value !== genre),
+                })
+              }
+            >
+              {genre} ×
+            </button>
+          )}
+        </For>
         <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
           <label title="Inclure les albums dont l’année de sortie n’est pas renseignée.">
             <input
@@ -82,6 +93,7 @@ export function FilterBar(props: {
               query: "",
               countries: [],
               genre: undefined,
+              genres: [],
             })
           }
         >

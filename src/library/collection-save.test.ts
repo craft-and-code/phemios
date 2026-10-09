@@ -20,3 +20,20 @@ it("creates a rule only for the same session after capability confirmation", asy
     create_only: true,
   });
 });
+
+it("refuses multi-genre rules on servers supporting only legacy browsing", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  await expect(
+    saveBrowsingCollection("Styles", 'browse-v1:{"genres":["Metal","Rock"]}', () => true),
+  ).rejects.toThrow(/plusieurs genres/);
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  vi.mocked(requestAede).mockResolvedValue({
+    capabilities: ["dynamic_browse_collections", "dynamic_browse_genres"],
+  });
+  await saveBrowsingCollection("Styles", 'browse-v1:{"genres":["Metal","Rock"]}', () => true);
+  expect(requestAede).toHaveBeenLastCalledWith("/api/me/v1/collection", { name: "Styles" }, "PUT", {
+    expression: 'browse-v1:{"genres":["Metal","Rock"]}',
+    create_only: true,
+  });
+});

@@ -1,5 +1,5 @@
 import { AnnotationPanel } from "../components/AnnotationPanel";
-import { createMemo, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { PlayingBars } from "../components/PlayingBars";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { useLibrary } from "../library/context";
@@ -7,7 +7,12 @@ import { belongsToArtist } from "../library/filtering";
 import { sourceLink } from "../library/server";
 import type { Artist } from "../library/types";
 /** Present local editions and contributions without inventing a principal credit. */
-export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
+export function ArtistPage(props: {
+  artist: Artist;
+  reverse: boolean;
+  onGenres: (genres: readonly string[]) => void;
+  onCountry: (country: string) => void;
+}) {
   const library = useLibrary();
   const sort = (items: readonly import("../library/types").Album[]) =>
     [...items].sort((a, b) => a.title.localeCompare(b.title, "fr") * (props.reverse ? -1 : 1));
@@ -53,7 +58,27 @@ export function ArtistPage(props: { artist: Artist; reverse: boolean }) {
           <p class="eyebrow">ARTISTE</p>
           <h1>{props.artist.name}</h1>
           <p>
-            {props.artist.genre} · {props.artist.country ?? "Origine inconnue"}
+            <For each={props.artist.genres ?? (props.artist.genre ? [props.artist.genre] : [])}>
+              {(genre, index) => (
+                <>
+                  <Show when={index()}> · </Show>
+                  <button
+                    class="metadata-link"
+                    onClick={() => props.onGenres(props.artist.genres ?? [props.artist.genre])}
+                  >
+                    {genre}
+                  </button>
+                </>
+              )}
+            </For>
+            {props.artist.genre ? " · " : ""}
+            <Show when={props.artist.country} fallback="Origine inconnue">
+              {(country) => (
+                <button class="metadata-link" onClick={() => props.onCountry(country())}>
+                  {country()}
+                </button>
+              )}
+            </Show>
           </p>
         </div>
       </header>

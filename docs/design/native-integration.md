@@ -104,3 +104,15 @@ The audio facade keeps command admission, shared public state and actor ownershi
 ## Detail reading and explicit editing
 
 Artist, album and track personal tags/Markdown notes open in reading mode. The pencil opens the existing Milkdown/tag draft; Save closes it only after Aède confirms the write, while Cancel restores the last confirmed text. Stars and favourites remain immediate independent patches. Reading uses the same inert link/image schema as editing and does not fetch note media. The native system window title uses `Phḗmios`; system title-bar typography stays platform-owned.
+
+## Artist facets, diagnosis and measured bars
+
+Artist metadata buttons open Genres with all retained artist genres selected, or Countries with the known origin selected. This explicit transition clears unrelated browse criteria and hides rails so the new selection is immediately visible. Genre selections form a union, intersected with other criteria; dynamic collection writes require the additive `dynamic_browse_genres` server capability when a nonempty genres array is present. Older scalar genre rules retain their meaning.
+
+Doctor reads the existing paged `/api/v1/doctor` route. Severity filters, issue reasons, bounded file previews and unknown issue labels retain the server's evidence without proposing or executing a repair. The view requires an authenticated server; no offline diagnosis is fabricated.
+
+The four centred 2 px audio bars retain the measured output RMS, 60 ms cadence and 3–12 px range. Their response rates now span 0.06/0.65/0.18/0.9 and fixed relative ranges 0.65/1/0.8/0.92 distinguish sustained music. These are decorative RMS envelopes, not independently measured frequency bands; silence still decays every envelope to zero, and pause keeps four flat marks.
+
+## Proposed managed local engine
+
+A future Local/Server choice should reuse a platform-packaged Aède sidecar and the same typed API, not duplicate its graph/DSP/catalog rules in Phémios. Phémios would own only its child process, an isolated application-data store, explicit music-folder selection and scan lifecycle. A loopback listener on an OS-assigned port, process-scoped credentials and a readiness/version handshake avoid assuming an existing user server. Closing or replacing the local mode must stop playback and only the owned process; persistent library data and the remote server remain independent. Packaging must build/sign the correct Aède binary for each supported platform and test migration, crash recovery and the account/administrator bootstrap before shipping. This is an architecture proposal, not an implemented local mode.

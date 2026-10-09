@@ -51,4 +51,5 @@ export interface Filters {
   query: string;
   countries?: readonly (string | null)[];
   genre?: string | undefined;
+  genres?: readonly string[];
 }

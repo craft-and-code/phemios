@@ -1,7 +1,7 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { equalizerHeights } from "../library/equalizer";
-/** FlacCompagnon's RMS response and dimensions, centred rather than bottom-aligned. */
+/** Measured RMS with distinct response envelopes and FlacCompagnon's centred dimensions. */
 export function PlayingBars(props: { reference: string }) {
   const player = useLibrary().player;
   const [heights, setHeights] = createSignal([0, 0, 0, 0]);

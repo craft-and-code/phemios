@@ -115,3 +115,15 @@ it("selected countries are a union intersected with genre and query", () => {
   ).toHaveLength(0);
   expect(filterArtists(artists, albums, { ...defaults, countries: [] })).toHaveLength(2);
 });
+
+it("unions multiple selected genres while retaining country intersection", () => {
+  expect(filterArtists(artists, albums, { ...defaults, genres: ["Jazz", "Rock"] })).toHaveLength(2);
+  expect(
+    filterArtists(artists, albums, {
+      ...defaults,
+      genres: ["Jazz", "Rock"],
+      countries: ["France"],
+    }),
+  ).toHaveLength(1);
+  expect(filterAlbums(albums, artists, { ...defaults, genres: ["Absent"] })).toHaveLength(0);
+});
