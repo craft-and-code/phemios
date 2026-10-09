@@ -1,3 +1,4 @@
+import { createToolPreferences } from "./library/tool-preferences";
 import { t } from "./i18n";
 import {
   createEffect,
@@ -36,6 +37,7 @@ import { WorkspacePage } from "./views/WorkspacePage";
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
   const library = useLibrary();
+  const browsing = createToolPreferences();
   const connectionPanel = () => false;
   const setConnectionPanel = (_value: boolean) => {
     navigation.navigate("#/settings");
@@ -78,6 +80,7 @@ export function App() {
   const trackPaging = createTrackPaging(
     () => filters().query,
     () => library.trackSources(),
+    () => browsing.value().trackPageSize,
   );
   const [selectedTag, setSelectedTag] = createSignal("");
   const [tagOffset, setTagOffset] = createSignal(0);
@@ -414,6 +417,9 @@ export function App() {
                     >
                       <TracksPage
                         query={filters().query}
+                        size={browsing.value().trackPageSize}
+                        setSize={(size) => browsing.update({ trackPageSize: size })}
+                        preferenceError={browsing.error()}
                         offset={trackPaging.offset()}
                         setOffset={trackPaging.setOffset}
                       />

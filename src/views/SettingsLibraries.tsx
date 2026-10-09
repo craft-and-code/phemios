@@ -1,3 +1,4 @@
+import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createResource, createSignal, For, Show, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -12,11 +13,14 @@ import {
 import type { Job } from "../library/jobs";
 /** Registered folders, availability and explicit tasks are kept distinct. */
 export function SettingsLibraries() {
+  const prefs = createToolPreferences();
+  const full = () => prefs.value().full,
+    threads = () => prefs.value().threads;
+  const setFull = (full: boolean) => prefs.update({ full }),
+    setThreads = (threads: number) => prefs.update({ threads });
   const library = useLibrary(),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
-    [full, setFull] = createSignal(false),
-    [threads, setThreads] = createSignal(0),
     [excluded, setExcluded] = createSignal(""),
     [task, setTask] = createSignal<Job>(),
     [taskSource, setTaskSource] = createSignal<"local" | "server">("local"),
@@ -71,6 +75,9 @@ export function SettingsLibraries() {
   }
   return (
     <div class="settings-libraries">
+      <Show when={prefs.error()}>
+        <p role="alert">{prefs.error()}</p>
+      </Show>
       <div class="settings-card">
         <h2>{t("Bibliothèque locale")}</h2>
         <p>
@@ -157,6 +164,9 @@ export function SettingsLibraries() {
             {t("Synchroniser le catalogue local")}{" "}
           </button>
         </div>
+        <small class="settings-persistence">
+          {t("Les options sont enregistrées automatiquement.")}
+        </small>
         <label class="check">
           <input
             type="checkbox"

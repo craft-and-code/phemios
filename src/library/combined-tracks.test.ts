@@ -90,3 +90,22 @@ it("hides redundant origins and automatically follows a sole active or retained 
   expect(effectiveSource("local", ["local", "server"], ["local", "server"])).toBe("local");
   expect(effectiveSource("server", [], ["local"])).toBe("local");
 });
+it("honours display sizes without changing the bounded fifty-row wire pages", async () => {
+  const read = vi.fn(async (source: SourceId, at: number) =>
+    page(source, source === "local" ? 63 : 125, at),
+  );
+  const reader = combinedTrackReader(
+    [
+      { source: "local", identity: "one" },
+      { source: "server", identity: "two" },
+    ],
+    read,
+  );
+  expect((await reader(25, 25)).items).toHaveLength(25);
+  const result = await reader(50, 100);
+  expect(result.items).toHaveLength(100);
+  expect(result.items[12]?.reference).toBe("track:@phemios/local/62");
+  expect(result.items[13]?.reference).toBe("track:@phemios/server/0");
+  expect(result.items.at(-1)?.reference).toBe("track:@phemios/server/86");
+  await expect(reader(0, 10000)).rejects.toThrow();
+});

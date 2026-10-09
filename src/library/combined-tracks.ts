@@ -1,3 +1,4 @@
+import { pageSizes } from "./tool-preferences";
 import { t } from "../i18n";
 import { parseTrackPage, type CatalogTrack } from "./track-page";
 import type { SourceId } from "./sources";
@@ -33,7 +34,8 @@ export function combinedTrackReader(
     cache.set(key, pending);
     return pending;
   }
-  return async (offset: number) => {
+  return async (offset: number, size = 50) => {
+    if (!pageSizes.some((value) => value === size)) throw new Error(t("Page de pistes invalide."));
     const probes = await Promise.allSettled(sources.map((source) => page(source, 0)));
     const items: CatalogTrack[] = [],
       unavailable: { source: SourceId; error: string }[] = [];
@@ -47,7 +49,7 @@ export function combinedTrackReader(
       }
       const count = probe.value.total,
         start = Math.max(0, offset - total),
-        end = Math.min(count, offset + 50 - total);
+        end = Math.min(count, offset + size - total);
       total += count;
       if (!Number.isSafeInteger(total)) throw new Error(t("Nombre de pistes invalide."));
       if (start >= end) continue;

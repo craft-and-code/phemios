@@ -1,3 +1,4 @@
+import { pageSizes } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createMemo, createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -8,6 +9,9 @@ import { TrackResults } from "../components/TrackResults";
 /** All catalog placements, including albumless tracks, use bounded server search pages. */
 export function TracksPage(props: {
   query: string;
+  size: number;
+  setSize: (size: number) => void;
+  preferenceError: string;
   offset: number;
   setOffset: (value: number) => void;
 }) {
@@ -30,11 +34,23 @@ export function TracksPage(props: {
       : undefined;
   });
   const [page, { refetch }] = createResource(
-    () => reader() && { read: reader()!, offset: offset() },
-    (key) => key.read(key.offset),
+    () => reader() && { read: reader()!, offset: offset(), size: props.size },
+    (key) => key.read(key.offset, key.size),
   );
   return (
     <section class="page tracks-page">
+      <label class="track-page-size">
+        {t("Pistes par page")}{" "}
+        <select
+          value={props.size}
+          onChange={(event) => props.setSize(Number(event.currentTarget.value))}
+        >
+          <For each={pageSizes}>{(size) => <option value={size}>{size}</option>}</For>
+        </select>
+      </label>
+      <Show when={props.preferenceError}>
+        <p role="alert">{props.preferenceError}</p>
+      </Show>
       <Show when={!reader()}>
         <p class="notice">{t("Connectez Aède pour consulter toutes les pistes.")}</p>
       </Show>
@@ -72,15 +88,18 @@ export function TracksPage(props: {
               <p class="muted">
                 {value().total} {t("piste")}
                 {value().total > 1 ? "s" : ""} · {value().total ? offset() + 1 : 0}–
-                {Math.min(offset() + 50, value().total)}
+                {Math.min(offset() + props.size, value().total)}
               </p>
               <div class="page-controls">
-                <button disabled={!offset()} onClick={() => setOffset(Math.max(0, offset() - 50))}>
+                <button
+                  disabled={!offset()}
+                  onClick={() => setOffset(Math.max(0, offset() - props.size))}
+                >
                   {t("Précédentes")}{" "}
                 </button>
                 <button
-                  disabled={offset() + 50 >= value().total}
-                  onClick={() => setOffset(offset() + 50)}
+                  disabled={offset() + props.size >= value().total}
+                  onClick={() => setOffset(offset() + props.size)}
                 >
                   {t("Suivantes")}{" "}
                 </button>

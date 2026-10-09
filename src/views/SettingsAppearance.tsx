@@ -31,6 +31,7 @@ export function SettingsAppearance() {
   return (
     <div class="settings-card">
       <h2>{t("Apparence et langue")}</h2>
+      <p class="muted">{t("La langue et les couleurs sont enregistrées à chaque modification.")}</p>
       <label>
         {t("Langue")}{" "}
         <select

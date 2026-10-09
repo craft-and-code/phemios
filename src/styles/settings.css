@@ -231,3 +231,18 @@
 .album-hero .detail-title + p {
   margin-block: 0 12px;
 }
+.track-page-size {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: end;
+  margin-bottom: 16px;
+}
+.track-page-size select {
+  width: auto;
+}
+.settings-persistence {
+  display: block;
+  color: var(--muted);
+  margin-top: 16px;
+}

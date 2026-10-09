@@ -944,5 +944,20 @@
   "Tous les tags": "All tags",
   "Aucun élément tagué dans cette sélection.": "No tagged items in this selection.",
   "{0} élément(s) tagué(s) absent(s) du catalogue en cache. Synchronisez la bibliothèque pour les retrouver.": "{0} tagged item(s) missing from the cached catalog. Sync the library to find them.",
-  "Titre indisponible": "Track unavailable"
+  "Titre indisponible": "Track unavailable",
+  "Radios favorites": "Favorite stations",
+  "Utilisez le cœur d’une station pour la retrouver ici.": "Use a station’s heart to find it here.",
+  "Écouter {0}": "Listen to {0}",
+  "Retirer {0} des radios favorites": "Remove {0} from favorite stations",
+  "Ajouter {0} aux radios favorites": "Add {0} to favorite stations",
+  "Favoris radio illisibles.": "Radio favorites are unreadable.",
+  "Vous pouvez enregistrer jusqu’à 500 radios favorites.": "You can save up to 500 favorite stations.",
+  "Options enregistrées illisibles.": "Saved options are unreadable.",
+  "Les options sont enregistrées automatiquement.": "Options are saved automatically.",
+  "La langue et les couleurs sont enregistrées à chaque modification.": "Language and colors are saved on every change.",
+  "Pistes par page": "Tracks per page",
+  "Une carte par élément tagué : artiste, album ou piste.": "One card per tagged item: artist, album or track.",
+  "{0} élément(s) tagué(s)": "{0} tagged item(s)",
+  "Élément tagué indisponible.": "Tagged item unavailable.",
+  "Cet élément n’a pas encore de vue dédiée.": "This item does not have a dedicated view yet."
 }

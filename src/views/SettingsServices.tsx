@@ -1,31 +1,31 @@
+import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
-import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { localStatus, saveLocalKeys, requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
-import { sourceLabel, type SourceId } from "../library/sources";
+import { sourceLabel } from "../library/sources";
 import { startEnrichment } from "../library/enrichment";
 import { Icon } from "../components/Icon";
 /** One private native key store serves explicit jobs on either library; no automatic enrichment. */
 export function SettingsServices() {
+  const prefs = createToolPreferences();
+  const summaries = () => prefs.value().summaries,
+    covers = () => prefs.value().covers,
+    fanartPass = () => prefs.value().fanart,
+    lyrics = () => prefs.value().lyrics,
+    excluded = () => prefs.value().excluded;
+  const setSummaries = (summaries: boolean) => prefs.update({ summaries }),
+    setCovers = (covers: boolean) => prefs.update({ covers }),
+    setFanartPass = (fanart: boolean) => prefs.update({ fanart }),
+    setLyrics = (lyrics: boolean) => prefs.update({ lyrics });
+  const setExcluded = (update: (held: ("local" | "server")[]) => ("local" | "server")[]) =>
+    prefs.update({ excluded: update(excluded()) });
   const library = useLibrary(),
     [fanart, setFanart] = createSignal(""),
     [acoustid, setAcoustid] = createSignal(""),
     [message, setMessage] = createSignal(""),
-    [busy, setBusy] = createSignal(false),
-    [summaries, setSummaries] = createSignal(true),
-    [covers, setCovers] = createSignal(true),
-    [fanartPass, setFanartPass] = createSignal(false),
-    [lyrics, setLyrics] = createSignal(false),
-    [excluded, setExcluded] = createSignal<SourceId[]>([]);
+    [busy, setBusy] = createSignal(false);
   const [status, { refetch }] = createResource(() => !library.demo, localStatus);
-  let initialized = false;
-  createEffect(() => {
-    const configured = status()?.keys.fanart;
-    if (configured !== undefined && !initialized) {
-      initialized = true;
-      setFanartPass(configured);
-    }
-  });
   const targets = createMemo(() =>
     (["local", "server"] as const).filter((source) => {
       const session = source === "local" ? library.localSession() : library.serverSession();
@@ -128,6 +128,10 @@ export function SettingsServices() {
         )}
       </p>
       <h3>{t("Enrichir la bibliothèque")}</h3>
+      <small>{t("Les options sont enregistrées automatiquement.")}</small>
+      <Show when={prefs.error()}>
+        <p role="alert">{prefs.error()}</p>
+      </Show>
       <Show when={library.origins().length > 1}>
         <div class="service-targets" aria-label={t("Bibliothèques à enrichir")}>
           <For each={targets()}>

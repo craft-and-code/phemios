@@ -55,3 +55,21 @@ it("does not discard the track window when unrelated catalog facets change", asy
   expect(paging.offset()).toBe(50);
   dispose();
 });
+it("resets the current page when its display size changes", async () => {
+  await createRoot(async (dispose) => {
+    const [size, setSize] = createSignal(25);
+    const paging = createTrackPaging(
+      () => "",
+      () => "session",
+      size,
+    );
+    await Promise.resolve();
+    paging.setOffset(25);
+    expect(paging.offset()).toBe(25);
+    setSize(100);
+    await Promise.resolve();
+    expect(paging.offset()).toBe(0);
+    expect(() => paging.setOffset(25)).toThrow();
+    dispose();
+  });
+});
