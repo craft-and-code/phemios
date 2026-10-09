@@ -200,3 +200,15 @@ it("starts server-ordered discography metadata and refuses an edition absent fro
     dispose();
   });
 });
+it("stops an external source only when starting music, never on transport stop", async () => {
+  await createRoot(async (dispose) => {
+    const stopExternal = vi.fn();
+    vi.mocked(playbackState).mockResolvedValue(idlePlayback);
+    const player = createPlayback(() => true, undefined, stopExternal);
+    await player.action("stop");
+    expect(stopExternal).not.toHaveBeenCalled();
+    await player.start(tracks, album, "Artist");
+    expect(stopExternal).toHaveBeenCalledOnce();
+    dispose();
+  });
+});

@@ -3,6 +3,7 @@
 mod aede;
 mod commands;
 mod playback;
+mod radio;
 use tauri::Manager;
 
 /// Start the local desktop window with its minimal capability set.
@@ -19,10 +20,16 @@ pub fn run() -> Result<(), tauri::Error> {
             app.manage(std::sync::Arc::new(
                 phemios_core::playback::Player::default(),
             ));
+            app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
+                phemios_core::radio::Directory::default(),
+            ))));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            radio::radio_search,
+            radio::radio_statistics,
+            radio::radio_resolve,
             playback::playback_devices,
             playback::playback_state,
             playback::playback_start,

@@ -10,6 +10,7 @@ export type Section =
   | "collections"
   | "history"
   | "playlists"
+  | "radio"
   | "doctor"
   | "analysis"
   | "relations"
@@ -32,6 +33,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "collections", label: "Collections", symbol: "library" },
   { id: "history", label: "Historique", symbol: "history" },
   { id: "playlists", label: "Listes M3U", symbol: "list" },
+  { id: "radio", label: "Radio", symbol: "radio" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
   { id: "analysis", label: "Analyses", symbol: "wave" },
   { id: "relations", label: "Relations", symbol: "graph" },

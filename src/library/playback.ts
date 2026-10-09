@@ -17,6 +17,7 @@ const message = (failure: unknown) =>
 export function createPlayback(
   ready: Accessor<boolean>,
   catalog?: () => { albums: readonly Album[]; artists: readonly Artist[] },
+  beforeStart: () => void = () => {},
 ) {
   const [state, setState] = createSignal(idlePlayback),
     [outputs, setOutputs] = createSignal<AudioOutput[]>([]),
@@ -59,6 +60,7 @@ export function createPlayback(
   }
   async function startReference(reference = target()) {
     if (!ready() || busy() || !reference || !catalog) return;
+    beforeStart();
     setBusy(true);
     setError("");
     cancel();
@@ -124,6 +126,7 @@ export function createPlayback(
   }
   async function start(tracks: readonly Track[], album: Album, artist: string, index = 0) {
     if (!ready() || busy()) return;
+    beforeStart();
     setBusy(true);
     setError("");
     cancel();

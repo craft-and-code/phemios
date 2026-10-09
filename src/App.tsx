@@ -12,6 +12,7 @@ import { browseArtists } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
 import { SelectionCollection } from "./components/SelectionCollection";
+import { RadioPlayerBar } from "./components/RadioPlayerBar";
 import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
 import { Icon } from "./components/Icon";
@@ -171,6 +172,9 @@ export function App() {
                   <Show when={item.id === "favourites"}>
                     <p class="nav-label">VOTRE MUSIQUE</p>
                   </Show>
+                  <Show when={item.id === "radio"}>
+                    <p class="nav-label">SOURCES MUSICALES</p>
+                  </Show>
                   <Show when={item.id === "doctor"}>
                     <p class="nav-label">OUTILS</p>
                   </Show>
@@ -223,7 +227,7 @@ export function App() {
             {library.error()}
           </p>
         </Show>
-        <Show when={!library.artists().length && !library.busy()}>
+        <Show when={!library.artists().length && !library.busy() && section() !== "radio"}>
           <div class="empty">
             <p>Connectez votre serveur Aède pour synchroniser la bibliothèque.</p>
             <button class="primary" onClick={() => setConnectionPanel(true)}>
@@ -380,7 +384,9 @@ export function App() {
           )}
         </Show>
       </main>
-      <PlayerBar />
+      <Show when={library.radio.station()} fallback={<PlayerBar />}>
+        <RadioPlayerBar />
+      </Show>
     </div>
   );
 }

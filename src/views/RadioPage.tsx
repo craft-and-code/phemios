@@ -1,0 +1,256 @@
+import { createSignal, For, Show, onCleanup } from "solid-js";
+import { Icon } from "../components/Icon";
+import { useLibrary } from "../library/context";
+import { isNative, radioStatistics, searchRadio } from "../platform/desktop";
+import { parseStations, stationCount, type Station } from "../radio/directory";
+/** An Internet-station dial indexes the current directory page, without inventing FM frequencies. */
+export function RadioPage(props: { query: string }) {
+  const radio = useLibrary().radio;
+  const [name, setName] = createSignal(props.query),
+    [country, setCountry] = createSignal(""),
+    [tag, setTag] = createSignal("");
+  const [secureOnly, setSecureOnly] = createSignal(true);
+  const [stations, setStations] = createSignal<Station[]>([]),
+    [more, setMore] = createSignal(false),
+    [offset, setOffset] = createSignal(0),
+    [selected, setSelected] = createSignal(0),
+    [count, setCount] = createSignal<number>(),
+    [busy, setBusy] = createSignal(false),
+    [error, setError] = createSignal(""),
+    [loaded, setLoaded] = createSignal(false),
+    [countError, setCountError] = createSignal("");
+  let criteria = { name: "", country: "", tag: "", secureOnly: true },
+    alive = true;
+  // A late result may populate this page only while its owner is mounted.
+  onCleanup(() => {
+    alive = false;
+  });
+  const chosen = () => stations()[selected()];
+  async function search(page = 0, fresh = false) {
+    if (busy()) return;
+    if (fresh)
+      criteria = { name: name(), country: country(), tag: tag(), secureOnly: secureOnly() };
+    setBusy(true);
+    setError("");
+    try {
+      const response = parseStations(
+        await searchRadio(criteria.name, criteria.country, criteria.tag, page, criteria.secureOnly),
+      );
+      if (!alive) return;
+      setStations(response.stations);
+      setMore(response.more);
+      setOffset(page);
+      setSelected(0);
+      setLoaded(true);
+      if (count() === undefined)
+        try {
+          const total = stationCount(await radioStatistics());
+          if (alive) {
+            setCount(total);
+            setCountError("");
+          }
+        } catch {
+          if (alive) setCountError("Le total de l’annuaire est indisponible.");
+        }
+    } catch (failure) {
+      if (alive)
+        setError(failure instanceof Error ? failure.message : "Annuaire radio indisponible.");
+    } finally {
+      if (alive) setBusy(false);
+    }
+  }
+  return (
+    <section class="page radio-page">
+      <p class="intro">Explorez les radios Internet du monde entier.</p>
+      <form
+        class="radio-search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void search(0, true);
+        }}
+      >
+        <label>
+          Station
+          <input
+            type="search"
+            maxlength="256"
+            placeholder="Nom de la station…"
+            value={name()}
+            onInput={(e) => setName(e.currentTarget.value)}
+          />
+        </label>
+        <label>
+          Pays
+          <input
+            maxlength="256"
+            placeholder="France, Germany…"
+            value={country()}
+            onInput={(e) => setCountry(e.currentTarget.value)}
+          />
+        </label>
+        <label>
+          Style
+          <input
+            maxlength="256"
+            placeholder="rock, jazz, classical…"
+            value={tag()}
+            onInput={(e) => setTag(e.currentTarget.value)}
+          />
+        </label>
+        <label class="radio-secure">
+          <input
+            type="checkbox"
+            checked={secureOnly()}
+            onChange={(e) => setSecureOnly(e.currentTarget.checked)}
+          />
+          Flux HTTPS uniquement
+        </label>
+        <button class="primary" disabled={busy() || !isNative()}>
+          {busy() ? "Recherche…" : "Explorer les stations"}
+        </button>
+      </form>
+      <Show when={!isNative()}>
+        <p class="notice">
+          L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.
+        </p>
+      </Show>
+      <Show when={error()}>
+        <p role="alert">{error()}</p>
+      </Show>
+      <Show when={count()}>
+        <p class="muted">
+          {count()!.toLocaleString("fr")} entrées dans Radio Browser · recherche dans l’annuaire
+          complet · affichage par 50.
+        </p>
+      </Show>
+      <Show when={countError()}>
+        <small>{countError()}</small>
+      </Show>
+      <Show when={stations().length}>
+        <div class="radio-tuner">
+          <div class="radio-display">
+            <Icon name="radio" />
+            <div>
+              <small>
+                RADIO INTERNET · STATION {String(offset() + selected() + 1).padStart(2, "0")}
+              </small>
+              <strong>{chosen()?.name}</strong>
+              <span>
+                {chosen()?.country || "Pays non renseigné"} · {chosen()?.codec || "Format inconnu"}
+                {chosen()?.bitrate ? ` · ${chosen()?.bitrate} kbit/s` : ""}
+              </span>
+            </div>
+            <button
+              class="play-button"
+              aria-label="Écouter la station sélectionnée"
+              disabled={busy() || radio.status() === "connecting"}
+              onClick={() => {
+                const station = chosen();
+                if (station) void radio.start(station);
+              }}
+            >
+              <Icon name="play" />
+            </button>
+          </div>
+          <div class="radio-dial">
+            <svg class="radio-scale" viewBox="0 0 900 120" aria-hidden="true">
+              <path
+                class="radio-wave"
+                d="M0 70 Q25 20 50 70 T100 70 T150 70 T200 70 T250 70 T300 70 T350 70 T400 70 T450 70 T500 70 T550 70 T600 70 T650 70 T700 70 T750 70 T800 70 T850 70 T900 70"
+              />
+              <For each={Array.from({ length: stations().length }, (_, i) => i)}>
+                {(i) => {
+                  const x = () => 20 + (i / Math.max(1, stations().length - 1)) * 860;
+                  return (
+                    <g>
+                      <line x1={x()} x2={x()} y1={i % 5 === 0 ? 40 : 54} y2="90" />
+                      <Show when={i % 5 === 0}>
+                        <text x={x()} y="110" text-anchor="middle">
+                          {String(offset() + i + 1).padStart(2, "0")}
+                        </text>
+                      </Show>
+                    </g>
+                  );
+                }}
+              </For>
+              <line
+                class="radio-needle"
+                x1={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
+                x2={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
+                y1="10"
+                y2="92"
+              />
+            </svg>
+            <input
+              class="radio-dial-input"
+              type="range"
+              min="0"
+              max={stations().length - 1}
+              step="1"
+              value={selected()}
+              aria-label="Sélectionner une station sur le cadran"
+              aria-valuetext={chosen()?.name ?? ""}
+              onInput={(e) => setSelected(Number(e.currentTarget.value))}
+            />
+          </div>
+          <p class="muted">
+            Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis
+            lancez l’écoute.
+          </p>
+        </div>
+        <ul class="radio-stations">
+          <For each={stations()}>
+            {(station, i) => (
+              <li>
+                <button
+                  class="radio-station"
+                  aria-pressed={selected() === i()}
+                  onClick={() => setSelected(i())}
+                >
+                  <span class="radio-station-number">
+                    {String(offset() + i() + 1).padStart(2, "0")}
+                  </span>
+                  <span>
+                    <strong>{station.name}</strong>
+                    <small>
+                      {station.country || "Pays inconnu"} · {station.tags || "Style non renseigné"}
+                    </small>
+                  </span>
+                  <small>
+                    {station.codec}
+                    {station.bitrate ? ` · ${station.bitrate}k` : ""}
+                  </small>
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
+        <div class="page-heading">
+          <button
+            disabled={busy() || offset() === 0}
+            onClick={() => void search(Math.max(0, offset() - 50))}
+          >
+            Précédentes
+          </button>
+          <span>
+            Stations {offset() + 1}–{offset() + stations().length}
+          </span>
+          <button disabled={busy() || !more()} onClick={() => void search(offset() + 50)}>
+            Suivantes
+          </button>
+        </div>
+      </Show>
+      <Show when={loaded() && !stations().length && !busy()}>
+        <p class="notice">Aucune station pour ces critères.</p>
+      </Show>
+      <p class="radio-credit">
+        Annuaire communautaire{" "}
+        <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer">
+          Radio Browser
+        </a>
+        . Chaque entrée décrit un flux ; certaines stations ont plusieurs flux. L’écoute utilise les
+        codecs et la sortie système du navigateur intégré.
+      </p>
+    </section>
+  );
+}

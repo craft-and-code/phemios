@@ -76,3 +76,7 @@ Project sources use MPL-2.0, matching Aède. The starter derives from the tauri-
 ## App icon
 
 The approved [editable p-dot icon](assets/brand/phemios-icon.svg) uses the shared off-white/accent palette and a dark rounded tile with transparent corners. PNG, ICNS and ICO resources come from this one master, along with the browser favicon. On macOS, Tauri development explicitly installs the configured ICNS (PNG fallback); a packaged `.app` uses its bundle resource. An old Dock icon can be cached independently of current source. Restart the native process after regenerating icons; building/launching the `.app` is the reference distribution check.
+
+## Internet radio
+
+Open **Radio** under **Sources Musicales**, then explicitly search the Radio Browser community directory by station name, country or style. HTTPS streams are preferred by default; disable the checkbox to include older HTTP addresses, which may be blocked by the platform. The dial slides through the current fifty-station page; select a station and press Play. Internet streams use the system WebView's supported codecs and audio output. Pause releases the stream; resume rejoins the live broadcast. Aède login is not required. Directory and station availability depend on their external providers. No radio playback is added to Aède's catalogue listening history.

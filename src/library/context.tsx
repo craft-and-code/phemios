@@ -8,6 +8,8 @@ import {
   type ParentProps,
   type Accessor,
 } from "solid-js";
+import { createRadioPlayback } from "../radio/playback";
+import { resolveRadio } from "../platform/desktop";
 import { createPlayback } from "./playback";
 import { connectionMonitor } from "./connection";
 import { createJobs } from "./jobs";
@@ -26,6 +28,7 @@ import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } fr
 import type { Artist, Album } from "./types";
 interface Library {
   player: ReturnType<typeof createPlayback>;
+  radio: ReturnType<typeof createRadioPlayback>;
   tasks: ReturnType<typeof createJobs>;
   artists: Accessor<readonly Artist[]>;
   albums: Accessor<readonly Album[]>;
@@ -68,7 +71,15 @@ export function LibraryProvider(props: ParentProps) {
   const player = createPlayback(
     () => connected() && ["user", "admin"].includes(session()?.account.role ?? ""),
     () => ({ albums: albums(), artists: artists() }),
+    () => radio.stop(),
   );
+  const radio = createRadioPlayback(resolveRadio, async () => {
+    if (["playing", "paused", "connecting"].includes(player.state().status)) {
+      await player.action("stop");
+      if (["playing", "paused", "connecting"].includes(player.state().status))
+        throw new Error("Arrêtez la lecture de la bibliothèque avant de lancer la radio.");
+    }
+  });
   const tasks = createJobs(() => !!session());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
@@ -256,6 +267,7 @@ export function LibraryProvider(props: ParentProps) {
   });
   const value: Library = {
     tasks,
+    radio,
     player,
     artists,
     albums,

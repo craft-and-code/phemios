@@ -69,3 +69,14 @@ export const playbackControl = (action: string, value: unknown = null) =>
 /** Save the authenticated server-selected spectrum without exposing filesystem writes. */
 export const downloadSpectrumAede = (reference: string) =>
   nativeCall<string>("aede_download_spectrum", { reference });
+
+/** Explicit external radio requests never reuse Aède authority or credentials. */
+export const searchRadio = (
+  name: string,
+  country: string,
+  tag: string,
+  offset: number,
+  secureOnly: boolean,
+) => nativeCall<unknown>("radio_search", { name, country, tag, offset, secureOnly });
+export const radioStatistics = () => nativeCall<unknown>("radio_statistics");
+export const resolveRadio = (uuid: string) => nativeCall<unknown>("radio_resolve", { uuid });

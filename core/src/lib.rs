@@ -21,3 +21,5 @@ pub fn validate_bridge(version: u32) -> Result<(), &'static str> {
 mod tests;
 
 pub mod playback;
+
+pub mod radio;

@@ -71,7 +71,7 @@ export function DoctorPage() {
       <Show when={report.error}>
         <p role="alert">Doctor indisponible : {String(report.error)}</p>
       </Show>
-      <Show when={report() && !report.loading && !report.error()}>
+      <Show when={report() && !report.loading && !report.error}>
         {(_ready) => (
           <>
             <div class="doctor-summary">

@@ -1,0 +1,88 @@
+export interface Station {
+  uuid: string;
+  name: string;
+  country: string;
+  tags: string;
+  codec: string;
+  bitrate: number;
+}
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const object = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new Error("Réponse radio invalide.");
+  return value as Record<string, unknown>;
+};
+/** Page through the live directory, never claiming every entry is a unique or available broadcast. */
+export function parseStations(value: unknown) {
+  if (!Array.isArray(value) || value.length > 51) throw new Error("Page de stations invalide.");
+  const stations = value.slice(0, 50).map((value: unknown): Station => {
+    const row = object(value);
+    const text = (key: string) => {
+      if (typeof row[key] !== "string" || row[key].length > 4096)
+        throw new Error("Station radio invalide.");
+      return row[key];
+    };
+    const uuid = text("stationuuid");
+    if (
+      !uuidPattern.test(uuid) ||
+      typeof row.bitrate !== "number" ||
+      !Number.isSafeInteger(row.bitrate) ||
+      row.bitrate < 0
+    )
+      throw new Error("Station radio invalide.");
+    return {
+      uuid,
+      name: text("name"),
+      country:
+        typeof row.countrycode === "string" && /^[A-Z]{2}$/.test(row.countrycode)
+          ? (new Intl.DisplayNames(["fr"], { type: "region" }).of(row.countrycode) ??
+            text("country"))
+          : text("country"),
+      tags: text("tags"),
+      codec: text("codec"),
+      bitrate: row.bitrate,
+    };
+  });
+  return { stations, more: value.length === 51 };
+}
+/** Streams are explicitly selected HTTP(S) media; reject credentials, local literals and pseudo-protocols. */
+export function streamUrl(value: unknown): string {
+  if (typeof value !== "string" || value.length > 8192)
+    throw new Error("Adresse du flux invalide.");
+  const url = new URL(value);
+  const host = url.hostname.toLowerCase();
+  const ipv4 = /^\d+\.\d+\.\d+\.\d+$/.test(host);
+  const octets = host.split(".").map(Number);
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    !host.includes(".") ||
+    host.endsWith(".local") ||
+    host.endsWith(".localhost") ||
+    host.startsWith("[") ||
+    (ipv4 &&
+      (octets[0] === 0 ||
+        octets[0] === 10 ||
+        octets[0] === 127 ||
+        octets[0]! >= 224 ||
+        (octets[0] === 192 && octets[1] === 168) ||
+        (octets[0] === 172 && octets[1]! >= 16 && octets[1]! <= 31) ||
+        (octets[0] === 169 && octets[1] === 254)))
+  )
+    throw new Error("Cette station ne fournit pas de flux Internet HTTP/HTTPS utilisable.");
+  return url.href;
+}
+/** The click response must still identify the station the user selected. */
+export function parseResolved(value: unknown, uuid: string): string {
+  const row = object(value);
+  if (row.stationuuid !== uuid)
+    throw new Error("La station résolue ne correspond pas à la sélection.");
+  return streamUrl(row.url);
+}
+export function stationCount(value: unknown): number {
+  const count = object(value).stations;
+  if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0)
+    throw new Error("Nombre de stations indisponible.");
+  return count;
+}

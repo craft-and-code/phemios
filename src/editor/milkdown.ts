@@ -22,6 +22,11 @@ import { listener, listenerCtx } from "@milkdown/kit/plugin/listener";
 import { history, undoCommand, redoCommand } from "@milkdown/kit/plugin/history";
 import { callCommand, replaceAll } from "@milkdown/kit/utils";
 import { markdownDraft } from "./draft";
+const documentAttributes = (readOnly: boolean): Record<string, string> => ({
+  role: readOnly ? "document" : "textbox",
+  "aria-label": "Notes personnelles",
+  ...(readOnly ? {} : { "aria-multiline": "true" }),
+});
 export type NoteCommand =
   "bold" | "italic" | "heading" | "paragraph" | "bullet" | "ordered" | "quote" | "undo" | "redo";
 /** Markdown images and links retain their data without fetching or navigating on display. */
@@ -53,11 +58,7 @@ export async function mountNoteEditor(
       ctx.update(editorViewOptionsCtx, (previous) => ({
         ...previous,
         editable: () => !disabled,
-        attributes: {
-          role: "textbox",
-          "aria-label": "Notes personnelles",
-          "aria-multiline": "true",
-        },
+        attributes: documentAttributes(disabled),
       }));
       ctx.get(listenerCtx).markdownUpdated((_ctx, value) => {
         draft.changed(value);
@@ -116,7 +117,11 @@ export async function mountNoteEditor(
     command,
     read: () => draft.read(markdown()),
     set(value: string, readOnly: boolean) {
-      editor.action((ctx) => ctx.get(editorViewCtx).setProps({ editable: () => !readOnly }));
+      editor.action((ctx) =>
+        ctx
+          .get(editorViewCtx)
+          .setProps({ editable: () => !readOnly, attributes: documentAttributes(readOnly) }),
+      );
       if (draft.differs(value))
         draft.replace(value, () => {
           editor.action(replaceAll(value));
