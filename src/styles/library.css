@@ -1247,3 +1247,170 @@ button.metadata-link:hover {
 .history-reset {
   align-self: flex-start;
 }
+
+/* Catalogue playback is a sibling of links, never a button nested in a link. */
+.album-card {
+  position: relative;
+}
+.album-card a {
+  color: inherit;
+  text-decoration: none;
+}
+.album-art-link {
+  display: block;
+}
+.album-card:hover strong {
+  color: var(--accent);
+}
+.cover-play {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  border-radius: 50%;
+  background: #111213dc;
+  border: 1px solid var(--border);
+}
+.album-card > .cover-play,
+.tagged-playable > .cover-play {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  opacity: 0;
+  pointer-events: none;
+}
+.album-card:hover > .cover-play,
+.album-card:focus-within > .cover-play,
+.tagged-playable:hover > .cover-play,
+.tagged-playable:focus-within > .cover-play {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cover-play:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  outline-offset: 0;
+}
+.artist-card {
+  position: relative;
+  padding: 0;
+  display: block;
+}
+.artist-card-link {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.artist-card > .cover-play {
+  position: absolute;
+  left: 78px;
+  top: 22px;
+  opacity: 0;
+  pointer-events: none;
+}
+.artist-card:hover > .cover-play,
+.artist-card:focus-within > .cover-play {
+  opacity: 1;
+  pointer-events: auto;
+}
+.tagged-playable {
+  position: relative;
+}
+.density-compact .album-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto 30px;
+}
+.density-compact .album-card .album-title-link {
+  min-width: 0;
+}
+.density-compact .album-card > .album-year {
+  width: auto;
+  text-align: right;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.density-compact .album-card > .cover-play {
+  position: static;
+  opacity: 1;
+  pointer-events: auto;
+}
+.density-compact .artist-card {
+  padding: 0;
+  display: block;
+}
+.density-compact .artist-card-link {
+  padding: 8px 12px;
+  padding-right: 54px;
+}
+.density-compact .artist-card > .cover-play {
+  left: auto;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 1;
+  pointer-events: auto;
+}
+.density-compact .tagged-playable .album-card {
+  display: flex;
+  padding-right: 54px;
+}
+.density-compact .tagged-playable > .cover-play {
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .album-card > .cover-play,
+  .artist-card > .cover-play,
+  .tagged-playable > .cover-play {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: activity-spin 0.8s linear infinite;
+}
+@keyframes activity-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-style: dotted;
+  }
+}
+
+.detail-cover-actions {
+  position: relative;
+}
+.detail-cover-actions > .cover-play {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  pointer-events: none;
+}
+.detail-cover-actions:hover > .cover-play,
+.detail-cover-actions:focus-within > .cover-play {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .detail-cover-actions > .cover-play {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

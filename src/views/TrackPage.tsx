@@ -6,6 +6,7 @@ import { createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { parseTrackDetail } from "../library/track-detail";
+import { CoverPlay } from "../components/CoverPlay";
 import { Artwork } from "../components/Artwork";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { fileSize, trackDuration } from "../library/detail-format";
@@ -39,9 +40,12 @@ export function TrackPage(props: { reference: string }) {
             <div class="album-hero">
               <Show when={album()}>
                 {(a) => (
-                  <a href={`#/album/${encodeURIComponent(a().reference)}`}>
-                    <Artwork album={a()} />
-                  </a>
+                  <div class="detail-cover-actions">
+                    <a href={`#/album/${encodeURIComponent(a().reference)}`}>
+                      <Artwork album={a()} />
+                    </a>
+                    <CoverPlay reference={a().reference} title={a().title} />
+                  </div>
                 )}
               </Show>
               <div>

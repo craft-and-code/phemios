@@ -3,10 +3,9 @@ import { MissingAlbumCard } from "./MissingAlbumCard";
 import type { MissingAlbum } from "../library/missing";
 import { albumEntries } from "../library/album-order";
 import { t } from "../i18n";
-import { SourceBadge } from "./SourceBadge";
+import { AlbumCard } from "./AlbumCard";
 import { For, Show } from "solid-js";
 import type { Album } from "../library/types";
-import { Artwork } from "./Artwork";
 
 /** Each local edition keeps its own identity and cover when opening details. */
 export function AlbumGrid(props: {
@@ -37,20 +36,11 @@ export function AlbumGrid(props: {
               <Show
                 when={entry.missing}
                 fallback={
-                  <a class="album-card" href={`#/album/${encodeURIComponent(album.reference)}`}>
-                    <Artwork album={album} />
-                    <strong>{album.title}</strong>
-                    <Show when={props.rating}>
-                      <small class="card-rating">
-                        <Show when={props.ratingFromArtist?.(album)}>{t("Artiste")} · </Show>
-                        {"★".repeat(props.rating?.(album) ?? 0)}
-                      </small>
-                    </Show>
-                    <small>
-                      {album.year ?? t("Année inconnue")}{" "}
-                      <SourceBadge reference={album.reference} />
-                    </small>
-                  </a>
+                  <AlbumCard
+                    album={album}
+                    rating={props.rating?.(album)}
+                    ratingFromArtist={props.ratingFromArtist?.(album)}
+                  />
                 }
               >
                 {(missing) => <MissingAlbumCard album={missing()} />}

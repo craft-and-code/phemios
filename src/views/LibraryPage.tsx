@@ -5,6 +5,7 @@ import { SourceBadge } from "../components/SourceBadge";
 import { createMemo, For, Show } from "solid-js";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
+import { CoverPlay } from "../components/CoverPlay";
 import { Artwork } from "../components/Artwork";
 import { useLibrary } from "../library/context";
 import {
@@ -122,43 +123,52 @@ export function LibraryPage(props: {
               const cover = releases.find((item) => item.cover) ?? releases[0];
               return (
                 <li>
-                  <a class="artist-card" href={`#/artist/${encodeURIComponent(artist.reference)}`}>
-                    <Show
-                      when={library.image(artist.reference, "portrait")}
-                      fallback={
-                        <Show
-                          when={cover}
-                          fallback={
-                            <div
-                              class="artwork missing-art"
-                              aria-label={t("Pas de pochette disponible")}
-                            >
-                              ♪
-                            </div>
-                          }
-                        >
-                          {(album) => <Artwork album={album()} />}
-                        </Show>
-                      }
+                  <div class="artist-card">
+                    <a
+                      class="artist-card-link"
+                      href={`#/artist/${encodeURIComponent(artist.reference)}`}
                     >
-                      {(url) => (
-                        <div class="artwork real-art">
-                          <img src={url()} alt={t("Portrait de {0}", artist.name)} />
-                        </div>
-                      )}
-                    </Show>
-                    <div>
-                      <h2>
-                        {artist.name} <SourceBadge reference={artist.reference} />
-                      </h2>
-                      <p>
-                        {artist.genre} · {countryName(artist.countryCode, artist.country)}
-                      </p>
-                      <small>
-                        {releases.length} {t("albums · ouvrir la page")}
-                      </small>
-                    </div>
-                  </a>
+                      <Show
+                        when={library.image(artist.reference, "portrait")}
+                        fallback={
+                          <Show
+                            when={cover}
+                            fallback={
+                              <div
+                                class="artwork missing-art"
+                                aria-label={t("Pas de pochette disponible")}
+                              >
+                                ♪
+                              </div>
+                            }
+                          >
+                            {(album) => <Artwork album={album()} />}
+                          </Show>
+                        }
+                      >
+                        {(url) => (
+                          <div class="artwork real-art">
+                            <img src={url()} alt={t("Portrait de {0}", artist.name)} />
+                          </div>
+                        )}
+                      </Show>
+                      <div>
+                        <h2>
+                          {artist.name} <SourceBadge reference={artist.reference} />
+                        </h2>
+                        <p>
+                          {artist.genre} · {countryName(artist.countryCode, artist.country)}
+                        </p>
+                        <small>
+                          {releases.length} {t("albums · ouvrir la page")}
+                        </small>
+                      </div>
+                    </a>
+                    <CoverPlay
+                      reference={cover?.reference ?? artist.reference}
+                      title={cover?.title ?? artist.name}
+                    />
+                  </div>
                 </li>
               );
             }}

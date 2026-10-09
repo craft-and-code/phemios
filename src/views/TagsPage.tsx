@@ -1,3 +1,4 @@
+import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
 import { createMemo, createResource, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -130,33 +131,36 @@ export function TagsPage(props: {
                 }
               >
                 {(value) => (
-                  <a
-                    class="album-card"
-                    href={`#/${value().kind}/${encodeURIComponent(target.reference)}`}
-                  >
-                    <div class="artwork real-art tagged-artwork">
-                      <Show
-                        when={
-                          library.image(target.reference, "portrait") ??
-                          (value().cover ? library.image(value().cover!, "cover") : undefined)
-                        }
-                        fallback={
-                          <Icon
-                            name={
-                              value().kind === "artist"
-                                ? "users"
-                                : value().kind === "track"
-                                  ? "genres"
-                                  : "disc"
-                            }
-                          />
-                        }
-                      >
-                        {(url) => <img src={url()} alt="" decoding="async" />}
-                      </Show>
-                    </div>
-                    <strong>{value().label}</strong>
-                  </a>
+                  <div class="tagged-playable">
+                    <a
+                      class="album-card"
+                      href={`#/${value().kind}/${encodeURIComponent(target.reference)}`}
+                    >
+                      <div class="artwork real-art tagged-artwork">
+                        <Show
+                          when={
+                            library.image(target.reference, "portrait") ??
+                            (value().cover ? library.image(value().cover!, "cover") : undefined)
+                          }
+                          fallback={
+                            <Icon
+                              name={
+                                value().kind === "artist"
+                                  ? "users"
+                                  : value().kind === "track"
+                                    ? "genres"
+                                    : "disc"
+                              }
+                            />
+                          }
+                        >
+                          {(url) => <img src={url()} alt="" decoding="async" />}
+                        </Show>
+                      </div>
+                      <strong>{value().label}</strong>
+                    </a>
+                    <CoverPlay reference={target.reference} title={value().label} />
+                  </div>
                 )}
               </Show>
               <SourceBadge reference={target.reference} />

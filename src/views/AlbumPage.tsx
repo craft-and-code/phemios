@@ -1,3 +1,4 @@
+import { CoverPlay } from "../components/CoverPlay";
 import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
@@ -34,17 +35,20 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
   return (
     <article class="page album-page">
       <div class="album-hero">
-        <button
-          class="cover-open"
-          aria-label={t("Agrandir la pochette de {0}", props.album.title)}
-          disabled={!library.demo && !library.image(props.album.reference, "cover")}
-          onClick={(event) => {
-            event.currentTarget.focus();
-            setEnlarged(true);
-          }}
-        >
-          <Artwork album={props.album} />
-        </button>
+        <div class="detail-cover-actions">
+          <button
+            class="cover-open"
+            aria-label={t("Agrandir la pochette de {0}", props.album.title)}
+            disabled={!library.demo && !library.image(props.album.reference, "cover")}
+            onClick={(event) => {
+              event.currentTarget.focus();
+              setEnlarged(true);
+            }}
+          >
+            <Artwork album={props.album} />
+          </button>
+          <CoverPlay reference={props.album.reference} title={props.album.title} />
+        </div>
         <Show when={enlarged()}>
           <CoverPreview album={props.album} onClose={() => setEnlarged(false)} />
         </Show>
