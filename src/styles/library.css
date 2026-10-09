@@ -1102,7 +1102,7 @@ pre {
   transition: border-color 140ms ease;
 }
 .album-card:hover .artwork,
-.library-page:not(.country-library) .artist-card:hover .artwork {
+.library-page .artist-card:hover .artwork {
   border-color: var(--accent);
 }
 .playing-cover .cover-fallback svg {
@@ -1120,4 +1120,81 @@ button.metadata-link {
 }
 button.metadata-link:hover {
   color: var(--accent);
+}
+
+.missing-release-art {
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  filter: saturate(0.2);
+  opacity: 0.5;
+}
+.missing-release-art > svg {
+  width: 44px;
+  height: 44px;
+}
+.missing-mark {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: absolute;
+  bottom: 10px;
+  font-size: 11px;
+}
+.missing-mark svg {
+  width: 14px;
+  height: 14px;
+}
+.missing-album strong {
+  color: var(--muted);
+}
+.missing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.missing-status {
+  margin: 20px 0;
+}
+.missing-status ul {
+  padding: 0;
+  list-style: none;
+}
+.missing-status li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.label-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.label-card {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--surface);
+}
+.label-card svg {
+  grid-row: span 2;
+  width: 28px;
+  height: 28px;
+}
+.label-card:hover {
+  border-color: var(--accent);
+}
+.label-card small {
+  grid-column: 2;
+}
+.label-biography {
+  white-space: pre-line;
 }

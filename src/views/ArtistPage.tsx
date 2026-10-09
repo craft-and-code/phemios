@@ -1,3 +1,4 @@
+import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
@@ -147,7 +148,14 @@ export function ArtistPage(props: {
               {albums().length} {t("albums dans la sélection")}
             </span>
           </div>
-          <AlbumGrid albums={albums()} />
+          <AlbumGrid
+            albums={albums()}
+            missing={library.missing
+              .rows()
+              .filter((row) => !row.set_aside && row.artist === props.artist.reference)}
+            reverse={props.reverse}
+          />
+          <MissingAlbumsStatus artist={props.artist.reference} />
           <Show when={appearances().length}>
             <h2>{t("Participations")}</h2>
             <AlbumGrid albums={appearances()} />

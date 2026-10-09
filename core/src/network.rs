@@ -345,6 +345,9 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/v1/track"
                     | "/api/v1/lyrics"
                     | "/api/v1/query"
+                    | "/api/v1/labels"
+                    | "/api/v1/label"
+                    | "/api/me/v1/missing"
                     | "/api/me/v1/annotation"
                     | "/api/me/v1/annotations"
                     | "/api/me/v1/m3u"
@@ -358,7 +361,10 @@ fn allowed(method: &str, path: &str) -> bool {
         }
         "PUT" => matches!(
             path,
-            "/api/me/v1/annotation" | "/api/me/v1/collection" | "/api/auth/v1/password"
+            "/api/me/v1/annotation"
+                | "/api/me/v1/collection"
+                | "/api/auth/v1/password"
+                | "/api/me/v1/missing"
         ),
         "PATCH" => account_path(path, false),
         "DELETE" => {

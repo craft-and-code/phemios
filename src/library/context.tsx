@@ -1,3 +1,4 @@
+import { createMissingCatalog } from "./missing";
 import { t } from "../i18n";
 import { catalogOrigins, effectiveSource, referenceSource, type SourceId } from "./sources";
 import { startLocal, stopLocal, localStatus, setRequestSource } from "../platform/desktop";
@@ -31,6 +32,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  missing: ReturnType<typeof createMissingCatalog>;
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
   tasks: ReturnType<typeof createJobs>;
@@ -375,7 +377,9 @@ export function LibraryProvider(props: ParentProps) {
     connection.stop();
     clearMedia();
   });
+  const missing = createMissingCatalog(localSession, serverSession, snapshot);
   const value: Library = {
+    missing,
     tasks,
     radio,
     player,

@@ -67,27 +67,29 @@ export function TagsPage(props: {
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
       <p class="muted">{t("Une carte par élément tagué : artiste, album ou piste.")}</p>
-      <div class="tag-choices" aria-label={t("Choisir un tag")}>
-        <button aria-pressed={!props.selected} onClick={() => props.onSelect("")}>
-          {t("Tous les tags")}
-        </button>
-        <For
-          each={vocabulary().filter((tag) =>
-            normalizeName(tag.label).includes(normalizeName(props.query)),
-          )}
-        >
-          {(tag) => (
-            <button
-              aria-pressed={props.selected === tag.key}
-              onClick={() => props.onSelect(props.selected === tag.key ? "" : tag.key)}
-              title={t("{0} élément(s) tagué(s)", tag.count)}
-            >
-              {tag.label}
-              <span class="tag-count">{tag.count}</span>
-            </button>
-          )}
-        </For>
-      </div>
+      <Show when={vocabulary().length}>
+        <div class="tag-choices" aria-label={t("Choisir un tag")}>
+          <button aria-pressed={!props.selected} onClick={() => props.onSelect("")}>
+            {t("Tous les tags")}
+          </button>
+          <For
+            each={vocabulary().filter((tag) =>
+              normalizeName(tag.label).includes(normalizeName(props.query)),
+            )}
+          >
+            {(tag) => (
+              <button
+                aria-pressed={props.selected === tag.key}
+                onClick={() => props.onSelect(props.selected === tag.key ? "" : tag.key)}
+                title={t("{0} élément(s) tagué(s)", tag.count)}
+              >
+                {tag.label}
+                <span class="tag-count">{tag.count}</span>
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
       <Show when={!entries().length}>
         <p class="empty">{t("Aucun élément tagué dans cette sélection.")}</p>
       </Show>

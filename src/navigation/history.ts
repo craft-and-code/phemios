@@ -95,14 +95,16 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
     return true;
   }
   const backLink = () => {
-    if (!["album", "artist", "track"].includes(route().kind)) return undefined;
+    if (!["album", "artist", "track", "label"].includes(route().kind)) return undefined;
     return (
       entry().origin ??
-      (route().kind === "track"
-        ? { href: "#/tracks", label: t("Toutes les pistes") }
-        : route().kind === "album"
-          ? { href: "#/albums", label: t("Tous les albums") }
-          : { href: "#/artists", label: t("Tous les artistes") })
+      (route().kind === "label"
+        ? { href: "#/labels", label: t("Tous les labels") }
+        : route().kind === "track"
+          ? { href: "#/tracks", label: t("Toutes les pistes") }
+          : route().kind === "album"
+            ? { href: "#/albums", label: t("Tous les albums") }
+            : { href: "#/artists", label: t("Tous les artistes") })
     );
   };
   function goBack() {

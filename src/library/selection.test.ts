@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { selectCountries, additiveCountrySelection, browseArtists } from "./selection";
+import {
+  selectCountries,
+  additiveCountrySelection,
+  browseArtists,
+  selectAlbumYear,
+} from "./selection";
 import type { Artist, Album } from "./types";
 it("normal clicks replace countries; modifier clicks toggle a deduplicated union", () => {
   expect(selectCountries(["France"], "Suède", false)).toEqual(["Suède"]);
@@ -52,4 +57,19 @@ it("browses canonical album artists without discarding contributors from the cat
     ),
   ).toEqual(["Band", "Singer", "Various"]);
   expect(artists).toHaveLength(4);
+});
+
+it("opening a release year clears the unrelated artist alphabet interval", () => {
+  expect(
+    selectAlbumYear(
+      {
+        mode: "both",
+        years: [1990, 2020],
+        alphabet: [5, 5],
+        query: "artist",
+        includeUnknownYear: true,
+      },
+      2016,
+    ).alphabet,
+  ).toEqual([0, 26]);
 });

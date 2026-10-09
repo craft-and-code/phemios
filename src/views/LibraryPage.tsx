@@ -1,3 +1,5 @@
+import { missingAlbum } from "../library/missing";
+import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { SourceBadge } from "../components/SourceBadge";
@@ -56,6 +58,16 @@ export function LibraryPage(props: {
       .filter((item) => props.section !== "compilations" || item.compilation)
       .sort((a, b) => compare(a.title, b.title)),
   );
+  const missing = createMemo(() => {
+    if (props.section !== "albums") return [];
+    const rows = library.missing.rows().filter((row) => !row.set_aside);
+    const refs = new Set(
+      filterAlbums(rows.map(missingAlbum), library.artists(), props.filters).map(
+        (row) => row.reference,
+      ),
+    );
+    return rows.filter((row) => refs.has(missingAlbum(row).reference));
+  });
   const artistView = () => ["artists", "countries", "genres"].includes(props.section);
   return (
     <section
@@ -65,7 +77,7 @@ export function LibraryPage(props: {
     >
       <div class="page-heading">
         <span role="status">
-          {artistView() ? artists().length : albums().length} {t("résultat(s)")}
+          {artistView() ? artists().length : albums().length + missing().length} {t("résultat(s)")}
         </span>
       </div>
       <Show when={props.section === "countries"}>
@@ -104,7 +116,17 @@ export function LibraryPage(props: {
           </For>
         </div>
       </Show>
-      <Show when={artistView()} fallback={<AlbumGrid albums={albums()} />}>
+      <Show
+        when={artistView()}
+        fallback={
+          <>
+            <AlbumGrid albums={albums()} missing={missing()} reverse={props.reverse} />
+            <Show when={props.section === "albums"}>
+              <MissingAlbumsStatus />
+            </Show>
+          </>
+        }
+      >
         <ul class="artist-grid">
           <For each={artists()}>
             {(artist) => {

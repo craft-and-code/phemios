@@ -1,3 +1,5 @@
+import { LabelsPage } from "./views/LabelsPage";
+import { LabelPage } from "./views/LabelPage";
 import { createToolPreferences } from "./library/tool-preferences";
 import { t } from "./i18n";
 import {
@@ -21,7 +23,8 @@ import { Icon } from "./components/Icon";
 import { useLibrary } from "./library/context";
 import { SettingsPage } from "./views/SettingsPage";
 import { sourceLabel } from "./library/sources";
-import type { Filters } from "./library/types";
+import { createScopedFilters } from "./navigation/scoped-filters";
+import { ActiveFilters } from "./components/ActiveFilters";
 import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
@@ -44,7 +47,10 @@ export function App() {
   };
   const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
   const yearDomain = createMemo(() => {
-    const values = library.snapshot()?.albums ?? (library.demo ? library.albums() : []);
+    const values = [
+      ...(library.snapshot()?.albums ?? (library.demo ? library.albums() : [])),
+      ...library.missing.rows().filter((row) => !row.set_aside),
+    ];
     let low = Infinity,
       high = -Infinity;
     for (const album of values)
@@ -54,6 +60,7 @@ export function App() {
       }
     return Number.isFinite(low) ? ([low, high] as const) : ([0, 0] as const);
   });
+  const [labelTitle, setLabelTitle] = createSignal("");
   const [runtime] = createResource(getRuntimeInfo);
   const navigation = createNavigation(browserNavigationHost(), (hash) => {
     const source = parseRoute(hash);
@@ -63,20 +70,13 @@ export function App() {
       return library.artists().find((a) => a.reference === source.reference)?.name ?? t("Artiste");
     if (source.kind === "album")
       return library.albums().find((a) => a.reference === source.reference)?.title ?? "Album";
+    if (source.kind === "label") return labelTitle() || t("Label");
     return t("Catalogue");
   });
   const [sidebar, setSidebar] = createSignal(true);
-  const [filters, setFilters] = createSignal<Filters>({
-    mode: "years",
-    years: [0, 0],
-    alphabet: [0, 26],
-    includeUnknownYear: true,
-    query: "",
-  });
-  createEffect(() => {
-    const domain = yearDomain();
-    if (Number.isFinite(domain[0])) setFilters((previous) => ({ ...previous, years: domain }));
-  });
+  const scopedFilters = createScopedFilters(navigation.section, yearDomain);
+  const filters = scopedFilters.value,
+    setFilters = scopedFilters.set;
   const trackPaging = createTrackPaging(
     () => filters().query,
     () => library.trackSources(),
@@ -168,8 +168,10 @@ export function App() {
             value={filters().query}
             onInput={(event) => {
               setFilters({ ...filters(), query: event.currentTarget.value });
-              setSelectedTag("");
-              setTagOffset(0);
+              if (section() === "tags") {
+                setSelectedTag("");
+                setTagOffset(0);
+              }
             }}
           />
         </label>
@@ -271,6 +273,19 @@ export function App() {
             </button>
           </div>
         </Show>
+        <Show
+          when={
+            current().kind === "section" &&
+            !["radio", "settings", "statistics", "doctor"].includes(section())
+          }
+        >
+          <ActiveFilters
+            value={filters()}
+            setValue={setFilters}
+            domain={yearDomain()}
+            catalog={hasFilters()}
+          />
+        </Show>
         <Show when={hasFilters() && library.artists().length}>
           <FilterBar
             value={filters()}
@@ -340,6 +355,7 @@ export function App() {
               "recent",
               "tracks",
               "tags",
+              "labels",
               "radio",
               "settings",
               "relations",
@@ -373,7 +389,10 @@ export function App() {
                 </div>
               )}
             >
-              <Show when={route.kind === "section"}>
+              <Show when={route.kind === "section" && section() === "labels"}>
+                <LabelsPage query={filters().query} />
+              </Show>
+              <Show when={route.kind === "section" && section() !== "labels"}>
                 <Show
                   when={["artists", "albums", "compilations", "countries", "genres"].includes(
                     section(),
@@ -444,8 +463,7 @@ export function App() {
                       artist={artist()}
                       reverse={reverse()}
                       onGenres={(genres) => {
-                        setFilters({
-                          ...filters(),
+                        scopedFilters.select("genres", {
                           mode: "none",
                           query: "",
                           countries: [],
@@ -455,8 +473,7 @@ export function App() {
                         navigation.navigate("#/genres");
                       }}
                       onCountry={(country) => {
-                        setFilters({
-                          ...filters(),
+                        scopedFilters.select("countries", {
                           mode: "none",
                           query: "",
                           genre: undefined,
@@ -478,12 +495,18 @@ export function App() {
                     <AlbumPage
                       album={album()}
                       onYear={(year) => {
-                        setFilters(selectAlbumYear(filters(), year));
+                        scopedFilters.select("albums", selectAlbumYear(filters(), year));
                         navigation.navigate("#/albums");
                       }}
                     />
                   )}
                 </Show>
+              </Show>
+              <Show when={route.kind === "label"}>
+                <LabelPage
+                  reference={(route as { reference: string }).reference}
+                  onTitle={setLabelTitle}
+                />
               </Show>
               <Show when={route.kind === "track"}>
                 <TrackPage reference={(route as { reference: string }).reference} />

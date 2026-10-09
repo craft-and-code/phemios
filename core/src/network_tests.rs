@@ -320,3 +320,14 @@ fn settings_routes_do_not_expand_to_arbitrary_admin_paths() {
     assert!(!allowed("POST", "/api/admin/v1/shell"));
     assert!(!allowed("GET", "https://other.example/api/v1/roots"));
 }
+
+#[test]
+fn label_reads_and_private_missing_decisions_have_narrow_methods() {
+    assert!(allowed("GET", "/api/v1/labels"));
+    assert!(allowed("GET", "/api/v1/label"));
+    assert!(allowed("GET", "/api/me/v1/missing"));
+    assert!(allowed("PUT", "/api/me/v1/missing"));
+    assert!(!allowed("DELETE", "/api/v1/label"));
+    assert!(!allowed("POST", "/api/me/v1/missing"));
+    assert!(!allowed("GET", "/api/me/v1/missing/../../private"));
+}

@@ -5,6 +5,7 @@ export function selectAlbumYear(previous: Filters, year: number): Filters {
     ...previous,
     mode: "years",
     years: [year, year],
+    alphabet: [0, 26],
     includeUnknownYear: false,
     query: "",
     countries: [],

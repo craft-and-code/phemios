@@ -1,0 +1,49 @@
+import { createRoot, createSignal } from "solid-js";
+import { expect, it } from "vitest";
+import { createScopedFilters, activeFilters, clearFilter } from "./scoped-filters";
+import type { Section } from "./routes";
+it("isolates browse selections and preserves them on return, with hidden country rails", () => {
+  createRoot((dispose) => {
+    const [section, setSection] = createSignal<Section>("genres");
+    const filters = createScopedFilters(section, () => [1980, 2025]);
+    filters.set({ ...filters.value(), genres: ["Metal"], years: [2000, 2010], query: "live" });
+    setSection("albums");
+    expect(filters.value().query).toBe("");
+    expect(filters.value().genres).toBeUndefined();
+    expect(filters.value().years).toEqual([1980, 2025]);
+    setSection("countries");
+    expect(filters.value().mode).toBe("none");
+    setSection("genres");
+    expect(filters.value().query).toBe("live");
+    expect(filters.value().genres).toEqual(["Metal"]);
+    filters.select("albums", { years: [2016, 2016], includeUnknownYear: false });
+    setSection("albums");
+    expect(filters.value().years).toEqual([2016, 2016]);
+    dispose();
+  });
+});
+it("shows every restricting criterion and removes one without discarding the others", () => {
+  const value = {
+    mode: "both" as const,
+    years: [2000, 2010] as const,
+    alphabet: [1, 3] as const,
+    includeUnknownYear: false,
+    query: "live",
+    countries: ["FR"],
+    genres: ["Metal"],
+  };
+  const rows = activeFilters(value, [1980, 2025]);
+  expect(rows.map((row) => row.key)).toEqual([
+    "query",
+    "years",
+    "unknown",
+    "alphabet",
+    "country:FR",
+    "genre:Metal",
+  ]);
+  expect(clearFilter(value, "country:FR", [1980, 2025]).genres).toEqual(["Metal"]);
+  expect(clearFilter(value, "years", [1980, 2025]).years).toEqual([1980, 2025]);
+  expect(activeFilters({ ...value, mode: "none" }, [1980, 2025]).map((r) => r.key)).not.toContain(
+    "years",
+  );
+});

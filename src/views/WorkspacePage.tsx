@@ -1,3 +1,4 @@
+import { RatedPage } from "./RatedPage";
 import { t } from "../i18n";
 import { RadioPage } from "./RadioPage";
 import { DoctorPage } from "./DoctorPage";
@@ -24,6 +25,7 @@ const descriptions: Partial<Record<Section, string>> = {
 /** Future services remain unavailable; changing a plan never writes music files. */
 export function WorkspacePage(props: { section: Section; query: string }) {
   const [convert, setConvert] = createSignal(false);
+  if (props.section === "rated") return <RatedPage query={props.query} />;
   return (
     <Show
       when={props.section === "radio"}
