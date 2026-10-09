@@ -53,19 +53,6 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
           <div class="detail-title">
             <h1>{props.album.title}</h1>
             <SourceBadge reference={props.album.reference} />
-            <button
-              class="icon-button detail-play"
-              aria-label={t("Lire l’album")}
-              title={t("Lire l’album")}
-              disabled={
-                !library.sessionFor(props.album.reference) ||
-                library.sessionFor(props.album.reference)?.account.role === "auditor" ||
-                library.player.busy()
-              }
-              onClick={() => void library.player.startReference(props.album.reference)}
-            >
-              <Icon name="play" />
-            </button>
           </div>
           <p>
             <Show when={artist()} fallback={t("Artistes divers")}>
@@ -89,6 +76,19 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
               </button>
             </Show>
           </p>
+          <button
+            class="icon-button detail-play"
+            aria-label={t("Lire l’album")}
+            title={t("Lire l’album")}
+            disabled={
+              !library.sessionFor(props.album.reference) ||
+              library.sessionFor(props.album.reference)?.account.role === "auditor" ||
+              library.player.busy()
+            }
+            onClick={() => void library.player.startReference(props.album.reference)}
+          >
+            <Icon name="play" />
+          </button>
         </div>
       </div>
       <AnnotationPanel reference={props.album.reference} kind="album" />

@@ -15,9 +15,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 0;
-  aspect-ratio: 1;
+  gap: 6px;
+  min-height: 72px;
   padding: 12px;
   border-radius: 0;
   background: var(--surface);
@@ -217,11 +216,18 @@
 }
 @media (max-width: 850px) {
   .settings-tabs {
-    max-width: 256px;
+    max-width: 512px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .service-status {
   white-space: pre-line;
+}
+
+.album-hero .detail-title h1 {
+  margin-block: 0 4px;
+}
+.album-hero .detail-title + p {
+  margin-block: 0 12px;
 }
