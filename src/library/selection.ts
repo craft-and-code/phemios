@@ -1,4 +1,17 @@
-import type { Album, Artist } from "./types";
+import type { Album, Artist, Filters } from "./types";
+/** A detail year opens all albums from that year, independent of stale browse facets. */
+export function selectAlbumYear(previous: Filters, year: number): Filters {
+  return {
+    ...previous,
+    mode: "years",
+    years: [year, year],
+    includeUnknownYear: false,
+    query: "",
+    countries: [],
+    genre: undefined,
+    genres: [],
+  };
+}
 /** Visible album artists use Aède's canonical release association, not personnel roles. */
 export function browseArtists(artists: readonly Artist[], albums: readonly Album[]) {
   const principals = new Set(albums.map((album) => album.artist).filter(Boolean));

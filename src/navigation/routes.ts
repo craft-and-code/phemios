@@ -25,7 +25,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "artists", label: "Artistes", symbol: "users" },
   { id: "albums", label: "Albums", symbol: "disc" },
   { id: "tracks", label: "Pistes", symbol: "list" },
-  { id: "recent", label: "Nouveautés", symbol: "history" },
+  { id: "recent", label: "Nouveautés", symbol: "sparkles" },
   { id: "compilations", label: "Compilations", symbol: "layers" },
   { id: "countries", label: "Pays", symbol: "globe" },
   { id: "genres", label: "Genres", symbol: "tags" },

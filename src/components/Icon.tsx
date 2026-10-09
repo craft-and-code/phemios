@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  sparkles:
+    "m9 3 2.5 6.5L18 12l-6.5 2.5L9 21l-2.5-6.5L0 12l6.5-2.5L9 3ZM19 2v6M16 5h6M21 16v6M18 19h6",
   edit: "m15 4 5 5M3 21l1-6L16 3l5 5L9 20l-6 1Z",
   doctor: "M6 3v7a6 6 0 0 0 12 0V3M4 3h4M16 3h4M12 16v2a4 4 0 0 0 8 0v-3",
   radio: "M4 8h16v13H4V8ZM7 8 18 3M7 12h6M16 12h1M7 17h3M14 17h3",

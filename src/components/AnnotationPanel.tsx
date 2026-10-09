@@ -258,26 +258,28 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
             }}
           />
         </div>
-        <button
-          class="primary"
-          disabled={blocked() || savingNotes() || editorUnavailable()}
-          onClick={saveNotes}
-        >
-          Enregistrer les notes et tags
-        </button>
-        <button
-          class="quiet"
-          disabled={savingNotes()}
-          onClick={() => {
-            setTags(savedTags().slice());
-            setNote(savedNote());
-            setPendingTag(false);
-            setFailure("");
-            setEditing(false);
-          }}
-        >
-          Annuler
-        </button>
+        <div class="annotation-edit-actions">
+          <button
+            class="primary"
+            disabled={blocked() || savingNotes() || editorUnavailable()}
+            onClick={saveNotes}
+          >
+            Enregistrer les notes et tags
+          </button>
+          <button
+            class="quiet"
+            disabled={savingNotes()}
+            onClick={() => {
+              setTags(savedTags().slice());
+              setNote(savedNote());
+              setPendingTag(false);
+              setFailure("");
+              setEditing(false);
+            }}
+          >
+            Annuler
+          </button>
+        </div>
       </Show>
       <p role="status">
         {pending()

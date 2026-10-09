@@ -235,6 +235,14 @@
 
 .annotation-text-heading {
   margin-top: 20px;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.annotation-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 .annotation-text-heading h3 {
   margin: 0;

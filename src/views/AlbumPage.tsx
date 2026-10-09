@@ -10,7 +10,7 @@ import { useLibrary } from "../library/context";
 import { albumTracks, discGroups } from "../library/album-tracks";
 import type { Album } from "../library/types";
 /** Read/edit current-account annotations; save failure never discards the draft. */
-export function AlbumPage(props: { album: Album }) {
+export function AlbumPage(props: { album: Album; onYear: (year: number) => void }) {
   const library = useLibrary();
   const [enlarged, setEnlarged] = createSignal(false);
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
@@ -59,7 +59,16 @@ export function AlbumPage(props: { album: Album }) {
                 </a>
               )}
             </Show>{" "}
-            · {props.album.year ?? "Année inconnue"}
+            ·{" "}
+            <Show when={props.album.year !== null} fallback="Année inconnue">
+              <button
+                class="metadata-link"
+                aria-label={`Voir les albums de ${props.album.year}`}
+                onClick={() => props.onYear(props.album.year!)}
+              >
+                {props.album.year}
+              </button>
+            </Show>
           </p>
         </div>
       </div>

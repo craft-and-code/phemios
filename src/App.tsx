@@ -8,7 +8,7 @@ import {
   Show,
 } from "solid-js";
 import { createNavigation, browserNavigationHost } from "./navigation/history";
-import { browseArtists } from "./library/selection";
+import { browseArtists, selectAlbumYear } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
 import { distributions } from "./library/distribution";
 import { SelectionCollection } from "./components/SelectionCollection";
@@ -368,7 +368,15 @@ export function App() {
               </Show>
               <Show when={route.kind === "album"}>
                 <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
-                  {(album) => <AlbumPage album={album()} />}
+                  {(album) => (
+                    <AlbumPage
+                      album={album()}
+                      onYear={(year) => {
+                        setFilters(selectAlbumYear(filters(), year));
+                        navigation.navigate("#/albums");
+                      }}
+                    />
+                  )}
                 </Show>
               </Show>
               <Show when={route.kind === "track"}>
