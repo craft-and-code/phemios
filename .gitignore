@@ -8,3 +8,5 @@ coverage/
 *.log
 
 src-tauri/binaries/
+
+dist-docs/
