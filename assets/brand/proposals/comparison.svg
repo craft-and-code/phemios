@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 640" role="img" aria-labelledby="board-title"><title id="board-title">Phémios and Aède — SVG identity proposals</title><rect width="1100" height="640" rx="24" fill="#111213"/><text x="48" y="56" font-family="Arial,sans-serif" font-size="18" fill="#a4a6a7">PHÉMIOS · AÈDE — IDENTITÉ COMMUNE</text><svg x="48" y="100" width="220" height="220" role="img" aria-labelledby="phemios-icon-title" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title id="phemios-icon-title">Phémios — application icon proposal</title>
+  <defs>
+    <linearGradient id="phemios-icon-surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#222a27"/><stop offset="1" stop-color="#101413"/></linearGradient>
+    <radialGradient id="phemios-icon-light" cx=".25" cy=".15" r=".85"><stop stop-color="#d8f36a" stop-opacity=".08"/><stop offset="1" stop-color="#d8f36a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect x="48" y="48" width="928" height="928" rx="216" fill="url(#phemios-icon-surface)"/>
+  <rect x="48" y="48" width="928" height="928" rx="216" fill="url(#phemios-icon-light)" stroke="#e1eadc" stroke-opacity=".12" stroke-width="3"/>
+  <path fill="#f1f0eb" fill-rule="evenodd" d="M276 302h103v42c35-36 79-56 132-56 115 0 193 82 193 206S626 701 511 701c-53 0-97-19-132-54v162H276V302Zm103 192c0 70 45 115 107 115s112-45 112-115-50-115-112-115-107 45-107 115Z"/>
+  <circle cx="757" cy="654" r="48" fill="#d8f36a"/>
+</svg>
+<svg x="320" y="120" width="700" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="phemios-wordmark-title" viewBox="0 0 480 160">
+  <title id="phemios-wordmark-title">Phémios — wordmark proposal</title>
+  <text x="24" y="119" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="112" font-weight="500" letter-spacing="-5" fill="#f1f0eb">phémios</text>
+  <circle cx="446" cy="111" r="8" fill="#d8f36a"/>
+</svg>
+<svg x="48" y="355" width="220" height="220" role="img" aria-labelledby="aede-icon-title" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title id="aede-icon-title">Aède — application icon proposal</title>
+  <defs>
+    <linearGradient id="aede-icon-surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#222a27"/><stop offset="1" stop-color="#101413"/></linearGradient>
+    <radialGradient id="aede-icon-light" cx=".25" cy=".15" r=".85"><stop stop-color="#d8f36a" stop-opacity=".08"/><stop offset="1" stop-color="#d8f36a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect x="48" y="48" width="928" height="928" rx="216" fill="url(#aede-icon-surface)"/>
+  <rect x="48" y="48" width="928" height="928" rx="216" fill="url(#aede-icon-light)" stroke="#e1eadc" stroke-opacity=".12" stroke-width="3"/>
+  <path fill="#f1f0eb" fill-rule="evenodd" d="M496 287c-98 0-166 41-175 118h102c6-25 30-40 72-40 46 0 69 20 69 53v10h-74c-129 0-195 46-195 134 0 81 56 138 143 138 56 0 100-23 130-62v51h101V429c0-94-61-142-173-142Zm68 218v29c0 53-37 85-91 85-39 0-60-18-60-45 0-45 29-69 94-69h57Z"/>
+  <circle cx="757" cy="654" r="48" fill="#d8f36a"/>
+</svg>
+<svg x="320" y="370" width="500" height="180" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="aede-wordmark-title" viewBox="0 0 320 160">
+  <title id="aede-wordmark-title">Aède — wordmark proposal</title>
+  <text x="24" y="119" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="112" font-weight="500" letter-spacing="-5" fill="#f1f0eb">aède</text>
+  <circle cx="285" cy="111" r="8" fill="#d8f36a"/>
+</svg>
+</svg>
