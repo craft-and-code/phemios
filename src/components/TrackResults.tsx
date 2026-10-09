@@ -28,7 +28,7 @@ export function TrackResults(props: {
   const duration = () => props.track.duration_ms;
   const [detail] = createResource(
     () =>
-      analysis() && library.session() && !props.track.analyses.length
+      analysis() && library.sessionFor(props.track.reference) && !props.track.analyses.length
         ? props.track.reference
         : false,
     async (reference) => {

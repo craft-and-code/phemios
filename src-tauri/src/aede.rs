@@ -5,16 +5,41 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
-pub(crate) struct Aede {
+pub(crate) struct SourceState {
     pub(crate) session: Mutex<Option<Client>>,
     pub(crate) cache: Cache,
-    pub(crate) downloads: std::path::PathBuf,
     pub(crate) snapshot: Mutex<Option<Arc<Value>>>,
 }
+pub(crate) struct Aede {
+    pub(crate) server: SourceState,
+    pub(crate) local: SourceState,
+    pub(crate) engine: Arc<Mutex<phemios_core::local::Engine>>,
+    pub(crate) playback_source: Mutex<phemios_core::federation::Source>,
+    pub(crate) downloads: std::path::PathBuf,
+}
+impl Aede {
+    pub(crate) fn owner(&self, source: phemios_core::federation::Source) -> &SourceState {
+        match source {
+            phemios_core::federation::Source::Local => &self.local,
+            phemios_core::federation::Source::Server => &self.server,
+        }
+    }
+}
+pub(crate) fn source(value: Option<&str>) -> Result<phemios_core::federation::Source, String> {
+    phemios_core::federation::Source::parse(value.unwrap_or("server"))
+}
+pub(crate) fn public(
+    mut value: Value,
+    owner: phemios_core::federation::Source,
+) -> Result<Value, String> {
+    phemios_core::federation::map(&mut value, owner, true)?;
+    Ok(value)
+}
+
 pub(crate) fn bridge(version: u32) -> Result<(), String> {
     phemios_core::validate_bridge(version).map_err(str::to_owned)
 }
-pub(crate) fn client(state: &Aede) -> Result<Client, String> {
+pub(crate) fn client(state: &SourceState) -> Result<Client, String> {
     state
         .session
         .lock()
@@ -42,6 +67,7 @@ pub(crate) async fn aede_login(
     let client = blocking(move || Client::login(&server, &username, &password)).await?;
     let account = client.account();
     let mut session = state
+        .server
         .session
         .lock()
         .map_err(|_| "Session native indisponible.".to_string())?;
@@ -59,8 +85,16 @@ pub(crate) async fn aede_logout(
 ) -> Result<(), String> {
     bridge(version)?;
     let audio = player.inner().clone();
-    blocking(move || audio.halt()).await?;
+    if *state
+        .playback_source
+        .lock()
+        .map_err(|_| "État audio indisponible.")?
+        == phemios_core::federation::Source::Server
+    {
+        blocking(move || audio.halt()).await?;
+    }
     let session = state
+        .server
         .session
         .lock()
         .map_err(|_| "Session native indisponible.".to_string())?
@@ -71,48 +105,95 @@ pub(crate) async fn aede_logout(
     Ok(())
 }
 #[tauri::command]
-pub(crate) async fn aede_sync(version: u32, state: State<'_, Aede>) -> Result<Value, String> {
+pub(crate) async fn aede_sync(
+    version: u32,
+    source: Option<String>,
+    state: State<'_, Aede>,
+) -> Result<Value, String> {
     bridge(version)?;
-    let client = client(&state)?;
+    let origin = self::source(source.as_deref())?;
+    let state = state.owner(origin);
+    let client = client(state)?;
     let cache = state.cache.clone();
     let snapshot = blocking(move || cache.save(client.snapshot()?)).await?;
     *state
         .snapshot
         .lock()
         .map_err(|_| "Cache natif indisponible.".to_string())? = Some(Arc::new(snapshot.clone()));
-    Ok(snapshot)
+    public(snapshot, origin)
 }
 #[tauri::command]
 pub(crate) async fn aede_cache(
     version: u32,
+    source: Option<String>,
     state: State<'_, Aede>,
 ) -> Result<Option<Value>, String> {
     bridge(version)?;
+    let origin = self::source(source.as_deref())?;
+    let state = state.owner(origin);
     let cache = state.cache.clone();
     let snapshot = blocking(move || cache.load()).await?;
     *state
         .snapshot
         .lock()
         .map_err(|_| "Cache natif indisponible.".to_string())? = snapshot.clone().map(Arc::new);
-    Ok(snapshot)
+    snapshot.map(|value| public(value, origin)).transpose()
 }
 #[tauri::command]
 pub(crate) async fn aede_request(
     version: u32,
     method: String,
     path: String,
-    query: BTreeMap<String, String>,
-    body: Option<Value>,
+    mut query: BTreeMap<String, String>,
+    mut body: Option<Value>,
+    source: Option<String>,
     state: State<'_, Aede>,
 ) -> Result<Value, String> {
     bridge(version)?;
-    let client = client(&state)?;
+    let hint = query
+        .get("ref")
+        .or_else(|| query.get("reference"))
+        .map(String::as_str)
+        .or_else(|| {
+            body.as_ref()
+                .and_then(|v| v["release"].as_str().or_else(|| v["reference"].as_str()))
+        });
+    let origin = hint
+        .map(phemios_core::federation::resolve)
+        .transpose()?
+        .map(|v| v.0)
+        .unwrap_or(self::source(source.as_deref())?);
+    for key in ["ref", "reference"] {
+        if let Some(reference) = query.get_mut(key) {
+            let (owner, raw) = phemios_core::federation::resolve(reference)?;
+            if owner != origin {
+                return Err("Origines incompatibles.".into());
+            }
+            *reference = raw;
+        }
+    }
+    if let Some(value) = body.as_mut() {
+        phemios_core::federation::map(value, origin, false)?;
+    }
+    if origin == phemios_core::federation::Source::Local
+        && path.starts_with("/api/admin/v1/accounts/phemios-local")
+        && method != "GET"
+    {
+        return Err("Le compte du moteur local est géré par Phémios.".into());
+    }
+    if origin == phemios_core::federation::Source::Local && path == "/api/auth/v1/password" {
+        return Err("Le secret du moteur local est géré par Phémios.".into());
+    }
+    let client = client(state.owner(origin))?;
     blocking(move || {
         let query: Vec<_> = query
             .iter()
             .map(|(key, value)| (key.as_str(), value.as_str()))
             .collect();
-        client.request(&method, &path, &query, body.as_ref())
+        public(
+            client.request(&method, &path, &query, body.as_ref())?,
+            origin,
+        )
     })
     .await
 }
@@ -124,6 +205,8 @@ pub(crate) async fn aede_artwork(
     state: State<'_, Aede>,
 ) -> Result<tauri::ipc::Response, String> {
     bridge(version)?;
+    let (origin, reference) = phemios_core::federation::resolve(&reference)?;
+    let state = state.owner(origin);
     let cache = state.cache.clone();
     let session = state
         .session
@@ -160,10 +243,11 @@ pub(crate) async fn aede_artwork(
 pub(crate) async fn aede_download(
     version: u32,
     id: String,
+    source: Option<String>,
     state: State<'_, Aede>,
 ) -> Result<String, String> {
     bridge(version)?;
-    let client = client(&state)?;
+    let client = client(state.owner(self::source(source.as_deref())?))?;
     let folder = state.downloads.clone();
     blocking(move || {
         let response = client.request("GET", &format!("/api/me/v1/m3u/{id}"), &[], None)?;
@@ -180,8 +264,9 @@ pub(crate) async fn aede_download_analysis(
     state: State<'_, Aede>,
 ) -> Result<String, String> {
     bridge(version)?;
-    let client = client(&state)?;
-    let folder = state.downloads.clone();
+    let (origin, reference) = phemios_core::federation::resolve(&reference)?;
+    let client = client(state.owner(origin))?;
+    let folder = state.downloads.join(origin.name());
     blocking(move || {
         let response = client.request(
             "GET",
@@ -202,8 +287,9 @@ pub(crate) async fn aede_download_spectrum(
     state: State<'_, Aede>,
 ) -> Result<String, String> {
     bridge(version)?;
-    let client = client(&state)?;
-    let folder = state.downloads.clone();
+    let (origin, reference) = phemios_core::federation::resolve(&reference)?;
+    let client = client(state.owner(origin))?;
+    let folder = state.downloads.join(origin.name());
     blocking(move || {
         let bytes = client.spectrum_download(&reference)?;
         let path = phemios_core::download::publish_spectrum(&folder, &reference, &bytes)?;

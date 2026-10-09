@@ -1,3 +1,4 @@
+import { referenceSource, sourceLabel } from "../library/sources";
 import { createMemo, For, Show } from "solid-js";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { AlbumGrid } from "../components/AlbumGrid";
@@ -133,7 +134,12 @@ export function LibraryPage(props: {
                       )}
                     </Show>
                     <div>
-                      <h2>{artist.name}</h2>
+                      <h2>
+                        {artist.name}{" "}
+                        <span class="source-badge">
+                          {sourceLabel(referenceSource(artist.reference))}
+                        </span>
+                      </h2>
                       <p>
                         {artist.genre} · {artist.country ?? "Origine inconnue"}
                       </p>

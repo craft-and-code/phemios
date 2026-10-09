@@ -15,7 +15,8 @@ export type Section =
   | "analysis"
   | "relations"
   | "players"
-  | "statistics";
+  | "statistics"
+  | "settings";
 export type Route =
   | { kind: "section"; section: Section }
   | { kind: "artist" | "album" | "track"; reference: string }
@@ -45,6 +46,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#\/?/, "");
   if (!path) return { kind: "section", section: "artists" };
+  if (path === "settings") return { kind: "section", section: "settings" };
   const section = sections.find((candidate) => candidate.id === path);
   if (section) return { kind: "section", section: section.id };
   const match = /^(artist|album|track)\/([^/]+)$/.exec(path);

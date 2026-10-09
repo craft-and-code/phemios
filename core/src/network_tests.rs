@@ -23,7 +23,7 @@ fn credentials_only_go_to_explicit_secure_authorities() {
 #[test]
 fn bridge_requests_cannot_supply_another_url_or_arbitrary_admin_command() {
     assert!(!allowed("GET", "https://example.org/api/v1/album"));
-    assert!(!allowed("POST", "/api/admin/v1/scan"));
+    assert!(!allowed("POST", "/api/admin/v1/execute"));
     assert!(!allowed("PUT", "/api/admin/v1/accounts"));
     assert!(!allowed("GET", "/api/admin/v1/tasks/1/../../accounts"));
     assert!(allowed("POST", "/api/admin/v1/tasks/42/cancel"));
@@ -302,4 +302,21 @@ fn spectrum_exports_request_original_dimensions_and_preserve_response_bytes() {
         b"\x89PNG\r\n\x1a\n"
     );
     worker.join().unwrap();
+}
+
+#[test]
+fn settings_routes_do_not_expand_to_arbitrary_admin_paths() {
+    assert!(allowed("GET", "/api/v1/roots"));
+    assert!(allowed("POST", "/api/admin/v1/scan"));
+    assert!(allowed("PATCH", "/api/admin/v1/accounts/listener"));
+    assert!(allowed(
+        "DELETE",
+        "/api/admin/v1/accounts/listener/sessions"
+    ));
+    assert!(!allowed(
+        "PATCH",
+        "/api/admin/v1/accounts/listener/../owner"
+    ));
+    assert!(!allowed("POST", "/api/admin/v1/shell"));
+    assert!(!allowed("GET", "https://other.example/api/v1/roots"));
 }

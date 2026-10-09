@@ -40,12 +40,15 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   onCleanup(() => {
     disposed = true;
   });
-  const scope = annotationScope(() => props.reference, library.session);
+  const scope = annotationScope(
+    () => props.reference,
+    () => library.sessionFor(props.reference),
+  );
   const writer = createMemo(() => {
     const { session, reference } = scope();
     const current = () => !disposed && writer() === controller;
     const controller = annotationWriter({
-      active: () => !!session && session === library.session(),
+      active: () => !!session && session === library.sessionFor(props.reference),
       request: async (patch) =>
         (
           await requestAede<{ annotation: Annotation | null }>(
@@ -135,8 +138,8 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     }
   }
   const blocked = () =>
-    !library.session() ||
-    library.session()?.account.role === "auditor" ||
+    !library.sessionFor(props.reference) ||
+    library.sessionFor(props.reference)?.account.role === "auditor" ||
     annotation.loading ||
     !!annotation.error;
   const dirty = () =>
@@ -149,7 +152,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         Annotations de{" "}
         {props.kind === "artist" ? "l’artiste" : props.kind === "track" ? "la piste" : "l’album"}
       </h2>
-      <Show when={!library.session()}>
+      <Show when={!library.sessionFor(props.reference)}>
         <p class="notice">Connectez-vous pour enregistrer vos annotations.</p>
       </Show>
       <Show when={annotation.error}>
@@ -233,7 +236,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
           value={tags()}
           vocabulary={tagVocabulary(Object.values(library.annotations))}
           disabled={blocked()}
-          resetKey={`${library.session()?.account.id ?? ""}:${props.reference}`}
+          resetKey={`${library.sessionFor(props.reference)?.account.id ?? ""}:${props.reference}`}
           onChange={(value) => {
             setTags(value);
             setMessage("");

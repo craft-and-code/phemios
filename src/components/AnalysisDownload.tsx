@@ -28,7 +28,7 @@ export function AnalysisDownload(props: {
     <div class="analysis-download">
       <button
         class="icon-button quiet"
-        disabled={!library.session() || !props.available || busy()}
+        disabled={!library.sessionFor(props.reference) || !props.available || busy()}
         onClick={download}
         aria-busy={busy()}
         aria-label={

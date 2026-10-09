@@ -6,6 +6,7 @@ npm run lint
 npm test
 npm run build
 npm run check:tauri
+node scripts/prepare-engine.mjs
 cargo fmt --all -- --check
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings

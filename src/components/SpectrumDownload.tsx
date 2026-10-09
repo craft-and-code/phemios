@@ -24,7 +24,7 @@ export function SpectrumDownload(props: { reference: string }) {
         class="icon-button quiet"
         title="Télécharger le spectre"
         aria-label="Télécharger le spectre"
-        disabled={!library.connected() || busy()}
+        disabled={!library.sessionFor(props.reference) || busy()}
         onClick={() => void download()}
       >
         <Icon name="download" />

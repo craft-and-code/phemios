@@ -6,5 +6,6 @@ export function annotationScope(
   session: () => AccountSession | undefined,
 ) {
   const stableReference = createMemo(reference);
-  return createMemo(() => ({ reference: stableReference(), session: session() }));
+  const stableSession = createMemo(session);
+  return createMemo(() => ({ reference: stableReference(), session: stableSession() }));
 }

@@ -16,7 +16,13 @@ it("does not refetch after annotation updates rebuild the artist projection", as
       searchFields: [] as string[],
     });
     const [session, setSession] = createSignal<AccountSession | undefined>(account);
-    const scope = annotationScope(() => artist().reference, session);
+    const scope = annotationScope(
+      () => artist().reference,
+      () => {
+        void artist().reference;
+        return session();
+      },
+    );
     createResource(() => (scope().session ? scope() : false), fetch);
     return { setArtist, setSession };
   });

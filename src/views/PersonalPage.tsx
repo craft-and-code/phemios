@@ -1,3 +1,4 @@
+import { referenceSource } from "../library/sources";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { HistoryReset } from "../components/HistoryReset";
 import { CollectionAlbums } from "../components/CollectionAlbums";
@@ -30,6 +31,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
     [offset, setOffset] = createSignal(0);
   createEffect(() => {
     void props.section;
+    void library.source();
     setOffset(0);
     setSelected("");
     setMessage("");
@@ -73,13 +75,20 @@ export function PersonalPage(props: { section: Section; query: string }) {
     }
   }
   const favourites = () =>
-    filterAlbums(favouriteAlbums(library.albums(), library.annotations), library.artists(), {
-      mode: "alphabet",
-      years: [0, 9999],
-      alphabet: [0, 26],
-      includeUnknownYear: true,
-      query: props.query,
-    });
+    filterAlbums(
+      favouriteAlbums(
+        library.albums().filter((a) => referenceSource(a.reference) === library.source()),
+        library.annotations,
+      ),
+      library.artists(),
+      {
+        mode: "alphabet",
+        years: [0, 9999],
+        alphabet: [0, 26],
+        includeUnknownYear: true,
+        query: props.query,
+      },
+    );
   return (
     <section class="page personal-page">
       <Show when={!library.session() && !library.demo}>

@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  gear: "M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1 1-3ZM16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
   sparkles:
     "m9 3 2.5 6.5L18 12l-6.5 2.5L9 21l-2.5-6.5L0 12l6.5-2.5L9 3ZM19 2v6M16 5h6M21 16v6M18 19h6",
   edit: "m15 4 5 5M3 21l1-6L16 3l5 5L9 20l-6 1Z",

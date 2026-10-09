@@ -1,9 +1,11 @@
+import { referenceSource, type SourceId } from "../library/sources";
 import { createSignal, Show } from "solid-js";
 import { saveLibraryM3U } from "../library/m3u-save";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
 import { downloadAede, isNative } from "../platform/desktop";
 export interface M3UFile {
+  source?: SourceId;
   id: string;
   name: string;
   filename: string;
@@ -12,7 +14,7 @@ export interface M3UFile {
 }
 /** Download exactly the M3U produced by Aède, retaining its server-side paths. */
 export async function downloadM3U(file: M3UFile): Promise<string> {
-  if (isNative()) return downloadAede(file.id);
+  if (isNative()) return downloadAede(file.id, file.source);
   const url = URL.createObjectURL(
     new Blob([file.content], { type: "audio/x-mpegurl;charset=utf-8" }),
   );
@@ -43,14 +45,14 @@ export function M3UExport(props: { release: string; title: string }) {
     setBusy(true);
     setError("");
     try {
-      const session = library.session(),
+      const session = library.sessionFor(props.release),
         reference = props.release;
       const saved = await saveLibraryM3U(
         reference,
         props.title,
-        () => library.session() === session && props.release === reference,
+        () => library.sessionFor(props.release) === session && props.release === reference,
       );
-      if (saved) setFile(saved);
+      if (saved) setFile({ ...saved, source: referenceSource(reference) });
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Export impossible.");
     } finally {
@@ -70,7 +72,11 @@ export function M3UExport(props: { release: string; title: string }) {
         class="icon-button quiet"
         aria-label="Enregistrer le M3U sur Aède"
         title="Enregistrer le M3U sur Aède"
-        disabled={!library.session() || library.session()?.account.role !== "admin" || busy()}
+        disabled={
+          !library.sessionFor(props.release) ||
+          library.sessionFor(props.release)?.account.role !== "admin" ||
+          busy()
+        }
         onClick={save}
       >
         <Icon name="list" />

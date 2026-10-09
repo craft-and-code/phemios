@@ -1,6 +1,8 @@
+import { referenceSource, type SourceId } from "./sources";
 import { createSignal, onCleanup } from "solid-js";
 import { requestAede } from "../platform/desktop";
 export interface Job {
+  source?: SourceId;
   task_id: number;
   status: "queued" | "running" | "completed" | "failed" | "cancelled";
   kind?: string;
@@ -23,10 +25,20 @@ export function createJobs(connected: () => boolean) {
     const active = jobs().filter((job) => job.status === "queued" || job.status === "running");
     for (const job of active) {
       try {
-        const result = await requestAede<Job>(`/api/admin/v1/tasks/${job.task_id}`);
+        const result = await requestAede<Job>(
+          `/api/admin/v1/tasks/${job.task_id}`,
+          {},
+          "GET",
+          null,
+          job.source,
+        );
         if (disposed) return;
         setJobs((rows) =>
-          rows.map((row) => (row.task_id === result.task_id ? { ...row, ...result } : row)),
+          rows.map((row) =>
+            row.task_id === result.task_id && row.source === job.source
+              ? { ...row, ...result }
+              : row,
+          ),
         );
       } catch (failure) {
         setError(failure instanceof Error ? failure.message : "Suivi de tâche interrompu.");
@@ -46,11 +58,11 @@ export function createJobs(connected: () => boolean) {
       "POST",
       { release, force, threads: 2 },
     );
-    setJobs((rows) => [...rows, { ...result, kind, release }]);
+    setJobs((rows) => [...rows, { ...result, kind, release, source: referenceSource(release) }]);
     if (timer === undefined) timer = window.setTimeout(() => void poll(), 300);
   }
-  async function cancel(id: number) {
-    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", {});
+  async function cancel(id: number, source: SourceId = "server") {
+    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", {}, source);
   }
   onCleanup(() => {
     disposed = true;

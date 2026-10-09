@@ -1,3 +1,4 @@
+import { referenceSource } from "../library/sources";
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { browseArtists } from "../library/selection";
@@ -18,20 +19,30 @@ export function StatisticsPage() {
     [refresh, setRefresh] = createSignal(0);
   const reader = createMemo(() => {
     refresh();
+    const owner = library.source();
     return library.session()
       ? statisticsReader((offset) =>
-          requestAede("/api/v1/stats", { offset: String(offset), limit: "50" }),
+          requestAede("/api/v1/stats", { offset: String(offset), limit: "50" }, "GET", null, owner),
         )
       : undefined;
   });
   const [report] = createResource(reader, (read) => read(0));
   const [doctor] = createResource(
-    () => library.session() && refresh() + 1,
-    async () => parseDiagnosis(await requestAede("/api/v1/doctor", { limit: "1" })),
+    () =>
+      library.session() && {
+        session: library.session(),
+        source: library.source(),
+        refresh: refresh(),
+      },
+    async (key) =>
+      parseDiagnosis(await requestAede("/api/v1/doctor", { limit: "1" }, "GET", null, key.source)),
   );
   const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
   const currentReport = () => (library.session() ? report() : undefined);
-  const own = () => Object.values(library.annotations).filter((value) => !!value);
+  const own = () =>
+    Object.values(library.annotations).filter(
+      (value) => !!value && referenceSource(value.reference) === library.source(),
+    );
   const ratings = () => own().filter((value) => value?.rating != null);
   const bucket = (page: Page<Bucket>, weight = true): Page<StatRow> => ({
     ...page,

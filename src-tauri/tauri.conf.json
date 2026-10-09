@@ -5,7 +5,7 @@
   "identifier": "fr.craftandcode.phemios",
   "build": {
     "frontendDist": "../dist",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "node scripts/prepare-engine.mjs && npm run build"
   },
   "app": {
     "windows": [
@@ -31,6 +31,7 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       }
-    }
+    },
+    "externalBin": ["binaries/phemios-aede"]
   }
 }

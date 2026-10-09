@@ -1,3 +1,4 @@
+@import "./styles/settings.css";
 @import "./styles/layout.css";
 @import "./styles/filters.css";
 @import "./styles/library.css";
@@ -8,8 +9,10 @@
 :root {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: var(--text);
-  background: #111213;
+  background: var(--background);
   color-scheme: dark;
+  --background: #111213;
+  --accent-text: #17191a;
   --text: #f1f0eb;
   --accent: #d8f36a;
   --muted: #a4a6a7;

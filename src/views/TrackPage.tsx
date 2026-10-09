@@ -10,7 +10,7 @@ import { TrackResults } from "../components/TrackResults";
 export function TrackPage(props: { reference: string }) {
   const library = useLibrary();
   const [detail] = createResource(
-    () => (library.session() ? props.reference : false),
+    () => (library.sessionFor(props.reference) ? props.reference : false),
     async (ref) => parseTrackDetail(await requestAede("/api/v1/track", { ref }), ref),
   );
   const album = () => library.albums().find((a) => a.reference === detail()?.release);
@@ -18,7 +18,7 @@ export function TrackPage(props: { reference: string }) {
     v === null ? "Non renseigné" : `${v.toLocaleString("fr")} ${unit}`;
   return (
     <article class="page track-page">
-      <Show when={!library.session()}>
+      <Show when={!library.sessionFor(props.reference)}>
         <p class="notice">Connectez Aède pour consulter ce titre.</p>
       </Show>
       <Show when={detail.loading}>

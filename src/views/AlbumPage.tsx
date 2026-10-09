@@ -15,7 +15,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
   const [enlarged, setEnlarged] = createSignal(false);
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
   const [tracks, { refetch }] = createResource(
-    () => (library.session() ? props.album.reference : false),
+    () => (library.sessionFor(props.album.reference) ? props.album.reference : false),
     albumTracks,
   );
   const discs = createMemo(() => discGroups(tracks() ?? []));
@@ -84,7 +84,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
         <Show when={tracks.loading}>
           <p class="muted">Chargement des pistes…</p>
         </Show>
-        <Show when={!library.session()}>
+        <Show when={!library.sessionFor(props.album.reference)}>
           <p class="muted">Connectez Aède pour consulter les pistes.</p>
         </Show>
         <Show when={tracks() && !tracks.loading && !tracks()?.length}>

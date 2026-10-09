@@ -1,3 +1,4 @@
+import { referenceSource, type SourceId } from "../library/sources";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 
 /** Versioned bridge metadata; no music folders or credentials are exposed. */
@@ -36,13 +37,16 @@ export const loginAede = (server: string, username: string, password: string) =>
     username,
     password,
   });
-export const downloadAede = (id: string) => nativeCall<string>("aede_download", { id });
+export const downloadAede = (id: string, source: SourceId = requestSource) =>
+  nativeCall<string>("aede_download", { id, source });
 /** Fetch the server-selected complete report and save it under the native Downloads folder. */
 export const downloadAnalysisAede = (reference: string) =>
   nativeCall<string>("aede_download_analysis", { reference });
 export const logoutAede = () => nativeCall<void>("aede_logout");
-export const syncAede = () => nativeCall<unknown>("aede_sync");
-export const cachedAede = () => nativeCall<unknown | null>("aede_cache");
+export const syncAede = (source: SourceId = requestSource) =>
+  nativeCall<unknown>("aede_sync", { source });
+export const cachedAede = (source: SourceId = "server") =>
+  nativeCall<unknown | null>("aede_cache", { source });
 export const artworkAede = (reference: string, kind: string) =>
   nativeCall<ArrayBuffer>("aede_artwork", { reference, kind });
 export function requestAede<T>(
@@ -50,8 +54,14 @@ export function requestAede<T>(
   query: Record<string, string> = {},
   method = "GET",
   body: unknown = null,
+  source: SourceId = requestSource,
 ): Promise<T> {
-  return nativeCall<T>("aede_request", { path, query, method, body });
+  const entity =
+    query.ref ??
+    query.reference ??
+    (body && typeof body === "object" ? (body as Record<string, unknown>).release : undefined);
+  const origin = typeof entity === "string" ? referenceSource(entity) : source;
+  return nativeCall<T>("aede_request", { path, query, method, body, source: origin });
 }
 
 /** PCM credentials and device callbacks stay native; only bounded transport controls cross IPC. */
@@ -80,3 +90,30 @@ export const searchRadio = (
 ) => nativeCall<unknown>("radio_search", { name, country, tag, offset, secureOnly });
 export const radioStatistics = () => nativeCall<unknown>("radio_statistics");
 export const resolveRadio = (uuid: string) => nativeCall<unknown>("radio_resolve", { uuid });
+
+let requestSource: SourceId = "server";
+/** Only ownerless requests use the explicitly selected personal-library scope. */
+export function setRequestSource(source: SourceId) {
+  requestSource = source;
+}
+export interface LocalStatus {
+  enabled: boolean;
+  running: boolean;
+  roots: { path: string; available: boolean; mount: string | null }[];
+  keys: { fanart: boolean; acoustid: boolean };
+}
+export const localStatus = () => nativeCall<LocalStatus>("local_status");
+export const startLocal = () =>
+  nativeCall<import("../library/server").AccountSession>("local_start");
+export const stopLocal = () => nativeCall<void>("local_stop");
+export const pickLocalRoots = () => nativeCall<void>("local_pick_roots");
+export const scanLocal = (full: boolean, threads: number) =>
+  nativeCall<{ task_id: number; status: "queued" }>("local_scan", { full, threads });
+export const localRootAction = (path: string, action: "remove" | "exclude" | "include") =>
+  nativeCall<void>("local_root_action", { path, action });
+export const saveLocalKeys = (
+  fanart: string,
+  acoustid: string,
+  removeFanart: boolean,
+  removeAcoustid: boolean,
+) => nativeCall<void>("local_keys", { fanart, acoustid, removeFanart, removeAcoustid });

@@ -2,9 +2,10 @@ import { createSignal, Show, onMount, onCleanup } from "solid-js";
 import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
 import { useLibrary } from "../library/context";
 /** Successful login names are remembered; passwords and bearer credentials stay ephemeral. */
-export function ConnectionPanel(props: { onClose: () => void }) {
+export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean }) {
   let panel: HTMLElement | undefined;
   onMount(() => {
+    if (props.embedded) return;
     const previous =
       document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
     panel?.querySelector<HTMLElement>("input,button")?.focus();
@@ -44,7 +45,7 @@ export function ConnectionPanel(props: { onClose: () => void }) {
   } catch {
     setPreferenceError("Le nom d’utilisateur mémorisé est indisponible.");
   }
-  const initialServer = library.snapshot()?.server ?? remembered?.server ?? "http://127.0.0.1:3412";
+  const initialServer = remembered?.server ?? "http://127.0.0.1:3412";
   const [server, setServer] = createSignal(initialServer);
   const [username, setUsername] = createSignal(
     remembered?.server === initialServer ? remembered.username : "",
@@ -52,7 +53,7 @@ export function ConnectionPanel(props: { onClose: () => void }) {
   const [password, setPassword] = createSignal("");
   return (
     <div
-      class="popover-backdrop"
+      class={props.embedded ? "settings-connection" : "popover-backdrop"}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) props.onClose();
       }}
@@ -61,16 +62,18 @@ export function ConnectionPanel(props: { onClose: () => void }) {
         ref={(element) => {
           panel = element;
         }}
-        role="dialog"
-        aria-modal="true"
+        role={props.embedded ? undefined : "dialog"}
+        aria-modal={props.embedded ? undefined : true}
         class="connection-panel"
         aria-label="Connexion Aède"
       >
-        <button class="connection-close" aria-label="Fermer la connexion" onClick={props.onClose}>
-          ×
-        </button>
+        <Show when={!props.embedded}>
+          <button class="connection-close" aria-label="Fermer la connexion" onClick={props.onClose}>
+            ×
+          </button>
+        </Show>
         <Show
-          when={library.session()}
+          when={library.serverSession()}
           fallback={
             <form
               onSubmit={async (event) => {
@@ -78,7 +81,7 @@ export function ConnectionPanel(props: { onClose: () => void }) {
                 const secret = password();
                 setPassword("");
                 await library.connect(server(), username(), secret);
-                const session = library.session();
+                const session = library.serverSession();
                 if (session) {
                   try {
                     saveLoginPreference(localStorage, session.server, session.account.username);
@@ -89,7 +92,8 @@ export function ConnectionPanel(props: { onClose: () => void }) {
                     );
                   }
                 }
-                if (session && !library.error() && !preferenceError()) props.onClose();
+                if (!props.embedded && session && !library.error() && !preferenceError())
+                  props.onClose();
               }}
             >
               <p class="eyebrow">VOTRE SERVEUR AÈDE</p>
@@ -135,7 +139,8 @@ export function ConnectionPanel(props: { onClose: () => void }) {
           }
         >
           <p>
-            {library.connected() ? "Connecté" : "Session"} : {library.session()?.account.username}
+            {library.connected() ? "Connecté" : "Session"} :{" "}
+            {library.serverSession()?.account.username}
           </p>
           <Show when={!library.connected()}>
             <p role="status">
@@ -143,8 +148,8 @@ export function ConnectionPanel(props: { onClose: () => void }) {
               reconnectez-vous.
             </p>
           </Show>
-          <p class="muted">{library.session()?.server}</p>
-          <button disabled={library.busy()} onClick={() => library.sync()}>
+          <p class="muted">{library.serverSession()?.server}</p>
+          <button disabled={library.busy()} onClick={() => library.sync("server")}>
             Synchroniser la bibliothèque
           </button>
           <button onClick={() => library.disconnect()}>Se déconnecter</button>

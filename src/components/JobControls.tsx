@@ -21,13 +21,21 @@ export function JobControls(props: { release: string }) {
     <section class="job-controls">
       <div class="job-actions">
         <button
-          disabled={!library.session() || library.session()?.account.role !== "admin" || busy()}
+          disabled={
+            !library.sessionFor(props.release) ||
+            library.sessionFor(props.release)?.account.role !== "admin" ||
+            busy()
+          }
           onClick={() => start("analyze")}
         >
           Analyser avec FlacCompagnon
         </button>
         <button
-          disabled={!library.session() || library.session()?.account.role !== "admin" || busy()}
+          disabled={
+            !library.sessionFor(props.release) ||
+            library.sessionFor(props.release)?.account.role !== "admin" ||
+            busy()
+          }
           onClick={() => start("spectrum")}
         >
           Générer les spectres
@@ -66,7 +74,9 @@ export function JobControls(props: { release: string }) {
               <Show when={job.status === "queued" || job.status === "running"}>
                 <button
                   onClick={() =>
-                    library.tasks.cancel(job.task_id).catch((failure) => setError(String(failure)))
+                    library.tasks
+                      .cancel(job.task_id, job.source)
+                      .catch((failure) => setError(String(failure)))
                   }
                 >
                   Annuler

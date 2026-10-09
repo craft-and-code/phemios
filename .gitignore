@@ -6,3 +6,5 @@ src-tauri/gen/
 coverage/
 .DS_Store
 *.log
+
+src-tauri/binaries/

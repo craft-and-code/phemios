@@ -23,3 +23,6 @@ mod tests;
 pub mod playback;
 
 pub mod radio;
+
+pub mod federation;
+pub mod local;

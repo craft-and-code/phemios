@@ -16,10 +16,17 @@ pub(crate) async fn playback_devices(
 #[tauri::command]
 pub(crate) fn playback_state(
     version: u32,
+    state: State<'_, Aede>,
     player: State<'_, Arc<Player>>,
 ) -> Result<Value, String> {
     bridge(version)?;
-    player.snapshot()
+    crate::aede::public(
+        player.snapshot()?,
+        *state
+            .playback_source
+            .lock()
+            .map_err(|_| "État audio indisponible.")?,
+    )
 }
 #[tauri::command]
 pub(crate) async fn playback_start(
@@ -32,7 +39,24 @@ pub(crate) async fn playback_start(
     state: State<'_, Aede>,
 ) -> Result<(), String> {
     bridge(version)?;
-    let client = client(&state)?;
+    let (origin, _) = phemios_core::federation::resolve(tracks.first().ok_or("Sélection vide.")?)?;
+    let tracks = tracks
+        .iter()
+        .map(|reference| {
+            let (source, raw) = phemios_core::federation::resolve(reference)?;
+            if source != origin {
+                return Err(
+                    "Lecture de plusieurs origines non prise en charge dans une seule file.".into(),
+                );
+            }
+            Ok(raw)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let client = client(state.owner(origin))?;
+    *state
+        .playback_source
+        .lock()
+        .map_err(|_| "État audio indisponible.")? = origin;
     let player = player.inner().clone();
     blocking(move || player.start(client, tracks, device, index, &policy)).await
 }

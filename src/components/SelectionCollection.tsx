@@ -12,7 +12,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
     [busy, setBusy] = createSignal(false),
     [message, setMessage] = createSignal("");
   const writable = () =>
-    library.connected() && ["user", "admin"].includes(library.session()?.account.role ?? "");
+    !!library.session() && ["user", "admin"].includes(library.session()?.account.role ?? "");
   async function save() {
     const expression = draft();
     if (!expression || busy()) return;
@@ -78,7 +78,9 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                 }}
               >
                 <div class="section-heading">
-                  <h2>Créer une collection</h2>
+                  <h2>
+                    Créer une collection · {library.source() === "local" ? "Local" : "Serveur"}
+                  </h2>
                   <button
                     type="button"
                     class="icon-button quiet"

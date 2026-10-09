@@ -1,3 +1,4 @@
+import { referenceSource, sourceLabel } from "../library/sources";
 import { For, Show } from "solid-js";
 import type { Album } from "../library/types";
 import { Artwork } from "./Artwork";
@@ -15,7 +16,10 @@ export function AlbumGrid(props: { albums: readonly Album[] }) {
             <a class="album-card" href={`#/album/${encodeURIComponent(album.reference)}`}>
               <Artwork album={album} />
               <strong>{album.title}</strong>
-              <small>{album.year ?? "Année inconnue"}</small>
+              <small>
+                {album.year ?? "Année inconnue"}{" "}
+                <span class="source-badge">{sourceLabel(referenceSource(album.reference))}</span>
+              </small>
             </a>
           )}
         </For>

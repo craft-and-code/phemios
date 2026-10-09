@@ -8,3 +8,5 @@ Cargo.lock
 package-lock.json
 LICENSE
 licenses/
+
+src-tauri/binaries/

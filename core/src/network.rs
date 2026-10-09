@@ -171,7 +171,9 @@ impl Client {
             if data.len() > 16 * 1024 {
                 return Err("Requête trop grande.".into());
             }
-            let mut request = if method == "PUT" {
+            let mut request = if method == "PATCH" {
+                self.agent.patch(&url)
+            } else if method == "PUT" {
                 self.agent.put(&url)
             } else {
                 self.agent.post(&url)
@@ -328,6 +330,9 @@ fn allowed(method: &str, path: &str) -> bool {
                 path,
                 "/api/auth/v1/session"
                     | "/api/v1/status"
+                    | "/api/v1/roots"
+                    | "/api/admin/v1/accounts"
+                    | "/api/admin/v1/tasks"
                     | "/api/v1/presentation/tracks"
                     | "/api/v1/presentation/artists"
                     | "/api/v1/presentation/albums"
@@ -349,16 +354,29 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/history"
             ) || task_path(path, false)
                 || playlist_path(path)
+                || account_path(path, false)
         }
-        "PUT" => matches!(path, "/api/me/v1/annotation" | "/api/me/v1/collection"),
-        "DELETE" => matches!(
+        "PUT" => matches!(
             path,
-            "/api/auth/v1/session" | "/api/me/v1/collection" | "/api/me/v1/history"
+            "/api/me/v1/annotation" | "/api/me/v1/collection" | "/api/auth/v1/password"
         ),
+        "PATCH" => account_path(path, false),
+        "DELETE" => {
+            account_path(path, true)
+                || matches!(
+                    path,
+                    "/api/auth/v1/session" | "/api/me/v1/collection" | "/api/me/v1/history"
+                )
+        }
         "POST" => {
             matches!(
                 path,
-                "/api/admin/v1/analyze" | "/api/admin/v1/spectrum" | "/api/me/v1/m3u"
+                "/api/admin/v1/analyze"
+                    | "/api/admin/v1/spectrum"
+                    | "/api/me/v1/m3u"
+                    | "/api/admin/v1/scan"
+                    | "/api/admin/v1/fetch"
+                    | "/api/admin/v1/accounts"
             ) || task_path(path, true)
         }
         _ => false,
@@ -386,4 +404,23 @@ mod tests;
 fn playlist_path(path: &str) -> bool {
     path.strip_prefix("/api/me/v1/m3u/playlist-")
         .is_some_and(|id| id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit()))
+}
+
+fn account_path(path: &str, sessions: bool) -> bool {
+    let Some(name) = path.strip_prefix("/api/admin/v1/accounts/") else {
+        return false;
+    };
+    let name = if sessions {
+        match name.strip_suffix("/sessions") {
+            Some(name) => name,
+            None => return false,
+        }
+    } else {
+        name
+    };
+    !name.is_empty()
+        && name.len() <= 128
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
 }

@@ -17,7 +17,8 @@ import { PlayerBar } from "./components/PlayerBar";
 import { FilterBar } from "./components/FilterBar";
 import { Icon } from "./components/Icon";
 import { useLibrary } from "./library/context";
-import { ConnectionPanel } from "./components/ConnectionPanel";
+import { SettingsPage } from "./views/SettingsPage";
+import { sourceLabel } from "./library/sources";
 import type { Filters } from "./library/types";
 import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
@@ -33,7 +34,10 @@ import { WorkspacePage } from "./views/WorkspacePage";
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
   const library = useLibrary();
-  const [connectionPanel, setConnectionPanel] = createSignal(false);
+  const connectionPanel = () => false;
+  const setConnectionPanel = (_value: boolean) => {
+    navigation.navigate("#/settings");
+  };
   const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
   const yearDomain = createMemo(() => {
     const values = library.snapshot()?.albums ?? (library.demo ? library.albums() : []);
@@ -146,22 +150,23 @@ export function App() {
             onInput={(event) => setFilters({ ...filters(), query: event.currentTarget.value })}
           />
         </label>
-        <button class="server-button" onClick={() => setConnectionPanel(!connectionPanel())}>
+        <a
+          class="server-button settings-button"
+          href="#/settings"
+          aria-label="Paramètres"
+          title="Paramètres"
+        >
           <span
             class="server-indicator"
-            classList={{ online: library.connected() }}
+            classList={{
+              online: library.connected(),
+              unnecessary: !!library.localSession() && !library.serverSession(),
+            }}
             aria-hidden="true"
           />
-          {library.connected()
-            ? "Aède connecté"
-            : library.session()
-              ? "Connexion Aède perdue"
-              : "Connexion Aède"}
-        </button>
+          <Icon name="gear" />
+        </a>
       </header>
-      <Show when={connectionPanel()}>
-        <ConnectionPanel onClose={() => setConnectionPanel(false)} />
-      </Show>
       <Show when={sidebar()}>
         <aside class="sidebar" aria-label="Navigation principale">
           <p class="nav-label">BIBLIOTHÈQUE</p>
@@ -227,7 +232,13 @@ export function App() {
             {library.error()}
           </p>
         </Show>
-        <Show when={!library.artists().length && !library.busy() && section() !== "radio"}>
+        <Show
+          when={
+            !library.artists().length &&
+            !library.busy() &&
+            !["radio", "settings"].includes(section())
+          }
+        >
           <div class="empty">
             <p>Connectez votre serveur Aède pour synchroniser la bibliothèque.</p>
             <button class="primary" onClick={() => setConnectionPanel(true)}>
@@ -291,6 +302,37 @@ export function App() {
             </Show>
           </div>
         </Show>
+        <Show
+          when={
+            current().kind === "section" &&
+            ![
+              "artists",
+              "albums",
+              "compilations",
+              "countries",
+              "genres",
+              "recent",
+              "radio",
+              "settings",
+              "relations",
+              "players",
+            ].includes(section()) &&
+            (library.localSession() || library.serverSession())
+          }
+        >
+          <div class="choices library-source" aria-label="Origine des données personnelles">
+            <For each={["local", "server"] as const}>
+              {(source) => (
+                <button
+                  aria-pressed={library.source() === source}
+                  onClick={() => library.chooseSource(source)}
+                >
+                  {sourceLabel(source)}
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
         <Show when={current()} keyed>
           {(route) => (
             <ErrorBoundary
@@ -312,7 +354,16 @@ export function App() {
                       fallback={
                         <Show
                           when={section() === "recent"}
-                          fallback={<WorkspacePage section={section()} query={filters().query} />}
+                          fallback={
+                            <Show
+                              when={section() === "settings"}
+                              fallback={
+                                <WorkspacePage section={section()} query={filters().query} />
+                              }
+                            >
+                              <SettingsPage />
+                            </Show>
+                          }
                         >
                           <RecentPage query={filters().query} />
                         </Show>

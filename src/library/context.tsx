@@ -1,3 +1,5 @@
+import { referenceSource, type SourceId } from "./sources";
+import { startLocal, stopLocal, localStatus, setRequestSource } from "../platform/desktop";
 import {
   createContext,
   useContext,
@@ -34,12 +36,19 @@ interface Library {
   albums: Accessor<readonly Album[]>;
   demo: boolean;
   session: Accessor<AccountSession | undefined>;
+  serverSession: Accessor<AccountSession | undefined>;
+  localSession: Accessor<AccountSession | undefined>;
+  source: Accessor<SourceId>;
+  chooseSource: (source: SourceId) => void;
+  sessionFor: (reference: string) => AccountSession | undefined;
+  enableLocal: () => Promise<void>;
+  disableLocal: () => Promise<void>;
   busy: Accessor<boolean>;
   connected: Accessor<boolean>;
   error: Accessor<string>;
   snapshot: Accessor<Snapshot | undefined>;
   connect: (server: string, username: string, password: string) => Promise<void>;
-  sync: () => Promise<void>;
+  sync: (source?: SourceId) => Promise<void>;
   disconnect: () => Promise<void>;
   image: (reference: string, kind: string) => string | undefined;
   imageError: (reference: string, kind: string) => string | undefined;
@@ -53,23 +62,54 @@ const Context = createContext<Library>();
 /** Public catalog is cached; own annotations and session secrets remain separate. */
 export function LibraryProvider(props: ParentProps) {
   const demo = !isNative();
-  const [snapshot, setSnapshot] = createSignal<Snapshot>(),
-    [session, setSession] = createSignal<AccountSession>(),
+  const [serverSnapshot, setServerSnapshot] = createSignal<Snapshot>(),
+    [localSnapshot, setLocalSnapshot] = createSignal<Snapshot>(),
+    [serverSession, setSession] = createSignal<AccountSession>(),
+    [localSession, setLocalSession] = createSignal<AccountSession>(),
+    [source, setSource] = createSignal<SourceId>("server"),
     [busy, setBusy] = createSignal(false),
     [connected, setConnected] = createSignal(false),
     [error, setError] = createSignal("");
+  const session = () => (source() === "local" ? localSession() : serverSession());
+  const sessionFor = (reference: string) =>
+    referenceSource(reference) === "local" ? localSession() : serverSession();
+  const snapshot = createMemo<Snapshot | undefined>(() => {
+    const remote = serverSnapshot(),
+      local = localSnapshot();
+    const base = remote ?? local;
+    return base
+      ? {
+          ...base,
+          artists: [...(local?.artists ?? []), ...(remote?.artists ?? [])],
+          albums: [...(local?.albums ?? []), ...(remote?.albums ?? [])],
+        }
+      : undefined;
+  });
+  function chooseSource(value: SourceId) {
+    setRequestSource(value);
+    setSource(value);
+  }
   const [images, setImages] = createStore<Record<string, string | undefined>>({}),
     [imageErrors, setImageErrors] = createStore<Record<string, string | undefined>>({}),
     [annotations, setAnnotations] = createStore<Record<string, Annotation | undefined>>({});
   const [mediaProgress, setMediaProgress] = createSignal<readonly [number, number]>([0, 0]);
   const connection = connectionMonitor(async () => {
-    const current = session();
+    const current = serverSession();
     if (!current) throw new Error("Session absente.");
-    const account = await requestAede<{ id: string; enabled: boolean }>("/api/auth/v1/session");
+    const account = await requestAede<{ id: string; enabled: boolean }>(
+      "/api/auth/v1/session",
+      {},
+      "GET",
+      null,
+      "server",
+    );
     if (account.id !== current.account.id || !account.enabled) throw new Error("Session invalide.");
   }, setConnected);
   const player = createPlayback(
-    () => connected() && ["user", "admin"].includes(session()?.account.role ?? ""),
+    () =>
+      [localSession(), serverSession()].some(
+        (value) => value && ["user", "admin"].includes(value.account.role),
+      ),
     () => ({ albums: albums(), artists: artists() }),
     () => radio.stop(),
   );
@@ -80,7 +120,7 @@ export function LibraryProvider(props: ParentProps) {
         throw new Error("Arrêtez la lecture de la bibliothèque avant de lancer la radio.");
     }
   });
-  const tasks = createJobs(() => !!session());
+  const tasks = createJobs(() => !!localSession() || !!serverSession());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
   let generation = 0;
@@ -186,16 +226,20 @@ export function LibraryProvider(props: ParentProps) {
       }),
     );
   }
-  async function loadAnnotations() {
-    const account = session()?.account.id;
+  async function loadAnnotations(owner: SourceId) {
+    const current = () => (owner === "local" ? localSession() : serverSession());
+    const account = current()?.account.id;
     let offset = 0;
     try {
-      while (account && account === session()?.account.id) {
+      while (account && account === current()?.account.id) {
         const page = await requestAede<{ items: Annotation[]; total: number }>(
           "/api/me/v1/annotations",
           { offset: String(offset), limit: "200" },
+          "GET",
+          null,
+          owner,
         );
-        if (account !== session()?.account.id) return;
+        if (account !== current()?.account.id) return;
         for (const row of page.items) setAnnotations(row.reference, row);
         offset += page.items.length;
         if (offset >= page.total) return;
@@ -205,15 +249,16 @@ export function LibraryProvider(props: ParentProps) {
       setError(failure instanceof Error ? failure.message : "Annotations indisponibles.");
     }
   }
-  async function sync() {
+  async function sync(owner: SourceId = source()) {
     if (busy()) return;
     setBusy(true);
     setError("");
     try {
-      const value = parseSnapshot(await syncAede());
+      const value = parseSnapshot(await syncAede(owner));
       clearMedia();
-      setSnapshot(value);
-      if (session()) await loadAnnotations();
+      if (owner === "local") setLocalSnapshot(value);
+      else setServerSnapshot(value);
+      await loadAnnotations(owner);
       void warmCovers();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Synchronisation impossible.");
@@ -227,14 +272,14 @@ export function LibraryProvider(props: ParentProps) {
     setError("");
     try {
       setSession(await loginAede(server, username, password));
-      player.identify(`${session()?.server}:${session()?.account.id}`);
+      player.identify(`${serverSession()?.server}:${serverSession()?.account.id}`);
       connection.start();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Connexion impossible.");
     } finally {
       setBusy(false);
     }
-    if (session()) await sync();
+    if (serverSession()) await sync("server");
   }
   async function disconnect() {
     setError("");
@@ -244,19 +289,46 @@ export function LibraryProvider(props: ParentProps) {
       setError(failure instanceof Error ? failure.message : "Déconnexion interrompue.");
     } finally {
       connection.stop();
-      player.reset();
+      if (referenceSource(player.state().reference) === "server") player.reset();
       setSession(undefined);
-      for (const ref of Object.keys(annotations)) setAnnotations(ref, undefined);
+      for (const ref of Object.keys(annotations))
+        if (referenceSource(ref) === "server") setAnnotations(ref, undefined);
+    }
+  }
+  async function enableLocal() {
+    setError("");
+    try {
+      setLocalSession(await startLocal());
+      if (!serverSession()) chooseSource("local");
+      await sync("local");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Moteur local indisponible.");
+    }
+  }
+  async function disableLocal() {
+    try {
+      await stopLocal();
+      setLocalSession(undefined);
+      if (referenceSource(player.state().reference) === "local") player.reset();
+      for (const ref of Object.keys(annotations))
+        if (referenceSource(ref) === "local") setAnnotations(ref, undefined);
+      if (source() === "local") chooseSource("server");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Arrêt local impossible.");
     }
   }
   onMount(async () => {
     if (demo) return;
     try {
-      const cached = await cachedAede();
-      if (cached) {
-        setSnapshot(parseSnapshot(cached));
-        void warmCovers();
+      for (const owner of ["server", "local"] as const) {
+        const cached = await cachedAede(owner);
+        if (cached) {
+          if (owner === "local") setLocalSnapshot(parseSnapshot(cached));
+          else setServerSnapshot(parseSnapshot(cached));
+        }
       }
+      void warmCovers();
+      if ((await localStatus()).enabled) await enableLocal();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Cache inaccessible.");
     }
@@ -273,6 +345,13 @@ export function LibraryProvider(props: ParentProps) {
     albums,
     demo,
     session,
+    serverSession,
+    localSession,
+    source,
+    chooseSource,
+    sessionFor,
+    enableLocal,
+    disableLocal,
     busy,
     connected,
     error,

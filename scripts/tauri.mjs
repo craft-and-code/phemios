@@ -10,6 +10,7 @@ let frontend;
 try {
   let args = process.argv.slice(2);
   if (args[0] === "dev") {
+    await import("./prepare-engine.mjs");
     const { startFrontend, developmentArguments } = await import("./development.mjs");
     frontend = await startFrontend({ root });
     console.log(`[Phémios] Development frontend: http://127.0.0.1:${frontend.port}`);

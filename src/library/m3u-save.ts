@@ -1,3 +1,4 @@
+import { referenceSource } from "./sources";
 import { requestAede } from "../platform/desktop";
 import type { M3UFile } from "../components/M3UExport";
 /** Explicit library publication requires its server capability and the unchanged owner session. */
@@ -6,7 +7,13 @@ export async function saveLibraryM3U(
   name: string,
   isCurrent: () => boolean,
 ): Promise<M3UFile | undefined> {
-  const status = await requestAede<{ capabilities?: unknown }>("/api/v1/status");
+  const status = await requestAede<{ capabilities?: unknown }>(
+    "/api/v1/status",
+    {},
+    "GET",
+    null,
+    referenceSource(release),
+  );
   if (!isCurrent()) return;
   if (
     !Array.isArray(status?.capabilities) ||
