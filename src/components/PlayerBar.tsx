@@ -89,6 +89,32 @@ export function PlayerBar() {
           </button>
 
           <button
+            class="play-button"
+            disabled={
+              player.busy() ||
+              (!player.ready() && !active()) ||
+              (!active() && state().status !== "ended" && !player.target())
+            }
+            aria-label={
+              state().status === "playing"
+                ? t("Mettre en pause")
+                : active()
+                  ? t("Reprendre la lecture")
+                  : t("Lancer la lecture")
+            }
+            onClick={() =>
+              void (state().status === "playing"
+                ? player.action("pause")
+                : state().status === "paused"
+                  ? player.action("resume")
+                  : player.target()
+                    ? player.startReference()
+                    : player.action("resume"))
+            }
+          >
+            <Icon name={state().status === "playing" ? "pause" : "play"} />
+          </button>
+          <button
             class="icon-button"
             disabled={disabled() || state().index + 1 >= state().total}
             aria-label={t("Morceau suivant")}
@@ -219,46 +245,18 @@ export function PlayerBar() {
           aria-label={t("Volume")}
           onInput={(e) => void player.volume(Number(e.currentTarget.value))}
         />
-        <div class="play-stop-cluster">
-          <button
-            class="icon-button transport-stop"
-            disabled={
-              player.busy() ||
-              !["playing", "paused", "connecting", "ended", "error"].includes(state().status)
-            }
-            aria-label={t("Arrêter la lecture")}
-            onClick={() => void player.action("stop")}
-          >
-            <Icon name="stop" />
-          </button>
-          <button
-            class="play-button"
-            disabled={
-              player.busy() ||
-              (!player.ready() && !active()) ||
-              (!active() && state().status !== "ended" && !player.target())
-            }
-            aria-label={
-              state().status === "playing"
-                ? t("Mettre en pause")
-                : active()
-                  ? t("Reprendre la lecture")
-                  : t("Lancer la lecture")
-            }
-            onClick={() =>
-              void (state().status === "playing"
-                ? player.action("pause")
-                : state().status === "paused"
-                  ? player.action("resume")
-                  : player.target()
-                    ? player.startReference()
-                    : player.action("resume"))
-            }
-          >
-            <Icon name={state().status === "playing" ? "pause" : "play"} />
-          </button>
-        </div>
       </div>
+      <button
+        class="icon-button transport-stop"
+        disabled={
+          player.busy() ||
+          !["playing", "paused", "connecting", "ended", "error"].includes(state().status)
+        }
+        aria-label={t("Arrêter la lecture")}
+        onClick={() => void player.action("stop")}
+      >
+        <Icon name="stop" />
+      </button>
     </footer>
   );
 }

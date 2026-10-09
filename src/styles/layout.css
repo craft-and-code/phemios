@@ -536,8 +536,8 @@ legend {
     display: flex;
     min-width: 160px;
   }
-  .transport-buttons > button:nth-child(1),
-  .transport-buttons > button:nth-child(5) {
+  .player-bar:not(.radio-player) .transport-buttons > button:nth-child(1),
+  .player-bar:not(.radio-player) .transport-buttons > button:nth-child(5) {
     display: none;
   }
 }
@@ -572,39 +572,26 @@ legend {
   }
 }
 
-/* Trial layout: Play and its smaller Stop sit together at the lower-right edge. */
-.play-stop-cluster {
-  display: grid;
-  grid-template-rows: 20px 44px;
-  gap: 4px;
-  place-items: center;
-  width: 48px;
-  flex: 0 0 48px;
+/* Play stays on the centre axis; Stop has its own lower-right hit area. */
+.player-bar {
+  position: relative;
 }
-.play-stop-cluster .transport-stop {
-  width: 22px;
-  height: 20px;
-  padding: 3px;
+.player-bar .player-options {
+  padding-right: 36px;
+}
+.player-bar > .transport-stop {
+  position: absolute;
+  right: 16px;
+  bottom: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 6px;
   border: 0;
   background: transparent;
-  justify-self: end;
-}
-.play-stop-cluster .play-button {
-  width: 44px;
-  height: 44px;
 }
 .transport-stop svg {
-  width: 12px;
-  height: 12px;
-}
-
-.rating-filter {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.card-rating {
-  color: var(--accent) !important;
-  letter-spacing: -1px;
+  width: 14px;
+  height: 14px;
 }

@@ -371,6 +371,8 @@ fn idempotent_reads_retry_temporary_personal_store_contention() {
                 }
                 Err(error) => panic!("{error}"),
             };
+            // Accepted sockets can inherit O_NONBLOCK on macOS; bound reads explicitly.
+            stream.set_nonblocking(false).unwrap();
             stream
                 .set_read_timeout(Some(Duration::from_secs(1)))
                 .unwrap();
