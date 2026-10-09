@@ -1,3 +1,4 @@
+import { createTagPreferences } from "./tag-preferences";
 import { createMissingCoverLoader } from "./missing-artwork";
 import { missingCoverAede } from "../platform/desktop";
 import { createMissingCatalog } from "./missing";
@@ -39,6 +40,9 @@ interface Library {
     image: (row: import("./missing").MissingAlbum) => string | undefined;
     error: (row: import("./missing").MissingAlbum) => string | undefined;
     load: (row: import("./missing").MissingAlbum) => Promise<void>;
+    status: (
+      row: import("./missing").MissingAlbum,
+    ) => ReturnType<ReturnType<typeof createMissingCoverLoader>["status"]>;
   };
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
@@ -70,6 +74,7 @@ interface Library {
   mediaErrors: Accessor<number>;
   updateAnnotation: (reference: string, value: Annotation | null) => void;
   annotations: Record<string, Annotation | undefined>;
+  tagPreferences: ReturnType<typeof createTagPreferences>;
 }
 const Context = createContext<Library>();
 /** Public catalog is cached; own annotations and session secrets remain separate. */
@@ -108,6 +113,7 @@ export function LibraryProvider(props: ParentProps) {
         : [];
     }),
   );
+  const tagPreferences = createTagPreferences();
   const source = createMemo(() =>
     effectiveSource(
       selectedSource(),
@@ -411,6 +417,10 @@ export function LibraryProvider(props: ParentProps) {
         return missingArtwork.error(row);
       },
       load: missingArtwork.load,
+      status: (row) => {
+        missingImageVersion();
+        return missingArtwork.status(row);
+      },
     },
     tasks,
     radio,
@@ -441,6 +451,7 @@ export function LibraryProvider(props: ParentProps) {
     mediaProgress,
     mediaErrors: () => Object.values(imageErrors).filter(Boolean).length,
     annotations,
+    tagPreferences,
     updateAnnotation: (ref, value) => setAnnotations(ref, value ?? undefined),
   };
   return <Context.Provider value={value}>{props.children}</Context.Provider>;

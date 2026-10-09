@@ -1,7 +1,25 @@
 import { expect, it, vi } from "vitest";
-import { saveBrowsingCollection } from "./collection-save";
+import { saveBrowsingCollection, deleteSavedCollection } from "./collection-save";
 import { requestAede } from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
+it("deletes only the explicitly chosen owner collection and never reports a replacement session's success", async () => {
+  vi.mocked(requestAede).mockClear();
+  expect(await deleteSavedCollection("Road", "local", () => false)).toBe(false);
+  expect(requestAede).not.toHaveBeenCalled();
+  let current = true;
+  vi.mocked(requestAede).mockImplementationOnce(async () => {
+    current = false;
+    return null;
+  });
+  expect(await deleteSavedCollection("Road", "local", () => current)).toBe(false);
+  expect(requestAede).toHaveBeenLastCalledWith(
+    "/api/me/v1/collection",
+    { name: "Road" },
+    "DELETE",
+    null,
+    "local",
+  );
+});
 it("explains an outdated server before sending unsupported collection writes", async () => {
   vi.mocked(requestAede).mockResolvedValue({ api_version: 1 });
   await expect(saveBrowsingCollection("Era", "browse-v1:{}", () => true)).rejects.toThrow(

@@ -8,7 +8,13 @@ export function createMissingCoverLoader(
   request: (artist: string, group: string, download: boolean) => Promise<ArrayBuffer>,
   changed: () => void,
 ) {
-  type Entry = { session: AccountSession; promise: Promise<void>; url?: string; error?: string };
+  type Entry = {
+    session: AccountSession;
+    promise: Promise<void>;
+    url?: string;
+    error?: string;
+    finished?: boolean;
+  };
   const entries = new Map<string, Entry>();
   const tails = { local: Promise.resolve(), server: Promise.resolve() };
   const key = (row: MissingAlbum) => `${row.artist}:${row.release_group}`;
@@ -18,6 +24,14 @@ export function createMissingCoverLoader(
     entries.delete(id);
   }
   return {
+    status: (
+      row: MissingAlbum,
+    ): "idle" | "loading" | "ready" | "absent" | "failed" | "unsupported" => {
+      if (!supported(row.artist)) return "unsupported";
+      const held = entries.get(key(row));
+      if (held?.session !== sessionFor(row.artist) || !held) return "idle";
+      return held.url ? "ready" : held.error ? "failed" : held.finished ? "absent" : "loading";
+    },
     image: (row: MissingAlbum) => {
       const held = entries.get(key(row));
       return held?.session === sessionFor(row.artist) ? held?.url : undefined;
@@ -54,9 +68,11 @@ export function createMissingCoverLoader(
           if (entries.get(id) === entry)
             entry.error = failure instanceof Error ? failure.message : String(failure);
         } finally {
+          entry.finished = true;
           changed();
         }
       });
+      changed();
       tails[source] = entry.promise;
       return entry.promise;
     },

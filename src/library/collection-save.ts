@@ -31,3 +31,14 @@ export async function saveBrowsingCollection(
     );
   await requestAede("/api/me/v1/collection", { name }, "PUT", { expression, create_only: true });
 }
+
+/** The caller confirms deletion and captures its owner before invoking this non-replayed mutation. */
+export async function deleteSavedCollection(
+  name: string,
+  source: import("./sources").SourceId,
+  isCurrent: () => boolean,
+): Promise<boolean> {
+  if (!isCurrent()) return false;
+  await requestAede("/api/me/v1/collection", { name }, "DELETE", null, source);
+  return isCurrent();
+}

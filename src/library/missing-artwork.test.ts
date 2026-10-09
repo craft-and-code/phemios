@@ -27,7 +27,9 @@ it("deduplicates missing covers, keeps acquisition serial and ignores replaced a
     request,
     () => {},
   );
+  expect(loader.status(row)).toBe("idle");
   const first = loader.load(row);
+  expect(loader.status(row)).toBe("loading");
   expect(loader.load(row)).toBe(first);
   await Promise.resolve();
   expect(request).toHaveBeenCalledTimes(1);
@@ -35,6 +37,7 @@ it("deduplicates missing covers, keeps acquisition serial and ignores replaced a
   finish(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer);
   await first;
   expect(loader.image(row)).toBeUndefined();
+  expect(loader.status(row)).toBe("idle");
   loader.dispose();
 });
 it("uses cache-only reads for auditors and never downloads unsupported sources", async () => {
@@ -48,6 +51,7 @@ it("uses cache-only reads for auditors and never downloads unsupported sources",
   );
   await loader.load(row);
   await loader.load(row);
+  expect(loader.status(row)).toBe("absent");
   expect(request).toHaveBeenCalledOnce();
   expect(request).toHaveBeenCalledWith(row.artist, row.release_group, false);
   createMissingCoverLoader(
@@ -72,9 +76,11 @@ it("retries a transient archive failure when the card is opened again", async ()
   );
   await loader.load(row);
   expect(loader.error(row)).toBe("Archive temporarily unavailable");
+  expect(loader.status(row)).toBe("failed");
   await loader.load(row);
   expect(request).toHaveBeenCalledTimes(2);
   expect(loader.error(row)).toBeUndefined();
+  expect(loader.status(row)).toBe("absent");
 });
 it("runs one acquisition per source and keeps the two sources independent", async () => {
   const session = { account: { role: "user" } } as AccountSession;

@@ -1,3 +1,4 @@
+import { DeleteCollection } from "../components/DeleteCollection";
 import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t } from "../i18n";
@@ -22,6 +23,7 @@ interface Playlist {
   id: string;
   name: string;
   track_count: number;
+  duplicates?: number;
 }
 /** Existing owner-scoped services, with explicit save and download actions. */
 export function PersonalPage(props: { section: Section; query: string }) {
@@ -177,6 +179,13 @@ export function PersonalPage(props: { section: Section; query: string }) {
                 >
                   {t("Modifier")}{" "}
                 </button>
+                <DeleteCollection
+                  name={row.name}
+                  onDeleted={() => {
+                    if (openedCollection() === row.name) setOpenedCollection("");
+                    void refetch();
+                  }}
+                />
               </li>
             )}
           </For>
@@ -213,6 +222,11 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </Show>
       </Show>
       <Show when={props.section === "playlists"}>
+        <p class="muted">
+          {t(
+            "Listes déjà enregistrées sur Aède : téléchargez-les pour un autre lecteur. Les réenregistrements identiques sont regroupés.",
+          )}
+        </p>
         <ul class="personal-list">
           <For each={(page()?.items as Playlist[] | undefined)?.filter((row) => matches(row.name))}>
             {(row) => (
@@ -220,6 +234,10 @@ export function PersonalPage(props: { section: Section; query: string }) {
                 <strong>{row.name}</strong>
                 <small>
                   {row.track_count} {t("pistes")}
+                  <Show when={(row.duplicates ?? 1) > 1}>
+                    {" "}
+                    · {t("{0} enregistrements identiques", row.duplicates)}
+                  </Show>
                 </small>
                 <button onClick={() => download(row.id)}>{t("Télécharger le M3U")}</button>
               </li>

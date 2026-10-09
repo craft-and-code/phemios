@@ -1,10 +1,11 @@
+import { radioCountryPreference, radioCountryKey } from "../radio/location";
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
 import { createRadioFavourites } from "../radio/favourites";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { createSignal, For, Show, onCleanup, onMount } from "solid-js";
 import { Icon } from "../components/Icon";
 import { useLibrary } from "../library/context";
 import { isNative, radioStatistics, searchRadio } from "../platform/desktop";
@@ -33,10 +34,25 @@ export function RadioPage(props: { query: string }) {
     alive = false;
   });
   const chosen = () => stations()[selected()];
+  onMount(() => {
+    try {
+      setCountry(radioCountryPreference(localStorage, navigator.languages));
+      if (isNative()) void search(0, true);
+    } catch (failure) {
+      setError(String(failure));
+    }
+  });
   async function search(page = 0, fresh = false) {
     if (busy()) return;
-    if (fresh)
+    if (fresh) {
+      try {
+        localStorage.setItem(radioCountryKey, JSON.stringify(country()));
+      } catch (failure) {
+        setError(String(failure));
+        return;
+      }
       criteria = { name: name(), country: country(), tag: tag(), secureOnly: secureOnly() };
+    }
     setBusy(true);
     setError("");
     try {

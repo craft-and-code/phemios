@@ -10,8 +10,46 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
     library.missing
       .rows()
       .filter((row) => row.set_aside && (!props.artist || row.artist === props.artist));
+  const visible = () =>
+    library.missing
+      .rows()
+      .filter((row) => !row.set_aside && (!props.artist || row.artist === props.artist));
+  const failed = () => visible().filter((row) => library.missingArtwork.status(row) === "failed");
+  const counted = (status: string) =>
+    visible().filter((row) => library.missingArtwork.status(row) === status).length;
   return (
     <div class="missing-status">
+      <Show when={visible().length}>
+        <p class="missing-notice cover-status" role="status">
+          <span>
+            {t(
+              "Pochettes chargées : {0} · indisponibles : {1} · échecs : {2}",
+              counted("ready"),
+              counted("absent"),
+              failed().length,
+            )}
+          </span>
+          <Show when={counted("loading")}>
+            <span>{t("Téléchargement en cours…")}</span>
+          </Show>
+          <Show when={failed().length}>
+            <button
+              onClick={() =>
+                void Promise.all(failed().map((row) => library.missingArtwork.load(row)))
+              }
+            >
+              {t("Réessayer les pochettes")}
+            </button>
+          </Show>
+        </p>
+        <Show when={counted("unsupported")}>
+          <p class="notice">
+            {t(
+              "Ce serveur ne télécharge pas encore les pochettes manquantes. Mettez à jour puis redémarrez Aède.",
+            )}
+          </p>
+        </Show>
+      </Show>
       <For each={library.missing.errors()}>
         {(message) => (
           <p class="notice missing-notice" role="status">

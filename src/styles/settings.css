@@ -4,8 +4,8 @@
 }
 .settings-tabs {
   display: grid;
-  max-width: 512px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 640px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border);

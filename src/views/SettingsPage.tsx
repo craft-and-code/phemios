@@ -1,3 +1,4 @@
+import { SettingsTags } from "./SettingsTags";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { SettingsLibraries } from "./SettingsLibraries";
@@ -17,17 +18,17 @@ export function SettingsPage() {
         role="tablist"
         aria-label={t("Paramètres")}
         onKeyDown={(event) => {
-          const ids = ["libraries", "accounts", "services", "appearance"],
+          const ids = ["libraries", "accounts", "services", "tags", "appearance"],
             index = ids.indexOf(tab());
           const next =
             event.key === "ArrowRight"
-              ? (index + 1) % 4
+              ? (index + 1) % ids.length
               : event.key === "ArrowLeft"
-                ? (index + 3) % 4
+                ? (index + ids.length - 1) % ids.length
                 : event.key === "Home"
                   ? 0
                   : event.key === "End"
-                    ? 3
+                    ? ids.length - 1
                     : undefined;
           if (next === undefined) return;
           event.preventDefault();
@@ -40,6 +41,7 @@ export function SettingsPage() {
             { icon: "library", id: "libraries", label: t("Bibliothèques") },
             { icon: "users", id: "accounts", label: t("Comptes") },
             { icon: "globe", id: "services", label: t("Sources externes") },
+            { icon: "tags", id: "tags", label: t("Tags") },
             { icon: "palette", id: "appearance", label: t("Apparence") },
           ]}
         >
@@ -81,6 +83,9 @@ export function SettingsPage() {
         </Show>
         <Show when={tab() === "services"}>
           <SettingsServices />
+        </Show>
+        <Show when={tab() === "tags"}>
+          <SettingsTags />
         </Show>
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />

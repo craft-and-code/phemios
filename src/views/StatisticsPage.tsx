@@ -106,6 +106,7 @@ export function StatisticsPage() {
           {t("Statistiques indisponibles :")} {String(report.error)}
         </p>
       </Show>
+      <h2>{t("Votre collection")}</h2>
       <div class="stat-tiles">
         <For each={tiles()}>
           {(tile) => (

@@ -1,3 +1,5 @@
+import { suggestionVocabulary } from "../library/tag-preferences";
+import { referenceSource } from "../library/sources";
 import { StarRating } from "./StarRating";
 import { t } from "../i18n";
 import {
@@ -242,7 +244,15 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       >
         <TagInput
           value={tags()}
-          vocabulary={tagVocabulary(Object.values(library.annotations))}
+          vocabulary={suggestionVocabulary(
+            tagVocabulary(
+              Object.values(library.annotations).filter(
+                (row) => row && referenceSource(row.reference) === referenceSource(props.reference),
+              ),
+            ),
+            library.tagPreferences.entries(),
+            library.sessionFor(props.reference),
+          )}
           disabled={blocked()}
           resetKey={`${library.sessionFor(props.reference)?.account.id ?? ""}:${props.reference}`}
           onChange={(value) => {
