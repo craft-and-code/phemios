@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { record } from "./track-page";
 import type { Track } from "./server";
 export interface TrackDetail extends Track {
@@ -42,7 +43,7 @@ export function parseTrackDetail(value: unknown, reference: string): TrackDetail
     !(p.lossless === null || typeof p.lossless === "boolean") ||
     !Object.values(tags).every((v) => Array.isArray(v) && v.every((s) => typeof s === "string"))
   )
-    throw new Error("Détail de piste invalide ; mettez à jour puis redémarrez Aède.");
+    throw new Error(t("Détail de piste invalide ; mettez à jour puis redémarrez Aède."));
   for (const v of r.credits) {
     const c = record(v);
     if (
@@ -50,7 +51,7 @@ export function parseTrackDetail(value: unknown, reference: string): TrackDetail
       !c.reference.startsWith("artist:") ||
       ![c.name, c.role, c.source].every((v) => typeof v === "string")
     )
-      throw new Error("Crédit Aède invalide.");
+      throw new Error(t("Crédit Aède invalide."));
   }
   return r as unknown as TrackDetail;
 }

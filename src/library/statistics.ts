@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t } from "../i18n";
 export interface Page<T> {
   items: T[];
   total: number;
@@ -44,16 +46,16 @@ export interface Statistics {
 }
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Statistiques Aède invalides.");
+    throw new Error(t("Statistiques Aède invalides."));
   return value as Record<string, unknown>;
 }
 function count(value: unknown): number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
-    throw new Error("Mesure Aède invalide.");
+    throw new Error(t("Mesure Aède invalide."));
   return value;
 }
 function text(value: unknown): string {
-  if (typeof value !== "string") throw new Error("Libellé Aède invalide.");
+  if (typeof value !== "string") throw new Error(t("Libellé Aède invalide."));
   return value;
 }
 function page<T>(
@@ -72,7 +74,7 @@ function page<T>(
     !Array.isArray(raw.items) ||
     raw.items.length !== Math.min(limit, Math.max(0, total - offset))
   )
-    throw new Error("Pagination des statistiques incohérente. Actualisez la page.");
+    throw new Error(t("Pagination des statistiques incohérente. Actualisez la page."));
   return {
     items: raw.items.map((value) => parse(object(value))),
     total,
@@ -89,7 +91,7 @@ export function parseStatistics(value: unknown, offset: number): Statistics {
     top = object(raw.top);
   const ratio = (value: unknown) => {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1)
-      throw new Error("Complétude Aède invalide.");
+      throw new Error(t("Complétude Aède invalide."));
     return value;
   };
   const bucket = (value: unknown) =>
@@ -147,7 +149,7 @@ export function statisticsReader(read: (offset: number) => Promise<unknown>) {
       .then((value) => {
         const parsed = parseStatistics(value, offset);
         if (epoch !== undefined && epoch !== parsed.scanned_at)
-          throw new Error("Le catalogue a changé. Actualisez les statistiques.");
+          throw new Error(t("Le catalogue a changé. Actualisez les statistiques."));
         epoch = parsed.scanned_at;
         return parsed;
       })
@@ -159,22 +161,25 @@ export function statisticsReader(read: (offset: number) => Promise<unknown>) {
     return pending;
   };
 }
-export const numberLabel = (value: number) => value.toLocaleString("fr");
+export const numberLabel = (value: number) => value.toLocaleString(locale());
 export function bytesLabel(value: number): string {
-  const units = ["o", "Kio", "Mio", "Gio", "Tio", "Pio"];
+  const units =
+    locale() === "en"
+      ? ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]
+      : ["o", "Kio", "Mio", "Gio", "Tio", "Pio"];
   let index = 0;
   while (value >= 1024 && index < units.length - 1) {
     value /= 1024;
     index++;
   }
-  return `${value.toLocaleString("fr", { maximumFractionDigits: index ? 1 : 0 })} ${units[index]}`;
+  return `${value.toLocaleString(locale(), { maximumFractionDigits: index ? 1 : 0 })} ${units[index]}`;
 }
 export function durationLabel(ms: number): string {
   const seconds = Math.floor(ms / 1000),
     days = Math.floor(seconds / 86400),
     hours = Math.floor((seconds % 86400) / 3600),
     minutes = Math.floor((seconds % 3600) / 60);
-  return `${days ? `${days} j ` : ""}${hours} h ${minutes} min`;
+  return `${days ? `${days} ${locale() === "en" ? "d" : "j"} ` : ""}${hours} h ${minutes} min`;
 }
 
 /** Doctor is read-only; absent measurements stay an error rather than invented zeroes. */

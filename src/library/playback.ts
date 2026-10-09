@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, onCleanup, type Accessor } from "solid-js";
 import {
   playbackControl,
@@ -12,7 +13,7 @@ import { createSeekProgress } from "./seek-progress";
 import { playbackSelection, type PlayableSelection } from "./playback-selection";
 import type { Artist, Album } from "./types";
 const message = (failure: unknown) =>
-  failure instanceof Error ? failure.message : "Lecture indisponible.";
+  failure instanceof Error ? failure.message : t("Lecture indisponible.");
 /** Explicit playback owns one serialized poll; it never starts during offline browsing. */
 export function createPlayback(
   ready: Accessor<boolean>,
@@ -40,7 +41,7 @@ export function createPlayback(
     try {
       setRemaining(sessionStorage.getItem(preferenceKey) === "remaining");
     } catch {
-      setError("Préférence de durée indisponible.");
+      setError(t("Préférence de durée indisponible."));
     }
   }
   function toggleTime() {
@@ -50,7 +51,7 @@ export function createPlayback(
       try {
         sessionStorage.setItem(preferenceKey, next ? "remaining" : "duration");
       } catch {
-        setError("Préférence de durée non mémorisée.");
+        setError(t("Préférence de durée non mémorisée."));
       }
   }
   async function choosePolicy(value: string) {
@@ -133,7 +134,7 @@ export function createPlayback(
     const epoch = generation;
     try {
       if (!tracks.length || tracks.length > 4096 || index < 0 || index >= tracks.length)
-        throw new Error("Sélection limitée à 4096 pistes.");
+        throw new Error(t("Sélection limitée à 4096 pistes."));
       await playbackStart(
         tracks.map((t) => t.reference),
         device(),

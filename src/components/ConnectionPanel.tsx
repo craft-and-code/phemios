@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
 import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
 import { useLibrary } from "../library/context";
@@ -43,7 +44,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
   try {
     remembered = readLoginPreference(localStorage);
   } catch {
-    setPreferenceError("Le nom d’utilisateur mémorisé est indisponible.");
+    setPreferenceError(t("Le nom d’utilisateur mémorisé est indisponible."));
   }
   const initialServer = remembered?.server ?? "http://127.0.0.1:3412";
   const [server, setServer] = createSignal(initialServer);
@@ -65,10 +66,14 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
         role={props.embedded ? undefined : "dialog"}
         aria-modal={props.embedded ? undefined : true}
         class="connection-panel"
-        aria-label="Connexion Aède"
+        aria-label={t("Connexion Aède")}
       >
         <Show when={!props.embedded}>
-          <button class="connection-close" aria-label="Fermer la connexion" onClick={props.onClose}>
+          <button
+            class="connection-close"
+            aria-label={t("Fermer la connexion")}
+            onClick={props.onClose}
+          >
             ×
           </button>
         </Show>
@@ -88,7 +93,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                     setPreferenceError("");
                   } catch {
                     setPreferenceError(
-                      "Connexion réussie, mais le nom d’utilisateur n’a pas pu être mémorisé.",
+                      t("Connexion réussie, mais le nom d’utilisateur n’a pas pu être mémorisé."),
                     );
                   }
                 }
@@ -96,9 +101,9 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                   props.onClose();
               }}
             >
-              <p class="eyebrow">VOTRE SERVEUR AÈDE</p>
+              <p class="eyebrow">{t("VOTRE SERVEUR AÈDE")}</p>
               <label>
-                Serveur
+                {t("Serveur")}{" "}
                 <input
                   required
                   type="url"
@@ -107,7 +112,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                 />
               </label>
               <label>
-                Compte
+                {t("Compte")}{" "}
                 <input
                   required
                   autocomplete="username"
@@ -116,7 +121,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                 />
               </label>
               <label>
-                Mot de passe
+                {t("Mot de passe")}{" "}
                 <input
                   required
                   type="password"
@@ -126,33 +131,37 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                 />
               </label>
               <button class="primary" disabled={library.busy() || library.demo}>
-                {library.busy() ? "Connexion et synchronisation…" : "Se connecter"}
+                {library.busy() ? t("Connexion et synchronisation…") : t("Se connecter")}
               </button>
               <Show when={library.demo}>
-                <p class="muted">La connexion utilise le pont natif de l’application desktop.</p>
+                <p class="muted">
+                  {t("La connexion utilise le pont natif de l’application desktop.")}
+                </p>
               </Show>
               <small>
-                Le nom d’utilisateur est mémorisé sur cet appareil. Le mot de passe est demandé à
-                chaque connexion.
+                {t(
+                  "Le nom d’utilisateur est mémorisé sur cet appareil. Le mot de passe est demandé à chaque connexion.",
+                )}{" "}
               </small>
             </form>
           }
         >
           <p>
-            {library.connected() ? "Connecté" : "Session"} :{" "}
+            {library.connected() ? t("Connecté") : t("Session")} :{" "}
             {library.serverSession()?.account.username}
           </p>
           <Show when={!library.connected()}>
             <p role="status">
-              Connexion perdue ou session expirée. Si nécessaire, déconnectez-vous puis
-              reconnectez-vous.
+              {t(
+                "Connexion perdue ou session expirée. Si nécessaire, déconnectez-vous puis reconnectez-vous.",
+              )}{" "}
             </p>
           </Show>
           <p class="muted">{library.serverSession()?.server}</p>
           <button disabled={library.busy()} onClick={() => library.sync("server")}>
-            Synchroniser la bibliothèque
+            {t("Synchroniser la bibliothèque")}{" "}
           </button>
-          <button onClick={() => library.disconnect()}>Se déconnecter</button>
+          <button onClick={() => library.disconnect()}>{t("Se déconnecter")}</button>
         </Show>
         <Show when={preferenceError()}>
           <p role="status">{preferenceError()}</p>

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
 import { createSignal, Show } from "solid-js";
 import { saveLibraryM3U } from "../library/m3u-save";
@@ -34,9 +35,9 @@ export function M3UExport(props: { release: string; title: string }) {
     setBusy(true);
     setError("");
     try {
-      setError(`M3U téléchargé : ${await downloadM3U(file)}`);
+      setError(t("M3U téléchargé : {0}", await downloadM3U(file)));
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Téléchargement impossible.");
+      setError(failure instanceof Error ? failure.message : t("Téléchargement impossible."));
     } finally {
       setBusy(false);
     }
@@ -54,7 +55,7 @@ export function M3UExport(props: { release: string; title: string }) {
       );
       if (saved) setFile({ ...saved, source: referenceSource(reference) });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Export impossible.");
+      setError(failure instanceof Error ? failure.message : t("Export impossible."));
     } finally {
       setBusy(false);
     }
@@ -64,14 +65,14 @@ export function M3UExport(props: { release: string; title: string }) {
       <Show when={file()}>
         <small title={file()?.library_files?.join("\n")}>
           {file()?.library_files?.length
-            ? "Enregistré dans les dossiers de la bibliothèque"
-            : "Enregistré sur le serveur · chemins du serveur"}
+            ? t("Enregistré dans les dossiers de la bibliothèque")
+            : t("Enregistré sur le serveur · chemins du serveur")}
         </small>
       </Show>
       <button
         class="icon-button quiet"
-        aria-label="Enregistrer le M3U sur Aède"
-        title="Enregistrer le M3U sur Aède"
+        aria-label={t("Enregistrer le M3U sur Aède")}
+        title={t("Enregistrer le M3U sur Aède")}
         disabled={
           !library.sessionFor(props.release) ||
           library.sessionFor(props.release)?.account.role !== "admin" ||
@@ -86,8 +87,8 @@ export function M3UExport(props: { release: string; title: string }) {
           <>
             <button
               class="icon-button quiet"
-              title="Télécharger le M3U"
-              aria-label="Télécharger le M3U"
+              title={t("Télécharger le M3U")}
+              aria-label={t("Télécharger le M3U")}
               disabled={busy()}
               onClick={() => download(value())}
             >

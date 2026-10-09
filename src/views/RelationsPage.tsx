@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t } from "../i18n";
 import { createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { searchArtist } from "../library/filtering";
@@ -17,7 +19,7 @@ export function RelationsPage(props: { query: string }) {
       .sort(
         (a, b) =>
           (b.relations?.length ?? 0) - (a.relations?.length ?? 0) ||
-          a.name.localeCompare(b.name, "fr"),
+          a.name.localeCompare(b.name, locale()),
       ),
   );
   const selected = createMemo(
@@ -34,7 +36,9 @@ export function RelationsPage(props: { query: string }) {
     library
       .albums()
       .filter((a) => selected()?.releaseRefs?.includes(a.reference))
-      .sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999) || a.title.localeCompare(b.title, "fr")),
+      .sort(
+        (a, b) => (a.year ?? 9999) - (b.year ?? 9999) || a.title.localeCompare(b.title, locale()),
+      ),
   );
   const graphNodes = createMemo(() =>
     mode() === "album"
@@ -44,7 +48,7 @@ export function RelationsPage(props: { query: string }) {
             reference: a.reference,
             name: a.title,
             weight: 1,
-            source: "catalogue Aède",
+            source: t("catalogue Aède"),
             kind: "album" as const,
             href: `#/album/${encodeURIComponent(a.reference)}`,
           }))
@@ -60,16 +64,16 @@ export function RelationsPage(props: { query: string }) {
     <section class="page relations-page">
       <div class="relation-picker">
         <label>
-          Artiste de départ
+          {t("Artiste de départ")}{" "}
           <input
             type="search"
-            aria-label="Chercher un artiste de départ"
-            placeholder="Chercher un artiste ou un musicien…"
+            aria-label={t("Chercher un artiste de départ")}
+            placeholder={t("Chercher un artiste ou un musicien…")}
             value={search()}
             onInput={(event) => setSearch(event.currentTarget.value)}
           />
         </label>
-        <div class="choices" aria-label="Artistes de départ proposés">
+        <div class="choices" aria-label={t("Artistes de départ proposés")}>
           <For each={choices().slice(0, 8)}>
             {(artist) => (
               <button
@@ -82,40 +86,45 @@ export function RelationsPage(props: { query: string }) {
           </For>
         </div>
         <Show when={!choices().length}>
-          <p class="muted">Aucun artiste correspondant.</p>
+          <p class="muted">{t("Aucun artiste correspondant.")}</p>
         </Show>
       </div>
       <p class="muted">
-        Liens de collaboration issus des crédits du catalogue Aède. Le nombre indique les pistes
-        jouées ensemble ; il ne désigne pas une appartenance à un groupe.
+        {t(
+          "Liens de collaboration issus des crédits du catalogue Aède. Le nombre indique les pistes jouées ensemble ; il ne désigne pas une appartenance à un groupe.",
+        )}{" "}
       </p>
-      <Show when={selected()} fallback={<p class="empty">Aucun artiste disponible.</p>}>
+      <Show when={selected()} fallback={<p class="empty">{t("Aucun artiste disponible.")}</p>}>
         {(artist) => (
           <>
             <div class="section-heading">
               <h2>
-                {mode() === "album" ? "Albums associés à" : "Collaborations de"} {artist().name}
+                {mode() === "album" ? t("Albums associés à") : t("Collaborations de")}{" "}
+                {artist().name}
               </h2>
               <div class="choices">
                 <button aria-pressed={mode() === "artist"} onClick={() => setMode("artist")}>
-                  Artistes liés
+                  {t("Artistes liés")}{" "}
                 </button>
                 <button aria-pressed={mode() === "album"} onClick={() => setMode("album")}>
-                  Albums liés
+                  {t("Albums liés")}{" "}
                 </button>
               </div>
             </div>
             <Show
               when={graphNodes().length}
               fallback={
-                <p class="empty">Aucune collaboration locale connue pour {artist().name}.</p>
+                <p class="empty">
+                  {t("Aucune collaboration locale connue pour")} {artist().name}.
+                </p>
               }
             >
               <RelationGraph name={artist().name} edges={graphNodes()} onSelect={setReference} />
               <Show when={mode() === "artist"}>
                 <p class="muted">
-                  Les 16 liens les plus forts sont affichés. Choisissez un voisin pour continuer
-                  l’exploration.
+                  {t(
+                    "Les 16 liens les plus forts sont affichés. Choisissez un voisin pour continuer l’exploration.",
+                  )}{" "}
                 </p>
                 <ul class="personal-list">
                   <For each={edges()}>
@@ -125,11 +134,11 @@ export function RelationsPage(props: { query: string }) {
                           {edge.artist.name}
                         </a>
                         <small>
-                          {edge.weight} pistes communes · Source :{" "}
-                          {edge.source === "tags" ? "crédits des fichiers" : edge.source}
+                          {edge.weight} {t("pistes communes · Source :")}{" "}
+                          {edge.source === "tags" ? t("crédits des fichiers") : edge.source}
                         </small>
                         <button onClick={() => setReference(edge.artist.reference)}>
-                          Explorer
+                          {t("Explorer")}{" "}
                         </button>
                       </li>
                     )}
@@ -138,14 +147,15 @@ export function RelationsPage(props: { query: string }) {
               </Show>
               <Show when={mode() === "album"}>
                 <p class="muted">
-                  Discographie et participations issues du catalogue. Le graphe affiche les 16
-                  premiers albums ; les pochettes ci-dessous donnent accès à l’ensemble.
+                  {t(
+                    "Discographie et participations issues du catalogue. Le graphe affiche les 16 premiers albums ; les pochettes ci-dessous donnent accès à l’ensemble.",
+                  )}{" "}
                 </p>
                 <AlbumGrid albums={albums()} />
               </Show>
             </Show>
             <a href={`#/artist/${encodeURIComponent(artist().reference)}`}>
-              Ouvrir la page de {artist().name}
+              {t("Ouvrir la page de")} {artist().name}
             </a>
           </>
         )}

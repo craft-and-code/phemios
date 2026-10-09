@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import {
   createEffect,
   createMemo,
@@ -49,7 +50,7 @@ export function TagInput(props: {
   onMount(() => props.onRead(() => commit()));
   return (
     <div class="tag-editor">
-      <label for={id}>Tags</label>
+      <label for={id}>{t("Tags")}</label>
       <div class="tag-field" classList={{ disabled: props.disabled }}>
         <input
           id={id}
@@ -64,7 +65,7 @@ export function TagInput(props: {
           }
           disabled={props.disabled}
           value={draft()}
-          placeholder="Ajouter un tag…"
+          placeholder={t("Ajouter un tag…")}
           autocomplete="off"
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
@@ -110,7 +111,7 @@ export function TagInput(props: {
           id={`${id}-suggestions`}
           class="tag-suggestions"
           role="listbox"
-          aria-label="Tags enregistrés proposés"
+          aria-label={t("Tags enregistrés proposés")}
         >
           <For each={suggestions()}>
             {(tag, index) => (
@@ -127,7 +128,7 @@ export function TagInput(props: {
           </For>
         </ul>
       </Show>
-      <div class="tag-pills" aria-label="Tags validés">
+      <div class="tag-pills" aria-label={t("Tags validés")}>
         <For each={props.value}>
           {(tag, index) => (
             <span class="tag-pill">
@@ -135,7 +136,7 @@ export function TagInput(props: {
               <button
                 class="tag-remove"
                 disabled={props.disabled}
-                aria-label={`Retirer le tag ${tag}`}
+                aria-label={t("Retirer le tag {0}", tag)}
                 onClick={() => props.onChange(props.value.filter((_, i) => i !== index()))}
               >
                 <Icon name="close" />
@@ -145,7 +146,9 @@ export function TagInput(props: {
         </For>
       </div>
       <small>
-        Entrée ou virgule pour créer une pastille. Les tags sont enregistrés avec les notes.
+        {t(
+          "Entrée ou virgule pour créer une pastille. Les tags sont enregistrés avec les notes.",
+        )}{" "}
       </small>
     </div>
   );

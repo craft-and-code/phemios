@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -49,25 +50,28 @@ export function SettingsAccounts() {
   }
   return (
     <div class="settings-card">
-      <h2>Comptes Aède</h2>
+      <h2>{t("Comptes Aède")}</h2>
       <p class="muted">
-        Bibliothèque sélectionnée : {library.source() === "local" ? "Local" : "Serveur"}. Les
-        comptes et annotations restent propres à chaque Aède.
+        {t("Bibliothèque sélectionnée :")}{" "}
+        {library.source() === "local" ? t("Local") : t("Serveur")}
+        {t(". Les comptes et annotations restent propres à chaque Aède.")}{" "}
       </p>
       <Show when={!library.session()}>
-        <p class="notice">Activez le moteur local ou connectez un serveur.</p>
+        <p class="notice">{t("Activez le moteur local ou connectez un serveur.")}</p>
       </Show>
       <Show when={library.session()}>
         <p>
-          Compte actif : {library.session()?.account.username} · {library.session()?.account.role}
+          {t("Compte actif :")} {library.session()?.account.username} ·{" "}
+          {library.session()?.account.role}
         </p>
       </Show>
       <Show
         when={administrative()}
         fallback={
           <p class="muted">
-            L’administration des comptes nécessite un administrateur sur Aède HTTP local. Le serveur
-            HTTPS désactive ses routes administratives ; utilisez sa commande accounts.
+            {t(
+              "L’administration des comptes nécessite un administrateur sur Aède HTTP local. Le serveur HTTPS désactive ses routes administratives ; utilisez sa commande accounts.",
+            )}{" "}
           </p>
         }
       >
@@ -79,20 +83,20 @@ export function SettingsAccounts() {
             <div class="account-row">
               <strong>{account.username}</strong>
               <select
-                aria-label={`Rôle de ${account.username}`}
+                aria-label={t("Rôle de {0}", account.username)}
                 disabled={busy() || account.username === "phemios-local"}
                 value={account.role}
                 onChange={(e) => void patch(account, { role: e.currentTarget.value })}
               >
-                <option value="admin">Administrateur</option>
-                <option value="user">Utilisateur</option>
-                <option value="auditor">Auditeur</option>
+                <option value="admin">{t("Administrateur")}</option>
+                <option value="user">{t("Utilisateur")}</option>
+                <option value="auditor">{t("Auditeur")}</option>
               </select>
               <button
                 disabled={busy() || account.username === "phemios-local"}
                 onClick={() => void patch(account, { enabled: !account.enabled })}
               >
-                {account.enabled ? "Désactiver" : "Activer"}
+                {account.enabled ? t("Désactiver") : t("Activer")}
               </button>
               <button
                 disabled={busy() || account.username === "phemios-local"}
@@ -108,11 +112,11 @@ export function SettingsAccounts() {
                   )
                 }
               >
-                Révoquer les sessions
+                {t("Révoquer les sessions")}{" "}
               </button>
               <Show when={account.username !== "phemios-local"}>
                 <details>
-                  <summary>Modifier ce compte</summary>
+                  <summary>{t("Modifier ce compte")}</summary>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -127,14 +131,14 @@ export function SettingsAccounts() {
                     }}
                   >
                     <label>
-                      Nom d’utilisateur
+                      {t("Nom d’utilisateur")}{" "}
                       <input name="username" placeholder={account.username} />
                     </label>
                     <label>
-                      Nouveau mot de passe
+                      {t("Nouveau mot de passe")}{" "}
                       <input name="password" type="password" autocomplete="new-password" />
                     </label>
-                    <button disabled={busy()}>Enregistrer</button>
+                    <button disabled={busy()}>{t("Enregistrer")}</button>
                   </form>
                 </details>
               </Show>
@@ -157,9 +161,9 @@ export function SettingsAccounts() {
             );
           }}
         >
-          <h3>Créer un compte</h3>
+          <h3>{t("Créer un compte")}</h3>
           <label>
-            Nom d’utilisateur
+            {t("Nom d’utilisateur")}{" "}
             <input
               required
               value={username()}
@@ -167,7 +171,7 @@ export function SettingsAccounts() {
             />
           </label>
           <label>
-            Mot de passe
+            {t("Mot de passe")}{" "}
             <input
               required
               type="password"
@@ -177,14 +181,14 @@ export function SettingsAccounts() {
             />
           </label>
           <label>
-            Rôle
+            {t("Rôle")}{" "}
             <select value={role()} onChange={(e) => setRole(e.currentTarget.value)}>
-              <option value="user">Utilisateur</option>
-              <option value="auditor">Auditeur</option>
-              <option value="admin">Administrateur</option>
+              <option value="user">{t("Utilisateur")}</option>
+              <option value="auditor">{t("Auditeur")}</option>
+              <option value="admin">{t("Administrateur")}</option>
             </select>
           </label>
-          <button disabled={busy()}>Créer</button>
+          <button disabled={busy()}>{t("Créer")}</button>
         </form>
       </Show>
       <Show when={library.serverSession() && library.source() === "server"}>
@@ -200,9 +204,9 @@ export function SettingsAccounts() {
             });
           }}
         >
-          <h3>Changer mon mot de passe</h3>
+          <h3>{t("Changer mon mot de passe")}</h3>
           <label>
-            Mot de passe actuel
+            {t("Mot de passe actuel")}{" "}
             <input
               required
               type="password"
@@ -212,7 +216,7 @@ export function SettingsAccounts() {
             />
           </label>
           <label>
-            Nouveau mot de passe
+            {t("Nouveau mot de passe")}{" "}
             <input
               required
               type="password"
@@ -221,7 +225,7 @@ export function SettingsAccounts() {
               onInput={(e) => setNewPassword(e.currentTarget.value)}
             />
           </label>
-          <button disabled={busy()}>Modifier et se déconnecter</button>
+          <button disabled={busy()}>{t("Modifier et se déconnecter")}</button>
         </form>
       </Show>
       <p role="alert">{error()}</p>

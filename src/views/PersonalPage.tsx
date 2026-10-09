@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { HistoryReset } from "../components/HistoryReset";
@@ -55,12 +57,12 @@ export function PersonalPage(props: { section: Section; query: string }) {
       await requestAede("/api/me/v1/collection", { name: name() }, "PUT", {
         expression: expression(),
       });
-      setMessage("Collection enregistrée dans votre compte.");
+      setMessage(t("Collection enregistrée dans votre compte."));
       setName("");
       setExpression("");
       void refetch();
     } catch (failure) {
-      setMessage(failure instanceof Error ? failure.message : "Enregistrement impossible.");
+      setMessage(failure instanceof Error ? failure.message : t("Enregistrement impossible."));
     } finally {
       setSaving(false);
     }
@@ -69,9 +71,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
     setMessage("");
     try {
       const file = await requestAede<M3UFile>(`/api/me/v1/m3u/${encodeURIComponent(id)}`);
-      setMessage(`M3U téléchargé : ${await downloadM3U(file)}`);
+      setMessage(t("M3U téléchargé : {0}", await downloadM3U(file)));
     } catch (failure) {
-      setMessage(failure instanceof Error ? failure.message : "Téléchargement impossible.");
+      setMessage(failure instanceof Error ? failure.message : t("Téléchargement impossible."));
     }
   }
   const favourites = () =>
@@ -92,12 +94,12 @@ export function PersonalPage(props: { section: Section; query: string }) {
   return (
     <section class="page personal-page">
       <Show when={!library.session() && !library.demo}>
-        <p class="notice">Connectez-vous pour accéder aux données de votre compte.</p>
+        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
       <Show when={props.section === "favourites"}>
         <Show
           when={favourites().length}
-          fallback={<p class="empty">Aucun album favori dans cette sélection.</p>}
+          fallback={<p class="empty">{t("Aucun album favori dans cette sélection.")}</p>}
         >
           <AlbumGrid albums={favourites()} />
         </Show>
@@ -111,7 +113,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
           }}
         >
           <label>
-            Nom de la collection
+            {t("Nom de la collection")}{" "}
             <input
               required
               value={name()}
@@ -119,7 +121,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             />
           </label>
           <label>
-            Règle Aède
+            {t("Règle Aède")}{" "}
             <input
               required
               value={expression()}
@@ -127,14 +129,14 @@ export function PersonalPage(props: { section: Section; query: string }) {
               onInput={(event) => setExpression(event.currentTarget.value)}
             />
           </label>
-          <small>La règle est validée et enregistrée par le moteur Aède.</small>
+          <small>{t("La règle est validée et enregistrée par le moteur Aède.")}</small>
           <button
             class="primary"
             disabled={
               !library.session() || library.session()?.account.role === "auditor" || saving()
             }
           >
-            Enregistrer la collection
+            {t("Enregistrer la collection")}{" "}
           </button>
         </form>
         <ul class="personal-list">
@@ -148,23 +150,27 @@ export function PersonalPage(props: { section: Section; query: string }) {
                 <strong>{row.name}</strong>
                 <small>
                   {row.expression.startsWith("browse-v1:")
-                    ? "Collection dynamique · filtres du catalogue"
+                    ? t("Collection dynamique · filtres du catalogue")
                     : row.expression}
                 </small>
-                <button onClick={() => setOpenedCollection(row.name)}>Voir les albums</button>
+                <button onClick={() => setOpenedCollection(row.name)}>
+                  {t("Voir les albums")}
+                </button>
                 <button
                   disabled={row.expression.startsWith("browse-v1:")}
                   title={
                     row.expression.startsWith("browse-v1:")
-                      ? "Créez une nouvelle collection depuis les filtres pour choisir d’autres critères"
-                      : "Modifier la règle"
+                      ? t(
+                          "Créez une nouvelle collection depuis les filtres pour choisir d’autres critères",
+                        )
+                      : t("Modifier la règle")
                   }
                   onClick={() => {
                     setName(row.name);
                     setExpression(row.expression);
                   }}
                 >
-                  Modifier
+                  {t("Modifier")}{" "}
                 </button>
               </li>
             )}
@@ -176,15 +182,15 @@ export function PersonalPage(props: { section: Section; query: string }) {
       </Show>
       <Show when={props.section === "analysis" || props.section === "playlists"}>
         <label class="album-selection">
-          Album
+          {t("Album")}{" "}
           <select value={selected()} onChange={(event) => setSelected(event.currentTarget.value)}>
-            <option value="">Choisissez un album</option>
+            <option value="">{t("Choisissez un album")}</option>
             <For each={library.albums()}>
               {(album) => (
                 <option value={album.reference}>
                   {album.title} ·{" "}
                   {library.artists().find((artist) => artist.reference === album.artist)?.name ??
-                    "Artistes divers"}
+                    t("Artistes divers")}
                 </option>
               )}
             </For>
@@ -207,8 +213,10 @@ export function PersonalPage(props: { section: Section; query: string }) {
             {(row) => (
               <li>
                 <strong>{row.name}</strong>
-                <small>{row.track_count} pistes</small>
-                <button onClick={() => download(row.id)}>Télécharger le M3U</button>
+                <small>
+                  {row.track_count} {t("pistes")}
+                </small>
+                <button onClick={() => download(row.id)}>{t("Télécharger le M3U")}</button>
               </li>
             )}
           </For>
@@ -222,12 +230,14 @@ export function PersonalPage(props: { section: Section; query: string }) {
           }}
         />
         <p class="muted">
-          Historique confirmé par Aède ; aucun événement d’écoute n’est inventé par cette vue.
+          {t(
+            "Historique confirmé par Aède ; aucun événement d’écoute n’est inventé par cette vue.",
+          )}{" "}
         </p>
         <ul class="personal-list">
           <For
             each={history()?.filter((row) =>
-              matches(`${row.title} ${new Date(row.at * 1000).toLocaleString("fr-FR")}`),
+              matches(`${row.title} ${new Date(row.at * 1000).toLocaleString(locale())}`),
             )}
           >
             {(row) => (
@@ -236,10 +246,10 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   {(ref) => <a href={`#/album/${encodeURIComponent(ref())}`}>{row.title}</a>}
                 </Show>
                 <small>
-                  {new Date(row.at * 1000).toLocaleString("fr-FR")} ·{" "}
+                  {new Date(row.at * 1000).toLocaleString(locale())} ·{" "}
                   {row.ms_played === null
-                    ? "Durée inconnue"
-                    : `${Math.round(row.ms_played / 1000)} s écoutées`}
+                    ? t("Durée inconnue")
+                    : t("{0} s écoutées", Math.round(row.ms_played / 1000))}
                 </small>
                 <Show when={"error" in row}>
                   <small>{row.error}</small>
@@ -250,13 +260,13 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={reads.loading()}>
-        <p role="status">Chargement…</p>
+        <p role="status">{t("Chargement…")}</p>
       </Show>
       <Show when={reads.page()?.error}>
         <p role="alert">{reads.page()?.error}</p>
       </Show>
       <Show when={page() && !page()?.items.length}>
-        <p class="empty">Aucun élément enregistré dans cette rubrique.</p>
+        <p class="empty">{t("Aucun élément enregistré dans cette rubrique.")}</p>
       </Show>
       <Show when={(page()?.total ?? 0) > 50}>
         <div class="choices">
@@ -264,7 +274,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             disabled={!offset()}
             onClick={() => setOffset((value) => Math.max(0, value - 50))}
           >
-            Précédent
+            {t("Précédent")}{" "}
           </button>
           <span>
             {offset() + 1} / {page()?.total}
@@ -273,7 +283,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             disabled={offset() + 50 >= (page()?.total ?? 0)}
             onClick={() => setOffset((value) => value + 50)}
           >
-            Suivant
+            {t("Suivant")}{" "}
           </button>
         </div>
       </Show>

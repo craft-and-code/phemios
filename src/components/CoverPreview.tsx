@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { onMount, onCleanup } from "solid-js";
 import type { Album } from "../library/types";
 import { Icon } from "./Icon";
@@ -17,7 +18,7 @@ export function CoverPreview(props: { album: Album; onClose: () => void }) {
         dialog = element;
       }}
       class="cover-dialog"
-      aria-label={`Pochette de ${props.album.title}`}
+      aria-label={t("Pochette de {0}", props.album.title)}
       onCancel={(event) => {
         event.preventDefault();
         props.onClose();
@@ -36,7 +37,11 @@ export function CoverPreview(props: { album: Album; onClose: () => void }) {
           >
             {props.album.title}
           </h2>
-          <button class="icon-button quiet" aria-label="Fermer la pochette" onClick={props.onClose}>
+          <button
+            class="icon-button quiet"
+            aria-label={t("Fermer la pochette")}
+            onClick={props.onClose}
+          >
             <Icon name="close" />
           </button>
         </div>

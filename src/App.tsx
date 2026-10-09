@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import {
   createEffect,
   ErrorBoundary,
@@ -54,12 +55,12 @@ export function App() {
   const navigation = createNavigation(browserNavigationHost(), (hash) => {
     const source = parseRoute(hash);
     if (source.kind === "section")
-      return sections.find((s) => s.id === source.section)?.label ?? "Catalogue";
+      return sections.find((s) => s.id === source.section)?.label ?? t("Catalogue");
     if (source.kind === "artist")
-      return library.artists().find((a) => a.reference === source.reference)?.name ?? "Artiste";
+      return library.artists().find((a) => a.reference === source.reference)?.name ?? t("Artiste");
     if (source.kind === "album")
       return library.albums().find((a) => a.reference === source.reference)?.title ?? "Album";
-    return "Catalogue";
+    return t("Catalogue");
   });
   const [sidebar, setSidebar] = createSignal(true);
   const [filters, setFilters] = createSignal<Filters>({
@@ -100,8 +101,8 @@ export function App() {
   const backLink = navigation.backLink;
   const context = () =>
     ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
-      ? "Initiale de l’artiste · année de ses albums"
-      : "Initiale du titre · année de l’album";
+      ? t("Initiale de l’artiste · année de ses albums")
+      : t("Initiale du titre · année de l’album");
   const hasFilters = () => catalogRails(current());
   return (
     <div
@@ -131,21 +132,22 @@ export function App() {
       <header class="topbar">
         <button
           class="icon-button"
-          aria-label={sidebar() ? "Masquer la navigation" : "Afficher la navigation"}
+          aria-label={sidebar() ? t("Masquer la navigation") : t("Afficher la navigation")}
           aria-expanded={sidebar()}
           onClick={() => setSidebar(!sidebar())}
         >
           <Icon name="menu" />
         </button>
         <a class="wordmark" href="#/artists">
-          phémios<span>.</span>
+          {t("phémios")}
+          <span>.</span>
         </a>
         <label class="search">
           <Icon name="search" />
           <input
             type="search"
-            aria-label="Rechercher dans tous les champs du catalogue"
-            placeholder="Artiste, titre, pays, genre, tag…"
+            aria-label={t("Rechercher dans tous les champs du catalogue")}
+            placeholder={t("Artiste, titre, pays, genre, tag…")}
             value={filters().query}
             onInput={(event) => setFilters({ ...filters(), query: event.currentTarget.value })}
           />
@@ -153,8 +155,8 @@ export function App() {
         <a
           class="server-button settings-button"
           href="#/settings"
-          aria-label="Paramètres"
-          title="Paramètres"
+          aria-label={t("Paramètres")}
+          title={t("Paramètres")}
         >
           <span
             class="server-indicator"
@@ -168,27 +170,27 @@ export function App() {
         </a>
       </header>
       <Show when={sidebar()}>
-        <aside class="sidebar" aria-label="Navigation principale">
-          <p class="nav-label">BIBLIOTHÈQUE</p>
+        <aside class="sidebar" aria-label={t("Navigation principale")}>
+          <p class="nav-label">{t("BIBLIOTHÈQUE")}</p>
           <nav>
             <For each={sections}>
               {(item) => (
                 <>
                   <Show when={item.id === "favourites"}>
-                    <p class="nav-label">VOTRE MUSIQUE</p>
+                    <p class="nav-label">{t("VOTRE MUSIQUE")}</p>
                   </Show>
                   <Show when={item.id === "radio"}>
-                    <p class="nav-label">SOURCES MUSICALES</p>
+                    <p class="nav-label">{t("SOURCES MUSICALES")}</p>
                   </Show>
                   <Show when={item.id === "doctor"}>
-                    <p class="nav-label">OUTILS</p>
+                    <p class="nav-label">{t("OUTILS")}</p>
                   </Show>
                   <a
                     href={`#/${item.id}`}
                     aria-current={section() === item.id ? "page" : undefined}
                   >
                     <Icon name={item.symbol} />
-                    <span>{item.label}</span>
+                    <span>{t(item.label)}</span>
                   </a>
                 </>
               )}
@@ -197,31 +199,33 @@ export function App() {
           <div class="connection">
             <span class="status-dot" />
             {library.demo
-              ? "Aperçu hors ligne"
+              ? t("Aperçu hors ligne")
               : library.session()
-                ? "Bibliothèque Aède"
-                : "Cache local · hors ligne"}
+                ? t("Bibliothèque Aède")
+                : t("Cache local · hors ligne")}
             <small>
-              {principalArtists().length} artistes d’album · {library.albums().length} albums
+              {principalArtists().length} {t("artistes d’album ·")} {library.albums().length}{" "}
+              {t("albums")}{" "}
             </small>
             <Show when={library.mediaProgress()[1]}>
               <small>
-                Images {library.mediaProgress()[0]} / {library.mediaProgress()[1]}
+                {t("Images")} {library.mediaProgress()[0]} / {library.mediaProgress()[1]}
               </small>
             </Show>
             <Show when={library.mediaErrors()}>
               <small role="status">
-                {library.mediaErrors()} image(s) indisponible(s) · resynchronisez pour réessayer
+                {library.mediaErrors()}{" "}
+                {t("image(s) indisponible(s) · resynchronisez pour réessayer")}{" "}
               </small>
             </Show>
             <small>
-              <Show when={runtime()} fallback="Initialisation du pont…">
-                {runtime()?.native ? "Application desktop" : "Aperçu navigateur"} ·{" "}
+              <Show when={runtime()} fallback={t("Initialisation du pont…")}>
+                {runtime()?.native ? t("Application desktop") : t("Aperçu navigateur")} ·{" "}
                 {runtime()?.version}
               </Show>
             </small>
             <Show when={runtime.error}>
-              <small role="alert">Pont desktop indisponible</small>
+              <small role="alert">{t("Pont desktop indisponible")}</small>
             </Show>
           </div>
         </aside>
@@ -240,9 +244,9 @@ export function App() {
           }
         >
           <div class="empty">
-            <p>Connectez votre serveur Aède pour synchroniser la bibliothèque.</p>
+            <p>{t("Connectez votre serveur Aède pour synchroniser la bibliothèque.")}</p>
             <button class="primary" onClick={() => setConnectionPanel(true)}>
-              Configurer la connexion
+              {t("Configurer la connexion")}{" "}
             </button>
           </div>
         </Show>
@@ -264,7 +268,7 @@ export function App() {
             )}
             countLabel={
               current().kind === "section" && ["artists", "countries", "genres"].includes(section())
-                ? "artistes"
+                ? t("artistes")
                 : "albums"
             }
           />
@@ -274,17 +278,18 @@ export function App() {
             <Show when={backLink()}>
               {(link) => (
                 <a class="back" href={link().href} data-navigation-back>
-                  <Icon name="back" /> {link().label}
+                  <Icon name="back" />{" "}
+                  {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
                 </a>
               )}
             </Show>
-            <span>{library.busy() ? "Synchronisation…" : ""}</span>
+            <span>{library.busy() ? t("Synchronisation…") : ""}</span>
             <Show when={hasFilters()}>
               <SelectionCollection section={section()} filters={filters()} />
               <button
                 class="icon-button"
-                title="Inverser l’ordre alphabétique"
-                aria-label="Inverser l’ordre alphabétique"
+                title={t("Inverser l’ordre alphabétique")}
+                aria-label={t("Inverser l’ordre alphabétique")}
                 aria-pressed={reverse()}
                 onClick={() => setReverse(!reverse())}
               >
@@ -292,8 +297,8 @@ export function App() {
               </button>
               <button
                 class="icon-button"
-                title="Vue compacte"
-                aria-label="Vue compacte"
+                title={t("Vue compacte")}
+                aria-label={t("Vue compacte")}
                 aria-pressed={compact()}
                 onClick={() => setCompact(!compact())}
               >
@@ -320,7 +325,7 @@ export function App() {
             (library.localSession() || library.serverSession())
           }
         >
-          <div class="choices library-source" aria-label="Origine des données personnelles">
+          <div class="choices library-source" aria-label={t("Origine des données personnelles")}>
             <For each={["local", "server"] as const}>
               {(source) => (
                 <button
@@ -338,8 +343,10 @@ export function App() {
             <ErrorBoundary
               fallback={(error) => (
                 <div class="page" role="alert">
-                  <p>Cette page est indisponible : {String(error)}</p>
-                  <a href="#/artists">Revenir aux artistes</a>
+                  <p>
+                    {t("Cette page est indisponible :")} {String(error)}
+                  </p>
+                  <a href="#/artists">{t("Revenir aux artistes")}</a>
                 </div>
               )}
             >
@@ -386,7 +393,10 @@ export function App() {
                 </Show>
               </Show>
               <Show when={route.kind === "artist"}>
-                <Show when={selectedArtist()} fallback={<p class="empty">Artiste introuvable.</p>}>
+                <Show
+                  when={selectedArtist()}
+                  fallback={<p class="empty">{t("Artiste introuvable.")}</p>}
+                >
                   {(artist) => (
                     <ArtistPage
                       artist={artist()}
@@ -418,7 +428,10 @@ export function App() {
                 </Show>
               </Show>
               <Show when={route.kind === "album"}>
-                <Show when={selectedAlbum()} fallback={<p class="empty">Album introuvable.</p>}>
+                <Show
+                  when={selectedAlbum()}
+                  fallback={<p class="empty">{t("Album introuvable.")}</p>}
+                >
                   {(album) => (
                     <AlbumPage
                       album={album()}
@@ -435,8 +448,8 @@ export function App() {
               </Show>
               <Show when={route.kind === "not-found"}>
                 <div class="empty">
-                  <h1>Page introuvable</h1>
-                  <a href="#/artists">Revenir aux artistes</a>
+                  <h1>{t("Page introuvable")}</h1>
+                  <a href="#/artists">{t("Revenir aux artistes")}</a>
                 </div>
               </Show>
             </ErrorBoundary>

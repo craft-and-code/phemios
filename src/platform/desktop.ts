@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 
@@ -16,7 +17,7 @@ export async function getRuntimeInfo(): Promise<RuntimeInfo> {
   }
   const info = await invoke<RuntimeInfo>("runtime_info");
   if (info.bridgeVersion !== 1) {
-    throw new Error("Incompatible Phémios desktop bridge. Update the application.");
+    throw new Error(t("Incompatible Phémios desktop bridge. Update the application."));
   }
   return info;
 }
@@ -24,11 +25,11 @@ export async function getRuntimeInfo(): Promise<RuntimeInfo> {
 /** All native data operations carry the bridge version and stay on typed IPC. */
 export const isNative = () => isTauri();
 async function nativeCall<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
-  if (!isTauri()) throw new Error("La connexion Aède nécessite l’application desktop.");
+  if (!isTauri()) throw new Error(t("La connexion Aède nécessite l’application desktop."));
   try {
     return await invoke<T>(command, { version: 1, ...args });
   } catch (error) {
-    throw new Error(typeof error === "string" ? error : "Opération native impossible.");
+    throw new Error(typeof error === "string" ? t(error) : t("Opération native impossible."));
   }
 }
 export const loginAede = (server: string, username: string, password: string) =>

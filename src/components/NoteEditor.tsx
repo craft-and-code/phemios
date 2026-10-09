@@ -1,16 +1,17 @@
+import { t, locale } from "../i18n";
 import { createEffect, createSignal, For, onMount, onCleanup, Show } from "solid-js";
 import type { mountNoteEditor, NoteCommand } from "../editor/milkdown";
 import { Icon } from "./Icon";
 const commands: readonly { name: NoteCommand; label: string; icon: string }[] = [
-  { name: "bold", label: "Gras", icon: "bold" },
-  { name: "italic", label: "Italique", icon: "italic" },
-  { name: "heading", label: "Titre", icon: "heading" },
-  { name: "paragraph", label: "Paragraphe", icon: "paragraph" },
-  { name: "bullet", label: "Liste à puces", icon: "list" },
-  { name: "ordered", label: "Liste numérotée", icon: "ordered" },
-  { name: "quote", label: "Citation", icon: "quote" },
-  { name: "undo", label: "Annuler la modification", icon: "undo" },
-  { name: "redo", label: "Rétablir la modification", icon: "redo" },
+  { name: "bold", label: t("Gras"), icon: "bold" },
+  { name: "italic", label: t("Italique"), icon: "italic" },
+  { name: "heading", label: t("Titre"), icon: "heading" },
+  { name: "paragraph", label: t("Paragraphe"), icon: "paragraph" },
+  { name: "bullet", label: t("Liste à puces"), icon: "list" },
+  { name: "ordered", label: t("Liste numérotée"), icon: "ordered" },
+  { name: "quote", label: t("Citation"), icon: "quote" },
+  { name: "undo", label: t("Annuler la modification"), icon: "undo" },
+  { name: "redo", label: t("Rétablir la modification"), icon: "redo" },
 ];
 /** The editor is loaded only on detail pages and destroyed on navigation. */
 export function NoteEditor(props: {
@@ -43,10 +44,12 @@ export function NoteEditor(props: {
       setReady(true);
       props.onUnavailable(false);
     } catch (failure) {
-      if (!disposed) setError(failure instanceof Error ? failure.message : "Éditeur indisponible.");
+      if (!disposed)
+        setError(failure instanceof Error ? failure.message : t("Éditeur indisponible."));
     }
   });
   createEffect(() => {
+    locale();
     if (ready()) editor?.set(props.value, props.disabled);
   });
   onCleanup(() => {
@@ -59,14 +62,14 @@ export function NoteEditor(props: {
       classList={{ "note-readonly": props.disabled, "note-view": props.viewOnly ?? false }}
     >
       <Show when={!props.viewOnly}>
-        <div class="note-toolbar" role="toolbar" aria-label="Mise en forme des notes">
+        <div class="note-toolbar" role="toolbar" aria-label={t("Mise en forme des notes")}>
           <For each={commands}>
             {(item) => (
               <button
                 type="button"
                 class="icon-button"
-                title={item.label}
-                aria-label={item.label}
+                title={t(item.label)}
+                aria-label={t(item.label)}
                 aria-pressed={(revision(), ready() && editor?.active(item.name)) ?? false}
                 disabled={props.disabled || !ready()}
                 onPointerDown={(event) => event.preventDefault()}
@@ -85,10 +88,12 @@ export function NoteEditor(props: {
         class="note-document"
       />
       <Show when={!ready() && !error()}>
-        <small>Chargement de l’éditeur…</small>
+        <small>{t("Chargement de l’éditeur…")}</small>
       </Show>
       <Show when={error()}>
-        <p role="alert">Éditeur indisponible : {error()}</p>
+        <p role="alert">
+          {t("Éditeur indisponible :")} {error()}
+        </p>
         <pre>{props.value}</pre>
       </Show>
     </div>

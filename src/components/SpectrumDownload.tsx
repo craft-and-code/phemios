@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, Show } from "solid-js";
 import { downloadSpectrumAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
@@ -11,9 +12,9 @@ export function SpectrumDownload(props: { reference: string }) {
     setBusy(true);
     setMessage("");
     try {
-      setMessage(`Spectre téléchargé : ${await downloadSpectrumAede(props.reference)}`);
+      setMessage(t("Spectre téléchargé : {0}", await downloadSpectrumAede(props.reference)));
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Téléchargement impossible.");
+      setMessage(e instanceof Error ? e.message : t("Téléchargement impossible."));
     } finally {
       setBusy(false);
     }
@@ -22,8 +23,8 @@ export function SpectrumDownload(props: { reference: string }) {
     <div class="analysis-download">
       <button
         class="icon-button quiet"
-        title="Télécharger le spectre"
-        aria-label="Télécharger le spectre"
+        title={t("Télécharger le spectre")}
+        aria-label={t("Télécharger le spectre")}
         disabled={!library.sessionFor(props.reference) || busy()}
         onClick={() => void download()}
       >

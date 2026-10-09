@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { SettingsLibraries } from "./SettingsLibraries";
 import { SettingsAccounts } from "./SettingsAccounts";
@@ -10,24 +11,24 @@ export function SettingsPage() {
     library = useLibrary();
   return (
     <section class="page settings-page">
-      <div class="choices settings-tabs" aria-label="Paramètres">
+      <div class="choices settings-tabs" aria-label={t("Paramètres")}>
         <For
           each={[
-            { id: "libraries", label: "Bibliothèques" },
-            { id: "accounts", label: "Comptes" },
-            { id: "services", label: "Sources externes" },
-            { id: "appearance", label: "Apparence" },
+            { id: "libraries", label: t("Bibliothèques") },
+            { id: "accounts", label: t("Comptes") },
+            { id: "services", label: t("Sources externes") },
+            { id: "appearance", label: t("Apparence") },
           ]}
         >
           {(item) => (
             <button aria-pressed={tab() === item.id} onClick={() => setTab(item.id)}>
-              {item.label}
+              {t(item.label)}
             </button>
           )}
         </For>
       </div>
       <Show when={["accounts", "services"].includes(tab())}>
-        <div class="choices" aria-label="Bibliothèque à administrer">
+        <div class="choices" aria-label={t("Bibliothèque à administrer")}>
           <For each={["local", "server"] as const}>
             {(source) => (
               <button

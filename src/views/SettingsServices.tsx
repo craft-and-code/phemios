@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, createSignal, Show } from "solid-js";
 import { localStatus, saveLocalKeys, requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
@@ -19,10 +20,11 @@ export function SettingsServices() {
     library.session()?.account.role === "admin" && library.session()?.server.startsWith("http://");
   return (
     <div class="settings-card">
-      <h2>Sources externes</h2>
+      <h2>{t("Sources externes")}</h2>
       <p>
-        Les clés ci-dessous sont stockées dans les données privées de Phémios et utilisées
-        uniquement par le moteur local. Les clés d’un serveur distant se configurent sur ce serveur.
+        {t(
+          "Les clés ci-dessous sont stockées dans les données privées de Phémios et utilisées uniquement par le moteur local. Les clés d’un serveur distant se configurent sur ce serveur.",
+        )}{" "}
       </p>
       <form
         onSubmit={async (e) => {
@@ -37,7 +39,7 @@ export function SettingsServices() {
             setRemoveAcoustid(false);
             await refetch();
             setMessage(
-              "Clés enregistrées. Désactivez puis réactivez le moteur local pour les appliquer.",
+              t("Clés enregistrées. Désactivez puis réactivez le moteur local pour les appliquer."),
             );
           } catch (error) {
             setMessage(String(error));
@@ -47,7 +49,7 @@ export function SettingsServices() {
         }}
       >
         <label>
-          Fanart.tv · {status()?.keys.fanart ? "configurée" : "absente"}
+          {t("Fanart.tv ·")} {status()?.keys.fanart ? t("configurée") : t("absente")}
           <input
             type="password"
             autocomplete="off"
@@ -61,10 +63,10 @@ export function SettingsServices() {
             checked={removeFanart()}
             onChange={(e) => setRemoveFanart(e.currentTarget.checked)}
           />
-          Supprimer la clé Fanart.tv
+          {t("Supprimer la clé Fanart.tv")}{" "}
         </label>
         <label>
-          AcoustID · {status()?.keys.acoustid ? "configurée" : "absente"}
+          {t("AcoustID ·")} {status()?.keys.acoustid ? t("configurée") : t("absente")}
           <input
             type="password"
             autocomplete="off"
@@ -78,16 +80,17 @@ export function SettingsServices() {
             checked={removeAcoustid()}
             onChange={(e) => setRemoveAcoustid(e.currentTarget.checked)}
           />
-          Supprimer la clé AcoustID
+          {t("Supprimer la clé AcoustID")}{" "}
         </label>
-        <button disabled={busy() || library.demo}>Enregistrer les clés locales</button>
-        <small>Un champ vide conserve la clé existante.</small>
+        <button disabled={busy() || library.demo}>{t("Enregistrer les clés locales")}</button>
+        <small>{t("Un champ vide conserve la clé existante.")}</small>
       </form>
       <p class="muted">
-        MusicBrainz, Cover Art Archive, Wikipédia et Wikidata ne demandent pas de clé API pour les
-        passes utilisées par Aède.
+        {t(
+          "MusicBrainz, Cover Art Archive, Wikipédia et Wikidata ne demandent pas de clé API pour les passes utilisées par Aède.",
+        )}{" "}
       </p>
-      <h3>Enrichir la bibliothèque sélectionnée</h3>
+      <h3>{t("Enrichir la bibliothèque sélectionnée")}</h3>
       <div class="settings-actions">
         <label class="check">
           <input
@@ -95,7 +98,7 @@ export function SettingsServices() {
             checked={summaries()}
             onChange={(e) => setSummaries(e.currentTarget.checked)}
           />
-          Biographies
+          {t("Biographies")}{" "}
         </label>
         <label class="check">
           <input
@@ -103,7 +106,7 @@ export function SettingsServices() {
             checked={covers()}
             onChange={(e) => setCovers(e.currentTarget.checked)}
           />
-          Pochettes
+          {t("Pochettes")}{" "}
         </label>
         <label class="check">
           <input
@@ -111,7 +114,7 @@ export function SettingsServices() {
             checked={fanartPass()}
             onChange={(e) => setFanartPass(e.currentTarget.checked)}
           />
-          Fanart.tv
+          {t("Fanart.tv")}{" "}
         </label>
         <label class="check">
           <input
@@ -119,7 +122,7 @@ export function SettingsServices() {
             checked={lyrics()}
             onChange={(e) => setLyrics(e.currentTarget.checked)}
           />
-          Paroles
+          {t("Paroles")}{" "}
         </label>
       </div>
       <button
@@ -146,7 +149,11 @@ export function SettingsServices() {
               library.source(),
             );
             setMessage(
-              `Tâche #${job.task_id} lancée sur ${library.source() === "local" ? "Local" : "Serveur"}.`,
+              t(
+                "Tâche #{0} lancée sur {1}.",
+                job.task_id,
+                library.source() === "local" ? "Local" : "Serveur",
+              ),
             );
           } catch (e) {
             setMessage(String(e));
@@ -155,16 +162,18 @@ export function SettingsServices() {
           }
         }}
       >
-        Lancer l’enrichissement
+        {t("Lancer l’enrichissement")}{" "}
       </button>
       <p class="muted">
-        Cette action contacte les services externes. Aucun enrichissement n’est lancé en ouvrant la
-        bibliothèque ou les Paramètres.
+        {t(
+          "Cette action contacte les services externes. Aucun enrichissement n’est lancé en ouvrant la bibliothèque ou les Paramètres.",
+        )}{" "}
       </p>
       <Show when={!administrative()}>
         <p class="notice">
-          Un administrateur Aède HTTP local est nécessaire pour lancer une tâche. Sur un serveur
-          HTTPS, utilisez la commande fetch du serveur.
+          {t(
+            "Un administrateur Aède HTTP local est nécessaire pour lancer une tâche. Sur un serveur HTTPS, utilisez la commande fetch du serveur.",
+          )}{" "}
         </p>
       </Show>
       <p role="status">{message()}</p>

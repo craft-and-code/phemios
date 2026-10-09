@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createEffect, createSignal, type Accessor } from "solid-js";
 import type { PlaybackState } from "./playback-state";
 /** Keep a committed cursor stable until the actor acknowledges its seek ticket, coalescing rapid choices. */
@@ -57,7 +58,7 @@ export function createSeekProgress(
         if (epoch !== lifetime) break;
         const ticket = (reply as { seek_id?: unknown } | null)?.seek_id;
         if (!Number.isSafeInteger(ticket) || Number(ticket) <= 0)
-          throw new Error("Déplacement non confirmé ; mettez à jour puis redémarrez Phémios.");
+          throw new Error(t("Déplacement non confirmé ; mettez à jour puis redémarrez Phémios."));
         if (pending()?.serial === selectedSerial)
           setPending({
             reference,
@@ -70,7 +71,7 @@ export function createSeekProgress(
       if (epoch === lifetime) {
         setPending(undefined);
         queue = undefined;
-        failure(error instanceof Error ? error.message : "Déplacement impossible.");
+        failure(error instanceof Error ? error.message : t("Déplacement impossible."));
       }
     } finally {
       if (epoch === lifetime) running = false;

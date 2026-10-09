@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
@@ -23,7 +24,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
       await saveBrowsingCollection(name(), expression, () => account === library.session());
       if (account !== library.session()) return;
       setDraft(undefined);
-      setMessage(`Collection « ${name()} » enregistrée. Elle suit ces filtres.`);
+      setMessage(t("Collection « {0} » enregistrée. Elle suit ces filtres.", name()));
     } catch (e) {
       if (account === library.session()) setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -35,8 +36,8 @@ export function SelectionCollection(props: { section: string; filters: Filters }
       <button
         class="icon-button"
         disabled={!writable()}
-        aria-label="Créer une collection dynamique depuis ces filtres"
-        title="Créer une collection depuis ces filtres"
+        aria-label={t("Créer une collection dynamique depuis ces filtres")}
+        title={t("Créer une collection depuis ces filtres")}
         onClick={() => {
           setName("");
           setError("");
@@ -62,7 +63,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                 dialog = element;
               }}
               class="collection-dialog"
-              aria-label="Créer une collection dynamique"
+              aria-label={t("Créer une collection dynamique")}
               onCancel={(e) => {
                 e.preventDefault();
                 if (!busy()) setDraft(undefined);
@@ -79,12 +80,13 @@ export function SelectionCollection(props: { section: string; filters: Filters }
               >
                 <div class="section-heading">
                   <h2>
-                    Créer une collection · {library.source() === "local" ? "Local" : "Serveur"}
+                    {t("Créer une collection ·")}{" "}
+                    {library.source() === "local" ? t("Local") : t("Serveur")}
                   </h2>
                   <button
                     type="button"
                     class="icon-button quiet"
-                    aria-label="Fermer"
+                    aria-label={t("Fermer")}
                     disabled={busy()}
                     onClick={() => setDraft(undefined)}
                   >
@@ -92,11 +94,12 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                   </button>
                 </div>
                 <p>
-                  Les années, lettres, pays, genre et recherche actuellement sélectionnés seront
-                  conservés. Les futurs albums correspondants rejoindront cette collection.
+                  {t(
+                    "Les années, lettres, pays, genre et recherche actuellement sélectionnés seront conservés. Les futurs albums correspondants rejoindront cette collection.",
+                  )}{" "}
                 </p>
                 <label>
-                  Nom
+                  {t("Nom")}{" "}
                   <input
                     autofocus
                     required
@@ -107,7 +110,7 @@ export function SelectionCollection(props: { section: string; filters: Filters }
                 </label>
                 <p role="alert">{error()}</p>
                 <button class="primary" disabled={!writable() || busy()}>
-                  Créer la collection
+                  {t("Créer la collection")}{" "}
                 </button>
               </form>
             </dialog>

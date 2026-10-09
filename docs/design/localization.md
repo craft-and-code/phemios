@@ -1,0 +1,9 @@
+# Presentation languages
+
+Phémios supports French and English without an additional runtime dependency. The Settings → Appearance language preference is validated together with the three device-local colours, persisted in `phemios.appearance`, and applied at startup and live. A language change neither reloads the WebView nor reconnects accounts or restarts playback.
+
+`src/i18n/index.ts` exposes the reactive locale, exact message lookup and numbered parameter substitution. French messages are the source keys; `en.json` contains English presentation messages, including known native errors. Unknown external service errors remain verbatim rather than being guessed. Parameter replacement runs once, preserving inserted titles, paths and notes, even when they contain placeholder-like text. Static presentation descriptors are translated again at rendering so existing navigation and toolbar owners update live.
+
+Use `t()` only for product messages. Catalog identities, filter values, collection rules, artist/album/track titles, credited names, genre labels, station names, tags, personal Markdown and attributed biographies remain as supplied. Countries display through `Intl.DisplayNames` while their canonical filter values stay stable. Counts, decimal and binary file sizes use the active locale; durations retain the established clock or labelled time units. The document language follows the setting. macOS-provided menus/dialogs follow the operating system locale.
+
+The dictionary is a coherent exception to the usual module length guideline: keeping complete messages in one typed JSON catalog makes missing translations and placeholder parity auditable without introducing another framework. Behavioral tests verify live reactive changes, saved language restoration, user-data preservation, measurement formats and coverage of literal UI messages.

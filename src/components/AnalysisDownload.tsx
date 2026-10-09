@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, Show } from "solid-js";
 import { downloadAnalysisAede } from "../platform/desktop";
 import { Icon } from "./Icon";
@@ -19,7 +20,7 @@ export function AnalysisDownload(props: {
     try {
       setPath(await downloadAnalysisAede(props.reference));
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : "Téléchargement impossible.");
+      setFailure(error instanceof Error ? error.message : t("Téléchargement impossible."));
     } finally {
       setBusy(false);
     }
@@ -33,19 +34,22 @@ export function AnalysisDownload(props: {
         aria-busy={busy()}
         aria-label={
           busy()
-            ? "Téléchargement du rapport…"
-            : `Télécharger le JSON ${props.album ? "de l’album" : "du titre"}`
+            ? t("Téléchargement du rapport…")
+            : t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))
         }
-        title={`Télécharger le JSON ${props.album ? "de l’album" : "du titre"}`}
+        title={t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))}
       >
         <Icon name="download" />
       </button>
       <Show when={path()}>
-        <small role="status">Enregistré : {path()}</small>
+        <small role="status">
+          {t("Enregistré :")} {path()}
+        </small>
       </Show>
       <Show when={failure()}>
         <small role="alert">
-          {failure()} Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin.
+          {failure()}{" "}
+          {t("Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin.")}{" "}
         </small>
       </Show>
     </div>

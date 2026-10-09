@@ -1,3 +1,5 @@
+import { changeLanguage } from "../i18n";
+import { t } from "../i18n";
 export interface Preferences {
   language: "fr" | "en";
   background: string;
@@ -15,7 +17,7 @@ export function readPreferences(storage: Pick<Storage, "getItem">): Preferences 
   const raw = storage.getItem("phemios.appearance");
   if (!raw) return { ...defaultPreferences };
   const value: unknown = JSON.parse(raw);
-  if (!value || typeof value !== "object") throw new Error("Préférences illisibles.");
+  if (!value || typeof value !== "object") throw new Error(t("Préférences illisibles."));
   const v = value as Record<string, unknown>;
   if (
     !["fr", "en"].includes(String(v.language)) ||
@@ -23,12 +25,12 @@ export function readPreferences(storage: Pick<Storage, "getItem">): Preferences 
       (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c),
     )
   )
-    throw new Error("Préférences invalides.");
+    throw new Error(t("Préférences invalides."));
   return v as unknown as Preferences;
 }
 export function applyPreferences(value: Preferences) {
   const root = document.documentElement;
-  root.lang = value.language;
+  changeLanguage(value.language);
   for (const [key, color] of Object.entries(value))
     if (key !== "language") root.style.setProperty(`--${key}`, color);
   const luminance = (color: string) =>

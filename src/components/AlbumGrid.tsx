@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource, sourceLabel } from "../library/sources";
 import { For, Show } from "solid-js";
 import type { Album } from "../library/types";
@@ -8,7 +9,9 @@ export function AlbumGrid(props: { albums: readonly Album[] }) {
   return (
     <Show
       when={props.albums.length}
-      fallback={<p class="empty">Aucun album dans cette sélection. Élargissez vos filtres.</p>}
+      fallback={
+        <p class="empty">{t("Aucun album dans cette sélection. Élargissez vos filtres.")}</p>
+      }
     >
       <div class="album-grid">
         <For each={props.albums}>
@@ -17,7 +20,7 @@ export function AlbumGrid(props: { albums: readonly Album[] }) {
               <Artwork album={album} />
               <strong>{album.title}</strong>
               <small>
-                {album.year ?? "Année inconnue"}{" "}
+                {album.year ?? t("Année inconnue")}{" "}
                 <span class="source-badge">{sourceLabel(referenceSource(album.reference))}</span>
               </small>
             </a>

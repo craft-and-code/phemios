@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createMemo, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { recentAlbums } from "../library/recent-albums";
@@ -20,13 +21,15 @@ export function RecentPage(props: { query: string }) {
   return (
     <section class="page recent-page">
       <p class="muted">
-        30 derniers jours · date d’entrée dans le catalogue · {albums().length} album
+        {t("30 derniers jours · date d’entrée dans le catalogue ·")} {albums().length} {t("album")}{" "}
         {albums().length > 1 ? "s" : ""}
       </p>
       <Show when={unknown()}>
         <p class="notice">
-          {unknown()} albums ont une date d’ajout inconnue. Les nouveaux ajouts seront datés lors
-          des prochains scans Aède.
+          {unknown()}{" "}
+          {t(
+            "albums ont une date d’ajout inconnue. Les nouveaux ajouts seront datés lors des prochains scans Aède.",
+          )}{" "}
         </p>
       </Show>
       <AlbumGrid albums={albums()} />

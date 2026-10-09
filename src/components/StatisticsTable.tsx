@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, createSignal, For, Show } from "solid-js";
 import { numberLabel, type Page, type Statistics } from "../library/statistics";
 export interface StatRow {
@@ -25,14 +26,17 @@ export function StatisticsTable(props: {
       <h2>{props.title}</h2>
       <small>{props.unit}</small>
       <Show when={report.loading}>
-        <p role="status">Chargement…</p>
+        <p role="status">{t("Chargement…")}</p>
       </Show>
       <Show when={report.error}>
         <p role="alert">{String(report.error)}</p>
-        <button onClick={() => refetch()}>Réessayer</button>
+        <button onClick={() => refetch()}>{t("Réessayer")}</button>
       </Show>
       <Show when={!report.loading && !report.error}>
-        <Show when={page().items.length} fallback={<p class="muted">Aucune donnée enregistrée.</p>}>
+        <Show
+          when={page().items.length}
+          fallback={<p class="muted">{t("Aucune donnée enregistrée.")}</p>}
+        >
           <ol>
             <For each={page().items}>
               {(row) => (
@@ -59,7 +63,7 @@ export function StatisticsTable(props: {
             disabled={offset() === 0 || report.loading}
             onClick={() => setOffset(Math.max(0, offset() - 50))}
           >
-            Précédent
+            {t("Précédent")}{" "}
           </button>
           <span>
             {offset() + 1}–{Math.min(offset() + 50, page().total)} / {numberLabel(page().total)}
@@ -68,7 +72,7 @@ export function StatisticsTable(props: {
             disabled={offset() + 50 >= page().total || report.loading}
             onClick={() => setOffset(offset() + 50)}
           >
-            Suivant
+            {t("Suivant")}{" "}
           </button>
         </div>
       </Show>

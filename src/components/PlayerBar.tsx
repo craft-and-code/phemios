@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { PlayingBars } from "./PlayingBars";
@@ -14,18 +15,18 @@ export function PlayerBar() {
   const position = player.seekPosition;
   const active = () => ["playing", "paused"].includes(state().status);
   const disabled = () => player.busy() || !active();
-  const issue = () => player.error() || state().error;
+  const issue = () => t(player.error() || state().error || "");
   const status = () =>
     ({
-      idle: "Choisissez un album ou une piste.",
-      connecting: "Connexion du flux audio…",
-      playing: "Lecture",
-      paused: "En pause",
-      ended: "Fin de la sélection",
-      error: "Lecture interrompue",
+      idle: t("Choisissez un album ou une piste."),
+      connecting: t("Connexion du flux audio…"),
+      playing: t("Lecture"),
+      paused: t("En pause"),
+      ended: t("Fin de la sélection"),
+      error: t("Lecture interrompue"),
     })[state().status];
   return (
-    <footer class="player-bar" aria-label="Lecture">
+    <footer class="player-bar" aria-label={t("Lecture")}>
       <div class="now-playing">
         <Show
           when={player.current()?.album}
@@ -39,7 +40,7 @@ export function PlayerBar() {
             <a
               class="playing-cover"
               href={`#/album/${encodeURIComponent(current().reference)}`}
-              aria-label={`Ouvrir ${current().title}`}
+              aria-label={t("Ouvrir {0}", current().title)}
             >
               <Artwork album={current()} thumbnail />
             </a>
@@ -55,7 +56,7 @@ export function PlayerBar() {
               )}
             </Show>
             <PlayingBars reference={player.current()?.reference ?? ""} />
-            {player.current()?.title ?? "Aucun morceau en lecture"}
+            {player.current()?.title ?? t("Aucun morceau en lecture")}
           </strong>
           <small>
             {player.current()?.artist} {player.current() ? "· " : ""}
@@ -73,15 +74,15 @@ export function PlayerBar() {
           <button
             class="icon-button"
             disabled
-            aria-label="Lecture aléatoire"
-            title="Lecture aléatoire : prochain raccordement"
+            aria-label={t("Lecture aléatoire")}
+            title={t("Lecture aléatoire : prochain raccordement")}
           >
             <Icon name="shuffle" />
           </button>
           <button
             class="icon-button"
             disabled={disabled()}
-            aria-label="Morceau précédent"
+            aria-label={t("Morceau précédent")}
             onClick={() => void player.action("previous")}
           >
             <Icon name="previous" />
@@ -95,10 +96,10 @@ export function PlayerBar() {
             }
             aria-label={
               state().status === "playing"
-                ? "Mettre en pause"
+                ? t("Mettre en pause")
                 : active()
-                  ? "Reprendre la lecture"
-                  : "Lancer la lecture"
+                  ? t("Reprendre la lecture")
+                  : t("Lancer la lecture")
             }
             onClick={() =>
               void (state().status === "playing"
@@ -115,7 +116,7 @@ export function PlayerBar() {
           <button
             class="icon-button"
             disabled={disabled() || state().index + 1 >= state().total}
-            aria-label="Morceau suivant"
+            aria-label={t("Morceau suivant")}
             onClick={() => void player.action("next")}
           >
             <Icon name="next" />
@@ -123,8 +124,8 @@ export function PlayerBar() {
           <button
             class="icon-button"
             disabled
-            aria-label="Répétition"
-            title="Répétition : prochain raccordement"
+            aria-label={t("Répétition")}
+            title={t("Répétition : prochain raccordement")}
           >
             <Icon name="repeat" />
           </button>
@@ -134,7 +135,7 @@ export function PlayerBar() {
               player.busy() ||
               !["playing", "paused", "connecting", "ended", "error"].includes(state().status)
             }
-            aria-label="Arrêter la lecture"
+            aria-label={t("Arrêter la lecture")}
             onClick={() => void player.action("stop")}
           >
             <Icon name="stop" />
@@ -149,7 +150,7 @@ export function PlayerBar() {
             step="1000"
             value={position()}
             disabled={(!active() && !player.seeking()) || player.busy() || !state().duration_ms}
-            aria-label="Position de lecture"
+            aria-label={t("Position de lecture")}
             onInput={(event) => player.previewSeek(Number(event.currentTarget.value))}
             onChange={(event) => {
               const selected = Number(event.currentTarget.value);
@@ -161,7 +162,7 @@ export function PlayerBar() {
           <button
             class="time-toggle"
             aria-label={
-              player.remaining() ? "Afficher la durée totale" : "Afficher le temps restant"
+              player.remaining() ? t("Afficher la durée totale") : t("Afficher le temps restant")
             }
             aria-pressed={player.remaining()}
             onClick={player.toggleTime}
@@ -176,16 +177,16 @@ export function PlayerBar() {
         <details class="audio-settings">
           <summary
             class="icon-button"
-            aria-label="Réglages audio"
-            title="Sortie et mode de lecture"
+            aria-label={t("Réglages audio")}
+            title={t("Sortie et mode de lecture")}
           >
             <Icon name="settings" />
           </summary>
           <div class="audio-settings-panel">
             <label>
-              Sortie audio
+              {t("Sortie audio")}{" "}
               <select
-                aria-label="Sortie audio"
+                aria-label={t("Sortie audio")}
                 disabled={!player.ready() || player.busy()}
                 value={player.device()}
                 onFocus={() => {
@@ -193,12 +194,12 @@ export function PlayerBar() {
                 }}
                 onChange={(e) => void player.chooseOutput(e.currentTarget.value)}
               >
-                <option value="">Sortie système</option>
+                <option value="">{t("Sortie système")}</option>
                 <For each={player.outputs()}>
                   {(output) => (
                     <option value={output.id}>
                       {output.name}
-                      {output.default ? " (par défaut)" : ""}
+                      {output.default ? t(" (par défaut)") : ""}
                     </option>
                   )}
                 </For>
@@ -206,38 +207,39 @@ export function PlayerBar() {
             </label>
             <button
               class="icon-button"
-              aria-label="Actualiser les sorties audio"
-              title="Actualiser les sorties audio"
+              aria-label={t("Actualiser les sorties audio")}
+              title={t("Actualiser les sorties audio")}
               disabled={!player.ready() || player.busy()}
               onClick={() => void player.discover()}
             >
               <Icon name="refresh" />
             </button>
             <label>
-              Mode de lecture
+              {t("Mode de lecture")}{" "}
               <select
-                aria-label="Mode de lecture"
+                aria-label={t("Mode de lecture")}
                 disabled={!player.ready() || player.busy()}
                 value={player.policy()}
                 onChange={(e) => void player.choosePolicy(e.currentTarget.value)}
               >
-                <option value="without-effects">Sans DSP</option>
-                <option value="dsp">DSP · normalisation album</option>
+                <option value="without-effects">{t("Sans DSP")}</option>
+                <option value="dsp">{t("DSP · normalisation album")}</option>
                 <option value="bit-perfect" disabled>
-                  Bit-perfect · indisponible sur ce flux
+                  {t("Bit-perfect · indisponible sur ce flux")}{" "}
                 </option>
               </select>
             </label>
             <small>
-              Sans DSP : effets désactivés ; adaptation au format de la sortie et volume restent
-              actifs. Le flux PCM distant et la sortie système ne garantissent pas le bit-perfect.
+              {t(
+                "Sans DSP : effets désactivés ; adaptation au format de la sortie et volume restent actifs. Le flux PCM distant et la sortie système ne garantissent pas le bit-perfect.",
+              )}{" "}
             </small>
           </div>
         </details>
         <button
           class="speaker-button"
           disabled={!player.ready() && !active()}
-          aria-label={state().volume === 0 ? "Rétablir le son" : "Couper le son"}
+          aria-label={state().volume === 0 ? t("Rétablir le son") : t("Couper le son")}
           aria-pressed={state().volume === 0}
           onClick={() => void player.toggleMute()}
         >
@@ -250,7 +252,7 @@ export function PlayerBar() {
           step="0.01"
           value={state().volume}
           disabled={!player.ready() && !active()}
-          aria-label="Volume"
+          aria-label={t("Volume")}
           onInput={(e) => void player.volume(Number(e.currentTarget.value))}
         />
       </div>

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createEffect, createMemo, createSignal, on, type Accessor } from "solid-js";
 /** Shell-owned page state survives detail remounts; new search/session scopes restart at zero. */
 export function createTrackPaging(query: Accessor<string>, session: Accessor<unknown>) {
@@ -11,7 +12,7 @@ export function createTrackPaging(query: Accessor<string>, session: Accessor<unk
   );
   const setOffset = (value: number) => {
     if (!Number.isSafeInteger(value) || value < 0 || value % 50 !== 0)
-      throw new Error("Page de pistes invalide.");
+      throw new Error(t("Page de pistes invalide."));
     set(value);
   };
   return { offset, setOffset };

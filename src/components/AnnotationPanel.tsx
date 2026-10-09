@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import {
   createEffect,
   createMemo,
@@ -100,7 +101,14 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       await held.write({ [field]: value } as AnnotationPatch);
       if (current(held))
         setMessage(
-          `Étoiles et favori de ${props.kind === "artist" ? "cet artiste" : props.kind === "track" ? "ce titre" : "cet album"} enregistrés dans Aède.`,
+          t(
+            "Étoiles et favori de {0} enregistrés dans Aède.",
+            props.kind === "artist"
+              ? t("cet artiste")
+              : props.kind === "track"
+                ? t("ce titre")
+                : t("cet album"),
+          ),
         );
     } catch (error) {
       if (!current(held)) return;
@@ -109,7 +117,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         if (field === "rating") setRating(saved?.rating ?? null);
         else setFavourite(saved?.loved ?? false);
       }
-      setFailure(error instanceof Error ? error.message : "Enregistrement impossible.");
+      setFailure(error instanceof Error ? error.message : t("Enregistrement impossible."));
     }
   }
   async function saveNotes() {
@@ -127,12 +135,12 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       if (current(held)) {
         setSavedNote(currentNote);
         setSavedTags(currentTags);
-        setMessage("Notes et tags enregistrés dans votre compte Aède.");
+        setMessage(t("Notes et tags enregistrés dans votre compte Aède."));
         setEditing(false);
       }
     } catch (error) {
       if (current(held))
-        setFailure(error instanceof Error ? error.message : "Enregistrement impossible.");
+        setFailure(error instanceof Error ? error.message : t("Enregistrement impossible."));
     } finally {
       if (current(held)) setSavingNotes(false);
     }
@@ -149,23 +157,29 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   return (
     <section class="annotation-panel">
       <h2>
-        Annotations de{" "}
-        {props.kind === "artist" ? "l’artiste" : props.kind === "track" ? "la piste" : "l’album"}
+        {t("Annotations de")}{" "}
+        {props.kind === "artist"
+          ? t("l’artiste")
+          : props.kind === "track"
+            ? "la piste"
+            : t("l’album")}
       </h2>
       <Show when={!library.sessionFor(props.reference)}>
-        <p class="notice">Connectez-vous pour enregistrer vos annotations.</p>
+        <p class="notice">{t("Connectez-vous pour enregistrer vos annotations.")}</p>
       </Show>
       <Show when={annotation.error}>
-        <p role="alert">Annotations illisibles : {String(annotation.error)}</p>
-        <button onClick={() => refetch()}>Réessayer les annotations</button>
+        <p role="alert">
+          {t("Annotations illisibles :")} {String(annotation.error)}
+        </p>
+        <button onClick={() => refetch()}>{t("Réessayer les annotations")}</button>
       </Show>
       <div class="annotation-controls">
-        <fieldset aria-label="Note personnelle" disabled={blocked()}>
+        <fieldset aria-label={t("Note personnelle")} disabled={blocked()}>
           <div class="stars">
             <For each={[1, 2, 3, 4, 5]}>
               {(value) => (
                 <button
-                  aria-label={`${value} étoile(s)`}
+                  aria-label={t("{0} étoile(s)", value)}
                   aria-pressed={rating() === value}
                   classList={{ selected: value <= (rating() ?? 0) }}
                   onClick={() => {
@@ -183,8 +197,8 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         <button
           disabled={blocked()}
           class="annotation-heart"
-          aria-label={favourite() ? "Retirer des favoris" : "Ajouter aux favoris"}
-          title={favourite() ? "Retirer des favoris" : "Ajouter aux favoris"}
+          aria-label={favourite() ? t("Retirer des favoris") : t("Ajouter aux favoris")}
+          title={favourite() ? t("Retirer des favoris") : t("Ajouter aux favoris")}
           aria-pressed={favourite()}
           onClick={() => {
             const selected = !favourite();
@@ -196,13 +210,13 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         </button>
       </div>
       <div class="section-heading annotation-text-heading">
-        <h3>Tags et notes personnelles</h3>
+        <h3>{t("Tags et notes personnelles")}</h3>
         <Show when={!editing()}>
           <button
             class="icon-button quiet"
             disabled={blocked()}
-            aria-label="Modifier les tags et notes"
-            title="Modifier les tags et notes"
+            aria-label={t("Modifier les tags et notes")}
+            title={t("Modifier les tags et notes")}
             onClick={() => {
               setEditorUnavailable(true);
               setEditing(true);
@@ -216,10 +230,13 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         when={editing()}
         fallback={
           <div class="annotation-reading">
-            <div class="tag-pills" aria-label="Tags enregistrés">
+            <div class="tag-pills" aria-label={t("Tags enregistrés")}>
               <For each={savedTags()}>{(tag) => <span class="tag-pill">{tag}</span>}</For>
             </div>
-            <Show when={savedNote()} fallback={<p class="muted">Aucune note personnelle.</p>}>
+            <Show
+              when={savedNote()}
+              fallback={<p class="muted">{t("Aucune note personnelle.")}</p>}
+            >
               <NoteEditor
                 value={savedNote()}
                 disabled
@@ -247,7 +264,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
           }}
         />
         <div class="annotation-note">
-          <p>Notes personnelles</p>
+          <p>{t("Notes personnelles")}</p>
           <NoteEditor
             value={note()}
             disabled={blocked()}
@@ -267,7 +284,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
             disabled={blocked() || savingNotes() || editorUnavailable()}
             onClick={saveNotes}
           >
-            Enregistrer les notes et tags
+            {t("Enregistrer les notes et tags")}{" "}
           </button>
           <button
             class="quiet"
@@ -280,19 +297,21 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
               setEditing(false);
             }}
           >
-            Annuler
+            {t("Annuler")}{" "}
           </button>
         </div>
       </Show>
       <p role="status">
         {pending()
-          ? "Enregistrement dans Aède…"
+          ? t("Enregistrement dans Aède…")
           : dirty()
-            ? "Notes et tags non enregistrés."
+            ? t("Notes et tags non enregistrés.")
             : message()}
       </p>
       <Show when={failure()}>
-        <p role="alert">{failure()} Les notes en cours sont conservées.</p>
+        <p role="alert">
+          {failure()} {t("Les notes en cours sont conservées.")}
+        </p>
       </Show>
     </section>
   );

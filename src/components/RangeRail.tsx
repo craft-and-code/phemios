@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { For, createMemo } from "solid-js";
 import { shiftInterval } from "../library/filtering";
 import type { Interval } from "../library/types";
@@ -67,7 +68,7 @@ export function RangeRail(props: Props) {
       <div class="rail-heading">
         <span>{props.label}</span>
         <output>{label()}</output>
-        <small>Glissez la plage ou ses bornes</small>
+        <small>{t("Glissez la plage ou ses bornes")}</small>
       </div>
       <div
         class="rail-track"
@@ -75,7 +76,10 @@ export function RangeRail(props: Props) {
           track = element;
         }}
       >
-        <div class="rail-histogram" aria-label={`Répartition par ${props.label.toLowerCase()}`}>
+        <div
+          class="rail-histogram"
+          aria-label={t("Répartition par {0}", props.label.toLowerCase())}
+        >
           <For each={histogram()}>
             {(bin) => (
               <div
@@ -93,7 +97,7 @@ export function RangeRail(props: Props) {
         <button
           class="rail-band"
           type="button"
-          aria-label={`Déplacer la sélection ${props.label}`}
+          aria-label={t("Déplacer la sélection {0}", props.label)}
           style={{
             left: `${position(props.value[0])}%`,
             width: `${position(props.value[1]) - position(props.value[0])}%`,
@@ -117,7 +121,7 @@ export function RangeRail(props: Props) {
           max={props.domain[1]}
           step="1"
           value={props.value[0]}
-          aria-label={`${props.label} : début`}
+          aria-label={t("{0} : début", props.label)}
           onInput={(event) =>
             props.onChange([
               Math.min(Number(event.currentTarget.value), props.value[1]),
@@ -131,7 +135,7 @@ export function RangeRail(props: Props) {
           max={props.domain[1]}
           step="1"
           value={props.value[1]}
-          aria-label={`${props.label} : fin`}
+          aria-label={t("{0} : fin", props.label)}
           onInput={(event) =>
             props.onChange([
               props.value[0],
@@ -150,7 +154,7 @@ export function RangeRail(props: Props) {
                 "rail-edge-start": tick === props.domain[0],
                 "rail-edge-end": tick === props.domain[1],
               }}
-              aria-label={`${props.label} : sélectionner ${props.format(tick)}`}
+              aria-label={t("{0} : sélectionner {1}", props.label, props.format(tick))}
               onClick={() => props.onChange([tick, tick])}
             >
               {props.format(tick)}

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, For, onMount } from "solid-js";
 import {
   applyPreferences,
@@ -5,7 +6,7 @@ import {
   readPreferences,
   type Preferences,
 } from "../library/preferences";
-/** Appearance is device-local. Translation is a separate integration milestone. */
+/** Device-local language and colours apply live and survive the next launch. */
 export function SettingsAppearance() {
   const [value, setValue] = createSignal<Preferences>({ ...defaultPreferences }),
     [error, setError] = createSignal("");
@@ -24,27 +25,27 @@ export function SettingsAppearance() {
       setError("");
       window.dispatchEvent(new Event("phemios-preferences"));
     } catch {
-      setError("Préférences non mémorisées.");
+      setError(t("Préférences non mémorisées."));
     }
   }
   return (
     <div class="settings-card">
-      <h2>Apparence et langue</h2>
+      <h2>{t("Apparence et langue")}</h2>
       <label>
-        Langue
+        {t("Langue")}{" "}
         <select
           value={value().language}
           onChange={(e) => update({ ...value(), language: e.currentTarget.value as "fr" | "en" })}
         >
-          <option value="fr">Français</option>
-          <option value="en">English</option>
+          <option value="fr">{t("Français")}</option>
+          <option value="en">{t("English")}</option>
         </select>
       </label>
       <div class="color-settings">
         <For each={["background", "accent", "surface"] as const}>
           {(key) => (
             <label>
-              {{ background: "Fond", accent: "Contraste", surface: "Surfaces" }[key]}
+              {{ background: t("Fond"), accent: t("Contraste"), surface: t("Surfaces") }[key]}
               <input
                 type="color"
                 value={value()[key]}
@@ -55,7 +56,7 @@ export function SettingsAppearance() {
         </For>
       </div>
       <button onClick={() => update({ ...defaultPreferences, language: value().language })}>
-        Réinitialiser les couleurs
+        {t("Réinitialiser les couleurs")}{" "}
       </button>
       <p role="alert">{error()}</p>
     </div>

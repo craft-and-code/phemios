@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { For, Show } from "solid-js";
 import type { Filters, Interval } from "../library/types";
 import { toggleRail, type CountBin } from "../library/distribution";
@@ -22,11 +23,11 @@ export function FilterBar(props: {
   return (
     <div class="filters">
       <div class="filter-options">
-        <div class="rail-switches" role="group" aria-label="Réglettes visibles">
+        <div class="rail-switches" role="group" aria-label={t("Réglettes visibles")}>
           <button
             class="icon-button"
-            title="Réglette des années"
-            aria-label="Réglette des années"
+            title={t("Réglette des années")}
+            aria-label={t("Réglette des années")}
             aria-pressed={["years", "both"].includes(props.value.mode)}
             onClick={() => update({ mode: toggleRail(props.value.mode, "years") })}
           >
@@ -34,8 +35,8 @@ export function FilterBar(props: {
           </button>
           <button
             class="icon-button"
-            title="Réglette alphabétique"
-            aria-label="Réglette alphabétique"
+            title={t("Réglette alphabétique")}
+            aria-label={t("Réglette alphabétique")}
             aria-pressed={["alphabet", "both"].includes(props.value.mode)}
             onClick={() => update({ mode: toggleRail(props.value.mode, "alphabet") })}
           >
@@ -53,7 +54,7 @@ export function FilterBar(props: {
                 })
               }
             >
-              {country ?? "Origine inconnue"} ×
+              {country ?? t("Origine inconnue")} ×
             </button>
           )}
         </For>
@@ -73,13 +74,13 @@ export function FilterBar(props: {
           )}
         </For>
         <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
-          <label title="Inclure les albums dont l’année de sortie n’est pas renseignée.">
+          <label title={t("Inclure les albums dont l’année de sortie n’est pas renseignée.")}>
             <input
               type="checkbox"
               checked={props.value.includeUnknownYear}
               onChange={(e) => update({ includeUnknownYear: e.currentTarget.checked })}
             />
-            Inclure les dates inconnues
+            {t("Inclure les dates inconnues")}{" "}
           </label>
         </Show>
         <button
@@ -97,12 +98,12 @@ export function FilterBar(props: {
             })
           }
         >
-          Tout afficher
+          {t("Tout afficher")}{" "}
         </button>
       </div>
       <Show when={["years", "both"].includes(props.value.mode)}>
         <RangeRail
-          label="Années"
+          label={t("Années")}
           domain={props.yearDomain}
           value={props.value.years}
           ticks={[
@@ -122,7 +123,7 @@ export function FilterBar(props: {
       </Show>
       <Show when={["alphabet", "both"].includes(props.value.mode)}>
         <RangeRail
-          label="Alphabet"
+          label={t("Alphabet")}
           domain={[0, 26]}
           value={props.value.alphabet}
           ticks={Array.from({ length: 27 }, (_, i) => i)}

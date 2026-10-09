@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource, type SourceId } from "./sources";
 import { createSignal, onCleanup } from "solid-js";
 import { requestAede } from "../platform/desktop";
@@ -41,7 +42,7 @@ export function createJobs(connected: () => boolean) {
           ),
         );
       } catch (failure) {
-        setError(failure instanceof Error ? failure.message : "Suivi de tâche interrompu.");
+        setError(failure instanceof Error ? failure.message : t("Suivi de tâche interrompu."));
       }
     }
     if (jobs().some((job) => job.status === "queued" || job.status === "running"))
@@ -51,7 +52,7 @@ export function createJobs(connected: () => boolean) {
   async function start(kind: "analyze" | "spectrum", release: string, force: boolean) {
     setError("");
     if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
-      throw new Error("Quatre tâches sont déjà actives.");
+      throw new Error(t("Quatre tâches sont déjà actives."));
     const result = await requestAede<{ task_id: number; status: "queued" }>(
       `/api/admin/v1/${kind}`,
       {},

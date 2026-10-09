@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 /** Explicit launch, force option and cancellable server status. */
@@ -12,7 +13,7 @@ export function JobControls(props: { release: string }) {
     try {
       await library.tasks.start(kind, props.release, force());
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Lancement impossible.");
+      setError(failure instanceof Error ? failure.message : t("Lancement impossible."));
     } finally {
       setBusy(false);
     }
@@ -28,7 +29,7 @@ export function JobControls(props: { release: string }) {
           }
           onClick={() => start("analyze")}
         >
-          Analyser avec FlacCompagnon
+          {t("Analyser avec FlacCompagnon")}{" "}
         </button>
         <button
           disabled={
@@ -38,7 +39,7 @@ export function JobControls(props: { release: string }) {
           }
           onClick={() => start("spectrum")}
         >
-          Générer les spectres
+          {t("Générer les spectres")}{" "}
         </button>
       </div>
       <label class="job-force">
@@ -47,10 +48,12 @@ export function JobControls(props: { release: string }) {
           checked={force()}
           onChange={(event) => setForce(event.currentTarget.checked)}
         />{" "}
-        Recalculer les résultats existants
+        {t("Recalculer les résultats existants")}{" "}
       </label>
       <small>
-        Ces travaux s’exécutent sur Aède. Un compte administrateur et le serveur local sont requis.
+        {t(
+          "Ces travaux s’exécutent sur Aède. Un compte administrateur et le serveur local sont requis.",
+        )}{" "}
       </small>
       <Show when={error() || library.tasks.error()}>
         <p role="alert">{error() || library.tasks.error()}</p>
@@ -60,14 +63,14 @@ export function JobControls(props: { release: string }) {
           {(job) => (
             <div class="job-result">
               <span>
-                Tâche {job.task_id} · {job.task_kind ?? job.kind ?? "traitement"} ·{" "}
+                {t("Tâche")} {job.task_id} · {job.task_kind ?? job.kind ?? "traitement"} ·{" "}
                 {
                   {
-                    queued: "En attente",
-                    running: "En cours",
-                    completed: "Terminée",
-                    failed: "Échec",
-                    cancelled: "Annulée",
+                    queued: t("En attente"),
+                    running: t("En cours"),
+                    completed: t("Terminée"),
+                    failed: t("Échec"),
+                    cancelled: t("Annulée"),
                   }[job.status]
                 }
               </span>
@@ -79,17 +82,17 @@ export function JobControls(props: { release: string }) {
                       .catch((failure) => setError(String(failure)))
                   }
                 >
-                  Annuler
+                  {t("Annuler")}{" "}
                 </button>
               </Show>
               <Show when={job.result || job.error}>
                 <details>
-                  <summary>Résultat du serveur</summary>
+                  <summary>{t("Résultat du serveur")}</summary>
                   <pre>
                     {job.result ? `${job.result.stdout}\n${job.result.stderr}` : job.error?.message}
                   </pre>
                   <Show when={job.result?.output_truncated}>
-                    <small>Le journal a été raccourci par Aède.</small>
+                    <small>{t("Le journal a été raccourci par Aède.")}</small>
                   </Show>
                 </details>
               </Show>

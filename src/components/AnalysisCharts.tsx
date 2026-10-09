@@ -1,8 +1,10 @@
+import { locale } from "../i18n";
+import { t } from "../i18n";
 import { createMemo, For, Show } from "solid-js";
 import { analysisReading, measurementHelp } from "../library/analysis-reading";
 import { analysisGraphs } from "../library/analysis-graphs";
 const format = (value: number) =>
-  new Intl.NumberFormat("fr", { maximumFractionDigits: 2 }).format(value);
+  new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }).format(value);
 /** SVG scales show measured summaries and retained event positions, not invented waveforms. */
 export function AnalysisCharts(props: { analysis: unknown }) {
   const result = createMemo(() => {
@@ -15,7 +17,11 @@ export function AnalysisCharts(props: { analysis: unknown }) {
   return (
     <Show
       when={result().data}
-      fallback={<p role="alert">Graphiques indisponibles : {result().error}</p>}
+      fallback={
+        <p role="alert">
+          {t("Graphiques indisponibles :")} {result().error}
+        </p>
+      }
     >
       {(data) => (
         <div class="analysis-charts" classList={{ stale: data().stale === true }}>
@@ -23,13 +29,15 @@ export function AnalysisCharts(props: { analysis: unknown }) {
             <For each={analysisReading(data())}>
               {(reading) => (
                 <section class={`analysis-reading-card ${reading.tone}`}>
-                  <strong>{reading.label}</strong>
-                  <p>{reading.detail}</p>
+                  <strong>{t(reading.label)}</strong>
+                  <p>{t(reading.detail)}</p>
                 </section>
               )}
             </For>
           </div>
-          <p class="analysis-verdict">FlacCompagnon · {data().summary || "Mesures conservées"}</p>
+          <p class="analysis-verdict">
+            {t("FlacCompagnon ·")} {data().summary || t("Mesures conservées")}
+          </p>
           <Show when={data().error}>
             <p role="alert">{data().error}</p>
           </Show>
@@ -37,13 +45,19 @@ export function AnalysisCharts(props: { analysis: unknown }) {
             <p class="muted">{data().detail}</p>
           </Show>
           <p class="analysis-scale-note">
-            Les barres situent les mesures sur une échelle ; elles ne représentent pas un score.
-            Survolez une mesure pour son explication.
+            {t(
+              "Les barres situent les mesures sur une échelle ; elles ne représentent pas un score. Survolez une mesure pour son explication.",
+            )}{" "}
           </p>
           <Show when={data().missing.length}>
             <p class="analysis-coverage" role="status">
-              Mesures non fournies par ce rapport : {data().missing.join(" · ")}. Une nouvelle
-              analyse complète peut les ajouter ; aucune valeur n’est déduite des autres pistes.
+              {t("Mesures non fournies par ce rapport :")}{" "}
+              {data()
+                .missing.map((label) => t(label))
+                .join(" · ")}
+              {t(
+                ". Une nouvelle analyse complète peut les ajouter ; aucune valeur n’est déduite des autres pistes.",
+              )}{" "}
             </p>
           </Show>
           <div class="analysis-gauges">
@@ -56,13 +70,13 @@ export function AnalysisCharts(props: { analysis: unknown }) {
                   );
                 return (
                   <figure
-                    title={
+                    title={t(
                       measurementHelp[gauge.label] ??
-                      "Mesure de phase locale, à interpréter selon l’enregistrement."
-                    }
+                        t("Mesure de phase locale, à interpréter selon l’enregistrement."),
+                    )}
                   >
                     <figcaption>
-                      {gauge.label}
+                      {t(gauge.label)}
                       <strong>
                         {format(gauge.value)} {gauge.unit}
                       </strong>
@@ -70,7 +84,14 @@ export function AnalysisCharts(props: { analysis: unknown }) {
                     <svg
                       viewBox="0 0 300 34"
                       role="img"
-                      aria-label={`${gauge.label} : ${gauge.value} ${gauge.unit}. Échelle ${gauge.low} à ${gauge.high}.`}
+                      aria-label={t(
+                        "{0} : {1} {2}. Échelle {3} à {4}.",
+                        t(gauge.label),
+                        gauge.value,
+                        gauge.unit,
+                        gauge.low,
+                        gauge.high,
+                      )}
                     >
                       <rect x="0" y="8" width="300" height="8" rx="4" class="graph-track" />
                       <rect
@@ -101,23 +122,27 @@ export function AnalysisCharts(props: { analysis: unknown }) {
             </For>
           </div>
           <p class="analysis-integrity">
-            MD5 audio : {data().md5 || "Non renseigné"}
-            {data().clipped ? " · Écrêtage détecté" : ""}
+            {t("MD5 audio :")} {data().md5 || t("Non renseigné")}
+            {data().clipped ? t(" · Écrêtage détecté") : ""}
           </p>
           <Show when={data().duration && data().retainedEvents}>
             <figure>
               <figcaption>
-                Événements détectés{" "}
+                {t("Événements détectés")}{" "}
                 <span>
-                  {data().eventCount ?? "Nombre total inconnu"} au total · {data().retainedEvents}{" "}
-                  positions conservées · {data().events.length} affichées
+                  {data().eventCount ?? t("Nombre total inconnu")} {t("au total ·")}{" "}
+                  {data().retainedEvents} {t("positions conservées ·")} {data().events.length}{" "}
+                  {t("affichées")}{" "}
                 </span>
               </figcaption>
               <svg
                 class="event-timeline"
                 viewBox="0 0 600 65"
                 role="img"
-                aria-label={`Positions conservées des clics et coupures sur ${data().duration} secondes`}
+                aria-label={t(
+                  "Positions conservées des clics et coupures sur {0} secondes",
+                  data().duration,
+                )}
               >
                 <line x1="0" x2="600" y1="32" y2="32" class="graph-marker" />
                 <For each={data().events}>
@@ -130,8 +155,8 @@ export function AnalysisCharts(props: { analysis: unknown }) {
                       classList={{ "graph-event": true, dropout: event.kind === "Coupure" }}
                     >
                       <title>
-                        {event.kind} · {format(event.start)} s · canal {event.channel} · durée{" "}
-                        {event.duration} s
+                        {t(event.kind)} · {format(event.start)} {t("s · canal")} {event.channel}{" "}
+                        {t("· durée")} {event.duration} s
                       </title>
                     </rect>
                   )}
@@ -144,12 +169,14 @@ export function AnalysisCharts(props: { analysis: unknown }) {
                 </text>
               </svg>
               <small>
-                Clics en haut, coupures en bas. Le JSON contient toutes les positions conservées.
+                {t(
+                  "Clics en haut, coupures en bas. Le JSON contient toutes les positions conservées.",
+                )}{" "}
               </small>
             </figure>
           </Show>
           <Show when={!data().gauges.length && !data().retainedEvents}>
-            <p class="muted">Ce rapport ne contient pas de mesures représentables.</p>
+            <p class="muted">{t("Ce rapport ne contient pas de mesures représentables.")}</p>
           </Show>
         </div>
       )}

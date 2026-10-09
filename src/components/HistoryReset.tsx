@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createEffect, createSignal, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -23,7 +24,7 @@ export function HistoryReset(props: { onReset: () => void }) {
       await requestAede("/api/me/v1/history", {}, "DELETE", { confirm: true });
       if (account !== library.session()) return;
       setConfirm(false);
-      setMessage("Écoutes et compteurs réinitialisés.");
+      setMessage(t("Écoutes et compteurs réinitialisés."));
       props.onReset();
     } catch (e) {
       if (account === library.session()) setMessage(e instanceof Error ? e.message : String(e));
@@ -34,20 +35,20 @@ export function HistoryReset(props: { onReset: () => void }) {
   return (
     <>
       <button disabled={!writable() || busy()} onClick={() => setConfirm(true)}>
-        Réinitialiser l’historique
+        {t("Réinitialiser l’historique")}{" "}
       </button>
       <Show when={confirm()}>
-        <div class="history-confirm" role="group" aria-label="Confirmer la réinitialisation">
+        <div class="history-confirm" role="group" aria-label={t("Confirmer la réinitialisation")}>
           <p>
-            Effacer toutes les écoutes, les scrobbles et leurs compteurs pour ce compte ? Les
-            favoris, notes et collections sont conservés. Une lecture en cours pourra ensuite
-            ajouter une nouvelle écoute.
+            {t(
+              "Effacer toutes les écoutes, les scrobbles et leurs compteurs pour ce compte ? Les favoris, notes et collections sont conservés. Une lecture en cours pourra ensuite ajouter une nouvelle écoute.",
+            )}{" "}
           </p>
           <button disabled={!writable() || busy()} onClick={() => void reset()}>
-            Effacer mon historique
+            {t("Effacer mon historique")}{" "}
           </button>
           <button disabled={busy()} onClick={() => setConfirm(false)}>
-            Annuler
+            {t("Annuler")}{" "}
           </button>
         </div>
       </Show>

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 /** A legacy API must not receive a newer browsing expression or a cross-session write. */
 export async function saveBrowsingCollection(
@@ -13,7 +14,9 @@ export async function saveBrowsingCollection(
   if (!isCurrent()) return;
   if (!Array.isArray(capabilities) || !capabilities.includes("dynamic_browse_collections"))
     throw new Error(
-      "Ce serveur ne prend pas encore en charge les collections depuis les filtres. Mettez à jour puis redémarrez Aède.",
+      t(
+        "Ce serveur ne prend pas encore en charge les collections depuis les filtres. Mettez à jour puis redémarrez Aède.",
+      ),
     );
   const criteria = JSON.parse(expression.slice("browse-v1:".length)) as { genres?: unknown };
   if (
@@ -22,7 +25,9 @@ export async function saveBrowsingCollection(
     !capabilities.includes("dynamic_browse_genres")
   )
     throw new Error(
-      "Ce serveur ne prend pas encore en charge plusieurs genres dans une collection. Mettez à jour puis redémarrez Aède.",
+      t(
+        "Ce serveur ne prend pas encore en charge plusieurs genres dans une collection. Mettez à jour puis redémarrez Aède.",
+      ),
     );
   await requestAede("/api/me/v1/collection", { name }, "PUT", { expression, create_only: true });
 }

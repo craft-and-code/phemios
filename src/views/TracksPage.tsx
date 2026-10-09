@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -28,43 +29,46 @@ export function TracksPage(props: {
         key.offset,
       );
       if (epoch !== undefined && result.scannedAt !== epoch)
-        throw new Error("Le catalogue a changé ; resynchronisez la bibliothèque.");
+        throw new Error(t("Le catalogue a changé ; resynchronisez la bibliothèque."));
       return result;
     },
   );
   return (
     <section class="page tracks-page">
       <Show when={!library.session()}>
-        <p class="notice">Connectez Aède pour consulter toutes les pistes.</p>
+        <p class="notice">{t("Connectez Aède pour consulter toutes les pistes.")}</p>
       </Show>
       <Show when={page.error}>
-        <p role="alert">Pistes indisponibles : {String(page.error)}</p>
+        <p role="alert">
+          {t("Pistes indisponibles :")} {String(page.error)}
+        </p>
       </Show>
       <Show when={page.loading}>
-        <p role="status">Chargement des pistes…</p>
+        <p role="status">{t("Chargement des pistes…")}</p>
       </Show>
       <Show when={!page.loading && !page.error && page()}>
         {(value) => (
           <>
             <div class="section-heading">
               <p class="muted">
-                {value().total} piste{value().total > 1 ? "s" : ""} ·{" "}
-                {value().total ? offset() + 1 : 0}–{Math.min(offset() + 50, value().total)}
+                {value().total} {t("piste")}
+                {value().total > 1 ? "s" : ""} · {value().total ? offset() + 1 : 0}–
+                {Math.min(offset() + 50, value().total)}
               </p>
               <div class="page-controls">
                 <button disabled={!offset()} onClick={() => setOffset(Math.max(0, offset() - 50))}>
-                  Précédentes
+                  {t("Précédentes")}{" "}
                 </button>
                 <button
                   disabled={offset() + 50 >= value().total}
                   onClick={() => setOffset(offset() + 50)}
                 >
-                  Suivantes
+                  {t("Suivantes")}{" "}
                 </button>
               </div>
             </div>
             <Show when={!value().items.length}>
-              <p class="empty">Aucune piste dans cette recherche.</p>
+              <p class="empty">{t("Aucune piste dans cette recherche.")}</p>
             </Show>
             <ol class="track-list">
               <For each={value().items}>
@@ -76,15 +80,21 @@ export function TracksPage(props: {
                       onPlay={() => void library.player.startReference(track.reference)}
                       context={
                         <>
-                          <Show when={track.release} fallback="Sans album">
+                          <Show when={track.release} fallback={t("Sans album")}>
                             {(reference) => (
                               <a href={`#/album/${encodeURIComponent(reference())}`}>
                                 {track.album_title}
                               </a>
                             )}
                           </Show>
-                          <Show when={track.disc_no}> · CD {track.disc_no}</Show>
-                          <Show when={track.track_no}> · Piste {track.track_no}</Show>
+                          <Show when={track.disc_no}>
+                            {" "}
+                            {t("· CD")} {track.disc_no}
+                          </Show>
+                          <Show when={track.track_no}>
+                            {" "}
+                            {t("· Piste")} {track.track_no}
+                          </Show>
                         </>
                       }
                     />

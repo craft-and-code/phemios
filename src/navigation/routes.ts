@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 export type Section =
   | "artists"
   | "albums"
@@ -23,23 +24,23 @@ export type Route =
   | { kind: "not-found" };
 
 export const sections: readonly { id: Section; label: string; symbol: string }[] = [
-  { id: "artists", label: "Artistes", symbol: "users" },
-  { id: "albums", label: "Albums", symbol: "disc" },
-  { id: "tracks", label: "Pistes", symbol: "list" },
-  { id: "recent", label: "Nouveautés", symbol: "sparkles" },
-  { id: "compilations", label: "Compilations", symbol: "layers" },
-  { id: "countries", label: "Pays", symbol: "globe" },
-  { id: "genres", label: "Genres", symbol: "tags" },
-  { id: "favourites", label: "Favoris", symbol: "heart" },
-  { id: "collections", label: "Collections", symbol: "library" },
-  { id: "history", label: "Historique", symbol: "history" },
-  { id: "playlists", label: "Listes M3U", symbol: "list" },
-  { id: "radio", label: "Radio", symbol: "radio" },
+  { id: "artists", label: t("Artistes"), symbol: "users" },
+  { id: "albums", label: t("Albums"), symbol: "disc" },
+  { id: "tracks", label: t("Pistes"), symbol: "list" },
+  { id: "recent", label: t("Nouveautés"), symbol: "sparkles" },
+  { id: "compilations", label: t("Compilations"), symbol: "layers" },
+  { id: "countries", label: t("Pays"), symbol: "globe" },
+  { id: "genres", label: t("Genres"), symbol: "tags" },
+  { id: "favourites", label: t("Favoris"), symbol: "heart" },
+  { id: "collections", label: t("Collections"), symbol: "library" },
+  { id: "history", label: t("Historique"), symbol: "history" },
+  { id: "playlists", label: t("Listes M3U"), symbol: "list" },
+  { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
-  { id: "analysis", label: "Analyses", symbol: "wave" },
-  { id: "relations", label: "Relations", symbol: "graph" },
-  { id: "statistics", label: "Statistiques", symbol: "stats" },
-  { id: "players", label: "Lecteurs externes", symbol: "drive" },
+  { id: "analysis", label: t("Analyses"), symbol: "wave" },
+  { id: "relations", label: t("Relations"), symbol: "graph" },
+  { id: "statistics", label: t("Statistiques"), symbol: "stats" },
+  { id: "players", label: t("Lecteurs externes"), symbol: "drive" },
 ];
 
 /** Hash navigation works in native packaged assets without server rewrites. */

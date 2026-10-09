@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 interface Report {
   md5: string;
   stale: boolean | undefined;
@@ -11,85 +12,100 @@ export function analysisReading(data: Report) {
   const state = data.md5.toLowerCase();
   let integrity = {
     tone: "unknown",
-    label: "Intégrité non vérifiée",
-    detail: "Une signature absente ou non vérifiée ne signifie pas que le fichier est corrompu.",
+    label: t("Intégrité non vérifiée"),
+    detail: t("Une signature absente ou non vérifiée ne signifie pas que le fichier est corrompu."),
   };
   if (state === "match")
     integrity = {
       tone: "good",
-      label: "Intégrité vérifiée",
-      detail: "L’audio décodé correspond au MD5 FLAC conservé dans ce rapport.",
+      label: t("Intégrité vérifiée"),
+      detail: t("L’audio décodé correspond au MD5 FLAC conservé dans ce rapport."),
     };
   if (state === "mismatch")
     integrity = {
       tone: "bad",
-      label: "MD5 différent",
-      detail: "L’audio décodé ne correspond pas à la signature FLAC : contrôlez la source.",
+      label: t("MD5 différent"),
+      detail: t("L’audio décodé ne correspond pas à la signature FLAC : contrôlez la source."),
     };
   if (state === "error" || data.error)
     integrity = {
       tone: "bad",
-      label: "Vérification en erreur",
-      detail: data.error || "Le contrôle MD5 n’a pas pu aboutir.",
+      label: t("Vérification en erreur"),
+      detail: data.error || t("Le contrôle MD5 n’a pas pu aboutir."),
     };
   if (data.stale !== false)
     integrity = {
       tone: "unknown",
-      label: data.stale ? "Analyse à renouveler" : "Validité non confirmée",
-      detail: `${integrity.label} dans le rapport conservé ; cela ne confirme pas le fichier actuel.`,
+      label: data.stale ? t("Analyse à renouveler") : t("Validité non confirmée"),
+      detail: t(
+        "{0} dans le rapport conservé ; cela ne confirme pas le fichier actuel.",
+        integrity.label,
+      ),
     };
   const flagged = data.summary.toLowerCase() === "flagged",
     clean = data.summary.toLowerCase() === "clean";
   const findings = {
     tone: flagged ? "warning" : "unknown",
     label: flagged
-      ? "Indices détectés"
+      ? t("Indices détectés")
       : clean
-        ? "Aucun indice détecté"
-        : "Détections non renseignées",
+        ? t("Aucun indice détecté")
+        : t("Détections non renseignées"),
     detail: clean
-      ? "Aucun indice dans les contrôles réalisés. Ce résultat ne prouve ni l’origine ni la qualité du son."
-      : "Les détections sont des indices à examiner avec leur explication, pas une note de qualité.",
+      ? t(
+          "Aucun indice dans les contrôles réalisés. Ce résultat ne prouve ni l’origine ni la qualité du son.",
+        )
+      : t(
+          "Les détections sont des indices à examiner avec leur explication, pas une note de qualité.",
+        ),
   };
   const audible = data.clipped === true || (data.eventCount ?? 0) > 0;
   const listening = {
     tone: audible ? "warning" : "unknown",
     label: audible
-      ? "Passages à écouter"
+      ? t("Passages à écouter")
       : data.clipped === false && data.eventCount === 0
-        ? "Aucun événement signalé"
-        : "Contrôles partiels",
+        ? t("Aucun événement signalé")
+        : t("Contrôles partiels"),
     detail: [
       data.clipped === true
-        ? "Écrêtage détecté."
+        ? t("Écrêtage détecté.")
         : data.clipped === false
-          ? "Aucun écrêtage signalé."
-          : "Écrêtage non renseigné.",
+          ? t("Aucun écrêtage signalé.")
+          : t("Écrêtage non renseigné."),
       data.eventCount === undefined
-        ? "Nombre de clics/coupures inconnu."
-        : `${data.eventCount} clic(s)/coupure(s) détecté(s).`,
-      "Ces détections peuvent aussi venir de l’enregistrement ; écoutez les passages concernés.",
+        ? t("Nombre de clics/coupures inconnu.")
+        : t("{0} clic(s)/coupure(s) détecté(s).", data.eventCount),
+      t("Ces détections peuvent aussi venir de l’enregistrement ; écoutez les passages concernés."),
     ].join(" "),
   };
   return [integrity, findings, listening];
 }
 export const measurementHelp: Record<string, string> = {
-  "Niveau intégré": "Volume perçu moyen. Plus près de zéro signifie plus fort, pas meilleur.",
-  Dynamique:
+  "Niveau intégré": t("Volume perçu moyen. Plus près de zéro signifie plus fort, pas meilleur."),
+  Dynamique: t(
     "Écart de niveau mesuré. Il décrit le signal et le mastering, sans noter leur qualité.",
-  "Étendue de sonie":
+  ),
+  "Étendue de sonie": t(
     "Variations de volume au cours du morceau ; elles dépendent aussi de la musique.",
-  "Crête échantillon":
+  ),
+  "Crête échantillon": t(
     "Valeur maximale des échantillons. Le drapeau d’écrêtage est indiqué séparément.",
-  "Crête vraie":
+  ),
+  "Crête vraie": t(
     "Estimation des crêtes entre les échantillons ; ce n’est pas une mesure de la sortie physique.",
-  "Précision déclarée": "Résolution annoncée par le conteneur.",
-  "Précision mesurée":
+  ),
+  "Précision déclarée": t("Résolution annoncée par le conteneur."),
+  "Précision mesurée": t(
     "Résolution estimée dans le signal. Une différence avec le conteneur ne prouve pas une mauvaise écoute.",
-  "Coupure spectrale":
+  ),
+  "Coupure spectrale": t(
     "Bande passante mesurée. Une coupure ne prouve pas à elle seule une conversion avec pertes.",
-  "Corrélation stéréo":
+  ),
+  "Corrélation stéréo": t(
     "Relation entre les canaux. Une valeur faible ou négative peut être un choix artistique.",
-  "Balance D/G":
+  ),
+  "Balance D/G": t(
     "Différence de niveau entre droite et gauche ; à interpréter selon l’enregistrement.",
+  ),
 };

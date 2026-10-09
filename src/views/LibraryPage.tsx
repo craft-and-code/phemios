@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t, countryName } from "../i18n";
 import { referenceSource, sourceLabel } from "../library/sources";
 import { createMemo, For, Show } from "solid-js";
 import { CountryGlobe } from "../components/CountryGlobe";
@@ -44,7 +46,7 @@ export function LibraryPage(props: {
             : [...genres(), genre],
     });
   const compare = (a: string, b: string) =>
-    normalizeName(a).localeCompare(normalizeName(b), "fr") * (props.reverse ? -1 : 1);
+    normalizeName(a).localeCompare(normalizeName(b), locale()) * (props.reverse ? -1 : 1);
   const artists = createMemo(() => {
     const matched = filterArtists(principals(), library.albums(), props.filters);
     return [...matched].sort((a, b) => compare(a.name, b.name));
@@ -59,16 +61,18 @@ export function LibraryPage(props: {
     <section
       class="page library-page"
       classList={{ "country-library": props.section === "countries" }}
-      aria-label="Catalogue"
+      aria-label={t("Catalogue")}
     >
       <div class="page-heading">
-        <span role="status">{artistView() ? artists().length : albums().length} résultat(s)</span>
+        <span role="status">
+          {artistView() ? artists().length : albums().length} {t("résultat(s)")}
+        </span>
       </div>
       <Show when={props.section === "countries"}>
         <CountryGlobe artists={principals()} selected={countries()} onSelect={setCountry} />
-        <div class="choices" aria-label="Pays d’origine">
+        <div class="choices" aria-label={t("Pays d’origine")}>
           <button aria-pressed={countries().length === 0} onClick={() => setCountry(undefined)}>
-            Tous
+            {t("Tous")}{" "}
           </button>
           <For each={[...new Set(principals().map((item) => item.country))]}>
             {(value) => (
@@ -76,16 +80,16 @@ export function LibraryPage(props: {
                 aria-pressed={countries().includes(value)}
                 onClick={(event) => setCountry(value, additiveCountrySelection(event, isMac()))}
               >
-                {value ?? "Origine inconnue"}
+                {countryName(principals().find((a) => a.country === value)?.countryCode, value)}
               </button>
             )}
           </For>
         </div>
       </Show>
       <Show when={props.section === "genres"}>
-        <div class="choices" aria-label="Genres">
+        <div class="choices" aria-label={t("Genres")}>
           <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>
-            Tous
+            {t("Tous")}{" "}
           </button>
           <For
             each={[...new Set(principals().flatMap((item) => item.genres ?? [item.genre]))].filter(
@@ -117,7 +121,7 @@ export function LibraryPage(props: {
                           fallback={
                             <div
                               class="artwork missing-art"
-                              aria-label="Pas de pochette disponible"
+                              aria-label={t("Pas de pochette disponible")}
                             >
                               ♪
                             </div>
@@ -129,7 +133,7 @@ export function LibraryPage(props: {
                     >
                       {(url) => (
                         <div class="artwork real-art">
-                          <img src={url()} alt={`Portrait de ${artist.name}`} />
+                          <img src={url()} alt={t("Portrait de {0}", artist.name)} />
                         </div>
                       )}
                     </Show>
@@ -141,9 +145,11 @@ export function LibraryPage(props: {
                         </span>
                       </h2>
                       <p>
-                        {artist.genre} · {artist.country ?? "Origine inconnue"}
+                        {artist.genre} · {countryName(artist.countryCode, artist.country)}
                       </p>
-                      <small>{releases.length} albums · ouvrir la page</small>
+                      <small>
+                        {releases.length} {t("albums · ouvrir la page")}
+                      </small>
                     </div>
                   </a>
                 </li>
@@ -153,14 +159,17 @@ export function LibraryPage(props: {
         </ul>
         <Show when={!artists().length}>
           <p class="empty">
-            Aucun artiste dans cette sélection. Élargissez les bornes ou effacez la recherche.
+            {t(
+              "Aucun artiste dans cette sélection. Élargissez les bornes ou effacez la recherche.",
+            )}{" "}
           </p>
         </Show>
       </Show>
       <Show when={library.demo}>
         <p class="demo-note">
-          Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la
-          recherche globale d’Aède reste à raccorder.
+          {t(
+            "Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la recherche globale d’Aède reste à raccorder.",
+          )}{" "}
         </p>
       </Show>
     </section>

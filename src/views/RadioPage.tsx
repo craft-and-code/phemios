@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t, countryName } from "../i18n";
 import { createSignal, For, Show, onCleanup } from "solid-js";
 import { Icon } from "../components/Icon";
 import { useLibrary } from "../library/context";
@@ -50,18 +52,18 @@ export function RadioPage(props: { query: string }) {
             setCountError("");
           }
         } catch {
-          if (alive) setCountError("Le total de l’annuaire est indisponible.");
+          if (alive) setCountError(t("Le total de l’annuaire est indisponible."));
         }
     } catch (failure) {
       if (alive)
-        setError(failure instanceof Error ? failure.message : "Annuaire radio indisponible.");
+        setError(failure instanceof Error ? failure.message : t("Annuaire radio indisponible."));
     } finally {
       if (alive) setBusy(false);
     }
   }
   return (
     <section class="page radio-page">
-      <p class="intro">Explorez les radios Internet du monde entier.</p>
+      <p class="intro">{t("Explorez les radios Internet du monde entier.")}</p>
       <form
         class="radio-search"
         onSubmit={(e) => {
@@ -70,29 +72,29 @@ export function RadioPage(props: { query: string }) {
         }}
       >
         <label>
-          Station
+          {t("Station")}{" "}
           <input
             type="search"
             maxlength="256"
-            placeholder="Nom de la station…"
+            placeholder={t("Nom de la station…")}
             value={name()}
             onInput={(e) => setName(e.currentTarget.value)}
           />
         </label>
         <label>
-          Pays
+          {t("Pays")}{" "}
           <input
             maxlength="256"
-            placeholder="France, Germany…"
+            placeholder={t("France, Germany…")}
             value={country()}
             onInput={(e) => setCountry(e.currentTarget.value)}
           />
         </label>
         <label>
-          Style
+          {t("Style")}{" "}
           <input
             maxlength="256"
-            placeholder="rock, jazz, classical…"
+            placeholder={t("rock, jazz, classical…")}
             value={tag()}
             onInput={(e) => setTag(e.currentTarget.value)}
           />
@@ -103,15 +105,15 @@ export function RadioPage(props: { query: string }) {
             checked={secureOnly()}
             onChange={(e) => setSecureOnly(e.currentTarget.checked)}
           />
-          Flux HTTPS uniquement
+          {t("Flux HTTPS uniquement")}{" "}
         </label>
         <button class="primary" disabled={busy() || !isNative()}>
-          {busy() ? "Recherche…" : "Explorer les stations"}
+          {busy() ? t("Recherche…") : t("Explorer les stations")}
         </button>
       </form>
       <Show when={!isNative()}>
         <p class="notice">
-          L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.
+          {t("L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.")}{" "}
         </p>
       </Show>
       <Show when={error()}>
@@ -119,8 +121,10 @@ export function RadioPage(props: { query: string }) {
       </Show>
       <Show when={count()}>
         <p class="muted">
-          {count()!.toLocaleString("fr")} entrées dans Radio Browser · recherche dans l’annuaire
-          complet · affichage par 50.
+          {count()!.toLocaleString(locale())}{" "}
+          {t(
+            "entrées dans Radio Browser · recherche dans l’annuaire complet · affichage par 50.",
+          )}{" "}
         </p>
       </Show>
       <Show when={countError()}>
@@ -132,17 +136,18 @@ export function RadioPage(props: { query: string }) {
             <Icon name="radio" />
             <div>
               <small>
-                RADIO INTERNET · STATION {String(offset() + selected() + 1).padStart(2, "0")}
+                {t("RADIO INTERNET · STATION")} {String(offset() + selected() + 1).padStart(2, "0")}
               </small>
               <strong>{chosen()?.name}</strong>
               <span>
-                {chosen()?.country || "Pays non renseigné"} · {chosen()?.codec || "Format inconnu"}
+                {countryName(chosen()?.countryCode, chosen()?.country ?? null)} ·{" "}
+                {chosen()?.codec || t("Format inconnu")}
                 {chosen()?.bitrate ? ` · ${chosen()?.bitrate} kbit/s` : ""}
               </span>
             </div>
             <button
               class="play-button"
-              aria-label="Écouter la station sélectionnée"
+              aria-label={t("Écouter la station sélectionnée")}
               disabled={busy() || radio.status() === "connecting"}
               onClick={() => {
                 const station = chosen();
@@ -188,14 +193,15 @@ export function RadioPage(props: { query: string }) {
               max={stations().length - 1}
               step="1"
               value={selected()}
-              aria-label="Sélectionner une station sur le cadran"
+              aria-label={t("Sélectionner une station sur le cadran")}
               aria-valuetext={chosen()?.name ?? ""}
               onInput={(e) => setSelected(Number(e.currentTarget.value))}
             />
           </div>
           <p class="muted">
-            Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis
-            lancez l’écoute.
+            {t(
+              "Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis lancez l’écoute.",
+            )}{" "}
           </p>
         </div>
         <ul class="radio-stations">
@@ -213,7 +219,8 @@ export function RadioPage(props: { query: string }) {
                   <span>
                     <strong>{station.name}</strong>
                     <small>
-                      {station.country || "Pays inconnu"} · {station.tags || "Style non renseigné"}
+                      {countryName(station.countryCode, station.country)} ·{" "}
+                      {station.tags || t("Style non renseigné")}
                     </small>
                   </span>
                   <small>
@@ -230,26 +237,27 @@ export function RadioPage(props: { query: string }) {
             disabled={busy() || offset() === 0}
             onClick={() => void search(Math.max(0, offset() - 50))}
           >
-            Précédentes
+            {t("Précédentes")}{" "}
           </button>
           <span>
-            Stations {offset() + 1}–{offset() + stations().length}
+            {t("Stations")} {offset() + 1}–{offset() + stations().length}
           </span>
           <button disabled={busy() || !more()} onClick={() => void search(offset() + 50)}>
-            Suivantes
+            {t("Suivantes")}{" "}
           </button>
         </div>
       </Show>
       <Show when={loaded() && !stations().length && !busy()}>
-        <p class="notice">Aucune station pour ces critères.</p>
+        <p class="notice">{t("Aucune station pour ces critères.")}</p>
       </Show>
       <p class="radio-credit">
-        Annuaire communautaire{" "}
+        {t("Annuaire communautaire")}{" "}
         <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer">
-          Radio Browser
+          {t("Radio Browser")}{" "}
         </a>
-        . Chaque entrée décrit un flux ; certaines stations ont plusieurs flux. L’écoute utilise les
-        codecs et la sortie système du navigateur intégré.
+        {t(
+          ". Chaque entrée décrit un flux ; certaines stations ont plusieurs flux. L’écoute utilise les codecs et la sortie système du navigateur intégré.",
+        )}{" "}
       </p>
     </section>
   );

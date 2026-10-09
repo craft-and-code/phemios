@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -16,11 +17,11 @@ export function CollectionAlbums(props: { name: string }) {
           name,
         });
         if (!Array.isArray(response.items) || response.items.some((r) => typeof r !== "string"))
-          throw new Error("Collection Aède invalide.");
+          throw new Error(t("Collection Aède invalide."));
         const refs = new Set(response.items),
           albums = library.albums().filter((a) => refs.has(a.reference));
         if (albums.length !== refs.size)
-          throw new Error("La collection a changé : resynchronisez la bibliothèque.");
+          throw new Error(t("La collection a changé : resynchronisez la bibliothèque."));
         return { albums };
       } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) };
@@ -31,7 +32,7 @@ export function CollectionAlbums(props: { name: string }) {
     <section>
       <h2>{props.name}</h2>
       <Show when={result.loading}>
-        <p role="status">Évaluation…</p>
+        <p role="status">{t("Évaluation…")}</p>
       </Show>
       <Show when={result()?.error}>
         <p role="alert">{result()?.error}</p>

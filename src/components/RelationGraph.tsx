@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createMemo, createSignal, For, Show, createUniqueId, onCleanup } from "solid-js";
 export interface RelationNode {
   reference: string;
@@ -67,8 +68,8 @@ export function RelationGraph(props: {
               role="button"
               aria-label={
                 node.edge.kind === "album"
-                  ? `Ouvrir l’album ${node.edge.name}`
-                  : `Explorer ${node.edge.name}, ${node.edge.weight} pistes communes`
+                  ? t("Ouvrir l’album {0}", node.edge.name)
+                  : t("Explorer {0}, {1} pistes communes", node.edge.name, node.edge.weight)
               }
               onClick={() => {
                 if (!suppressClick) activate(node.edge);
@@ -84,8 +85,8 @@ export function RelationGraph(props: {
               <title>
                 {node.edge.name} ·{" "}
                 {node.edge.kind === "album"
-                  ? "album associé"
-                  : `${node.edge.weight} pistes communes`}{" "}
+                  ? t("album associé")
+                  : t("{0} pistes communes", node.edge.weight)}{" "}
                 · {node.edge.source}
               </title>
               <circle
@@ -117,7 +118,7 @@ export function RelationGraph(props: {
               });
             }}
           >
-            Ouvrir {node.name}
+            {t("Ouvrir")} {node.name}
           </a>
         )}
       </For>
@@ -127,7 +128,10 @@ export function RelationGraph(props: {
         viewBox="0 0 900 510"
         role="group"
         tabindex="0"
-        aria-label={`Espace 3D des collaborations de ${props.name}. Glisser pour tourner, molette pour zoomer ; flèches et plus ou moins au clavier.`}
+        aria-label={t(
+          "Espace 3D des collaborations de {0}. Glisser pour tourner, molette pour zoomer ; flèches et plus ou moins au clavier.",
+          props.name,
+        )}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
@@ -263,19 +267,20 @@ export function RelationGraph(props: {
         </text>
       </svg>
       <div class="relation-space-tools">
-        <span>Glisser pour tourner · molette pour zoomer</span>
-        <button aria-label="Zoom arrière" onClick={() => scale(-0.1)}>
+        <span>{t("Glisser pour tourner · molette pour zoomer")}</span>
+        <button aria-label={t("Zoom arrière")} onClick={() => scale(-0.1)}>
           −
         </button>
-        <button aria-label="Zoom avant" onClick={() => scale(0.1)}>
+        <button aria-label={t("Zoom avant")} onClick={() => scale(0.1)}>
           +
         </button>
-        <button onClick={reset}>Recentrer</button>
+        <button onClick={reset}>{t("Recentrer")}</button>
       </div>
       <Show when={props.edges.length}>
         <small>
-          La couleur s’assombrit avec la profondeur et l’éloignement du centre ; la disposition ne
-          mesure pas la proximité artistique.
+          {t(
+            "La couleur s’assombrit avec la profondeur et l’éloignement du centre ; la disposition ne mesure pas la proximité artistique.",
+          )}{" "}
         </small>
       </Show>
     </div>

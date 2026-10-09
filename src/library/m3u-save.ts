@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource } from "./sources";
 import { requestAede } from "../platform/desktop";
 import type { M3UFile } from "../components/M3UExport";
@@ -20,7 +21,9 @@ export async function saveLibraryM3U(
     !status.capabilities.includes("library_m3u_publication")
   )
     throw new Error(
-      "Ce serveur ne publie pas encore les M3U dans les dossiers Album et Artiste. Mettez à jour puis redémarrez Aède.",
+      t(
+        "Ce serveur ne publie pas encore les M3U dans les dossiers Album et Artiste. Mettez à jour puis redémarrez Aède.",
+      ),
     );
   const file = await requestAede<M3UFile>("/api/me/v1/m3u", {}, "POST", {
     release,
@@ -40,6 +43,6 @@ export async function saveLibraryM3U(
     file.library_files.length > 2 ||
     !file.library_files.every((path) => typeof path === "string" && path.length > 0)
   )
-    throw new Error("Publication M3U non confirmée par Aède.");
+    throw new Error(t("Publication M3U non confirmée par Aède."));
   return file;
 }

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { Album, Artist } from "./types";
 export interface Snapshot {
   artists: Artist[];
@@ -29,24 +30,24 @@ export interface AccountSession {
 const regions = new Intl.DisplayNames(["fr"], { type: "region" });
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Réponse Aède invalide.");
+    throw new Error(t("Réponse Aède invalide."));
   return value as Record<string, unknown>;
 }
 function string(value: unknown): string {
-  if (typeof value !== "string") throw new Error("Champ Aède invalide.");
+  if (typeof value !== "string") throw new Error(t("Champ Aède invalide."));
   return value;
 }
 function strings(value: unknown): string[] {
   if (!Array.isArray(value) || !value.every((v) => typeof v === "string"))
-    throw new Error("Liste Aède invalide.");
+    throw new Error(t("Liste Aède invalide."));
   return value as string[];
 }
 function relations(value: unknown): NonNullable<Artist["relations"]> {
-  if (!Array.isArray(value)) throw new Error("Relations Aède invalides.");
+  if (!Array.isArray(value)) throw new Error(t("Relations Aède invalides."));
   return value.map((value) => {
     const row = object(value);
     if (!Number.isSafeInteger(row.weight) || Number(row.weight) < 0)
-      throw new Error("Poids de relation Aède invalide.");
+      throw new Error(t("Poids de relation Aède invalide."));
     return {
       reference: string(row.reference),
       name: string(row.name),
@@ -60,7 +61,7 @@ function relations(value: unknown): NonNullable<Artist["relations"]> {
 export function parseSnapshot(value: unknown): Snapshot {
   const snapshot = object(value);
   if (!Array.isArray(snapshot.artists) || !Array.isArray(snapshot.albums))
-    throw new Error("Catalogue Aède invalide.");
+    throw new Error(t("Catalogue Aède invalide."));
   const artists = snapshot.artists.map((value) => {
     const row = object(value);
     const code =
@@ -105,9 +106,9 @@ export function parseSnapshot(value: unknown): Snapshot {
       row.year !== null &&
       (!Number.isInteger(row.year) || Number(row.year) < 1 || Number(row.year) > 9999)
     )
-      throw new Error("Année Aède invalide.");
+      throw new Error(t("Année Aède invalide."));
     if (row.added_at != null && (!Number.isSafeInteger(row.added_at) || Number(row.added_at) < 0))
-      throw new Error("Date d’ajout Aède invalide.");
+      throw new Error(t("Date d’ajout Aède invalide."));
     return {
       addedAt: row.added_at == null ? null : Number(row.added_at),
       reference: string(row.reference),
@@ -124,7 +125,7 @@ export function parseSnapshot(value: unknown): Snapshot {
   });
   for (const rows of [artists, albums])
     if (new Set(rows.map((row) => row.reference)).size !== rows.length)
-      throw new Error("Références Aède dupliquées.");
+      throw new Error(t("Références Aède dupliquées."));
   return {
     artists,
     albums,

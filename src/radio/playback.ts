@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createSignal, onCleanup } from "solid-js";
 import { parseResolved, type Station } from "./directory";
 export interface RadioMedia {
@@ -88,7 +89,7 @@ export function createRadioPlayback(
           release();
           setStatus("error");
           setError(
-            "La station ne transmet plus de son. Réessayez ou choisissez une autre station.",
+            t("La station ne transmet plus de son. Réessayez ou choisissez une autre station."),
           );
         }, 20000);
       };
@@ -111,7 +112,9 @@ export function createRadioPlayback(
           release();
           setStatus("error");
           setError(
-            "Flux radio interrompu ou format non pris en charge. Réessayez ou choisissez une autre station.",
+            t(
+              "Flux radio interrompu ou format non pris en charge. Réessayez ou choisissez une autre station.",
+            ),
           );
         },
       );
@@ -125,11 +128,15 @@ export function createRadioPlayback(
       setError(
         failure instanceof Error
           ? failure.name === "NotSupportedError"
-            ? "Ce flux est bloqué ou son format n’est pas pris en charge par le lecteur système. Essayez un flux HTTPS."
+            ? t(
+                "Ce flux est bloqué ou son format n’est pas pris en charge par le lecteur système. Essayez un flux HTTPS.",
+              )
             : failure.name === "NotAllowedError"
-              ? "Le lecteur système a refusé de démarrer ce flux. Relancez l’écoute explicitement."
+              ? t(
+                  "Le lecteur système a refusé de démarrer ce flux. Relancez l’écoute explicitement.",
+                )
               : failure.message
-          : "Lecture radio impossible.",
+          : t("Lecture radio impossible."),
       );
     }
   }

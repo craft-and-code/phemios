@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 interface Storage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -21,7 +22,7 @@ function validate(value: unknown): LoginPreference {
     !row.username.trim() ||
     row.username.length > 128
   )
-    throw new Error("Préférence de connexion illisible.");
+    throw new Error(t("Préférence de connexion illisible."));
   const url = new URL(row.server);
   if (
     !["http:", "https:"].includes(url.protocol) ||
@@ -31,14 +32,14 @@ function validate(value: unknown): LoginPreference {
     url.search ||
     url.hash
   )
-    throw new Error("Adresse mémorisée invalide.");
+    throw new Error(t("Adresse mémorisée invalide."));
   return { server: row.server, username: row.username };
 }
 /** Remember only public login metadata; malformed stored data is preserved and reported. */
 export function readLoginPreference(storage: Storage): LoginPreference | undefined {
   const value = storage.getItem(key);
   if (value === null) return undefined;
-  if (value.length > 4096) throw new Error("Préférence de connexion trop volumineuse.");
+  if (value.length > 4096) throw new Error(t("Préférence de connexion trop volumineuse."));
   return validate(JSON.parse(value));
 }
 /** Store a successful login name, never the password, bearer token or private annotations. */

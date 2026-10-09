@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
   status: "idle" | "connecting" | "playing" | "paused" | "ended" | "error";
@@ -38,7 +39,7 @@ export const idlePlayback: PlaybackState = {
 };
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("État audio invalide.");
+    throw new Error(t("État audio invalide."));
   return value as Record<string, unknown>;
 }
 const count = (v: unknown) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
@@ -60,21 +61,21 @@ export function parsePlayback(value: unknown): PlaybackState {
     v.volume > 1 ||
     typeof v.history_confirmed !== "boolean"
   )
-    throw new Error("État audio invalide.");
+    throw new Error(t("État audio invalide."));
   if (
     v.levels !== undefined &&
     (!Array.isArray(v.levels) ||
       v.levels.length !== 4 ||
       !v.levels.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1))
   )
-    throw new Error("Niveaux audio invalides.");
+    throw new Error(t("Niveaux audio invalides."));
   if (v.seek_id !== undefined && !count(v.seek_id))
-    throw new Error("Confirmation de position invalide.");
+    throw new Error(t("Confirmation de position invalide."));
   if (
     v.level !== undefined &&
     (typeof v.level !== "number" || !Number.isFinite(v.level) || v.level < 0 || v.level > 1)
   )
-    throw new Error("Niveau audio invalide.");
+    throw new Error(t("Niveau audio invalide."));
   return {
     ...v,
     seek_id: v.seek_id ?? 0,
@@ -84,7 +85,7 @@ export function parsePlayback(value: unknown): PlaybackState {
 }
 /** Outputs are explicitly discovered on the native host, never guessed from the catalog. */
 export function parseOutputs(value: unknown): AudioOutput[] {
-  if (!Array.isArray(value) || value.length > 64) throw new Error("Sorties audio invalides.");
+  if (!Array.isArray(value) || value.length > 64) throw new Error(t("Sorties audio invalides."));
   const seen = new Set<string>();
   return value.map((item) => {
     const v = object(item);
@@ -96,7 +97,7 @@ export function parseOutputs(value: unknown): AudioOutput[] {
       typeof v.name !== "string" ||
       typeof v.default !== "boolean"
     )
-      throw new Error("Sorties audio invalides.");
+      throw new Error(t("Sorties audio invalides."));
     seen.add(v.id);
     return { id: v.id, name: v.name, default: v.default };
   });

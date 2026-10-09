@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { Album, Artist } from "./types";
 export interface PlayableSelection {
   reference: string;
@@ -13,13 +14,13 @@ export function playbackSelection(
   albums: readonly Album[],
   artists: readonly Artist[],
 ): PlayableSelection[] {
-  if (!value || typeof value !== "object") throw new Error("Sélection Aède invalide.");
+  if (!value || typeof value !== "object") throw new Error(t("Sélection Aède invalide."));
   const rows = (value as { items?: unknown }).items;
   if (!Array.isArray(rows) || !rows.length || rows.length > 4096)
-    throw new Error("Sélection vide ou supérieure à 4096 pistes.");
+    throw new Error(t("Sélection vide ou supérieure à 4096 pistes."));
   const releases = new Map(albums.map((a) => [a.reference, a]));
   return rows.map((value) => {
-    if (!value || typeof value !== "object") throw new Error("Piste Aède invalide.");
+    if (!value || typeof value !== "object") throw new Error(t("Piste Aède invalide."));
     const r = value as Record<string, unknown>,
       album = r.release === null ? null : releases.get(String(r.release));
     if (
@@ -32,14 +33,14 @@ export function playbackSelection(
       Number(r.number) < 1 ||
       Number(r.number) > Number(r.album_total)
     )
-      throw new Error("Sélection modifiée ; resynchronisez la bibliothèque.");
+      throw new Error(t("Sélection modifiée ; resynchronisez la bibliothèque."));
     return {
       reference: r.reference,
       title: r.title,
       album,
       artist:
         artists.find((a) => a.reference === album?.artist)?.name ??
-        (album ? "Artistes divers" : "Titre sans album"),
+        (album ? t("Artistes divers") : t("Titre sans album")),
       number: Number(r.number),
       albumTotal: Number(r.album_total),
     };

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createMemo, createResource, type Accessor } from "solid-js";
 import type { Section } from "../navigation/routes";
 import type { AccountSession } from "./server";
@@ -48,7 +49,7 @@ export function createPersonalReads(
           !Number.isSafeInteger(value.total) ||
           value.total < value.items.length
         )
-          throw new Error("Page Aède invalide.");
+          throw new Error(t("Page Aède invalide."));
         if (input.path.endsWith("/history"))
           for (const row of value.items) {
             const item = row as HistoryRow;
@@ -63,7 +64,7 @@ export function createPersonalReads(
               ) ||
               !(item.completed === null || typeof item.completed === "boolean")
             )
-              throw new Error("Historique Aède invalide.");
+              throw new Error(t("Historique Aède invalide."));
           }
         return { data: value };
       } catch (error) {
@@ -87,10 +88,15 @@ export function createPersonalReads(
             typeof track.title !== "string" ||
             !(track.release === null || typeof track.release === "string")
           )
-            throw new Error("Piste Aède invalide.");
+            throw new Error(t("Piste Aède invalide."));
           result.push({ ...row, title: track.title, release: track.release });
         } catch (error) {
-          result.push({ ...row, title: "Piste indisponible", release: null, error: String(error) });
+          result.push({
+            ...row,
+            title: t("Piste indisponible"),
+            release: null,
+            error: String(error),
+          });
         }
       }
       return result;

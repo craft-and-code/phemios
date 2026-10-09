@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createResource, createSignal, For, Show, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
 import { ConnectionPanel } from "../components/ConnectionPanel";
@@ -71,10 +72,11 @@ export function SettingsLibraries() {
   return (
     <div class="settings-libraries">
       <div class="settings-card">
-        <h2>Bibliothèque locale</h2>
+        <h2>{t("Bibliothèque locale")}</h2>
         <p>
-          Ajoutez vos dossiers, y compris les partages réseau déjà montés par votre système. Leur
-          contenu rejoint le catalogue commun avec l’origine Local.
+          {t(
+            "Ajoutez vos dossiers, y compris les partages réseau déjà montés par votre système. Leur contenu rejoint le catalogue commun avec l’origine Local.",
+          )}{" "}
         </p>
         <Show when={local.error}>
           <p role="alert">{String(local.error)}</p>
@@ -85,21 +87,23 @@ export function SettingsLibraries() {
             disabled={busy() || library.demo}
             onClick={() => void perform(() => library.enableLocal())}
           >
-            {library.localSession() ? "Reconnecter le moteur local" : "Activer Aède local"}
+            {library.localSession() ? t("Reconnecter le moteur local") : t("Activer Aède local")}
           </button>
           <button
             disabled={busy() || !library.localSession()}
             onClick={() => void perform(() => library.disableLocal())}
           >
-            Désactiver le moteur local
+            {t("Désactiver le moteur local")}{" "}
           </button>
           <button disabled={busy() || library.demo} onClick={() => void perform(pickLocalRoots)}>
-            Ajouter des dossiers…
+            {t("Ajouter des dossiers…")}{" "}
           </button>
         </div>
         <Show when={local()?.enabled && !local()?.running}>
           <p class="notice">
-            Le moteur local est arrêté. Reconnectez-le pour lire ou modifier la bibliothèque.
+            {t(
+              "Le moteur local est arrêté. Reconnectez-le pour lire ou modifier la bibliothèque.",
+            )}{" "}
           </p>
         </Show>
         <ul class="root-list">
@@ -109,7 +113,7 @@ export function SettingsLibraries() {
                 <div>
                   <strong>{root.path}</strong>
                   <small>
-                    {root.available ? "Disponible" : "Indisponible · catalogue conservé"}
+                    {root.available ? t("Disponible") : t("Indisponible · catalogue conservé")}
                     {root.mount ? ` · ${root.mount}` : ""}
                   </small>
                 </div>
@@ -117,22 +121,22 @@ export function SettingsLibraries() {
                   disabled={busy()}
                   onClick={() => void perform(() => localRootAction(root.path, "remove"))}
                 >
-                  Retirer
+                  {t("Retirer")}{" "}
                 </button>
                 <button
                   disabled={busy() || !library.localSession()}
                   onClick={() => void perform(() => localRootAction(root.path, "exclude"))}
                 >
-                  Exclure
+                  {t("Exclure")}{" "}
                 </button>
               </li>
             )}
           </For>
         </ul>
         <p class="muted">
-          Ajouter un dossier ne lance aucun scan. Retirer ou exclure un dossier sera appliqué au
-          catalogue lors de l’analyse suivante ; les fichiers audio et les annotations sont
-          conservés.
+          {t(
+            "Ajouter un dossier ne lance aucun scan. Retirer ou exclure un dossier sera appliqué au catalogue lors de l’analyse suivante ; les fichiers audio et les annotations sont conservés.",
+          )}{" "}
         </p>
         <div class="settings-actions">
           <button
@@ -144,13 +148,13 @@ export function SettingsLibraries() {
               })
             }
           >
-            Analyser les dossiers
+            {t("Analyser les dossiers")}{" "}
           </button>
           <button
             disabled={busy() || !library.localSession()}
             onClick={() => void perform(() => library.sync("local"))}
           >
-            Synchroniser le catalogue local
+            {t("Synchroniser le catalogue local")}{" "}
           </button>
         </div>
         <label class="check">
@@ -159,10 +163,10 @@ export function SettingsLibraries() {
             checked={full()}
             onChange={(e) => setFull(e.currentTarget.checked)}
           />
-          Relire tous les fichiers
+          {t("Relire tous les fichiers")}{" "}
         </label>
         <label>
-          Threads (0 = automatique)
+          {t("Threads (0 = automatique)")}{" "}
           <input
             type="number"
             min="0"
@@ -172,7 +176,7 @@ export function SettingsLibraries() {
           />
         </label>
         <details>
-          <summary>Exclusions</summary>
+          <summary>{t("Exclusions")}</summary>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -180,7 +184,7 @@ export function SettingsLibraries() {
             }}
           >
             <label>
-              Dossier à exclure
+              {t("Dossier à exclure")}{" "}
               <input
                 required
                 value={excluded()}
@@ -188,19 +192,20 @@ export function SettingsLibraries() {
               />
             </label>
             <div class="settings-actions">
-              <button disabled={busy() || !library.localSession()}>Exclure</button>
+              <button disabled={busy() || !library.localSession()}>{t("Exclure")}</button>
               <button
                 type="button"
                 disabled={busy() || !library.localSession()}
                 onClick={() => void perform(() => localRootAction(excluded(), "include"))}
               >
-                Retirer l’exclusion
+                {t("Retirer l’exclusion")}{" "}
               </button>
             </div>
           </form>
           <p class="muted">
-            Les exclusions utilisent les règles roots d’Aède. Vous pouvez retirer une exclusion en
-            indiquant son chemin.
+            {t(
+              "Les exclusions utilisent les règles roots d’Aède. Vous pouvez retirer une exclusion en indiquant son chemin.",
+            )}{" "}
           </p>
           <For each={roots()?.items.filter((row) => row.status === "excluded")}>
             {(row) => (
@@ -210,7 +215,7 @@ export function SettingsLibraries() {
                   disabled={busy() || !row.path}
                   onClick={() => void perform(() => localRootAction(row.path!, "include"))}
                 >
-                  Retirer l’exclusion
+                  {t("Retirer l’exclusion")}{" "}
                 </button>
               </div>
             )}
@@ -221,11 +226,11 @@ export function SettingsLibraries() {
         </details>
       </div>
       <div class="settings-card">
-        <h2>Serveur Aède</h2>
+        <h2>{t("Serveur Aède")}</h2>
         <ConnectionPanel embedded onClose={() => {}} />
         <Show when={administrative()}>
           <details>
-            <summary>Dossiers et scan du serveur</summary>
+            <summary>{t("Dossiers et scan du serveur")}</summary>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -251,17 +256,18 @@ export function SettingsLibraries() {
               }}
             >
               <label>
-                Dossiers sur le serveur (un chemin absolu par ligne)
+                {t("Dossiers sur le serveur (un chemin absolu par ligne)")}{" "}
                 <textarea
                   value={remoteFolders()}
                   onInput={(e) => setRemoteFolders(e.currentTarget.value)}
                 />
               </label>
-              <button disabled={busy()}>Lancer le scan du serveur</button>
+              <button disabled={busy()}>{t("Lancer le scan du serveur")}</button>
             </form>
             <p class="muted">
-              Sans dossier indiqué, Aède analyse ses racines existantes. Le serveur gère ses
-              montages et exclusions. Les routes d’administration sont désactivées sur HTTPS.
+              {t(
+                "Sans dossier indiqué, Aède analyse ses racines existantes. Le serveur gère ses montages et exclusions. Les routes d’administration sont désactivées sur HTTPS.",
+              )}{" "}
             </p>
           </details>
         </Show>
@@ -269,13 +275,15 @@ export function SettingsLibraries() {
       <Show when={task()}>
         {(current) => (
           <div class="settings-card">
-            <h2>Tâche Aède · {taskSource() === "local" ? "Local" : "Serveur"}</h2>
+            <h2>
+              {t("Tâche Aède ·")} {taskSource() === "local" ? t("Local") : t("Serveur")}
+            </h2>
             <p>
               #{current().task_id} · {current().status}
             </p>
             <div class="settings-actions">
               <button disabled={busy()} onClick={() => void refreshTask()}>
-                Actualiser la progression
+                {t("Actualiser la progression")}{" "}
               </button>
               <button
                 disabled={busy() || !["queued", "running"].includes(current().status)}
@@ -291,7 +299,7 @@ export function SettingsLibraries() {
                   )
                 }
               >
-                Annuler la tâche
+                {t("Annuler la tâche")}{" "}
               </button>
             </div>
             <Show when={current().result}>

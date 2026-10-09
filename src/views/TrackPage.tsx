@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t } from "../i18n";
 import { createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -15,17 +17,19 @@ export function TrackPage(props: { reference: string }) {
   );
   const album = () => library.albums().find((a) => a.reference === detail()?.release);
   const format = (v: number | null, unit: string) =>
-    v === null ? "Non renseigné" : `${v.toLocaleString("fr")} ${unit}`;
+    v === null ? t("Non renseigné") : `${v.toLocaleString(locale())} ${unit}`;
   return (
     <article class="page track-page">
       <Show when={!library.sessionFor(props.reference)}>
-        <p class="notice">Connectez Aède pour consulter ce titre.</p>
+        <p class="notice">{t("Connectez Aède pour consulter ce titre.")}</p>
       </Show>
       <Show when={detail.loading}>
-        <p role="status">Chargement du titre…</p>
+        <p role="status">{t("Chargement du titre…")}</p>
       </Show>
       <Show when={detail.error}>
-        <p role="alert">Titre indisponible : {String(detail.error)}</p>
+        <p role="alert">
+          {t("Titre indisponible :")} {String(detail.error)}
+        </p>
       </Show>
       <Show when={!detail.loading && !detail.error && detail()}>
         {(row) => (
@@ -39,49 +43,49 @@ export function TrackPage(props: { reference: string }) {
                 )}
               </Show>
               <div>
-                <p class="eyebrow">PISTE</p>
+                <p class="eyebrow">{t("PISTE")}</p>
                 <h1>{row().title}</h1>
-                <Show when={album()} fallback={<p>Sans album</p>}>
+                <Show when={album()} fallback={<p>{t("Sans album")}</p>}>
                   {(a) => (
                     <p>
-                      <a href={`#/album/${encodeURIComponent(a().reference)}`}>{a().title}</a> · CD{" "}
-                      {row().disc_no ?? "?"} · Piste {row().track_no ?? "?"}
+                      <a href={`#/album/${encodeURIComponent(a().reference)}`}>{a().title}</a>{" "}
+                      {t("· CD")} {row().disc_no ?? "?"} {t("· Piste")} {row().track_no ?? "?"}
                     </p>
                   )}
                 </Show>
               </div>
             </div>
             <section>
-              <h2>Fichier et format</h2>
+              <h2>{t("Fichier et format")}</h2>
               <dl class="track-facts">
                 <div>
-                  <dt>Codec / conteneur</dt>
+                  <dt>{t("Codec / conteneur")}</dt>
                   <dd>
                     {row().properties.codec} / {row().properties.container}
                   </dd>
                 </div>
                 <div>
-                  <dt>Durée</dt>
+                  <dt>{t("Durée")}</dt>
                   <dd>{trackDuration(row().duration_ms)}</dd>
                 </div>
                 <div>
-                  <dt>Fréquence</dt>
+                  <dt>{t("Fréquence")}</dt>
                   <dd>{format(row().properties.sample_rate, "Hz")}</dd>
                 </div>
                 <div>
-                  <dt>Profondeur de bits</dt>
+                  <dt>{t("Profondeur de bits")}</dt>
                   <dd>{format(row().properties.bit_depth, "bits")}</dd>
                 </div>
                 <div>
-                  <dt>Canaux</dt>
+                  <dt>{t("Canaux")}</dt>
                   <dd>{format(row().properties.channels, "")}</dd>
                 </div>
                 <div>
-                  <dt>Débit</dt>
+                  <dt>{t("Débit")}</dt>
                   <dd>{format(row().properties.bitrate_kbps, "kbit/s")}</dd>
                 </div>
                 <div>
-                  <dt>Taille</dt>
+                  <dt>{t("Taille")}</dt>
                   <dd>{fileSize(row().size)}</dd>
                 </div>
               </dl>
@@ -91,14 +95,16 @@ export function TrackPage(props: { reference: string }) {
             </section>
             <Show when={row().credits.length}>
               <section>
-                <h2>Crédits</h2>
+                <h2>{t("Crédits")}</h2>
                 <ul class="personal-list">
                   <For each={row().credits}>
                     {(c) => (
                       <li>
                         <a href={`#/artist/${encodeURIComponent(c.reference)}`}>{c.name}</a>
                         <span>{c.role}</span>
-                        <small>Source : {c.source}</small>
+                        <small>
+                          {t("Source :")} {c.source}
+                        </small>
                       </li>
                     )}
                   </For>
@@ -106,7 +112,7 @@ export function TrackPage(props: { reference: string }) {
               </section>
             </Show>
             <section>
-              <h2>Tags du fichier</h2>
+              <h2>{t("Tags du fichier")}</h2>
               <dl class="file-tags">
                 <For each={Object.entries(row().tags)}>
                   {([key, values]) => (
@@ -120,7 +126,7 @@ export function TrackPage(props: { reference: string }) {
             </section>
             <AnnotationPanel reference={props.reference} kind="track" />
             <section>
-              <h2>Lecture et résultats enregistrés</h2>
+              <h2>{t("Lecture et résultats enregistrés")}</h2>
               <ol class="track-list">
                 <TrackResults
                   track={row()}

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { equalizerHeights } from "../library/equalizer";
@@ -24,8 +25,8 @@ export function PlayingBars(props: { reference: string }) {
         role="img"
         aria-label={
           player.state().status === "playing"
-            ? "Niveau audio du titre en lecture"
-            : "Indicateur audio en pause"
+            ? t("Niveau audio du titre en lecture")
+            : t("Indicateur audio en pause")
         }
       >
         <For each={[0, 1, 2, 3]}>

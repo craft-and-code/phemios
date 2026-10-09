@@ -1,3 +1,5 @@
+import { locale } from "../i18n";
+import { t, countryName } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createMemo, For, Show } from "solid-js";
 import { PlayingBars } from "../components/PlayingBars";
@@ -15,7 +17,7 @@ export function ArtistPage(props: {
 }) {
   const library = useLibrary();
   const sort = (items: readonly import("../library/types").Album[]) =>
-    [...items].sort((a, b) => a.title.localeCompare(b.title, "fr") * (props.reverse ? -1 : 1));
+    [...items].sort((a, b) => a.title.localeCompare(b.title, locale()) * (props.reverse ? -1 : 1));
   const albums = createMemo(() =>
     sort(library.albums().filter((album) => album.artist === props.artist.reference)),
   );
@@ -55,7 +57,7 @@ export function ArtistPage(props: {
         }
       >
         <div>
-          <p class="eyebrow">ARTISTE</p>
+          <p class="eyebrow">{t("ARTISTE")}</p>
           <h1>{props.artist.name}</h1>
           <p>
             <For each={props.artist.genres ?? (props.artist.genre ? [props.artist.genre] : [])}>
@@ -72,10 +74,10 @@ export function ArtistPage(props: {
               )}
             </For>
             {props.artist.genre ? " · " : ""}
-            <Show when={props.artist.country} fallback="Origine inconnue">
+            <Show when={props.artist.country} fallback={t("Origine inconnue")}>
               {(country) => (
                 <button class="metadata-link" onClick={() => props.onCountry(country())}>
-                  {country()}
+                  {countryName(props.artist.countryCode, country())}
                 </button>
               )}
             </Show>
@@ -94,15 +96,15 @@ export function ArtistPage(props: {
         </Show>
         <div class="page artist-content">
           <section class="biography">
-            <h2>Biographie</h2>
-            <p>{props.artist.biography || "Aucune biographie récupérée pour cet artiste."}</p>
+            <h2>{t("Biographie")}</h2>
+            <p>{props.artist.biography || t("Aucune biographie récupérée pour cet artiste.")}</p>
             <Show when={props.artist.biographyCredit}>
               {(credit) => (
                 <small>
                   <Show when={sourceLink(credit().url)} fallback={credit().url}>
                     {(url) => (
                       <a href={url()} target="_blank" rel="noreferrer">
-                        Source de la biographie
+                        {t("Source de la biographie")}{" "}
                       </a>
                     )}
                   </Show>{" "}
@@ -111,7 +113,7 @@ export function ArtistPage(props: {
               )}
             </Show>
             <Show when={library.demo}>
-              <small>Texte fictif pour l’aperçu.</small>
+              <small>{t("Texte fictif pour l’aperçu.")}</small>
             </Show>
           </section>
           <Show
@@ -130,18 +132,20 @@ export function ArtistPage(props: {
                 {library.player.current()?.title}
               </a>
               <small>
-                En {library.player.state().status === "paused" ? "pause" : "lecture"} ·{" "}
+                {t("En")} {library.player.state().status === "paused" ? "pause" : "lecture"} ·{" "}
                 {library.player.current()?.album?.title}
               </small>
             </div>
           </Show>
           <div class="section-heading">
-            <h2>Discographie</h2>
-            <span role="status">{albums().length} albums dans la sélection</span>
+            <h2>{t("Discographie")}</h2>
+            <span role="status">
+              {albums().length} {t("albums dans la sélection")}
+            </span>
           </div>
           <AlbumGrid albums={albums()} />
           <Show when={appearances().length}>
-            <h2>Participations</h2>
+            <h2>{t("Participations")}</h2>
             <AlbumGrid albums={appearances()} />
           </Show>
           <AnnotationPanel reference={props.artist.reference} kind="artist" />

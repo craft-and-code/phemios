@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { TrackResults } from "../components/TrackResults";
@@ -33,7 +34,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
       <div class="album-hero">
         <button
           class="cover-open"
-          aria-label={`Agrandir la pochette de ${props.album.title}`}
+          aria-label={t("Agrandir la pochette de {0}", props.album.title)}
           disabled={!library.demo && !library.image(props.album.reference, "cover")}
           onClick={(event) => {
             event.currentTarget.focus();
@@ -49,7 +50,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
           <p class="eyebrow">{props.album.compilation ? "COMPILATION" : "ALBUM"}</p>
           <h1>{props.album.title}</h1>
           <p>
-            <Show when={artist()} fallback="Artistes divers">
+            <Show when={artist()} fallback={t("Artistes divers")}>
               {(row) => (
                 <a
                   class="album-artist-link"
@@ -60,10 +61,10 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
               )}
             </Show>{" "}
             ·{" "}
-            <Show when={props.album.year !== null} fallback="Année inconnue">
+            <Show when={props.album.year !== null} fallback={t("Année inconnue")}>
               <button
                 class="metadata-link"
-                aria-label={`Voir les albums de ${props.album.year}`}
+                aria-label={t("Voir les albums de {0}", props.album.year)}
                 onClick={() => props.onYear(props.album.year!)}
               >
                 {props.album.year}
@@ -75,26 +76,28 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
       <AnnotationPanel reference={props.album.reference} kind="album" />
       <section>
         <div class="section-heading">
-          <h2>Pistes</h2>
+          <h2>{t("Pistes")}</h2>
           <M3UExport release={props.album.reference} title={props.album.title} />
         </div>
         <Show when={tracks.error}>
-          <p role="alert">Pistes indisponibles : {String(tracks.error)}</p>
+          <p role="alert">
+            {t("Pistes indisponibles :")} {String(tracks.error)}
+          </p>
         </Show>
         <Show when={tracks.loading}>
-          <p class="muted">Chargement des pistes…</p>
+          <p class="muted">{t("Chargement des pistes…")}</p>
         </Show>
         <Show when={!library.sessionFor(props.album.reference)}>
-          <p class="muted">Connectez Aède pour consulter les pistes.</p>
+          <p class="muted">{t("Connectez Aède pour consulter les pistes.")}</p>
         </Show>
         <Show when={tracks() && !tracks.loading && !tracks()?.length}>
-          <p class="muted">Aucune piste dans cet album.</p>
+          <p class="muted">{t("Aucune piste dans cet album.")}</p>
         </Show>
         <For each={discs()}>
           {(disc) => (
             <section class="album-disc">
               <Show when={discs().length > 1}>
-                <h3>{disc.disc === null ? "Disque non renseigné" : `CD ${disc.disc}`}</h3>
+                <h3>{disc.disc === null ? t("Disque non renseigné") : `CD ${disc.disc}`}</h3>
               </Show>
               <ol class="track-list">
                 <For each={disc.tracks}>
@@ -106,7 +109,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
                         void library.player.start(
                           tracks() ?? [],
                           props.album,
-                          artist()?.name ?? "Artistes divers",
+                          artist()?.name ?? t("Artistes divers"),
                           row.index,
                         )
                       }
@@ -120,7 +123,7 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
       </section>
       <section class="album-analysis-jobs">
         <div class="section-heading">
-          <h2>Analyse de l’album</h2>
+          <h2>{t("Analyse de l’album")}</h2>
           <AnalysisDownload
             reference={props.album.reference}
             album

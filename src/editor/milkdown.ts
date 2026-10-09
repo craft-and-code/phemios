@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import {
   Editor,
   rootCtx,
@@ -24,7 +25,7 @@ import { callCommand, replaceAll } from "@milkdown/kit/utils";
 import { markdownDraft } from "./draft";
 const documentAttributes = (readOnly: boolean): Record<string, string> => ({
   role: readOnly ? "document" : "textbox",
-  "aria-label": "Notes personnelles",
+  "aria-label": t("Notes personnelles"),
   ...(readOnly ? {} : { "aria-multiline": "true" }),
 });
 export type NoteCommand =
@@ -35,7 +36,7 @@ const inertImage = imageSchema.extendSchema((previous) => (ctx) => ({
   toDOM: (node) => [
     "span",
     { class: "note-media" },
-    `Image : ${node.attrs.alt || "sans description"}`,
+    t("Image : {0}", node.attrs.alt || t("sans description")),
   ],
 }));
 const inertLink = linkSchema.extendSchema((previous) => (ctx) => ({

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 interface Gauge {
   label: string;
   unit: string;
@@ -14,13 +15,13 @@ interface Event {
 function object(value: unknown): Record<string, unknown> {
   if (value === null || value === undefined) return {};
   if (typeof value !== "object" || Array.isArray(value))
-    throw new Error("Données FlacCompagnon invalides.");
+    throw new Error(t("Données FlacCompagnon invalides."));
   return value as Record<string, unknown>;
 }
 function number(value: unknown, low = -Infinity, high = Infinity): number | undefined {
   if (value === null || value === undefined) return undefined;
   if (typeof value !== "number" || !Number.isFinite(value) || value < low || value > high)
-    throw new Error("Mesure FlacCompagnon invalide.");
+    throw new Error(t("Mesure FlacCompagnon invalide."));
   return value;
 }
 function text(value: unknown): string {
@@ -30,7 +31,7 @@ function text(value: unknown): string {
 export function analysisGraphs(value: unknown) {
   const row = object(value),
     data = row.source_data ? object(row.source_data) : row;
-  if (row.source !== "flaccompagnon") throw new Error("Source d’analyse non prise en charge.");
+  if (row.source !== "flaccompagnon") throw new Error(t("Source d’analyse non prise en charge."));
   const clipping = object(data.clipping),
     detections = object(data.detections);
   const gauges: Gauge[] = [],
@@ -62,7 +63,7 @@ export function analysisGraphs(value: unknown) {
   add("Balance D/G", "dB", object(data.stereo_balance).right_minus_left_db, -12, 12);
   const phase = object(data.local_phase);
   if (phase.bands !== undefined && !Array.isArray(phase.bands))
-    throw new Error("Bandes de phase invalides.");
+    throw new Error(t("Bandes de phase invalides."));
   for (const value of (phase.bands as unknown[] | undefined)?.slice(0, 16) ?? []) {
     const band = object(value),
       low = number(band.low_hz, 0),
@@ -84,12 +85,12 @@ export function analysisGraphs(value: unknown) {
     const group = object(discontinuities[key ?? ""]),
       count = number(group.count, 0, Number.MAX_SAFE_INTEGER);
     if (count !== undefined && !Number.isInteger(count))
-      throw new Error("Nombre d’événements invalide.");
+      throw new Error(t("Nombre d’événements invalide."));
     if (count === undefined) completeCount = false;
     eventCount += count ?? 0;
-    if (!Number.isSafeInteger(eventCount)) throw new Error("Nombre d’événements trop grand.");
+    if (!Number.isSafeInteger(eventCount)) throw new Error(t("Nombre d’événements trop grand."));
     if (group.events !== undefined && !Array.isArray(group.events))
-      throw new Error("Événements invalides.");
+      throw new Error(t("Événements invalides."));
     const retained = (group.events as unknown[] | undefined) ?? [];
     retainedEvents += retained.length;
     for (const value of retained.slice(0, Math.max(0, 1000 - events.length))) {
@@ -103,8 +104,8 @@ export function analysisGraphs(value: unknown) {
         channel === undefined ||
         !Number.isInteger(channel)
       )
-        throw new Error("Position d’événement invalide.");
-      events.push({ start, duration: length, channel, kind: label ?? "Événement" });
+        throw new Error(t("Position d’événement invalide."));
+      events.push({ start, duration: length, channel, kind: label ?? t("Événement") });
     }
   }
   return {

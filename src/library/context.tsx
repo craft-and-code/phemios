@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { referenceSource, type SourceId } from "./sources";
 import { startLocal, stopLocal, localStatus, setRequestSource } from "../platform/desktop";
 import {
@@ -95,7 +96,7 @@ export function LibraryProvider(props: ParentProps) {
   const [mediaProgress, setMediaProgress] = createSignal<readonly [number, number]>([0, 0]);
   const connection = connectionMonitor(async () => {
     const current = serverSession();
-    if (!current) throw new Error("Session absente.");
+    if (!current) throw new Error(t("Session absente."));
     const account = await requestAede<{ id: string; enabled: boolean }>(
       "/api/auth/v1/session",
       {},
@@ -103,7 +104,8 @@ export function LibraryProvider(props: ParentProps) {
       null,
       "server",
     );
-    if (account.id !== current.account.id || !account.enabled) throw new Error("Session invalide.");
+    if (account.id !== current.account.id || !account.enabled)
+      throw new Error(t("Session invalide."));
   }, setConnected);
   const player = createPlayback(
     () =>
@@ -117,7 +119,7 @@ export function LibraryProvider(props: ParentProps) {
     if (["playing", "paused", "connecting"].includes(player.state().status)) {
       await player.action("stop");
       if (["playing", "paused", "connecting"].includes(player.state().status))
-        throw new Error("Arrêtez la lecture de la bibliothèque avant de lancer la radio.");
+        throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
     }
   });
   const tasks = createJobs(() => !!localSession() || !!serverSession());
@@ -177,7 +179,7 @@ export function LibraryProvider(props: ParentProps) {
         setImageErrors(id, "");
       } catch (failure) {
         if (epoch === generation)
-          setImageErrors(id, failure instanceof Error ? failure.message : "Image indisponible.");
+          setImageErrors(id, failure instanceof Error ? failure.message : t("Image indisponible."));
       } finally {
         pending.delete(id);
       }
@@ -243,10 +245,10 @@ export function LibraryProvider(props: ParentProps) {
         for (const row of page.items) setAnnotations(row.reference, row);
         offset += page.items.length;
         if (offset >= page.total) return;
-        if (!page.items.length) throw new Error("Pagination des annotations incohérente.");
+        if (!page.items.length) throw new Error(t("Pagination des annotations incohérente."));
       }
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Annotations indisponibles.");
+      setError(failure instanceof Error ? failure.message : t("Annotations indisponibles."));
     }
   }
   async function sync(owner: SourceId = source()) {
@@ -261,7 +263,7 @@ export function LibraryProvider(props: ParentProps) {
       await loadAnnotations(owner);
       void warmCovers();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Synchronisation impossible.");
+      setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
     } finally {
       setBusy(false);
     }
@@ -275,7 +277,7 @@ export function LibraryProvider(props: ParentProps) {
       player.identify(`${serverSession()?.server}:${serverSession()?.account.id}`);
       connection.start();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Connexion impossible.");
+      setError(failure instanceof Error ? failure.message : t("Connexion impossible."));
     } finally {
       setBusy(false);
     }
@@ -286,7 +288,7 @@ export function LibraryProvider(props: ParentProps) {
     try {
       await logoutAede();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Déconnexion interrompue.");
+      setError(failure instanceof Error ? failure.message : t("Déconnexion interrompue."));
     } finally {
       connection.stop();
       if (referenceSource(player.state().reference) === "server") player.reset();
@@ -302,7 +304,7 @@ export function LibraryProvider(props: ParentProps) {
       if (!serverSession()) chooseSource("local");
       await sync("local");
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Moteur local indisponible.");
+      setError(failure instanceof Error ? failure.message : t("Moteur local indisponible."));
     }
   }
   async function disableLocal() {
@@ -314,7 +316,7 @@ export function LibraryProvider(props: ParentProps) {
         if (referenceSource(ref) === "local") setAnnotations(ref, undefined);
       if (source() === "local") chooseSource("server");
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Arrêt local impossible.");
+      setError(failure instanceof Error ? failure.message : t("Arrêt local impossible."));
     }
   }
   onMount(async () => {
@@ -330,7 +332,7 @@ export function LibraryProvider(props: ParentProps) {
       void warmCovers();
       if ((await localStatus()).enabled) await enableLocal();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Cache inaccessible.");
+      setError(failure instanceof Error ? failure.message : t("Cache inaccessible."));
     }
   });
   onCleanup(() => {

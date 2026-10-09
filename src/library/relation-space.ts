@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 /** Perspective projection of a bounded Fibonacci sphere; coordinates carry no music meaning. */
 export function relationSpace(count: number, yaw: number, pitch: number, zoom: number) {
   if (
@@ -8,7 +9,7 @@ export function relationSpace(count: number, yaw: number, pitch: number, zoom: n
     zoom < 0.6 ||
     zoom > 1.6
   )
-    throw new Error("Espace de relations invalide.");
+    throw new Error(t("Espace de relations invalide."));
   return Array.from({ length: count }, (_, index) => {
     const y = 1 - (2 * (index + 0.5)) / count,
       radius = Math.sqrt(1 - y * y),
@@ -62,7 +63,7 @@ export function relationBrightness(x: number, y: number) {
 
 /** Explicit depth and radial shading remain visible even where rear nodes project near the centre. */
 export function relationTone(depth: number, x: number, y: number) {
-  if (![depth, x, y].every(Number.isFinite)) throw new Error("Position de relation invalide.");
+  if (![depth, x, y].every(Number.isFinite)) throw new Error(t("Position de relation invalide."));
   const distance = Math.min(1, Math.hypot(x - 450, y - 255) / 400);
   const brightness = Math.max(0.08, Math.min(1, 0.22 + (0.68 * (depth + 1)) / 2 - 0.25 * distance));
   const mix = (dark: readonly number[], light: readonly number[]) =>

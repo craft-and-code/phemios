@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { catalogIndex } from "./index";
 import type { Album, Artist, Filters, Interval } from "./types";
 
@@ -32,7 +33,7 @@ export function shiftInterval(range: Interval, delta: number, domain: Interval):
     range[0] < domain[0] ||
     range[1] > domain[1]
   ) {
-    throw new Error("The selected interval is outside its domain.");
+    throw new Error(t("The selected interval is outside its domain."));
   }
   const shift = Math.max(domain[0] - range[0], Math.min(Math.round(delta), domain[1] - range[1]));
   return [range[0] + shift, range[1] + shift];
@@ -150,7 +151,7 @@ export function filterAlbums(
     const related = index.artistsByAlbum.get(album.reference) ?? [];
     const fallback: Artist = {
       reference: "",
-      name: "Artistes divers",
+      name: t("Artistes divers"),
       genre: "",
       country: null,
       biography: "",

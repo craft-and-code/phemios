@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { createMemo, createSignal, onCleanup } from "solid-js";
 import { parseRoute, sections, type Section } from "./routes";
 interface Entry {
@@ -98,10 +99,10 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
     return (
       entry().origin ??
       (route().kind === "track"
-        ? { href: "#/tracks", label: "Toutes les pistes" }
+        ? { href: "#/tracks", label: t("Toutes les pistes") }
         : route().kind === "album"
-          ? { href: "#/albums", label: "Tous les albums" }
-          : { href: "#/artists", label: "Tous les artistes" })
+          ? { href: "#/albums", label: t("Tous les albums") }
+          : { href: "#/artists", label: t("Tous les artistes") })
     );
   };
   function goBack() {

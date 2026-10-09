@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { Icon } from "./Icon";
 import { Show } from "solid-js";
 import type { Album } from "../library/types";
@@ -13,7 +14,7 @@ export function Artwork(props: { album: Album; compact?: boolean; thumbnail?: bo
       classList={{ compact: props.compact ?? false, "real-art": !library.demo }}
       data-palette={Math.max(0, index()) % 6}
       role="img"
-      aria-label={`Pochette : ${props.album.title}`}
+      aria-label={t("Pochette : {0}", props.album.title)}
     >
       <Show
         when={library.demo}
@@ -29,8 +30,8 @@ export function Artwork(props: { album: Album; compact?: boolean; thumbnail?: bo
                   when={props.thumbnail}
                   fallback={
                     props.album.cover && !library.imageError(props.album.reference, "cover")
-                      ? "Chargement de la pochette…"
-                      : "Pochette indisponible"
+                      ? t("Chargement de la pochette…")
+                      : t("Pochette indisponible")
                   }
                 >
                   <Icon name="disc" />

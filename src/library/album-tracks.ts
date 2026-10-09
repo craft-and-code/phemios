@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import type { Track } from "./server";
 export interface AlbumTrack extends Track {
@@ -9,7 +10,7 @@ export interface AlbumTrack extends Track {
 }
 const object = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Page de pistes Aède invalide.");
+    throw new Error(t("Page de pistes Aède invalide."));
   return value as Record<string, unknown>;
 };
 const ordinal = (value: unknown) =>
@@ -35,12 +36,12 @@ export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
       !Number.isSafeInteger(page.scanned_at) ||
       Number(page.scanned_at) < 0
     )
-      throw new Error("Page de pistes invalide ou album supérieur à 4096 pistes.");
+      throw new Error(t("Page de pistes invalide ou album supérieur à 4096 pistes."));
     if (
       (total !== undefined && total !== page.total) ||
       (stamp !== undefined && stamp !== page.scanned_at)
     )
-      throw new Error("Le catalogue a changé ; resynchronisez la bibliothèque.");
+      throw new Error(t("Le catalogue a changé ; resynchronisez la bibliothèque."));
     total = Number(page.total);
     stamp = Number(page.scanned_at);
     if (
@@ -48,12 +49,12 @@ export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
       !Array.isArray(page.items) ||
       page.items.length !== Math.min(50, total - tracks.length)
     )
-      throw new Error("Page de pistes incomplète.");
+      throw new Error(t("Page de pistes incomplète."));
     for (const value of page.items) {
       const row = object(value);
       if (!("disc_no" in row) || !("track_no" in row) || !("album_position" in row))
         throw new Error(
-          "Mettez à jour puis redémarrez Aède pour afficher les disques de cet album.",
+          t("Mettez à jour puis redémarrez Aède pour afficher les disques de cet album."),
         );
       if (
         typeof row.reference !== "string" ||
@@ -68,7 +69,7 @@ export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
         typeof row.analysis_available !== "boolean" ||
         typeof row.spectrum_available !== "boolean"
       )
-        throw new Error("Position ou piste Aède invalide ; resynchronisez la bibliothèque.");
+        throw new Error(t("Position ou piste Aède invalide ; resynchronisez la bibliothèque."));
       seen.add(row.reference);
       tracks.push({
         reference: row.reference,

@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import type { Track } from "./server";
 export interface CatalogTrack extends Track {
   release: string | null;
@@ -8,7 +9,7 @@ export interface CatalogTrack extends Track {
   spectrum_available: boolean;
 }
 export const record = (v: unknown): Record<string, unknown> => {
-  if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error("Piste Aède invalide.");
+  if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error(t("Piste Aède invalide."));
   return v as Record<string, unknown>;
 };
 const nonnegative = (v: unknown): v is number => Number.isSafeInteger(v) && Number(v) >= 0;
@@ -24,10 +25,10 @@ export function parseTrackPage(value: unknown, offset: number) {
     !Array.isArray(p.items) ||
     p.items.length !== Math.max(0, Math.min(50, p.total - offset))
   )
-    throw new Error("Page de pistes Aède incomplète ou modifiée.");
+    throw new Error(t("Page de pistes Aède incomplète ou modifiée."));
   const items = p.items.map(parseCatalogTrack);
   if (new Set(items.map((r) => r.reference)).size !== items.length)
-    throw new Error("Pistes Aède dupliquées.");
+    throw new Error(t("Pistes Aède dupliquées."));
   return { items, total: p.total, scannedAt: p.scanned_at };
 }
 /** Shared lightweight row validation; full analysis payloads are fetched separately. */
@@ -46,7 +47,7 @@ export function parseCatalogTrack(value: unknown): CatalogTrack {
     typeof r.analysis_available !== "boolean" ||
     typeof r.spectrum_available !== "boolean"
   )
-    throw new Error("Piste Aède invalide ; mettez à jour puis redémarrez le serveur.");
+    throw new Error(t("Piste Aède invalide ; mettez à jour puis redémarrez le serveur."));
   return {
     reference: r.reference,
     title: r.title,
