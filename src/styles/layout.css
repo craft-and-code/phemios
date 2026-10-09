@@ -571,3 +571,40 @@ legend {
     grid-template-columns: minmax(0, 1fr) 230px minmax(0, 1fr);
   }
 }
+
+/* Trial layout: Play and its smaller Stop sit together at the lower-right edge. */
+.play-stop-cluster {
+  display: grid;
+  grid-template-rows: 20px 44px;
+  gap: 4px;
+  place-items: center;
+  width: 48px;
+  flex: 0 0 48px;
+}
+.play-stop-cluster .transport-stop {
+  width: 22px;
+  height: 20px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  justify-self: end;
+}
+.play-stop-cluster .play-button {
+  width: 44px;
+  height: 44px;
+}
+.transport-stop svg {
+  width: 12px;
+  height: 12px;
+}
+
+.rating-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.card-rating {
+  color: var(--accent) !important;
+  letter-spacing: -1px;
+}

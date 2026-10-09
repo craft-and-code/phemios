@@ -29,23 +29,7 @@ export function RadioPlayerBar() {
         </span>
       </div>
       <div class="transport">
-        <div class="transport-buttons">
-          <button
-            class="play-button"
-            aria-label={
-              radio.status() === "playing"
-                ? t("Mettre la radio en pause")
-                : t("Reprendre la radio en direct")
-            }
-            disabled={radio.status() === "connecting"}
-            onClick={() => (radio.status() === "playing" ? radio.pause() : radio.resume())}
-          >
-            <Icon name={radio.status() === "playing" ? "pause" : "play"} />
-          </button>
-          <button class="icon-button" aria-label={t("Arrêter la radio")} onClick={radio.stop}>
-            <Icon name="stop" />
-          </button>
-        </div>
+        <div class="transport-buttons"></div>
         <small class="radio-live">{t("DIRECT · RADIO INTERNET")}</small>
       </div>
       <div class="player-options">
@@ -68,6 +52,27 @@ export function RadioPlayerBar() {
           value={radio.volume()}
           onInput={(e) => radio.changeVolume(Number(e.currentTarget.value))}
         />
+        <div class="play-stop-cluster">
+          <button
+            class="icon-button transport-stop"
+            aria-label={t("Arrêter la radio")}
+            onClick={radio.stop}
+          >
+            <Icon name="stop" />
+          </button>
+          <button
+            class="play-button"
+            aria-label={
+              radio.status() === "playing"
+                ? t("Mettre la radio en pause")
+                : t("Reprendre la radio en direct")
+            }
+            disabled={radio.status() === "connecting"}
+            onClick={() => (radio.status() === "playing" ? radio.pause() : radio.resume())}
+          >
+            <Icon name={radio.status() === "playing" ? "pause" : "play"} />
+          </button>
+        </div>
       </div>
     </footer>
   );
