@@ -56,12 +56,12 @@
   overflow: auto;
   padding: 20px 14px;
   border-right: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 50%, var(--background));
+  background: var(--sidebar);
 }
 .nav-label {
   font-size: 9px;
   letter-spacing: 1.8px;
-  color: #7e8487;
+  color: var(--muted);
   margin: 20px 12px 9px;
 }
 .sidebar > .nav-label {
@@ -73,7 +73,7 @@
   align-items: center;
   padding: 10px 12px;
   border-radius: 6px;
-  color: #c2c6c6;
+  color: var(--text);
 }
 .sidebar nav a[aria-current="page"] {
   color: var(--accent);
@@ -83,7 +83,7 @@
   padding: 24px 12px 0;
   font-size: 11px;
   margin-top: auto;
-  color: #c1c7bd;
+  color: var(--muted);
 }
 .connection small {
   display: block;
@@ -150,7 +150,7 @@ main {
   justify-content: space-between;
   padding: 12px 24px;
   border-top: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--player);
 }
 .player-bar > div {
   display: flex;

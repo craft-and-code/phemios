@@ -33,3 +33,9 @@ Settings uses compact rectangular keyboard-accessible section tabs. External key
 ## Settings persistence
 
 Language and colours save immediately, with visible errors and Reset. Scan depth/worker count, enrichment categories and selected library exclusions now persist as validated non-secret app preferences, together with the track page size. Sections merge their changes rather than overwriting each other. Malformed stores are preserved and refused; failed writes leave the last confirmed choice selected. Changing these options never starts a scan or enrichment job. Connection and API-key drafts retain their explicit save actions; roots and account operations persist through their existing native/server contracts. Passwords and bearer tokens are not browser preferences.
+
+### Configurable shell
+
+Appearance contains eight independently retained colours and a Reset preserving language. Legacy three-colour preferences retain their former text contrast. Navigation contains visibility checkboxes (all enabled initially), native drag handles, equivalent move arrows and Reset. Changes publish only after device-local persistence; new menus append visibly to a previously saved order. The top-level Settings gear remains reachable even with every sidebar menu hidden. These controls change presentation, never account privileges or server configuration.
+
+Podcast removal presents an inline confirmation for the captured feed. Choosing another feed or Cancel abandons the request; only confirmation writes the subscription store, with a failed write leaving it intact.

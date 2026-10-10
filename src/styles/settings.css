@@ -4,8 +4,8 @@
 }
 .settings-tabs {
   display: grid;
-  max-width: 640px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 780px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--border);
@@ -245,4 +245,46 @@
   display: block;
   color: var(--muted);
   margin-top: 16px;
+}
+
+.menu-settings {
+  list-style: none;
+  padding: 0;
+  max-width: 650px;
+}
+.menu-settings li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.menu-settings li.drop-target {
+  border-top: 2px solid var(--accent);
+}
+.menu-settings .check {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.menu-settings .check svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.menu-settings .check span {
+  overflow-wrap: anywhere;
+}
+.menu-drag {
+  cursor: grab;
+  padding: 8px;
+  color: var(--muted);
+}
+.menu-settings .icon-button {
+  flex-shrink: 0;
+}
+.color-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 24px;
 }

@@ -1,3 +1,5 @@
+import { SettingsNavigation } from "./SettingsNavigation";
+import type { createMenuPreferences } from "../navigation/menu-preferences";
 import { SettingsTags } from "./SettingsTags";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -8,7 +10,7 @@ import { SettingsAppearance } from "./SettingsAppearance";
 import { useLibrary } from "../library/context";
 import { Icon } from "../components/Icon";
 import { sourceLabel } from "../library/sources";
-export function SettingsPage() {
+export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferences> }) {
   const [tab, setTab] = createSignal("libraries"),
     library = useLibrary();
   return (
@@ -18,7 +20,7 @@ export function SettingsPage() {
         role="tablist"
         aria-label={t("Paramètres")}
         onKeyDown={(event) => {
-          const ids = ["libraries", "accounts", "services", "tags", "appearance"],
+          const ids = ["libraries", "accounts", "services", "tags", "appearance", "navigation"],
             index = ids.indexOf(tab());
           const next =
             event.key === "ArrowRight"
@@ -43,6 +45,7 @@ export function SettingsPage() {
             { icon: "globe", id: "services", label: t("Sources externes") },
             { icon: "tags", id: "tags", label: t("Tags") },
             { icon: "palette", id: "appearance", label: t("Apparence") },
+            { icon: "menu", id: "navigation", label: t("Navigation") },
           ]}
         >
           {(item) => (
@@ -86,6 +89,9 @@ export function SettingsPage() {
         </Show>
         <Show when={tab() === "tags"}>
           <SettingsTags />
+        </Show>
+        <Show when={tab() === "navigation"}>
+          <SettingsNavigation menu={props.menu} />
         </Show>
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />

@@ -5,12 +5,22 @@ export interface Preferences {
   background: string;
   accent: string;
   surface: string;
+  text: string;
+  muted: string;
+  border: string;
+  sidebar: string;
+  player: string;
 }
 export const defaultPreferences: Preferences = {
   language: "fr",
   background: "#111213",
   accent: "#d8f36a",
   surface: "#1a1c1d",
+  text: "#f1f0eb",
+  muted: "#a4a6a7",
+  border: "#303234",
+  sidebar: "#151718",
+  player: "#1a1c1d",
 };
 /** Corrupt preferences are reported; secrets never belong in browser settings. */
 export function readPreferences(storage: Pick<Storage, "getItem">): Preferences {
@@ -26,17 +36,31 @@ export function readPreferences(storage: Pick<Storage, "getItem">): Preferences 
     )
   )
     throw new Error(t("Préférences invalides."));
-  return v as unknown as Preferences;
+  const next: Record<string, unknown> = { ...defaultPreferences, ...v };
+  if (v.text === undefined)
+    next.text = luminance(String(v.background)) > 0.55 ? "#17191a" : "#f1f0eb";
+  for (const key of Object.keys(defaultPreferences)) {
+    if (
+      key !== "language" &&
+      (typeof next[key] !== "string" || !/^#[0-9a-f]{6}$/i.test(next[key] as string))
+    )
+      throw new Error(t("Préférences invalides."));
+  }
+  if (Object.keys(v).some((key) => !Object.hasOwn(defaultPreferences, key)))
+    throw new Error(t("Préférences invalides."));
+  return next as unknown as Preferences;
 }
 export function applyPreferences(value: Preferences) {
   const root = document.documentElement;
   changeLanguage(value.language);
   for (const [key, color] of Object.entries(value))
     if (key !== "language") root.style.setProperty(`--${key}`, color);
-  const luminance = (color: string) =>
-    [1, 3, 5]
-      .map((i) => parseInt(color.slice(i, i + 2), 16) / 255)
-      .reduce((n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i]!, 0);
-  root.style.setProperty("--text", luminance(value.background) > 0.6 ? "#17191a" : "#f1f0eb");
+
   root.style.setProperty("--accent-text", luminance(value.accent) > 0.5 ? "#17191a" : "#ffffff");
+}
+
+function luminance(color: string): number {
+  return [1, 3, 5]
+    .map((i) => parseInt(color.slice(i, i + 2), 16) / 255)
+    .reduce((n, v, i) => n + v * [0.2126, 0.7152, 0.0722][i]!, 0);
 }

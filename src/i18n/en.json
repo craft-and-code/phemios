@@ -1105,5 +1105,20 @@
   "Mettez à jour puis redémarrez Aède pour conserver les tags dans une collection.": "Update and restart Aède to retain tags in a collection.",
   "Exploration des pays": "Country exploration",
   "Comment utiliser le globe": "How to use the globe",
-  "Validez avec Entrée. Séparez plusieurs tags par des virgules. Les tags sont enregistrés avec les notes.": "Confirm with Enter. Separate multiple tags with commas. Tags are saved with notes."
+  "Validez avec Entrée. Séparez plusieurs tags par des virgules. Les tags sont enregistrés avec les notes.": "Confirm with Enter. Separate multiple tags with commas. Tags are saved with notes.",
+  "Configuration du menu illisible.": "Unreadable menu configuration.",
+  "Navigation": "Navigation",
+  "Affichez les menus souhaités. Glissez une ligne ou utilisez les flèches pour modifier leur ordre. Les réglages sont enregistrés immédiatement.": "Choose which menus to show. Drag a row or use the arrows to reorder them. Changes are saved immediately.",
+  "Déplacer {0}": "Move {0}",
+  "Monter {0}": "Move {0} up",
+  "Descendre {0}": "Move {0} down",
+  "Réinitialiser le menu": "Reset menu",
+  "Texte secondaire": "Secondary text",
+  "Bordures": "Borders",
+  "Panneau de navigation": "Navigation panel",
+  "Barre de lecture": "Playback bar",
+  "Confirmer le désabonnement": "Confirm unsubscribe",
+  "Se désabonner de « {0} » ?": "Unsubscribe from “{0}”?",
+  "Confirmer": "Confirm",
+  "Texte": "Text"
 }

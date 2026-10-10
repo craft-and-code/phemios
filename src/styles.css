@@ -21,6 +21,8 @@
   --muted: #a4a6a7;
   --border: #303234;
   --surface: #1a1c1d;
+  --sidebar: #151718;
+  --player: #1a1c1d;
   font-synthesis: none;
 }
 body {

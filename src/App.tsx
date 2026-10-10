@@ -1,3 +1,4 @@
+import { createMenuPreferences, menuGroup } from "./navigation/menu-preferences";
 import { LabelsPage } from "./views/LabelsPage";
 import { LabelPage } from "./views/LabelPage";
 import { createToolPreferences } from "./library/tool-preferences";
@@ -41,6 +42,13 @@ import { WorkspacePage } from "./views/WorkspacePage";
 export function App() {
   const library = useLibrary();
   const browsing = createToolPreferences();
+  const menu = createMenuPreferences();
+  const visibleMenus = createMemo(() =>
+    menu
+      .value()
+      .order.filter((id) => !menu.value().hidden.includes(id))
+      .map((id) => sections.find((item) => item.id === id)!),
+  );
   const connectionPanel = () => false;
   const setConnectionPanel = (_value: boolean) => {
     navigation.navigate("#/settings");
@@ -191,19 +199,17 @@ export function App() {
       </header>
       <Show when={sidebar()}>
         <aside class="sidebar" aria-label={t("Navigation principale")}>
-          <p class="nav-label">{t("BIBLIOTHÈQUE")}</p>
           <nav>
-            <For each={sections}>
-              {(item) => (
+            <For each={visibleMenus()}>
+              {(item, index) => (
                 <>
-                  <Show when={item.id === "favourites"}>
-                    <p class="nav-label">{t("VOTRE MUSIQUE")}</p>
-                  </Show>
-                  <Show when={item.id === "radio"}>
-                    <p class="nav-label">{t("SOURCES MUSICALES")}</p>
-                  </Show>
-                  <Show when={item.id === "doctor"}>
-                    <p class="nav-label">{t("OUTILS")}</p>
+                  <Show
+                    when={
+                      index() === 0 ||
+                      menuGroup(visibleMenus()[index() - 1]!.id) !== menuGroup(item.id)
+                    }
+                  >
+                    <p class="nav-label">{menuGroup(item.id)}</p>
                   </Show>
                   <a
                     href={`#/${item.id}`}
@@ -411,7 +417,7 @@ export function App() {
                                 </Show>
                               }
                             >
-                              <SettingsPage />
+                              <SettingsPage menu={menu} />
                             </Show>
                           }
                         >

@@ -78,3 +78,19 @@
 .podcast-add > .job-activity {
   flex-basis: 100%;
 }
+
+.podcast-confirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.podcast-confirmation span {
+  flex: 1;
+  min-width: 160px;
+  overflow-wrap: anywhere;
+}

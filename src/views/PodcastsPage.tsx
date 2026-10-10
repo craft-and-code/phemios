@@ -3,6 +3,7 @@ import { t, locale } from "../i18n";
 import { useLibrary } from "../library/context";
 import { readPodcastFeed, isNative } from "../platform/desktop";
 import { parsePodcastFeed, podcastUrl } from "../podcasts/feed";
+import { createUnsubscribe } from "../podcasts/unsubscribe";
 import { createSubscriptions } from "../podcasts/subscriptions";
 import { Icon } from "../components/Icon";
 import { EmptyState } from "../components/EmptyState";
@@ -14,6 +15,7 @@ export function PodcastsPage(props: { query: string }) {
     [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
     [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
+  const unsubscribe = createUnsubscribe(subscriptions.remove);
   let alive = true;
   onCleanup(() => {
     alive = false;
@@ -83,7 +85,13 @@ export function PodcastsPage(props: { query: string }) {
           <nav aria-label={t("Abonnements podcasts")}>
             <For each={subscriptions.feeds()}>
               {(row) => (
-                <button aria-pressed={row.url === selected()} onClick={() => setSelected(row.url)}>
+                <button
+                  aria-pressed={row.url === selected()}
+                  onClick={() => {
+                    unsubscribe.cancel();
+                    setSelected(row.url);
+                  }}
+                >
                   <Icon name="podcast" />
                   <span>
                     {row.title}
@@ -119,13 +127,35 @@ export function PodcastsPage(props: { query: string }) {
                     aria-label={t("Se désabonner")}
                     title={t("Se désabonner")}
                     onClick={() => {
-                      if (subscriptions.remove(current().url))
-                        setSelected(subscriptions.feeds()[0]?.url ?? "");
+                      unsubscribe.ask(current());
                     }}
                   >
                     <Icon name="close" />
                   </button>
                 </div>
+                <Show when={unsubscribe.pending()}>
+                  {(pending) => (
+                    <div
+                      class="podcast-confirmation"
+                      role="group"
+                      aria-label={t("Confirmer le désabonnement")}
+                    >
+                      <span>{t("Se désabonner de « {0} » ?", pending().title)}</span>
+                      <button
+                        disabled={!!busy()}
+                        onClick={() => {
+                          if (unsubscribe.confirm())
+                            setSelected(subscriptions.feeds()[0]?.url ?? "");
+                        }}
+                      >
+                        {t("Confirmer")}
+                      </button>
+                      <button disabled={!!busy()} onClick={unsubscribe.cancel}>
+                        {t("Annuler")}
+                      </button>
+                    </div>
+                  )}
+                </Show>
                 <ul>
                   <For each={episodes()}>
                     {(row) => (

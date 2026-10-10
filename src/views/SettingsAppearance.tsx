@@ -18,10 +18,11 @@ export function SettingsAppearance() {
     }
   });
   function update(next: Preferences) {
-    setValue(next);
-    applyPreferences(next);
     try {
+      readPreferences(localStorage);
       localStorage.setItem("phemios.appearance", JSON.stringify(next));
+      setValue(next);
+      applyPreferences(next);
       setError("");
       window.dispatchEvent(new Event("phemios-preferences"));
     } catch {
@@ -43,10 +44,34 @@ export function SettingsAppearance() {
         </select>
       </label>
       <div class="color-settings">
-        <For each={["background", "accent", "surface"] as const}>
+        <For
+          each={
+            [
+              "background",
+              "accent",
+              "surface",
+              "text",
+              "muted",
+              "border",
+              "sidebar",
+              "player",
+            ] as const
+          }
+        >
           {(key) => (
             <label>
-              {{ background: t("Fond"), accent: t("Contraste"), surface: t("Surfaces") }[key]}
+              {
+                {
+                  background: t("Fond"),
+                  accent: t("Contraste"),
+                  surface: t("Surfaces"),
+                  text: t("Texte"),
+                  muted: t("Texte secondaire"),
+                  border: t("Bordures"),
+                  sidebar: t("Panneau de navigation"),
+                  player: t("Barre de lecture"),
+                }[key]
+              }
               <input
                 type="color"
                 value={value()[key]}
