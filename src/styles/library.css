@@ -1255,29 +1255,73 @@ button.metadata-link:hover {
 }
 
 .label-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.label-card {
-  display: grid;
-  grid-template-columns: 36px 1fr;
-  gap: 12px;
+.label-row {
+  display: flex;
+  align-items: center;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 18px;
   background: var(--surface);
+  padding-right: 12px;
+  min-height: 56px;
+  gap: 12px;
 }
-.label-card svg {
-  grid-row: span 2;
-  width: 28px;
-  height: 28px;
-}
-.label-card:hover {
+.label-row:hover {
   border-color: var(--accent);
 }
-.label-card small {
-  grid-column: 2;
+.label-link {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+.label-link strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.label-link .source-badge {
+  flex: 0 0 60px;
+  text-align: center;
+}
+.label-link small {
+  white-space: nowrap;
+  color: var(--muted);
+}
+.label-play.cover-play.icon-button {
+  border-radius: 8px;
+  position: static;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  flex-shrink: 0;
+}
+.label-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.label-page .filters {
+  margin: 20px 0 12px;
+}
+@media (max-width: 600px) {
+  .label-link {
+    gap: 8px;
+    padding: 12px;
+  }
+  .label-link .source-badge {
+    display: none;
+  }
 }
 .label-biography {
   white-space: pre-line;

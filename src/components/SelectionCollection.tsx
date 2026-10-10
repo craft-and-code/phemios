@@ -3,6 +3,7 @@ import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
 import { saveBrowsingCollection } from "../library/collection-save";
+import type { SourceId } from "../library/sources";
 import type { Filters } from "../library/types";
 /** Freeze the criteria at opening; Aède evaluates their future catalog matches. */
 export function SelectionCollection(props: {
@@ -10,28 +11,39 @@ export function SelectionCollection(props: {
   filters?: Filters;
   expression?: string;
   disabled?: boolean;
+  source?: SourceId;
 }) {
   const library = useLibrary(),
     [draft, setDraft] = createSignal<string>(),
+    [draftSource, setDraftSource] = createSignal<SourceId>(library.source()),
+    [draftAccount, setDraftAccount] = createSignal<ReturnType<typeof library.session>>(),
     [name, setName] = createSignal(""),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
     [message, setMessage] = createSignal("");
+  const source = () => props.source ?? library.source();
+  const session = (source: SourceId) =>
+    source === "local" ? library.localSession() : library.serverSession();
   const writable = () =>
-    !!library.session() && ["user", "admin"].includes(library.session()?.account.role ?? "");
+    !!session(source()) && ["user", "admin"].includes(session(source())?.account.role ?? "");
   async function save() {
     const expression = draft();
     if (!expression || busy()) return;
-    const account = library.session();
+    const owner = draftSource(),
+      account = draftAccount();
+    if (!account || account !== session(owner)) {
+      setError(t("Session invalide."));
+      return;
+    }
     setBusy(true);
     setError("");
     try {
-      await saveBrowsingCollection(name(), expression, () => account === library.session());
-      if (account !== library.session()) return;
+      await saveBrowsingCollection(name(), expression, () => account === session(owner), owner);
+      if (account !== session(owner)) return;
       setDraft(undefined);
       setMessage(t("Collection « {0} » enregistrée. Elle suit ces filtres.", name()));
     } catch (e) {
-      if (account === library.session()) setError(e instanceof Error ? e.message : String(e));
+      if (account === session(owner)) setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -44,6 +56,8 @@ export function SelectionCollection(props: {
         aria-label={t("Créer une collection depuis cette sélection")}
         title={t("Créer une collection depuis ces filtres")}
         onClick={() => {
+          setDraftSource(source());
+          setDraftAccount(session(source()));
           setName("");
           setError("");
           setMessage("");
@@ -88,7 +102,7 @@ export function SelectionCollection(props: {
                 <div class="section-heading">
                   <h2>
                     {t("Créer une collection ·")}{" "}
-                    {library.source() === "local" ? t("Local") : t("Serveur")}
+                    {draftSource() === "local" ? t("Local") : t("Serveur")}
                   </h2>
                   <button
                     type="button"

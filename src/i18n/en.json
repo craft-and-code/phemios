@@ -1120,5 +1120,11 @@
   "Confirmer le désabonnement": "Confirm unsubscribe",
   "Se désabonner de « {0} » ?": "Unsubscribe from “{0}”?",
   "Confirmer": "Confirm",
-  "Texte": "Text"
+  "Texte": "Text",
+  "Mettez à jour puis redémarrez Aède pour conserver un label dans une collection.": "Update and restart Aède to keep a label in a collection.",
+  "Mettez à jour puis redémarrez Aède pour récupérer les biographies Discogs des labels.": "Update and restart Aède to fetch Discogs label biographies.",
+  "Discogs · biographies des labels": "Discogs · label biographies",
+  "Discogs fournit les biographies des labels sans article Wikipédia, à partir de leur lien MusicBrainz. La récupération est lancée uniquement avec l’enrichissement.": "Discogs supplies biographies for labels without a Wikipedia article, using their MusicBrainz link. Retrieval runs only during explicit enrichment.",
+  "MusicBrainz, Cover Art Archive, Wikipédia, Wikidata et Discogs ne demandent pas de clé API pour les passes utilisées par Aède.": "MusicBrainz, Cover Art Archive, Wikipedia, Wikidata and Discogs do not require API keys for the passes used by Aède.",
+  "Inverser le tri": "Reverse sort order"
 }

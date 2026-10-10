@@ -1,3 +1,5 @@
+import { requestAede } from "../platform/desktop";
+import { t } from "../i18n";
 import type { SourceId } from "./sources";
 /** Explicit operations share one configuration but report every source's independent outcome. */
 export async function startEnrichment(
@@ -11,4 +13,31 @@ export async function startEnrichment(
       ? { task: result.value.task_id }
       : { error: String(result.reason) }),
   }));
+}
+
+/** Confirm additive Discogs support on the captured library before submitting a non-replayed job. */
+export async function startSourceEnrichment(
+  source: SourceId,
+  options: Record<string, boolean>,
+  isCurrent: () => boolean,
+): Promise<{ task_id: number }> {
+  if (options.discogs) {
+    const status = await requestAede<{ capabilities?: unknown }>(
+      "/api/v1/status",
+      {},
+      "GET",
+      undefined,
+      source,
+    );
+    if (
+      !status ||
+      !Array.isArray(status.capabilities) ||
+      !status.capabilities.includes("fetch_discogs")
+    )
+      throw new Error(
+        t("Mettez à jour puis redémarrez Aède pour récupérer les biographies Discogs des labels."),
+      );
+  }
+  if (!isCurrent()) throw new Error(t("Session invalide."));
+  return requestAede("/api/admin/v1/fetch", {}, "POST", options, source);
 }

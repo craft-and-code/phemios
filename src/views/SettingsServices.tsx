@@ -1,10 +1,10 @@
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
-import { localStatus, saveLocalKeys, requestAede } from "../platform/desktop";
+import { localStatus, saveLocalKeys } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import { sourceLabel } from "../library/sources";
-import { startEnrichment } from "../library/enrichment";
+import { startSourceEnrichment, startEnrichment } from "../library/enrichment";
 import { Icon } from "../components/Icon";
 /** One private native key store serves explicit jobs on either library; no automatic enrichment. */
 export function SettingsServices() {
@@ -13,6 +13,7 @@ export function SettingsServices() {
     covers = () => prefs.value().covers,
     fanartPass = () => prefs.value().fanart,
     lyrics = () => prefs.value().lyrics,
+    discogs = () => prefs.value().discogs,
     excluded = () => prefs.value().excluded;
   const setSummaries = (summaries: boolean) => prefs.update({ summaries }),
     setCovers = (covers: boolean) => prefs.update({ covers }),
@@ -124,7 +125,12 @@ export function SettingsServices() {
       </form>
       <p class="muted">
         {t(
-          "MusicBrainz, Cover Art Archive, Wikipédia et Wikidata ne demandent pas de clé API pour les passes utilisées par Aède.",
+          "MusicBrainz, Cover Art Archive, Wikipédia, Wikidata et Discogs ne demandent pas de clé API pour les passes utilisées par Aède.",
+        )}
+      </p>
+      <p class="muted">
+        {t(
+          "Discogs fournit les biographies des labels sans article Wikipédia, à partir de leur lien MusicBrainz. La récupération est lancée uniquement avec l’enrichissement.",
         )}
       </p>
       <h3>{t("Enrichir la bibliothèque")}</h3>
@@ -187,12 +193,20 @@ export function SettingsServices() {
           />
           {t("Paroles")}
         </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            checked={discogs()}
+            onChange={(e) => prefs.update({ discogs: e.currentTarget.checked })}
+          />
+          {t("Discogs · biographies des labels")}
+        </label>
       </div>
       <button
         disabled={
           busy() ||
           !targets().some((s) => !excluded().includes(s)) ||
-          ![summaries(), covers(), fanartPass(), lyrics()].some(Boolean)
+          ![summaries(), covers(), fanartPass(), lyrics(), discogs()].some(Boolean)
         }
         onClick={async () => {
           setBusy(true);
@@ -203,12 +217,24 @@ export function SettingsServices() {
             images: covers(),
             fanart: fanartPass(),
             lyrics: lyrics(),
+            labels: discogs(),
+            discogs: discogs(),
             yes: true,
           };
           try {
             const results = await startEnrichment(
               targets().filter((s) => !excluded().includes(s)),
-              (source) => requestAede("/api/admin/v1/fetch", {}, "POST", options, source),
+              async (source) => {
+                const account =
+                  source === "local" ? library.localSession() : library.serverSession();
+                return startSourceEnrichment(
+                  source,
+                  options,
+                  () =>
+                    account ===
+                    (source === "local" ? library.localSession() : library.serverSession()),
+                );
+              },
             );
             setMessage(
               results

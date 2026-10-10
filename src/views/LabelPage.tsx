@@ -1,13 +1,25 @@
-import { createResource, onCleanup, Show } from "solid-js";
+import { createResource, createSignal, createEffect, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { parseLabelDetail } from "../library/labels";
 import { sourceLink } from "../library/server";
+import { FilterBar } from "../components/FilterBar";
+import { SelectionCollection } from "../components/SelectionCollection";
+import { Icon } from "../components/Icon";
+import { filterAlbums } from "../library/filtering";
+import { labelExpression, labelHistogram, labelYearDomain } from "../library/label-browsing";
+import { referenceSource } from "../library/sources";
+import type { Filters } from "../library/types";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { SourceBadge } from "../components/SourceBadge";
 /** Attributed label biography precedes its owned albums, with explicit missing-cache feedback. */
-export function LabelPage(props: { reference: string; onTitle: (name: string) => void }) {
+export function LabelPage(props: {
+  reference: string;
+  onTitle: (name: string) => void;
+  compact: boolean;
+  onCompact: () => void;
+}) {
   const library = useLibrary();
   let alive = true;
   onCleanup(() => {
@@ -40,6 +52,22 @@ export function LabelPage(props: { reference: string; onTitle: (name: string) =>
   const detail = () => current()?.detail;
   const albums = () =>
     library.albums().filter((album) => detail()?.releases.includes(album.reference));
+  const [filters, setFilters] = createSignal<Filters>({
+      mode: "years",
+      years: [0, 0],
+      alphabet: [0, 26],
+      includeUnknownYear: true,
+      query: "",
+    }),
+    [reverse, setReverse] = createSignal(false);
+  let initialized = false;
+  createEffect(() => {
+    if (detail() && !initialized && (albums().length || !detail()?.releases.length)) {
+      initialized = true;
+      setFilters({ ...filters(), years: labelYearDomain(albums()) });
+    }
+  });
+  const selected = () => filterAlbums(albums(), library.artists(), filters());
   return (
     <article class="label-page">
       <Show when={result.loading}>
@@ -76,7 +104,9 @@ export function LabelPage(props: { reference: string; onTitle: (name: string) =>
                       <Show when={sourceLink(prose().url)} fallback={prose().url}>
                         {(url) => (
                           <a href={url()} target="_blank" rel="noreferrer">
-                            {t("Source de la biographie")}
+                            {prose().source === "discogs"
+                              ? "Data provided by Discogs."
+                              : t("Source de la biographie")}
                           </a>
                         )}
                       </Show>{" "}
@@ -86,7 +116,41 @@ export function LabelPage(props: { reference: string; onTitle: (name: string) =>
                 </Show>
               </section>
               <h2>{t("Albums")}</h2>
-              <AlbumGrid albums={albums()} />
+              <FilterBar
+                yearDomain={labelYearDomain(albums())}
+                value={filters()}
+                setValue={setFilters}
+                context={t("Initiale du titre · année de l’album")}
+                histogram={labelHistogram(albums(), library.artists(), filters())}
+                countLabel={t("albums")}
+                hasUnknownYear={albums().some((album) => album.year === null)}
+              />
+              <div class="label-toolbar">
+                <button
+                  class="icon-button"
+                  aria-label={t("Inverser le tri")}
+                  title={t("Inverser le tri")}
+                  aria-pressed={reverse()}
+                  onClick={() => setReverse(!reverse())}
+                >
+                  <Icon name="sort" />
+                </button>
+                <button
+                  class="icon-button"
+                  aria-label={t("Vue compacte")}
+                  title={t("Vue compacte")}
+                  aria-pressed={props.compact}
+                  onClick={props.onCompact}
+                >
+                  <Icon name="layers" />
+                </button>
+                <SelectionCollection
+                  expression={labelExpression(props.reference, filters())}
+                  source={referenceSource(props.reference)}
+                  disabled={!selected().length}
+                />
+              </div>
+              <AlbumGrid albums={selected()} reverse={reverse()} emptyIcon="label" />
               <Show when={row().releases.length > albums().length}>
                 <p class="notice">
                   {t(

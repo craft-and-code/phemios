@@ -109,7 +109,9 @@ export function App() {
     library.player.setTarget(
       selectedAlbum()?.reference ??
         selectedArtist()?.reference ??
-        (current().kind === "track" ? (current() as { reference: string }).reference : ""),
+        (["track", "label"].includes(current().kind)
+          ? (current() as { reference: string }).reference
+          : ""),
     );
   });
   const backLink = navigation.backLink;
@@ -496,6 +498,8 @@ export function App() {
                 <LabelPage
                   reference={(route as { reference: string }).reference}
                   onTitle={setLabelTitle}
+                  compact={compact()}
+                  onCompact={() => setCompact(!compact())}
                 />
               </Show>
               <Show when={route.kind === "track"}>

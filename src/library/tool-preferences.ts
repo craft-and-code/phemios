@@ -8,6 +8,7 @@ export interface ToolPreferences {
   covers: boolean;
   fanart: boolean;
   lyrics: boolean;
+  discogs: boolean;
   excluded: ("local" | "server")[];
   trackPageSize: number;
 }
@@ -18,6 +19,7 @@ export const defaultToolPreferences: ToolPreferences = {
   covers: true,
   fanart: false,
   lyrics: false,
+  discogs: false,
   excluded: [],
   trackPageSize: 50,
 };
@@ -29,9 +31,14 @@ function validate(raw: unknown): ToolPreferences {
     !row ||
     typeof row !== "object" ||
     Array.isArray(row) ||
-    ![row.full, row.summaries, row.covers, row.fanart, row.lyrics].every(
-      (v) => typeof v === "boolean",
-    ) ||
+    ![
+      row.full,
+      row.summaries,
+      row.covers,
+      row.fanart,
+      row.lyrics,
+      row.discogs === undefined ? false : row.discogs,
+    ].every((v) => typeof v === "boolean") ||
     !Number.isInteger(row.threads) ||
     row.threads < 0 ||
     row.threads > 64 ||
@@ -41,7 +48,7 @@ function validate(raw: unknown): ToolPreferences {
     Object.keys(row).some((field) => !Object.hasOwn(defaultToolPreferences, field))
   )
     throw new Error(t("Options enregistrées illisibles."));
-  return row;
+  return { ...row, discogs: row.discogs === undefined ? false : row.discogs };
 }
 /** Read non-secret scan, enrichment and browsing choices; preserve invalid stores. */
 export function readToolPreferences(storage: Store): ToolPreferences {

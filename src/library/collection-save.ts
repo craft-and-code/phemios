@@ -5,8 +5,11 @@ export async function saveBrowsingCollection(
   name: string,
   expression: string,
   isCurrent: () => boolean,
+  source?: import("./sources").SourceId,
 ) {
-  const status = await requestAede<unknown>("/api/v1/status");
+  const status = source
+    ? await requestAede<unknown>("/api/v1/status", {}, "GET", undefined, source)
+    : await requestAede<unknown>("/api/v1/status");
   const capabilities =
     status && typeof status === "object"
       ? (status as { capabilities?: unknown }).capabilities
@@ -22,6 +25,10 @@ export async function saveBrowsingCollection(
     genres?: unknown;
     view?: string;
   };
+  if (criteria.view === "label" && !capabilities.includes("dynamic_browse_label"))
+    throw new Error(
+      t("Mettez à jour puis redémarrez Aède pour conserver un label dans une collection."),
+    );
   if (criteria.view === "tags" && !capabilities.includes("dynamic_browse_tags"))
     throw new Error(
       t("Mettez à jour puis redémarrez Aède pour conserver les tags dans une collection."),
@@ -45,7 +52,9 @@ export async function saveBrowsingCollection(
         "Mettez à jour puis redémarrez Aède pour conserver les notes et favoris dans une collection.",
       ),
     );
-  await requestAede("/api/me/v1/collection", { name }, "PUT", { expression, create_only: true });
+  const body = { expression, create_only: true };
+  if (source) await requestAede("/api/me/v1/collection", { name }, "PUT", body, source);
+  else await requestAede("/api/me/v1/collection", { name }, "PUT", body);
 }
 
 /** The caller confirms deletion and captures its owner before invoking this non-replayed mutation. */

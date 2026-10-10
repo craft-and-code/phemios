@@ -79,3 +79,7 @@ Missing-album dismissal uses the same 30 px top-right overlay geometry and 8 px 
 Track detail reads its bounded album placements before showing a CD label: a single known CD or unknown numbering is not evidence of multiple discs. Multiple distinct known CDs expose the current placement's CD label. Sibling-read failures remain explicit.
 
 Commas remain in the annotation draft. Enter commits all comma-separated fragments as pills; autocomplete completes the last fragment while preserving previous pending tags. Committed pills still require their cross for removal. Statistics reserves inner breathing space and proportionally fits complete value/unit text after font readiness and width changes, without allowing text min-content width to enlarge its cell.
+
+### Labels
+
+Labels use full-height name/count rows with an independent final Play square. Aède owns the chronological label queue; the shell's target also follows a label detail. Detail lists expose scoped year and title-alphabet histogram rails (years initially visible), inverse order, compact density and a final collection action. Intervals never inherit an unrelated catalogue section's hidden criteria. Histogram bins count editions even without a principal artist. Collections freeze the original stable label key and originating library/account at opening; source changes cannot redirect the write. Future albums matching the retained label and criteria join on evaluation. Discogs prose retains a linked provider notice; opening the detail performs no external enrichment.

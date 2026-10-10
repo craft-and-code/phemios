@@ -6,6 +6,7 @@ import { requestAede } from "../platform/desktop";
 import { parseLabelPage } from "../library/labels";
 import { sourceLabel } from "../library/sources";
 import { SourceBadge } from "../components/SourceBadge";
+import { CoverPlay } from "../components/CoverPlay";
 import { Icon } from "../components/Icon";
 /** Explicit bounded browsing never fetches biographies from external providers. */
 export function LabelsPage(props: { query: string }) {
@@ -82,14 +83,14 @@ export function LabelsPage(props: { query: string }) {
               </Show>
               <For each={page.items}>
                 {(label) => (
-                  <a class="label-card" href={`#/label/${encodeURIComponent(label.reference)}`}>
-                    <Icon name="label" />
-                    <strong>{label.name}</strong>
-                    <small>
-                      {t("{0} albums", label.releaseCount)}{" "}
+                  <div class="label-row">
+                    <a class="label-link" href={`#/label/${encodeURIComponent(label.reference)}`}>
+                      <strong title={label.name}>{label.name}</strong>
+                      <small>{t("{0} albums", label.releaseCount)}</small>
                       <SourceBadge reference={label.reference} />
-                    </small>
-                  </a>
+                    </a>
+                    <CoverPlay reference={label.reference} title={label.name} class="label-play" />
+                  </div>
                 )}
               </For>
             </>

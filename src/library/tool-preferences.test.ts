@@ -44,3 +44,24 @@ it("does not change the selected setting when saving fails", () => {
   expect(prefs.value().trackPageSize).toBe(50);
   expect(prefs.error()).toContain("Disk full");
 });
+
+it("migrates enrichment choices with Discogs disabled and persists its explicit selection", () => {
+  const storage = store();
+  saveToolPreferences(storage, { discogs: true });
+  expect(readToolPreferences(storage).discogs).toBe(true);
+  storage.setItem(
+    "phemios.tools.v1",
+    JSON.stringify({
+      full: false,
+      threads: 0,
+      summaries: true,
+      covers: true,
+      fanart: false,
+      lyrics: false,
+      excluded: [],
+      trackPageSize: 50,
+    }),
+  );
+  expect(readToolPreferences(storage).discogs).toBe(false);
+  expect(() => saveToolPreferences(storage, { discogs: 42 as unknown as boolean })).toThrow();
+});

@@ -89,3 +89,25 @@ it("refuses tag rules on legacy servers before any mutation", async () => {
     create_only: true,
   });
 });
+
+it("saves label rules on their captured source and refuses unsupported labels before mutation", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  const expression = 'browse-v1:{"view":"label","label":"label:independent"}';
+  await expect(saveBrowsingCollection("Label", expression, () => true, "local")).rejects.toThrow(
+    /label/,
+  );
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  expect(requestAede).toHaveBeenLastCalledWith("/api/v1/status", {}, "GET", undefined, "local");
+  vi.mocked(requestAede).mockResolvedValue({
+    capabilities: ["dynamic_browse_collections", "dynamic_browse_label"],
+  });
+  await saveBrowsingCollection("Label", expression, () => true, "local");
+  expect(requestAede).toHaveBeenLastCalledWith(
+    "/api/me/v1/collection",
+    { name: "Label" },
+    "PUT",
+    { expression, create_only: true },
+    "local",
+  );
+});
