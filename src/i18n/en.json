@@ -1191,5 +1191,10 @@
   "Thème non enregistré.": "Theme could not be saved.",
   "Lecture aléatoire invalide.": "Invalid shuffle setting.",
   "Lecture aléatoire indisponible.": "Shuffle unavailable.",
-  "Position de file invalide.": "Invalid queue position."
+  "Position de file invalide.": "Invalid queue position.",
+  "Afficher ou masquer les paroles": "Show or hide lyrics",
+  "Paroles de {0}": "Lyrics for {0}",
+  "Chargement des paroles…": "Loading lyrics…",
+  "Balise audio": "Audio tag",
+  "Fichier LRC": "LRC file"
 }

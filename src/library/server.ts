@@ -21,6 +21,8 @@ export interface Track {
   duration_ms: number | null;
   analyses: unknown[];
   analysis_available?: boolean;
+  /** Presence hint only; the explicit lyrics read validates content and source identity. */
+  lyrics_available?: boolean;
   path?: string;
 }
 export interface AccountSession {

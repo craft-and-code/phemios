@@ -15,6 +15,14 @@ it("preserves albumless tracks, distinct placements and exact page windows", () 
   };
   const page = { items: [row], total: 1, offset: 0, limit: 50, scanned_at: 10 };
   expect(parseTrackPage(page, 0).items[0]?.release).toBeNull();
+  expect(parseTrackPage(page, 0).items[0]?.lyrics_available).toBeUndefined();
+  expect(
+    parseTrackPage({ ...page, items: [{ ...row, lyrics_available: true }] }, 0).items[0]
+      ?.lyrics_available,
+  ).toBe(true);
+  expect(() =>
+    parseTrackPage({ ...page, items: [{ ...row, lyrics_available: "yes" }] }, 0),
+  ).toThrow();
   expect(() => parseTrackPage({ ...page, offset: 1 }, 0)).toThrow();
   expect(() => parseTrackPage({ ...page, items: [row, row], total: 2 }, 0)).toThrow();
   expect(() => parseTrackPage({ ...page, items: [{ ...row, duration_ms: -1 }] }, 0)).toThrow();

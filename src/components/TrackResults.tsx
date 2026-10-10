@@ -1,3 +1,5 @@
+import { LyricsText } from "./LyricsText";
+import { createTrackLyrics } from "../library/track-lyrics";
 import { LyricsDownload } from "./LyricsDownload";
 import { t } from "../i18n";
 import type { JSX } from "solid-js";
@@ -11,7 +13,7 @@ import { AnalysisCharts } from "./AnalysisCharts";
 import { AnalysisDownload } from "./AnalysisDownload";
 import { SourceBadge } from "./SourceBadge";
 import { Icon } from "./Icon";
-/** Compact actions open retained analysis or explicitly fetched spectra independently. */
+/** Compact actions independently open retained analyses, spectra and existing lyrics. */
 export function TrackResults(props: {
   track: Track & { spectrum_available: boolean };
   number: number;
@@ -28,6 +30,13 @@ export function TrackResults(props: {
     [spectrum, setSpectrum] = createSignal(!!props.expanded && props.track.spectrum_available);
   createEffect(() => {
     if (spectrum()) void library.warmImage(props.track.reference, "spectrum");
+  });
+  const words = createTrackLyrics({
+    reference: () => props.track.reference,
+    available: () => props.track.lyrics_available,
+    session: () => library.sessionFor(props.track.reference),
+    jobs: library.tasks.jobs,
+    detail: !!props.expanded,
   });
   const duration = () => props.track.duration_ms;
   const [detail] = createResource(
@@ -90,6 +99,20 @@ export function TrackResults(props: {
                 }}
               >
                 <Icon name="spectrum" />
+              </button>
+            </Show>
+            <Show when={words.available() || words.visible()}>
+              <button
+                class="icon-button quiet"
+                title={t("Afficher ou masquer les paroles")}
+                aria-label={t("Paroles de {0}", props.track.title)}
+                disabled={!library.sessionFor(props.track.reference) && !words.visible()}
+                aria-expanded={words.visible()}
+                aria-controls={`${id}-lyrics`}
+                aria-pressed={words.visible()}
+                onClick={words.toggle}
+              >
+                <Icon name="lyrics" />
               </button>
             </Show>
             <button
@@ -157,6 +180,38 @@ export function TrackResults(props: {
             <p role="alert">{library.imageError(props.track.reference, "spectrum")}</p>
           </Show>
         </div>
+      </Show>
+      <Show when={words.visible()}>
+        <section id={`${id}-lyrics`} class="track-analysis track-lyrics">
+          <div class="analysis-result-heading">
+            <strong>{t("Paroles")}</strong>
+            <button
+              class="icon-button quiet"
+              aria-label={t("Actualiser les paroles")}
+              title={t("Actualiser les paroles")}
+              disabled={words.loading()}
+              onClick={words.refresh}
+            >
+              <Show when={words.loading()} fallback={<Icon name="refresh" />}>
+                <span class="spinner" />
+              </Show>
+            </button>
+          </div>
+          <Show when={words.loading()}>
+            <p role="status">{t("Chargement des paroles…")}</p>
+          </Show>
+          <Show when={words.error()}>
+            <p role="alert">{words.error()}</p>
+          </Show>
+          <Show when={!words.loading() && !words.error()}>
+            <Show
+              when={words.lyrics()}
+              fallback={<p class="muted">{t("Aucune parole disponible.")}</p>}
+            >
+              {(lyrics) => <LyricsText lyrics={lyrics()} reference={props.track.reference} />}
+            </Show>
+          </Show>
+        </section>
       </Show>
     </li>
   );

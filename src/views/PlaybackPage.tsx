@@ -3,7 +3,8 @@ import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { announceSetting } from "../library/saved-settings";
-import { parseLyrics, activeLyricTime } from "../library/lyrics";
+import { parseLyrics } from "../library/lyrics";
+import { LyricsText } from "../components/LyricsText";
 import { AudioScene } from "../components/AudioScene";
 import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
@@ -60,7 +61,6 @@ export function PlaybackPage() {
   );
   const lyrics = () =>
     words()?.reference === player.current()?.reference ? words()?.lyrics : undefined;
-  const time = () => activeLyricTime(lyrics(), player.seekPosition());
   const active = () =>
     !!player.current() && ["playing", "paused", "connecting"].includes(player.state().status);
   function choose(value: Scene) {
@@ -142,28 +142,7 @@ export function PlaybackPage() {
               <p role="alert">{words()?.error}</p>
             </Show>
             <Show when={lyrics()} fallback={<p class="muted">{t("Aucune parole disponible.")}</p>}>
-              {(value) => (
-                <>
-                  <small class="muted">{t("Source : {0}", value().source)}</small>
-                  <div class="lyrics-lines">
-                    <For each={value().lines}>
-                      {(line) => (
-                        <button
-                          classList={{
-                            "lyric-active": line.at_ms !== null && line.at_ms === time(),
-                          }}
-                          disabled={line.at_ms === null || player.busy()}
-                          onClick={() => {
-                            if (line.at_ms !== null) void player.seek(line.at_ms);
-                          }}
-                        >
-                          {line.text || "\u00a0"}
-                        </button>
-                      )}
-                    </For>
-                  </div>
-                </>
-              )}
+              {(value) => <LyricsText lyrics={value()} reference={player.current()!.reference} />}
             </Show>
           </section>
         </div>

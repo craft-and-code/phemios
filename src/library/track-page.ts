@@ -45,6 +45,7 @@ export function parseCatalogTrack(value: unknown): CatalogTrack {
     !(r.album_position === null || (nonnegative(r.album_position) && r.album_position > 0)) ||
     !(r.duration_ms === null || nonnegative(r.duration_ms)) ||
     typeof r.analysis_available !== "boolean" ||
+    (r.lyrics_available !== undefined && typeof r.lyrics_available !== "boolean") ||
     typeof r.spectrum_available !== "boolean"
   )
     throw new Error(t("Piste Aède invalide ; mettez à jour puis redémarrez le serveur."));
@@ -59,6 +60,9 @@ export function parseCatalogTrack(value: unknown): CatalogTrack {
     duration_ms: r.duration_ms as number | null,
     analysis_available: r.analysis_available,
     spectrum_available: r.spectrum_available,
+    ...(r.lyrics_available === undefined
+      ? {}
+      : { lyrics_available: r.lyrics_available as boolean }),
     analyses: [],
   };
 }

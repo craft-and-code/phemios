@@ -74,6 +74,7 @@ export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
         (row.duration_ms !== null &&
           (!Number.isSafeInteger(row.duration_ms) || Number(row.duration_ms) < 0)) ||
         typeof row.analysis_available !== "boolean" ||
+        (row.lyrics_available !== undefined && typeof row.lyrics_available !== "boolean") ||
         typeof row.spectrum_available !== "boolean"
       )
         throw new Error(t("Position ou piste Aède invalide ; resynchronisez la bibliothèque."));
@@ -87,6 +88,9 @@ export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
         duration_ms: row.duration_ms as number | null,
         analysis_available: row.analysis_available,
         spectrum_available: row.spectrum_available,
+        ...(row.lyrics_available === undefined
+          ? {}
+          : { lyrics_available: row.lyrics_available as boolean }),
         analyses: [],
       });
     }

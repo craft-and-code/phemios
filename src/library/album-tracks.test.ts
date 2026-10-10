@@ -11,6 +11,7 @@ const rows = Array.from({ length: 85 }, (_, i) => ({
   duration_ms: 123000,
   analysis_available: i === 0,
   spectrum_available: false,
+  ...(i === 0 ? { lyrics_available: true } : {}),
 }));
 it("shows a disc label only when the album has distinct known CDs", () => {
   expect(hasMultipleDiscs([{ disc_no: 1 }, { disc_no: 1 }])).toBe(false);
@@ -26,6 +27,8 @@ it("loads a four-disc album from bounded pages, retaining duplicate titles and p
   const tracks = await albumTracks("release:fictional");
   expect(requestAede).toHaveBeenCalledTimes(2);
   expect(tracks).toHaveLength(85);
+  expect(tracks[0]?.lyrics_available).toBe(true);
+  expect(tracks[1]?.lyrics_available).toBeUndefined();
   const groups = discGroups(tracks);
   expect(groups.map((g) => g.disc)).toEqual([1, 2, 3, 4]);
   expect(groups[1]?.tracks[0]?.index).toBe(22);

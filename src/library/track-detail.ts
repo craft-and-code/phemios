@@ -34,6 +34,7 @@ export function parseTrackDetail(value: unknown, reference: string): TrackDetail
     !integer(r.track_no) ||
     !Number.isSafeInteger(r.size) ||
     Number(r.size) < 0 ||
+    (r.lyrics_available !== undefined && typeof r.lyrics_available !== "boolean") ||
     typeof r.spectrum_available !== "boolean" ||
     !Array.isArray(r.analyses) ||
     !Array.isArray(r.credits) ||

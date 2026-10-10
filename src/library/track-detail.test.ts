@@ -26,6 +26,11 @@ it("preserves albumless metadata, tags and credited sources while refusing malfo
   };
   expect(parseTrackDetail(row, row.reference).credits[0]?.source).toBe("tags");
   expect(parseTrackDetail(row, row.reference).release).toBeNull();
+  expect(parseTrackDetail(row, row.reference).lyrics_available).toBeUndefined();
+  expect(parseTrackDetail({ ...row, lyrics_available: true }, row.reference).lyrics_available).toBe(
+    true,
+  );
+  expect(() => parseTrackDetail({ ...row, lyrics_available: "yes" }, row.reference)).toThrow();
   expect(() => parseTrackDetail({ ...row, size: -1 }, row.reference)).toThrow();
   expect(() =>
     parseTrackDetail({ ...row, properties: { ...row.properties, channels: "two" } }, row.reference),
