@@ -60,6 +60,7 @@ struct State {
     position: u64,
     duration: Option<u64>,
     seek_id: u64,
+    queue_id: u64,
     rate: u32,
     error: String,
     confirmed: bool,
@@ -72,6 +73,7 @@ struct State {
 pub struct Player {
     worker: Mutex<Option<Worker>>,
     next_seek: AtomicU64,
+    next_queue: AtomicU64,
     state: Arc<Mutex<State>>,
     signals: Arc<Signals>,
 }
@@ -80,6 +82,7 @@ impl Default for Player {
         Self {
             worker: Mutex::new(None),
             next_seek: AtomicU64::new(1),
+            next_queue: AtomicU64::new(1),
             state: Arc::new(Mutex::new(State {
                 status: "idle",
                 ..State::default()
@@ -110,7 +113,7 @@ impl Player {
             0.
         };
         Ok(
-            json!({"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -157,6 +160,7 @@ impl Player {
             total: tracks.len(),
             index,
             queue: (0..tracks.len()).collect(),
+            queue_id: self.next_queue.fetch_add(1, Ordering::Relaxed),
             device: device.clone(),
             policy,
             ..State::default()
@@ -238,6 +242,40 @@ impl Player {
             return self
                 .seek(value.as_u64().ok_or("Position invalide.")?)
                 .map(|_| ());
+        }
+        if action == "queue" {
+            let id = value["queue_id"]
+                .as_u64()
+                .ok_or("File de lecture invalide.")?;
+            let order = value["order"]
+                .as_array()
+                .filter(|order| !order.is_empty() && order.len() <= 4096)
+                .ok_or("File de lecture invalide.")?
+                .iter()
+                .map(|index| {
+                    index
+                        .as_u64()
+                        .filter(|index| *index < 4096)
+                        .map(|index| index as usize)
+                        .ok_or("File de lecture invalide.")
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let worker = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
+            if worker
+                .as_ref()
+                .is_none_or(|worker| worker.handle.is_finished())
+            {
+                return Err("Aucune lecture active.".into());
+            }
+            let mut state = self.state.lock().map_err(|_| "État audio indisponible.")?;
+            if state.queue_id != id || state.total == 0 || state.index >= state.total {
+                return Err("La liste de lecture a changé.".into());
+            }
+            let mut queue = queue::Queue::new(state.total, state.index);
+            queue.synchronize(&order, false)?;
+            state.queue = queue.order().to_vec();
+            state.shuffled = false;
+            return Ok(());
         }
         if action == "shuffle" {
             let enabled = value.as_bool().ok_or("Lecture aléatoire invalide.")?;

@@ -12,7 +12,6 @@ import { SettingsServices } from "./SettingsServices";
 import { SettingsAppearance } from "./SettingsAppearance";
 import { useLibrary } from "../library/context";
 import { Icon } from "../components/Icon";
-import { sourceLabel } from "../library/sources";
 export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferences> }) {
   const [tab, setTab] = createSignal("libraries"),
     library = useLibrary();
@@ -78,20 +77,6 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </For>
       </div>
       <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-tab-${tab()}`}>
-        <Show when={tab() === "accounts" && library.origins().length > 1}>
-          <div class="choices" aria-label={t("Bibliothèque à administrer")}>
-            <For each={library.origins()}>
-              {(source) => (
-                <button
-                  aria-pressed={library.source() === source}
-                  onClick={() => library.chooseSource(source)}
-                >
-                  {sourceLabel(source)}
-                </button>
-              )}
-            </For>
-          </div>
-        </Show>
         <Show when={tab() === "libraries"}>
           <SettingsLibraries />
         </Show>

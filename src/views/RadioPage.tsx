@@ -1,6 +1,12 @@
 import { Feedback } from "../components/Feedback";
 import { CountryGlobe } from "../components/CountryGlobe";
-import { radioCountryPreference, radioCountryKey, resetRadioCriteria } from "../radio/location";
+import { createDirectoryCount } from "../radio/directory-count";
+import {
+  systemRadioCountry,
+  radioCountryPreference,
+  radioCountryKey,
+  resetRadioCriteria,
+} from "../radio/location";
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
@@ -12,7 +18,7 @@ import { createSignal, For, Show, onCleanup, onMount } from "solid-js";
 import { Icon } from "../components/Icon";
 import { useLibrary } from "../library/context";
 import { isNative, radioStatistics, searchRadio, requestAede } from "../platform/desktop";
-import { parseStations, stationCount, type Station } from "../radio/directory";
+import { parseStations, type Station } from "../radio/directory";
 /** An Internet-station dial indexes the current directory page, without inventing FM frequencies. */
 export function RadioPage(props: { query: string }) {
   const library = useLibrary(),
@@ -50,11 +56,13 @@ export function RadioPage(props: { query: string }) {
     [more, setMore] = createSignal(false),
     [offset, setOffset] = createSignal(0),
     [selected, setSelected] = createSignal(0),
-    [count, setCount] = createSignal<number>(),
     [busy, setBusy] = createSignal(false),
     [error, setError] = createSignal(""),
     [loaded, setLoaded] = createSignal(false),
-    [countError, setCountError] = createSignal("");
+    [preferenceError, setPreferenceError] = createSignal("");
+  const counter = createDirectoryCount(radioStatistics),
+    count = counter.value,
+    countError = counter.error;
   let criteria = { name: "", country: "", tag: "", secureOnly: true },
     alive = true,
     pendingSearch = false,
@@ -67,24 +75,26 @@ export function RadioPage(props: { query: string }) {
   onMount(() => {
     try {
       setCountry(radioCountryPreference(localStorage, navigator.languages));
-      if (isNative()) void search(0, true);
     } catch (failure) {
-      setError(String(failure));
+      setCountry(systemRadioCountry(navigator.languages));
+      setPreferenceError(String(failure));
     }
+    if (isNative()) void search(0, true, false);
   });
-  async function search(page = 0, fresh = false) {
+  async function search(page = 0, fresh = false, remember = true) {
     if (fresh) searchEpoch += 1;
     if (busy()) {
       if (fresh) pendingSearch = true;
       return;
     }
     if (fresh) {
-      try {
-        localStorage.setItem(radioCountryKey, JSON.stringify(country()));
-      } catch (failure) {
-        setError(String(failure));
-        return;
-      }
+      if (remember)
+        try {
+          localStorage.setItem(radioCountryKey, JSON.stringify(country()));
+          setPreferenceError("");
+        } catch (failure) {
+          setPreferenceError(String(failure));
+        }
       criteria = { name: name(), country: country(), tag: tag(), secureOnly: secureOnly() };
     }
     const epoch = searchEpoch;
@@ -100,16 +110,7 @@ export function RadioPage(props: { query: string }) {
       setOffset(page);
       setSelected(0);
       setLoaded(true);
-      if (count() === undefined)
-        try {
-          const total = stationCount(await radioStatistics());
-          if (alive) {
-            setCount(total);
-            setCountError("");
-          }
-        } catch {
-          if (alive) setCountError(t("Le total de l’annuaire est indisponible."));
-        }
+      counter.refresh();
     } catch (failure) {
       if (alive && epoch === searchEpoch)
         setError(failure instanceof Error ? failure.message : t("Annuaire radio indisponible."));
@@ -166,6 +167,7 @@ export function RadioPage(props: { query: string }) {
             favourites={favourites}
             play={(station) => void radio.start(station)}
             busy={radio.status() === "connecting"}
+            writable={writable()}
           />
         </Show>
         <Show when={writable() && !favourites.stations().length && legacy().length}>
@@ -178,6 +180,9 @@ export function RadioPage(props: { query: string }) {
           <p class="notice">
             {t("L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.")}{" "}
           </p>
+        </Show>
+        <Show when={preferenceError()}>
+          <Feedback error message={preferenceError()} onClose={() => setPreferenceError("")} />
         </Show>
         <Show when={error()}>
           <Feedback error message={error()} onClose={() => setError("")} />

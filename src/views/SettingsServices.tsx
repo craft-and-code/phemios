@@ -280,56 +280,62 @@ export function SettingsServices() {
           {library.tasks.error()}
         </p>
       </Show>
-      <div class="enrichment-jobs">
-        <For each={library.tasks.jobs().filter((job) => job.kind === "fetch")}>
-          {(job) => (
-            <section class="enrichment-job">
-              <div class="page-heading">
-                <strong>
-                  {t("Tâche #{0}", job.task_id)} · {sourceLabel(job.source ?? "server")}
-                </strong>
-                <Show when={!job.tracking_error && ["queued", "running"].includes(job.status)}>
-                  <span class="spinner" role="status" aria-label={t("Enrichissement en cours…")} />
-                  <button
-                    class="icon-button quiet"
-                    title={t("Annuler la tâche")}
-                    aria-label={t("Annuler la tâche")}
-                    onClick={() =>
-                      void library.tasks
-                        .cancel(job.task_id, job.source ?? "server")
-                        .catch((failure) => setMessage(String(failure)))
-                    }
-                  >
-                    <Icon name="close" />
-                  </button>
+      <Show when={library.tasks.jobs().some((job) => job.kind === "fetch")}>
+        <div class="enrichment-jobs">
+          <For each={library.tasks.jobs().filter((job) => job.kind === "fetch")}>
+            {(job) => (
+              <section class="enrichment-job">
+                <div class="page-heading">
+                  <strong>
+                    {t("Tâche #{0}", job.task_id)} · {sourceLabel(job.source ?? "server")}
+                  </strong>
+                  <Show when={!job.tracking_error && ["queued", "running"].includes(job.status)}>
+                    <span
+                      class="spinner"
+                      role="status"
+                      aria-label={t("Enrichissement en cours…")}
+                    />
+                    <button
+                      class="icon-button quiet"
+                      title={t("Annuler la tâche")}
+                      aria-label={t("Annuler la tâche")}
+                      onClick={() =>
+                        void library.tasks
+                          .cancel(job.task_id, job.source ?? "server")
+                          .catch((failure) => setMessage(String(failure)))
+                      }
+                    >
+                      <Icon name="close" />
+                    </button>
+                  </Show>
+                </div>
+                <p>
+                  {job.tracking_error ??
+                    {
+                      queued: t("En attente"),
+                      running: t("Enrichissement en cours…"),
+                      completed: t("Enrichissement terminé."),
+                      failed: t(
+                        "Enrichissement partiel ou en échec ; les données enregistrées sont conservées.",
+                      ),
+                      cancelled: t("Tâche annulée ; les données enregistrées sont conservées."),
+                    }[job.status]}
+                </p>
+                <Show when={job.result || job.error}>
+                  <details>
+                    <summary>{t("Résultats et diagnostics")}</summary>
+                    <pre>
+                      {[job.result?.stdout, job.result?.stderr, job.error?.message]
+                        .filter(Boolean)
+                        .join("\n")}
+                    </pre>
+                  </details>
                 </Show>
-              </div>
-              <p>
-                {job.tracking_error ??
-                  {
-                    queued: t("En attente"),
-                    running: t("Enrichissement en cours…"),
-                    completed: t("Enrichissement terminé."),
-                    failed: t(
-                      "Enrichissement partiel ou en échec ; les données enregistrées sont conservées.",
-                    ),
-                    cancelled: t("Tâche annulée ; les données enregistrées sont conservées."),
-                  }[job.status]}
-              </p>
-              <Show when={job.result || job.error}>
-                <details>
-                  <summary>{t("Résultats et diagnostics")}</summary>
-                  <pre>
-                    {[job.result?.stdout, job.result?.stderr, job.error?.message]
-                      .filter(Boolean)
-                      .join("\n")}
-                  </pre>
-                </details>
-              </Show>
-            </section>
-          )}
-        </For>
-      </div>
+              </section>
+            )}
+          </For>
+        </div>
+      </Show>
       <Feedback message={message()} />
     </div>
   );

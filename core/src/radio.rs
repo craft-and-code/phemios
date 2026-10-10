@@ -127,9 +127,10 @@ impl Directory {
             .is_none_or(|time| time.elapsed() >= Duration::from_secs(600))
         {
             // std supports forward DNS but not portable PTR lookup; use the documented server-list fallback.
-            match self
-                .read(BOOTSTRAP, "/json/servers", &[])
-                .and_then(|value| mirror_hosts(&value))
+            match retry_mirrors(&[BOOTSTRAP.into(), BOOTSTRAP.into()], false, |host| {
+                self.read(host, "/json/servers", &[])
+            })
+            .and_then(|value| mirror_hosts(&value))
             {
                 Ok(hosts) => {
                     self.mirrors = hosts;

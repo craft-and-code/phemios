@@ -103,3 +103,45 @@ fn enabling_shuffle_does_not_pause_or_send_a_stream_restart_command() {
     release.send(()).unwrap();
     player.halt().unwrap();
 }
+
+#[test]
+fn manual_queue_order_preserves_sound_and_rejects_stale_selections() {
+    let player = Player::default();
+    let (commands, receiver) = mpsc::sync_channel(32);
+    let (release, wait) = mpsc::channel();
+    *player.worker.lock().unwrap() = Some(Worker {
+        commands,
+        handle: std::thread::spawn(move || {
+            let _ = wait.recv();
+        }),
+    });
+    {
+        let mut state = player.state.lock().unwrap();
+        state.status = "playing";
+        state.total = 4;
+        state.index = 1;
+        state.reference = "track:current".into();
+        state.queue = vec![0, 1, 2, 3];
+        state.position = 1234;
+    }
+    player.signals.paused.store(false, Ordering::Relaxed);
+    let id = player.snapshot().unwrap()["queue_id"].clone();
+    let result = player.control("queue", json!({"queue_id":id,"order":[3,2,1,0]}));
+    // Always release the worker, including when the regression assertion fails.
+    let snapshot = player.snapshot().unwrap();
+    let paused = player.signals.paused.load(Ordering::Relaxed);
+    let command = receiver.try_recv();
+    let invalid = player.control("queue", json!({"queue_id":id,"order":[0,0,1,2]}));
+    let stale = player.control("queue", json!({"queue_id":999,"order":[0,1,2,3]}));
+    release.send(()).unwrap();
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(snapshot["queue"], json!([3, 2, 1, 0]));
+    assert_eq!(snapshot["index"], 1);
+    assert_eq!(snapshot["position_ms"], 1234);
+    assert!(!paused);
+    assert!(matches!(command, Err(mpsc::TryRecvError::Empty)));
+    assert!(invalid.is_err());
+    assert!(stale.is_err());
+    assert_eq!(player.snapshot().unwrap()["queue"], json!([3, 2, 1, 0]));
+    player.halt().unwrap();
+}

@@ -15,6 +15,7 @@ export interface PlaybackState {
   device: string;
   error: string;
   seek_id: number;
+  queue_id: number;
   level: number;
   levels: readonly number[];
 }
@@ -38,6 +39,7 @@ export const idlePlayback: PlaybackState = {
   device: "",
   error: "",
   seek_id: 0,
+  queue_id: 0,
   level: 0,
   levels: [0, 0, 0, 0],
 };
@@ -73,6 +75,8 @@ export function parsePlayback(value: unknown): PlaybackState {
       !v.levels.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1))
   )
     throw new Error(t("Niveaux audio invalides."));
+  if (v.queue_id !== undefined && !count(v.queue_id))
+    throw new Error(t("File de lecture invalide."));
   if (v.seek_id !== undefined && !count(v.seek_id))
     throw new Error(t("Confirmation de position invalide."));
   if (
@@ -96,6 +100,7 @@ export function parsePlayback(value: unknown): PlaybackState {
     shuffled: v.shuffled ?? false,
     queue: v.queue ?? [],
     seek_id: v.seek_id ?? 0,
+    queue_id: v.queue_id ?? 0,
     level: v.level ?? 0,
     levels: v.levels ?? [0, 0, 0, 0],
   } as unknown as PlaybackState;

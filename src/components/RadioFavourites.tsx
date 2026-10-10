@@ -8,6 +8,7 @@ export function RadioFavourites(props: {
   favourites: ReturnType<typeof createAccountRadioFavourites>;
   play: (station: Station) => void;
   busy: boolean;
+  writable: boolean;
 }) {
   return (
     <section class="radio-favourites">
@@ -41,7 +42,7 @@ export function RadioFavourites(props: {
                   class="icon-button quiet radio-favourite"
                   aria-pressed="true"
                   aria-label={t("Retirer {0} des radios favorites", station.name)}
-                  disabled={props.favourites.busy()}
+                  disabled={!props.writable}
                   onClick={() => void props.favourites.toggle(station)}
                 >
                   <Icon name="heart" />

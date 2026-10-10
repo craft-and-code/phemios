@@ -210,3 +210,7 @@ Folder tabs join the first settings card without an intervening save-status bann
 Biographies remain escaped plain text. A shared renderer links complete, unambiguous cached artist names within the same catalogue origin, choosing longer matches first and retaining the original prose. The current artist, ambiguous names and incomplete word matches stay text. Attribution remains unchanged.
 
 The search-field settings icon opens a reserved, empty advanced-search workspace; the magnifying glass and ordinary text search keep their established semantics. M3U exports use a distinct file/music glyph and a dedicated selection/preview/download workspace with original ordered extended titles. Paths remain server paths and never become arbitrary native playback or file requests. Collection creation uses the same adjacent name/action row everywhere; completion notices have a stable viewport-bounded width, independent of narrow toolbar parents. Optional M3U and mood views are loaded lazily to keep catalogue startup code smaller.
+
+### Playback queue edits
+
+The native PCM player accepts only a complete occurrence-index permutation for its current queue generation. It publishes the new order atomically, preserving the current track and consumed frame clock; the actor uses that order for subsequent transport boundaries. Manual ordering disables shuffle. The playback workspace exposes reverse, drag/drop and keyboard move controls, with stale-generation rejection. HQPlayer controls do not yet expose this contract, so those edits are unavailable on that output.

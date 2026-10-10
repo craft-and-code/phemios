@@ -1,3 +1,4 @@
+import { sourceLabel } from "../library/sources";
 import { RoleHelp } from "../components/RoleHelp";
 import { Feedback } from "../components/Feedback";
 import { ChoiceSelect } from "../components/ChoiceSelect";
@@ -48,6 +49,20 @@ export function SettingsAccounts() {
   return (
     <div class="settings-card">
       <h2>{t("Comptes Aède")}</h2>
+      <Show when={library.origins().length > 1}>
+        <div class="choices" aria-label={t("Bibliothèque à administrer")}>
+          <For each={library.origins()}>
+            {(source) => (
+              <button
+                aria-pressed={library.source() === source}
+                onClick={() => library.chooseSource(source)}
+              >
+                {sourceLabel(source)}
+              </button>
+            )}
+          </For>
+        </div>
+      </Show>
       <p class="muted">
         {t("Bibliothèque sélectionnée :")}{" "}
         {library.source() === "local" ? t("Local") : t("Serveur")}

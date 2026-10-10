@@ -1297,5 +1297,7 @@
   "Exports M3U": "M3U exports",
   "Choisissez un export pour vérifier ses titres, puis téléchargez-le pour un autre lecteur. Les chemins sont ceux du serveur Aède.": "Choose an export to check its tracks, then download it for another player. Paths belong to the Aède server.",
   "Aucun export M3U enregistré.": "No saved M3U export.",
-  "Sélectionnez un export M3U.": "Select an M3U export."
+  "Sélectionnez un export M3U.": "Select an M3U export.",
+  "Inverser la liste de lecture": "Reverse playback queue",
+  "La liste de lecture a changé.": "The playback queue has changed."
 }

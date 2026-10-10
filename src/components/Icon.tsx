@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  reverse: "M7 3v18m-4-4 4 4 4-4M17 21V3m-4 4 4-4 4 4",
   playlist: "M3 3h11v18H3V3ZM6 7h5M6 11h5M18 8v9M18 10l4-1M18 17a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
   help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z",
   moods: "M3 15c4-10 5 10 9 0s5 10 9 0M3 9c4-10 5 10 9 0s5 10 9 0",

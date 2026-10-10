@@ -4,6 +4,7 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { announceSetting } from "../library/saved-settings";
 import { parseLyrics, currentLyricText } from "../library/lyrics";
+import { PlaybackQueue } from "../components/PlaybackQueue";
 import { AudioScene } from "../components/AudioScene";
 import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
@@ -16,7 +17,6 @@ export function PlaybackPage() {
     player = library.player,
     [queue, setQueue] = createSignal(false),
     [scene, setScene] = createSignal<Scene>("sphere"),
-    [visible, setVisible] = createSignal(100),
     [error, setError] = createSignal("");
   onMount(() => {
     function restore() {
@@ -142,49 +142,7 @@ export function PlaybackPage() {
           <p class="playback-current-lyrics">{currentLyricText(lyrics(), player.seekPosition())}</p>
         </div>
         <Show when={queue()}>
-          <aside class="playback-queue">
-            <div class="page-heading">
-              <h2>{t("Liste de lecture")}</h2>
-              <button
-                class="icon-button quiet icon-close"
-                aria-label={t("Fermer")}
-                onClick={() => setQueue(false)}
-              >
-                <Icon name="close" />
-              </button>
-            </div>
-            <ol>
-              <For each={player.queue().slice(0, visible())}>
-                {(row) => (
-                  <li classList={{ current: row.index === player.state().index }}>
-                    <button
-                      class="queue-track"
-                      disabled={player.busy()}
-                      onClick={() => void player.action("jump", row.index)}
-                    >
-                      <small class="queue-track-number">
-                        {row.number}/{row.albumTotal}
-                      </small>
-                      <span>
-                        <strong>{row.title}</strong>
-                        <small>
-                          {row.artist} · {row.album?.title}
-                        </small>
-                      </span>
-                      <span class="queue-track-state">
-                        <Show when={row.index === player.state().index}>
-                          <Icon name={player.state().status === "playing" ? "volume" : "pause"} />
-                        </Show>
-                      </span>
-                    </button>
-                  </li>
-                )}
-              </For>
-            </ol>
-            <Show when={player.queue().length > visible()}>
-              <button onClick={() => setVisible(visible() + 100)}>{t("Afficher davantage")}</button>
-            </Show>
-          </aside>
+          <PlaybackQueue onClose={() => setQueue(false)} />
         </Show>
       </Show>
     </section>

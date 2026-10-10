@@ -17,22 +17,29 @@ export function ServerRoots(props: {
   let id = 0;
   const [roots, { refetch }] = createResource(
     () => ({ session: library.serverSession(), revision: props.revision }),
-    async (key) => ({
-      session: key.session,
-      paths: await readServerRoots((offset) =>
-        requestAede(
-          "/api/v1/roots",
-          { offset: String(offset), limit: "200" },
-          "GET",
-          null,
-          "server",
-        ),
-      ),
-    }),
+    async (key) => {
+      try {
+        return {
+          session: key.session,
+          error: "",
+          paths: await readServerRoots((offset) =>
+            requestAede(
+              "/api/v1/roots",
+              { offset: String(offset), limit: "200" },
+              "GET",
+              null,
+              "server",
+            ),
+          ),
+        };
+      } catch (failure) {
+        return { session: key.session, error: String(failure), paths: undefined };
+      }
+    },
   );
   createEffect(() => {
     const data = roots();
-    if (data && data.session === library.serverSession())
+    if (data?.paths && data.session === library.serverSession())
       setRows(data.paths.map((path) => ({ id: id++, path })));
   });
   return (
@@ -52,7 +59,10 @@ export function ServerRoots(props: {
           </Show>
         </button>
       </div>
-      <Feedback error message={roots.error ? String(roots.error) : ""} />
+      <Feedback
+        error
+        message={roots()?.session === library.serverSession() ? (roots()?.error ?? "") : ""}
+      />
       <form
         onSubmit={(event) => {
           event.preventDefault();
