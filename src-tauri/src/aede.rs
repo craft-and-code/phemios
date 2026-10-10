@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use tauri::State;
 
 pub(crate) struct SourceState {
-    pub(crate) session: Mutex<Option<Client>>,
+    pub(crate) session: Arc<Mutex<Option<Client>>>,
     pub(crate) cache: Cache,
     pub(crate) snapshot: Mutex<Option<Arc<Value>>>,
 }
@@ -14,7 +14,7 @@ pub(crate) struct Aede {
     pub(crate) server: SourceState,
     pub(crate) local: SourceState,
     pub(crate) engine: Arc<Mutex<phemios_core::local::Engine>>,
-    pub(crate) playback_source: Mutex<phemios_core::federation::Source>,
+    pub(crate) playback_source: Arc<Mutex<phemios_core::federation::Source>>,
     pub(crate) downloads: std::path::PathBuf,
 }
 impl Aede {
@@ -82,28 +82,37 @@ pub(crate) async fn aede_logout(
     version: u32,
     state: State<'_, Aede>,
     player: State<'_, std::sync::Arc<phemios_core::playback::Player>>,
+    hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    let audio = player.inner().clone();
-    if *state
-        .playback_source
-        .lock()
-        .map_err(|_| "État audio indisponible.")?
-        == phemios_core::federation::Source::Server
-    {
-        blocking(move || audio.halt()).await?;
-    }
+    hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let session = state
         .server
         .session
         .lock()
-        .map_err(|_| "Session native indisponible.".to_string())?
+        .map_err(|_| "Session native indisponible.")?
         .take();
+    let player = player.inner().clone();
+    let controller = hq.controller.clone();
+    let routing = hq.routing.clone();
+    let source = state.playback_source.clone();
+    blocking(move || {
+        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        if *source.lock().map_err(|_| "État audio indisponible.")?
+            == phemios_core::federation::Source::Server
+        {
+            player.halt()?;
+            controller.halt()?;
+        }
+        Ok(())
+    })
+    .await?;
     if let Some(client) = session {
         blocking(move || client.request("DELETE", "/api/auth/v1/session", &[], None)).await?;
     }
     Ok(())
 }
+
 #[tauri::command]
 pub(crate) async fn aede_sync(
     version: u32,

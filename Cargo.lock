@@ -2366,6 +2366,7 @@ version = "0.1.0"
 dependencies = [
  "cpal",
  "getrandom 0.4.3",
+ "quick-xml",
  "rtrb",
  "serde_json",
  "tungstenite",

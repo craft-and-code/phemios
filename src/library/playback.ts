@@ -140,7 +140,10 @@ export function createPlayback(
       if (epoch !== generation) return;
       setState(value);
       if (!["idle", "ended", "error"].includes(value.status))
-        timer = setTimeout(() => void refresh(epoch), value.status === "playing" ? 60 : 250);
+        timer = setTimeout(
+          () => void refresh(epoch),
+          value.device === "@hqplayer" ? 250 : value.status === "playing" ? 60 : 250,
+        );
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
     }
@@ -249,14 +252,15 @@ export function createPlayback(
     }
   }
   async function toggleMute() {
-    await volume(state().volume > 0 ? 0 : audibleVolume);
+    if (state().device === "@hqplayer") await action("mute");
+    else await volume(state().volume > 0 ? 0 : audibleVolume);
   }
   async function chooseOutput(id: string) {
     if (busy()) return;
     const previous = device();
     setDevice(id);
     if (!["idle", "ended", "error"].includes(state().status)) {
-      await action("output", id);
+      await action(id === "@hqplayer" || previous === "@hqplayer" ? "stop" : "output", id);
       if (error()) setDevice(previous);
     }
   }

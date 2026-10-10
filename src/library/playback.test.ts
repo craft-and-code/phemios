@@ -325,3 +325,32 @@ it("retains queue row identities across clock polls and updates them only when o
     dispose();
   });
 });
+
+it("stops playback when moving to HQPlayer and sends the engine mute toggle", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackControl).mockResolvedValue(null);
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Fixture");
+    vi.mocked(playbackState).mockResolvedValue({ ...idlePlayback });
+    await player.chooseOutput("@hqplayer");
+    expect(playbackControl).toHaveBeenCalledWith("stop", "@hqplayer");
+    expect(player.device()).toBe("@hqplayer");
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      device: "@hqplayer",
+    });
+    await player.start(tracks, album, "Fixture");
+    await player.toggleMute();
+    expect(playbackControl).toHaveBeenCalledWith("mute", null);
+    dispose();
+  });
+});

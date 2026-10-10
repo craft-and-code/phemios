@@ -3,6 +3,7 @@
 mod aede;
 mod commands;
 mod exports;
+mod hqplayer;
 mod local;
 mod playback;
 mod podcast;
@@ -18,7 +19,7 @@ pub fn run() -> Result<(), tauri::Error> {
         .setup(|app| {
             let root = app.path().app_data_dir()?.join("cache");
             let source = |path| aede::SourceState {
-                session: std::sync::Mutex::new(None),
+                session: std::sync::Arc::new(std::sync::Mutex::new(None)),
                 snapshot: std::sync::Mutex::new(None),
                 cache: phemios_core::cache::Cache::new(path),
             };
@@ -39,12 +40,15 @@ pub fn run() -> Result<(), tauri::Error> {
                         executable,
                     ),
                 )),
-                playback_source: std::sync::Mutex::new(phemios_core::federation::Source::Server),
+                playback_source: std::sync::Arc::new(std::sync::Mutex::new(
+                    phemios_core::federation::Source::Server,
+                )),
                 downloads: app.path().download_dir()?.join("Phémios"),
             });
             app.manage(std::sync::Arc::new(
                 phemios_core::playback::Player::default(),
             ));
+            app.manage(hqplayer::HqPlayer::default());
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
                 phemios_core::radio::Directory::default(),
             ))));
@@ -55,6 +59,8 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            hqplayer::hqplayer_connect,
+            hqplayer::hqplayer_disconnect,
             exports::statistics_export,
             themes::theme_import,
             themes::theme_export,

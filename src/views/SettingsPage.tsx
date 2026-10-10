@@ -1,3 +1,4 @@
+import { SettingsPlayback } from "./SettingsPlayback";
 import { SettingsLanguage } from "./SettingsLanguage";
 import { SettingsNavigation } from "./SettingsNavigation";
 import type { createMenuPreferences } from "../navigation/menu-preferences";
@@ -26,6 +27,7 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
               "libraries",
               "accounts",
               "services",
+              "playback",
               "tags",
               "language",
               "appearance",
@@ -52,6 +54,7 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
             { icon: "library", id: "libraries", label: t("Bibliothèques") },
             { icon: "users", id: "accounts", label: t("Comptes") },
             { icon: "globe", id: "services", label: t("Sources externes") },
+            { icon: "volume", id: "playback", label: t("Lecture") },
             { icon: "tags", id: "tags", label: t("Tags") },
             { icon: "alphabet", id: "language", label: t("Langue") },
             { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
@@ -104,6 +107,9 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </Show>
         <Show when={tab() === "services"}>
           <SettingsServices />
+        </Show>
+        <Show when={tab() === "playback"}>
+          <SettingsPlayback />
         </Show>
         <Show when={tab() === "tags"}>
           <SettingsTags />

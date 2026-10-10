@@ -119,6 +119,10 @@ impl Client {
             account,
         })
     }
+    /// Compare native session identity without exposing its bearer credential.
+    pub fn same_session(&self, other: &Self) -> bool {
+        self.server == other.server && self.token == other.token
+    }
     /// Public account metadata excludes the bearer credential.
     pub fn account(&self) -> Value {
         json!({"account":self.account,"server":self.server})

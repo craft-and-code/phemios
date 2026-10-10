@@ -28,27 +28,36 @@ pub(crate) async fn local_stop(
     version: u32,
     state: State<'_, Aede>,
     player: State<'_, std::sync::Arc<phemios_core::playback::Player>>,
+    hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    if *state
-        .playback_source
-        .lock()
-        .map_err(|_| "État audio indisponible.")?
-        == phemios_core::federation::Source::Local
-    {
-        let player = player.inner().clone();
-        blocking(move || player.halt()).await?;
-    }
-    let engine = state.engine.clone();
-    blocking(move || engine.lock().map_err(|_| "Moteur local occupé.")?.stop()).await?;
+    hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     state
         .local
         .session
         .lock()
         .map_err(|_| "Session locale indisponible.")?
         .take();
+    let player = player.inner().clone();
+    let controller = hq.controller.clone();
+    let routing = hq.routing.clone();
+    let source = state.playback_source.clone();
+    blocking(move || {
+        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        if *source.lock().map_err(|_| "État audio indisponible.")?
+            == phemios_core::federation::Source::Local
+        {
+            player.halt()?;
+            controller.halt()?;
+        }
+        Ok(())
+    })
+    .await?;
+    let engine = state.engine.clone();
+    blocking(move || engine.lock().map_err(|_| "Moteur local occupé.")?.stop()).await?;
     Ok(())
 }
+
 #[tauri::command]
 pub(crate) async fn local_pick_roots(
     version: u32,

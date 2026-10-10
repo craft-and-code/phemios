@@ -255,10 +255,11 @@ export function PlayerBar() {
               {t("Mode de lecture")}{" "}
               <ChoiceSelect
                 label={t("Mode de lecture")}
-                disabled={!player.ready() || player.busy()}
-                value={player.policy()}
+                disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
+                value={player.device() === "@hqplayer" ? "hqplayer" : player.policy()}
                 onChange={(value) => void player.choosePolicy(value)}
                 options={[
+                  { value: "hqplayer", label: t("Traitement HQPlayer"), disabled: true },
                   { value: "without-effects", label: t("Sans DSP") },
                   { value: "dsp", label: t("DSP · normalisation album") },
                   {

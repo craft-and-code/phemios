@@ -140,3 +140,15 @@ export const exportTheme = (document: string) =>
 /** Save the complete CSV only to a native user-selected destination. */
 export const exportStatistics = (document: string) =>
   nativeCall<string | null>("statistics_export", { document });
+
+/** Explicit LAN HQPlayer probe, independent of Aède authentication and local audio processing. */
+export const connectHqPlayer = (
+  host: string,
+  port: number,
+  mappings: readonly { from: string; to: string }[],
+) =>
+  nativeCall<{ connected: boolean; product: string; version: string; name: string }>(
+    "hqplayer_connect",
+    { host, port, mappings },
+  );
+export const disconnectHqPlayer = () => nativeCall<void>("hqplayer_disconnect");

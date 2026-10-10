@@ -34,3 +34,6 @@ pub mod enrichment;
 pub mod volumes;
 
 pub mod podcast;
+
+/// Explicit LAN control of a separately installed HQPlayer engine.
+pub mod hqplayer;
