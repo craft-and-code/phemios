@@ -37,3 +37,6 @@ pub mod podcast;
 
 /// Explicit LAN control of a separately installed HQPlayer engine.
 pub mod hqplayer;
+
+/// Explicit streaming downloads of public podcast enclosures.
+pub mod podcast_download;

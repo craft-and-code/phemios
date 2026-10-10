@@ -2,7 +2,8 @@ import { Feedback } from "../components/Feedback";
 import { createSignal, For, Show, onCleanup } from "solid-js";
 import { t, locale } from "../i18n";
 import { useLibrary } from "../library/context";
-import { readPodcastFeed, isNative } from "../platform/desktop";
+import { createEpisodeDownloads } from "../podcasts/downloads";
+import { readPodcastFeed, downloadPodcastEpisode, isNative } from "../platform/desktop";
 import { parsePodcastFeed, podcastUrl } from "../podcasts/feed";
 import { createUnsubscribe } from "../podcasts/unsubscribe";
 import { createSubscriptions } from "../podcasts/subscriptions";
@@ -16,6 +17,7 @@ export function PodcastsPage(props: { query: string }) {
     [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
     [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
+  const downloads = createEpisodeDownloads(downloadPodcastEpisode);
   const unsubscribe = createUnsubscribe(subscriptions.remove);
   let alive = true;
   onCleanup(() => {
@@ -77,6 +79,17 @@ export function PodcastsPage(props: { query: string }) {
       </form>
       <Show when={error() || subscriptions.error()}>
         <Feedback error message={error() || subscriptions.error()} />
+      </Show>
+      <Feedback
+        message={downloads.message()}
+        error={downloads.failed()}
+        onClose={downloads.dismiss}
+      />
+      <Show when={downloads.busy()}>
+        <p class="job-activity" role="status">
+          <span class="spinner" aria-hidden="true" />
+          {t("Téléchargement de l’épisode…")}
+        </p>
       </Show>
       <Show
         when={subscriptions.feeds().length}
@@ -173,6 +186,22 @@ export function PodcastsPage(props: { query: string }) {
                             <p>{row.summary}</p>
                           </Show>
                         </div>
+                        <button
+                          type="button"
+                          class="icon-button"
+                          disabled={!isNative() || !!downloads.busy()}
+                          aria-busy={downloads.busy() === row.url}
+                          aria-label={t("Télécharger {0}", row.title)}
+                          title={t("Télécharger {0}", row.title)}
+                          onClick={() => void downloads.save(row.url, row.title)}
+                        >
+                          <Show
+                            when={downloads.busy() === row.url}
+                            fallback={<Icon name="download" />}
+                          >
+                            <span class="spinner" aria-hidden="true" />
+                          </Show>
+                        </button>
                         <button
                           class="icon-button"
                           aria-label={t("Lire {0}", row.title)}

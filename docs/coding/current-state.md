@@ -191,3 +191,7 @@ The circular reset inside the radio globe returns to the explicit OS locale regi
 ### Dismissible action messages
 
 Transient action notices now share `Feedback`: a right-hand close icon, bounded wrapping and automatic dismissal after 10 seconds (15 for failures), paused for reading/focus. Timer regression coverage verifies replacement, manual dismissal, remaining-time pause/resume and cleanup. Long-lived loading, connection and diagnostic states remain visible while relevant. Radio search generations discard obsolete results after resetting the globe, even if the previous request targets the same country.
+
+### Podcast episode downloads
+
+Explicit native episode downloads now save finite public media under Downloads/Phémios/Podcasts. Transfer activity replaces each action glyph, completion uses shared transient feedback, and failed/incomplete transfers remove their temporary file. Audio is streamed (one GiB/twenty-minute ceiling), preserving existing copies and never using Aède credentials. The browser preview cannot write native downloads. Unit and local HTTP fixtures verify redirects, media-type refusal, truncated cleanup, filename confinement, repeated-download preservation and late UI completion. Subscription playback remains online; this feature exports standalone episode files. No dependency was added.

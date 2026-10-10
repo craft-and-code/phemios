@@ -53,7 +53,7 @@ pub fn feed_address(value: &str) -> Result<Uri, String> {
     Ok(uri)
 }
 #[derive(Debug)]
-struct PublicResolver;
+pub(crate) struct PublicResolver;
 impl Resolver for PublicResolver {
     fn resolve(
         &self,

@@ -1268,5 +1268,15 @@
   "Chemin de piste Aède indisponible.": "Aède track path unavailable.",
   "Trop de notifications HQPlayer sans réponse.": "Too many HQPlayer notifications without a reply.",
   "HQPlayer ne peut pas identifier plusieurs pistes partageant ce fichier.": "HQPlayer cannot identify multiple tracks sharing this file.",
-  "{0} résultat(s)": "{0} result(s)"
+  "{0} résultat(s)": "{0} result(s)",
+  "Épisode téléchargé : {0}": "Episode downloaded: {0}",
+  "Téléchargement de l’épisode…": "Downloading episode…",
+  "Télécharger {0}": "Download {0}",
+  "Titre de podcast invalide.": "Invalid podcast title.",
+  "Épisode indisponible ou adresse non publique.": "Episode unavailable or non-public address.",
+  "Format de téléchargement du podcast non pris en charge.": "This podcast download format is not supported.",
+  "Épisode vide ou trop volumineux (limite : 1 Go).": "Episode empty or too large (limit: 1 GB).",
+  "Épisode incomplet ou trop volumineux (limite : 1 Go).": "Episode incomplete or too large (limit: 1 GB).",
+  "Trop de copies de cet épisode existent.": "Too many copies of this episode already exist.",
+  "Un téléchargement podcast est déjà en cours.": "A podcast download is already in progress."
 }
