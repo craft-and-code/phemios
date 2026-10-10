@@ -127,6 +127,7 @@ export function LabelPage(props: {
                 context={t("Initiale du titre · année de l’album")}
                 histogram={labelHistogram(albums(), library.artists(), filters())}
                 countLabel={t("albums")}
+                resultCount={selected().length}
                 hasUnknownYear={albums().some((album) => album.year === null)}
               />
               <div class="label-toolbar">

@@ -1,3 +1,4 @@
+import { ResultCount } from "../components/ResultCount";
 import { SelectionCollection } from "../components/SelectionCollection";
 import { personalCollectionExpression } from "../library/personal-collection";
 import { EmptyState } from "../components/EmptyState";
@@ -36,6 +37,7 @@ export function RatedPage(props: { query: string }) {
   return (
     <section class="page rated-page">
       <div class="rating-filter">
+        <ResultCount value={albums().length} />
         <span>{t("Note minimale")}</span>
         <StarRating
           value={minimum()}

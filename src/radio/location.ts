@@ -24,3 +24,8 @@ export function radioCountryPreference(
     throw new Error(t("Préférence de pays radio illisible."));
   return country;
 }
+
+/** Returning home discards station text filters but preserves the transport preference. */
+export function resetRadioCriteria(languages: readonly string[], secureOnly: boolean) {
+  return { country: systemRadioCountry(languages), name: "", tag: "", secureOnly };
+}

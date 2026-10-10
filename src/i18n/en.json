@@ -1267,5 +1267,6 @@
   "Identité de piste Aède invalide.": "Invalid Aède track identity.",
   "Chemin de piste Aède indisponible.": "Aède track path unavailable.",
   "Trop de notifications HQPlayer sans réponse.": "Too many HQPlayer notifications without a reply.",
-  "HQPlayer ne peut pas identifier plusieurs pistes partageant ce fichier.": "HQPlayer cannot identify multiple tracks sharing this file."
+  "HQPlayer ne peut pas identifier plusieurs pistes partageant ce fichier.": "HQPlayer cannot identify multiple tracks sharing this file.",
+  "{0} résultat(s)": "{0} result(s)"
 }

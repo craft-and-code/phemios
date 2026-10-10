@@ -118,7 +118,7 @@ export function SettingsPlayback() {
             />
           </label>
         </div>
-        <div class="actions">
+        <div class="settings-actions">
           <button type="button" disabled={busy()} onClick={() => void save(false)}>
             <Icon name="check" />
             {t("Enregistrer")}
@@ -130,6 +130,7 @@ export function SettingsPlayback() {
             {t("Tester la connexion")}
           </button>
           <button type="button" disabled={busy() || !isNative()} onClick={() => void disconnect()}>
+            <Icon name="disconnect" />
             {t("Déconnecter")}
           </button>
         </div>

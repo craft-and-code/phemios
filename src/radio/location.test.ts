@@ -8,3 +8,14 @@ it("uses an explicit system region rather than inferring a country from a langua
   expect(radioCountryPreference({ getItem: () => '"Canada"' }, ["fr-FR"])).toBe("Canada");
   expect(() => radioCountryPreference({ getItem: () => "{broken" }, ["fr-FR"])).toThrow();
 });
+
+it("reset ignores saved country and clears station filters", async () => {
+  const { resetRadioCriteria } = await import("./location");
+  expect(resetRadioCriteria(["en-US"], false)).toEqual({
+    country: "US",
+    name: "",
+    tag: "",
+    secureOnly: false,
+  });
+  expect(resetRadioCriteria(["fr"], true).country).toBe("");
+});

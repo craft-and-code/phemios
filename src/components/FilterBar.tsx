@@ -1,3 +1,5 @@
+import { ResultCount } from "./ResultCount";
+import { countRail } from "../library/result-count";
 import { t } from "../i18n";
 import { Show } from "solid-js";
 import type { Filters, Interval } from "../library/types";
@@ -15,6 +17,7 @@ export function FilterBar(props: {
   context: string;
   histogram: { years: CountBin[]; alphabet: CountBin[] };
   countLabel: string;
+  resultCount: number;
   hasUnknownYear: boolean;
 }) {
   const update = (patch: Partial<Filters>) => props.setValue({ ...props.value, ...patch });
@@ -42,6 +45,9 @@ export function FilterBar(props: {
             <Icon name="alphabet" />
           </button>
         </div>
+        <Show when={props.value.mode === "none"}>
+          <ResultCount value={props.resultCount} />
+        </Show>
         <span class="filter-context">{props.context}</span>
         <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
           <label title={t("Inclure les albums dont l’année de sortie n’est pas renseignée.")}>
@@ -88,6 +94,7 @@ export function FilterBar(props: {
           format={String}
           bins={props.histogram.years}
           countLabel={props.countLabel}
+          resultCount={countRail(props.value.mode) === "years" ? props.resultCount : undefined}
           onChange={(value) => interval("years", value)}
         />
       </Show>
@@ -100,6 +107,7 @@ export function FilterBar(props: {
           format={(i) => letters[i] ?? "#"}
           bins={props.histogram.alphabet}
           countLabel={props.countLabel}
+          resultCount={countRail(props.value.mode) === "alphabet" ? props.resultCount : undefined}
           onChange={(value) => interval("alphabet", value)}
         />
       </Show>

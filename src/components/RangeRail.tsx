@@ -1,5 +1,6 @@
+import { ResultCount } from "./ResultCount";
 import { t } from "../i18n";
-import { For, createMemo } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import { shiftInterval } from "../library/filtering";
 import type { Interval } from "../library/types";
 import type { CountBin } from "../library/distribution";
@@ -13,6 +14,7 @@ interface Props {
   onChange: (value: Interval) => void;
   bins: readonly CountBin[];
   countLabel: string;
+  resultCount?: number | undefined;
 }
 
 /** Two native bounds plus a draggable/keyboard-movable selected band. */
@@ -68,6 +70,9 @@ export function RangeRail(props: Props) {
       <div class="rail-heading">
         <span>{props.label}</span>
         <output>{label()}</output>
+        <Show when={props.resultCount !== undefined}>
+          <ResultCount value={props.resultCount!} />
+        </Show>
         <small>{t("Glissez la plage ou ses bornes")}</small>
       </div>
       <div

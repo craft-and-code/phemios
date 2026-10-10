@@ -20,6 +20,7 @@ const countryName = (code: string) => (/^[A-Z]{2}$/.test(code) ? names.of(code) 
 export function CountryGlobe(props: {
   directory?: boolean;
   focus?: string;
+  onReset?: () => string;
   artists: readonly Artist[];
   selected: readonly (string | null)[];
   onSelect: (value: string | undefined, additive?: boolean) => void;
@@ -55,15 +56,28 @@ export function CountryGlobe(props: {
         )
         .map((c) => c.code),
     );
-  createEffect(() => {
+  const focusCountry = (value: string | undefined) => {
     const country = countries()?.find(
-      (country) => props.focus === country.code || props.focus === country.name,
+      (country) => value === country.code || value === country.name,
     );
     if (country) {
       const point = geoCentroid(countryGeometry(country));
       if (point.every(Number.isFinite)) setCenter([point[0], point[1]]);
     }
-  });
+  };
+  createEffect(() => focusCountry(props.focus));
+  const selectCountry = (code: string) => {
+    const country = countries()?.find((row) => row.code === code);
+    const match = props.artists.find((artist) => codeFor(artist) === code);
+    props.onSelect(
+      code
+        ? props.directory
+          ? code
+          : (match?.country ?? countryName(code) ?? country?.name ?? code)
+        : undefined,
+    );
+    if (code) focusCountry(code);
+  };
   const redraw = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
@@ -129,13 +143,13 @@ export function CountryGlobe(props: {
   }
   return (
     <div class="globe-panel">
-      <Show when={props.directory}>
+      <Show when={countries()?.length}>
         <label class="radio-globe-country">
           {t("Pays")}
           <ChoiceSelect
             label={t("Pays")}
-            value={props.selected[0] ?? ""}
-            onChange={(value) => props.onSelect(value || undefined)}
+            value={[...selectedCodes()][0] ?? ""}
+            onChange={selectCountry}
             options={[
               { value: "", label: t("Tous") },
               ...(countries() ?? [])
@@ -219,6 +233,8 @@ export function CountryGlobe(props: {
             onClick={() => {
               setCenter([8, 22]);
               setZoom(1);
+              setHover(undefined);
+              if (props.onReset) focusCountry(props.onReset());
             }}
           >
             <Icon name="refresh" />

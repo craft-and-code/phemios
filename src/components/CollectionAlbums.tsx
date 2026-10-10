@@ -1,3 +1,4 @@
+import { ResultCount } from "./ResultCount";
 import { t } from "../i18n";
 import { createResource, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -30,7 +31,10 @@ export function CollectionAlbums(props: { name: string }) {
   );
   return (
     <section>
-      <h2>{props.name}</h2>
+      <div class="section-heading">
+        <h2>{props.name}</h2>
+        <Show when={result()?.albums}>{(albums) => <ResultCount value={albums().length} />}</Show>
+      </div>
       <Show when={result.loading}>
         <p role="status">{t("Évaluation…")}</p>
       </Show>

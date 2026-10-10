@@ -15,6 +15,7 @@ import {
 import { createNavigation, browserNavigationHost } from "./navigation/history";
 import { browseArtists, selectAlbumYear } from "./library/selection";
 import { catalogRails } from "./navigation/rails";
+import { filterArtists, filterAlbums } from "./library/filtering";
 import { distributions } from "./library/distribution";
 import { PodcastPlayerBar } from "./components/PodcastPlayerBar";
 import { SelectionCollection } from "./components/SelectionCollection";
@@ -275,6 +276,13 @@ export function App() {
         </Show>
         <Show when={hasFilters() && library.artists().length}>
           <FilterBar
+            resultCount={
+              ["artists", "countries", "genres"].includes(section())
+                ? filterArtists(principalArtists(), library.albums(), filters()).length
+                : filterAlbums(library.albums(), library.artists(), filters()).filter(
+                    (album) => section() !== "compilations" || album.compilation,
+                  ).length
+            }
             value={filters()}
             setValue={setFilters}
             context={context()}

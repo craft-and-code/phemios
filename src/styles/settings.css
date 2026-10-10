@@ -494,3 +494,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+.settings-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  line-height: 1.2;
+}
+.settings-actions > button.icon-button {
+  padding: 8px;
+}
+.settings-actions > button > svg {
+  flex-shrink: 0;
+}

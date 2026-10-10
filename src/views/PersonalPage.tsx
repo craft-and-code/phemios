@@ -1,3 +1,4 @@
+import { ResultCount } from "../components/ResultCount";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { Icon } from "../components/Icon";
 import { RenameCollection } from "../components/RenameCollection";
@@ -120,6 +121,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
       </Show>
       <Show when={props.section === "favourites"}>
         <div class="personal-selection-actions">
+          <ResultCount value={favourites().length} />
           <SelectionCollection
             disabled={!favourites().length}
             expression={personalCollectionExpression("favourites", props.query)}

@@ -1,3 +1,4 @@
+import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
 import { createMemo, createResource, For, Show } from "solid-js";
@@ -69,6 +70,7 @@ export function TagsPage(props: {
   return (
     <section class="page tags-page">
       <div class="personal-selection-actions">
+        <ResultCount value={entries().length} />
         <SelectionCollection
           disabled={!entries().some((row) => referenceSource(row.reference) === library.source())}
           expression={tagCollectionExpression(props.selected, props.query)}

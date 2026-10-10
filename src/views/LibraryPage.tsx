@@ -65,11 +65,6 @@ export function LibraryPage(props: {
           <CountryExplorer artists={principals()} selected={countries()} onSelect={setCountry} />
         </Show>
         <div class="library-results">
-          <div class="page-heading">
-            <span role="status">
-              {artistView() ? artists().length : albums().length} {t("résultat(s)")}
-            </span>
-          </div>
           <Show when={props.section === "genres"}>
             <div class="choices" aria-label={t("Genres")}>
               <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>

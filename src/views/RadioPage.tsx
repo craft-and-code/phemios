@@ -1,5 +1,5 @@
 import { CountryGlobe } from "../components/CountryGlobe";
-import { radioCountryPreference, radioCountryKey } from "../radio/location";
+import { radioCountryPreference, radioCountryKey, resetRadioCriteria } from "../radio/location";
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
@@ -101,6 +101,16 @@ export function RadioPage(props: { query: string }) {
           directory
           selected={country() ? [country()] : []}
           focus={country()}
+          onReset={() => {
+            const home = resetRadioCriteria(navigator.languages, secureOnly());
+            setCountry(home.country);
+            setName(home.name);
+            setTag(home.tag);
+            setStations([]);
+            setLoaded(false);
+            if (isNative()) void search(0, true);
+            return home.country;
+          }}
           onSelect={(value) => {
             setCountry(value ?? "");
             if (isNative()) void search(0, true);

@@ -205,3 +205,19 @@
   padding: 5px 9px;
   font-size: 12px;
 }
+
+.result-count {
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.rail-heading .result-count {
+  margin-left: auto;
+}
+.rail-heading {
+  flex-wrap: wrap;
+}
+.personal-selection-actions > .result-count {
+  margin-right: auto;
+  align-self: center;
+}
