@@ -35,3 +35,14 @@ it("refuses legacy Discogs jobs and late source sessions before any mutation", a
     "local",
   );
 });
+
+it("does not attach an accepted job to an account replaced during the POST", async () => {
+  let current = true;
+  vi.mocked(requestAede).mockImplementation(async () => {
+    current = false;
+    return { task_id: 9 };
+  });
+  await expect(startSourceEnrichment("server", { summaries: true }, () => current)).rejects.toThrow(
+    /Session/,
+  );
+});

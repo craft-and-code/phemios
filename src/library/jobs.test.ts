@@ -93,3 +93,40 @@ it("shows activity only for queued or running work on the matching source releas
     ),
   ).toBeUndefined();
 });
+
+it("restores actual running enrichment jobs and syncs confirmed completion without replaying a fetch", async () => {
+  const changed = vi.fn(async () => {}),
+    session = {
+      server: "http://localhost:3412",
+      account: { id: "owner", username: "owner", role: "admin" as const },
+    };
+  request.mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["administrative_tasks_list"] }
+      : path === "/api/admin/v1/tasks"
+        ? [{ task_id: 7, task_kind: "identification", status: "running" }]
+        : {
+            task_id: 7,
+            status: "completed",
+            result: {
+              exit_code: 0,
+              stdout: "Retained biography",
+              stderr: "",
+              output_truncated: false,
+            },
+          },
+  );
+  const jobs = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true, {
+      session: (source) => (source === "server" ? session : undefined),
+      changed,
+    });
+  });
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+  expect(jobs.jobs()[0]?.kind).toBe("fetch");
+  await vi.advanceTimersByTimeAsync(300);
+  expect(jobs.jobs()[0]?.status).toBe("completed");
+  expect(changed).toHaveBeenCalledWith("server");
+  expect(request.mock.calls.some((call) => call[0] === "/api/admin/v1/fetch")).toBe(false);
+});

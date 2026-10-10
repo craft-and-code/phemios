@@ -39,5 +39,13 @@ export async function startSourceEnrichment(
       );
   }
   if (!isCurrent()) throw new Error(t("Session invalide."));
-  return requestAede("/api/admin/v1/fetch", {}, "POST", options, source);
+  const result = await requestAede<{ task_id: number }>(
+    "/api/admin/v1/fetch",
+    {},
+    "POST",
+    options,
+    source,
+  );
+  if (!isCurrent()) throw new Error(t("Session invalide."));
+  return result;
 }

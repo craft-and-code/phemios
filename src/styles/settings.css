@@ -451,3 +451,23 @@
     align-items: center;
   }
 }
+
+.enrichment-job {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.enrichment-job .spinner {
+  margin-left: auto;
+}
+.enrichment-job pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
+  font-size: 12px;
+}
+.enrichment-job .page-heading {
+  margin: 0;
+}

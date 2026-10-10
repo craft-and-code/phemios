@@ -195,7 +195,12 @@ export function LibraryProvider(props: ParentProps) {
     const account = session();
     if (account) player.identify(`${source()}:${account.server}:${account.account.id}`);
   });
-  const tasks = createJobs(() => !!localSession() || !!serverSession());
+  const tasks = createJobs(() => !!localSession() || !!serverSession(), {
+    session: (source) => (source === "local" ? localSession() : serverSession()),
+    changed: async (source) => {
+      await sync(source);
+    },
+  });
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
   let generation = 0;

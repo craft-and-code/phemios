@@ -1207,5 +1207,12 @@
   "Le catalogue a changé ; relancez l’export.": "The catalogue changed; restart the export.",
   "CSV enregistré : {0}": "CSV saved: {0}",
   "Télécharger toutes les statistiques en CSV": "Download all statistics as CSV",
-  "Liste des comptes Aède invalide.": "Invalid Aède account list."
+  "Liste des comptes Aède invalide.": "Invalid Aède account list.",
+  "Suivi de tâche Aède invalide.": "Invalid Aède task tracking.",
+  "Enrichissement en cours…": "Enrichment in progress…",
+  "Tâche #{0}": "Task #{0}",
+  "Enrichissement terminé.": "Enrichment completed.",
+  "Enrichissement partiel ou en échec ; les données enregistrées sont conservées.": "Partial or failed enrichment; saved data is retained.",
+  "Tâche annulée ; les données enregistrées sont conservées.": "Task cancelled; saved data is retained.",
+  "Résultats et diagnostics": "Results and diagnostics"
 }
