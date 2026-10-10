@@ -810,12 +810,12 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 }
 
 .cover-flow {
-  --cover-size: clamp(220px, min(28vw, calc(100dvh - 500px)), 340px);
+  --cover-size: clamp(180px, min(28vw, calc(100dvh - 530px)), 340px);
   outline: none;
 }
 .cover-flow-stage {
   position: relative;
-  height: calc(var(--cover-size) + 65px);
+  height: calc(var(--cover-size) + 36px);
   perspective: 950px;
   overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
@@ -823,7 +823,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 .cover-flow-card {
   position: absolute;
   left: 50%;
-  top: 24px;
+  top: 12px;
   width: var(--cover-size);
   transform: translateX(calc(-50% + var(--offset) * var(--cover-size) * 0.6))
     translateZ(calc(var(--depth) * -110px)) rotateY(calc(clamp(-1, var(--offset), 1) * -48deg));
@@ -859,7 +859,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   justify-content: center;
   align-items: center;
   gap: 24px;
-  margin-block: 8px 20px;
+  margin-block: 8px 10px;
 }
 .cover-flow-caption {
   text-align: center;
@@ -900,4 +900,31 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 .advanced-search-fields .settings-card label {
   margin: 0;
   max-width: none;
+}
+
+.library-page:has(.cover-flow) {
+  padding-top: 4px;
+}
+
+/* Fit the stage to the grid's actual content row, including title and notices. */
+main:has(> .playback-page) {
+  display: flex;
+  flex-direction: column;
+}
+main:has(> .playback-page) > :not(.playback-page) {
+  flex-shrink: 0;
+}
+.playback-page {
+  flex: 1;
+  min-height: 0;
+}
+.playback-stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.playback-visuals {
+  flex: 1;
+  height: auto;
+  min-height: 220px;
 }

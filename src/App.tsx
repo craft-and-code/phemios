@@ -1,3 +1,4 @@
+import { needsCatalogPrompt } from "./navigation/catalog-prompt";
 import { createShortcuts, shortcutAction } from "./navigation/shortcuts";
 import { createMenuPreferences, visibleMenu, menuItem } from "./navigation/menu-preferences";
 import { LabelsPage } from "./views/LabelsPage";
@@ -119,7 +120,9 @@ export function App() {
     function key(event: KeyboardEvent) {
       const editing =
         event.target instanceof Element &&
-        !!event.target.closest("input, textarea, select, [contenteditable], dialog[open]");
+        (!!event.target.closest("input, textarea, select, [contenteditable], dialog[open]") ||
+          (!(event.metaKey || event.ctrlKey) &&
+            !!event.target.closest("button, a, summary, [role=button]")));
       const action = shortcutAction(event, shortcuts.value(), editing);
       if (!action) return;
       event.preventDefault();
@@ -306,11 +309,12 @@ export function App() {
           </p>
         </Show>
         <Show
-          when={
-            !library.artists().length &&
-            !library.busy() &&
-            !["radio", "podcasts", "settings", "advanced-search"].includes(section())
-          }
+          when={needsCatalogPrompt(
+            current(),
+            library.artists().length,
+            library.connected() || !!library.localSession(),
+            library.busy(),
+          )}
         >
           <div class="empty">
             <p>{t("Connectez votre serveur Aède pour synchroniser la bibliothèque.")}</p>
