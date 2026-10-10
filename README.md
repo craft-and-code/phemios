@@ -97,3 +97,7 @@ Browse filters now belong to each view and show removable active criteria; Count
 Podcasts: add a public RSS feed in Music sources → Podcasts, select a subscription and explicitly play an episode. Refresh updates its retained episode list; subscriptions remain browsable offline. Audio uses system WebView codecs/output. See [the RSS contract](docs/design/podcasts.md).
 
 Playback now includes a complete-track seekable waveform, native shuffle and an optional 3D particle workspace opened from the footer icon, with queue and local timed lyrics. Settings separates language and eight colours, supports portable theme import/export and synchronizes supported non-secret preferences per Aède account. Ambiances starts with transparent configurable tag/genre rules; automatic emotion inference is not implemented. Updated Aède is required for the additive waveform, preference, mood and exact-track lyrics contracts; rebuild and restart external servers after upgrading. See [native integration](docs/design/native-integration.md), [managed local engine](docs/design/local-engine.md) and [mood discovery](docs/design/mood-discovery.md).
+
+## Website preview
+
+The separate bilingual project website lives in [`site/`](site/README.md). Preview it with `python3 -m http.server 1439 --bind 127.0.0.1 --directory site`. It uses local assets and system fonts, links Aède and FlacCompagnon, and introduces the application without inventing a public download URL. No deployment is performed by the desktop build.
