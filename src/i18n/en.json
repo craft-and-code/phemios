@@ -1386,5 +1386,13 @@
   "Bandes de fréquences": "Frequency bands",
   "Afficher les fréquences": "Show frequency bands",
   "Durée du fondu": "Crossfade duration",
-  "Fondu entre les titres": "Track crossfade"
+  "Fondu entre les titres": "Track crossfade",
+  "Épisodes écoutés illisibles.": "Listened episodes cannot be read.",
+  "Écouté": "Listened",
+  "Phrase précédente": "Previous phrase",
+  "Phrase suivante": "Next phrase",
+  "Paroles non synchronisées": "Unsynchronised lyrics",
+  "Téléchargement des paroles interrompu.": "Lyrics acquisition interrupted.",
+  "La sortie audio ne confirme pas le déplacement.": "The audio output did not confirm the seek.",
+  "Le fondu nécessite le mode DSP. Ses réglages ne redémarrent pas le morceau ; un fondu déjà commencé se termine avec sa durée initiale.": "Crossfade requires DSP mode. Its settings do not restart the track; a transition already in progress finishes with its original duration."
 }

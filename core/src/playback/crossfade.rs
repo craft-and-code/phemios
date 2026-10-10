@@ -77,6 +77,7 @@ struct Mixer<'a> {
     mixing: Option<(u64, u64)>,
     progress: Instant,
     last_consumed: u64,
+    seek_ticket: Option<u64>,
 }
 impl Mixer<'_> {
     fn tick(&mut self) -> Result<(), String> {
@@ -113,6 +114,9 @@ impl Mixer<'_> {
                 && !self.signals.paused.load(Ordering::Relaxed)
             {
                 s.status = "playing";
+                if let Some(ticket) = self.seek_ticket.take() {
+                    s.seek_id = ticket;
+                }
             }
         })?;
         if self.output.failed.load(Ordering::Relaxed) {
@@ -202,7 +206,42 @@ impl Mixer<'_> {
         }
         update(self.state, |state| state.confirmed = true)
     }
-    fn run(&mut self, ms: u64, commands: &Receiver<Command>) -> Result<Option<Command>, String> {
+    fn seek(&mut self, position: u64, ticket: u64) -> Result<(), String> {
+        self.signals.paused.store(true, Ordering::Relaxed);
+        let consumed = self.output.reset()?;
+        for voice in [&mut self.current]
+            .into_iter()
+            .chain(self.next.iter_mut())
+            .chain(self.retired.iter_mut())
+        {
+            voice.acknowledge(consumed);
+            voice.source.finish()?;
+        }
+        self.current = Voice::open(
+            self.client,
+            self.tracks,
+            self.current.index,
+            self.output.rate,
+            position,
+        );
+        self.next = None;
+        self.retired = None;
+        self.mixing = None;
+        self.sent = 0;
+        self.last_consumed = 0;
+        self.progress = Instant::now();
+        self.seek_ticket = Some(ticket);
+        update(self.state, |s| {
+            s.position = position;
+            s.status = "connecting";
+            s.confirmed = false;
+        })
+    }
+    fn run(
+        &mut self,
+        mut ms: u64,
+        commands: &Receiver<Command>,
+    ) -> Result<Option<Command>, String> {
         loop {
             if self.sent.is_multiple_of(256)
                 || self.current.frames.is_empty()
@@ -210,6 +249,14 @@ impl Mixer<'_> {
             {
                 self.tick()?;
                 match commands.try_recv() {
+                    Ok(Command::Crossfade(value)) => {
+                        ms = value;
+                        update(self.state, |s| s.crossfade_ms = value)?;
+                    }
+                    Ok(Command::Seek(position, ticket)) => {
+                        self.seek(position, ticket)?;
+                        continue;
+                    }
                     Ok(command) => return Ok(Some(command)),
                     Err(TryRecvError::Disconnected) => return Ok(Some(Command::Stop)),
                     Err(TryRecvError::Empty) => {}
@@ -338,6 +385,7 @@ pub(super) fn stream(
         mixing: None,
         progress: Instant::now(),
         last_consumed: 0,
+        seek_ticket: None,
     };
     let result = mixer.run(ms, commands);
     let stopped = mixer.finish();

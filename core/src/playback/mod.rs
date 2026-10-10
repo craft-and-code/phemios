@@ -9,6 +9,7 @@ mod queue;
 mod socket;
 mod spectrum;
 mod stream;
+mod transport;
 use crate::network::Client;
 use output::Signals;
 use serde_json::{Value, json};

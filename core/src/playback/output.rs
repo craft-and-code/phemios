@@ -29,6 +29,7 @@ pub(super) struct Output {
     pub producer: Producer<[f32; 2]>,
     pub consumed: Arc<AtomicU64>,
     pub failed: Arc<AtomicBool>,
+    reset: Arc<super::transport::Reset>,
     _stream: cpal::Stream,
 }
 fn select(id: &str) -> Result<(Device, SupportedStreamConfig), String> {
@@ -78,6 +79,7 @@ fn render<T: SizedSample + FromSample<f32>>(
     signals: &Signals,
     consumed: &AtomicU64,
     spectrum: &mut super::spectrum::Spectrum,
+    transport: &mut super::transport::Transport,
 ) {
     let gain = f32::from_bits(signals.volume.load(Ordering::Relaxed));
     let mut frames = 0;
@@ -85,18 +87,25 @@ fn render<T: SizedSample + FromSample<f32>>(
     let mut peaks = [0_f32; 2];
     let mut output_squares = 0_f64;
     for target in output.chunks_exact_mut(channels) {
-        let sample = if signals.paused.load(Ordering::Relaxed) {
-            [0., 0.]
+        let paused = signals.paused.load(Ordering::Relaxed);
+        let input = if paused {
+            None
         } else {
             match ring.pop() {
                 Ok(frame) => {
                     frames += 1;
                     spectrum.push(frame);
-                    frame
+                    Some(frame)
                 }
-                Err(_) => [0., 0.],
+                Err(_) => None,
             }
         };
+        let sample = input.unwrap_or([0.; 2]);
+        let audible = transport.sample(input, paused);
+        if transport.flush(ring, consumed) {
+            let _ = spectrum.finish();
+            let _ = spectrum.finish();
+        }
         // Measure only PCM actually taken from the ring, before the local volume gain.
         // Stereo RMS/peak pairs do not pretend to be frequency-spectrum bands.
         for channel in 0..2 {
@@ -105,14 +114,14 @@ fn render<T: SizedSample + FromSample<f32>>(
             peaks[channel] = peaks[channel].max(magnitude);
         }
         if channels == 1 {
-            let value = (sample[0] + sample[1]) * 0.5 * gain;
+            let value = (audible[0] + audible[1]) * 0.5 * gain;
             output_squares += f64::from(value).powi(2);
             target[0] = T::from_sample(value);
         } else {
             output_squares +=
-                f64::from(sample[0] * gain).powi(2) + f64::from(sample[1] * gain).powi(2);
-            target[0] = T::from_sample(sample[0] * gain);
-            target[1] = T::from_sample(sample[1] * gain);
+                f64::from(audible[0] * gain).powi(2) + f64::from(audible[1] * gain).powi(2);
+            target[0] = T::from_sample(audible[0] * gain);
+            target[1] = T::from_sample(audible[1] * gain);
         }
     }
     for (target, value) in signals.spectrum.iter().zip(spectrum.finish()) {
@@ -145,6 +154,18 @@ fn render<T: SizedSample + FromSample<f32>>(
     consumed.fetch_add(frames, Ordering::Relaxed);
 }
 impl Output {
+    /// Request a callback-owned flush after a 5 ms stop ramp; return only previously consumed PCM.
+    pub fn reset(&self) -> Result<u64, String> {
+        let ticket = self.reset.requested.fetch_add(1, Ordering::Release) + 1;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        while self.reset.applied.load(Ordering::Acquire) != ticket {
+            if self.failed.load(Ordering::Relaxed) || std::time::Instant::now() >= deadline {
+                return Err("La sortie audio ne confirme pas le déplacement.".into());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        Ok(self.reset.consumed.load(Ordering::Relaxed))
+    }
     pub fn freeze(&self) -> Result<(), String> {
         self._stream
             .pause()
@@ -167,6 +188,8 @@ impl Output {
         let consumed = Arc::new(AtomicU64::new(0));
         let failed = Arc::new(AtomicBool::new(false));
         let mut spectrum = super::spectrum::Spectrum::new(rate);
+        let reset = Arc::new(super::transport::Reset::default());
+        let mut transport = super::transport::Transport::new(rate, reset.clone());
         let count = consumed.clone();
         let failure = failed.clone();
         macro_rules! build {
@@ -174,7 +197,15 @@ impl Output {
                 device.build_output_stream(
                     config,
                     move |data: &mut [$sample], _| {
-                        render(data, channels, &mut ring, &signals, &count, &mut spectrum)
+                        render(
+                            data,
+                            channels,
+                            &mut ring,
+                            &signals,
+                            &count,
+                            &mut spectrum,
+                            &mut transport,
+                        )
                     },
                     move |_| {
                         failure.store(true, Ordering::Relaxed);
@@ -206,6 +237,7 @@ impl Output {
             producer,
             consumed,
             failed,
+            reset,
             _stream: stream,
         })
     }

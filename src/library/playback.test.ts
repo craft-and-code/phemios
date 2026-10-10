@@ -374,3 +374,25 @@ it("does not start audio when logout occurs during preference configuration", as
     dispose();
   });
 });
+
+it("changes crossfade duration without changing the current DSP policy or restarting playback", async () => {
+  vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn() });
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist");
+    vi.mocked(playbackControl).mockClear();
+    await player.chooseCrossfade(3000);
+    expect(player.policy()).toBe("without-effects");
+    expect(playbackControl).toHaveBeenCalledExactlyOnceWith("crossfade", 3000);
+    expect(playbackStart).toHaveBeenCalledOnce();
+    expect(player.crossfade()).toBe(3000);
+    dispose();
+  });
+  vi.unstubAllGlobals();
+});

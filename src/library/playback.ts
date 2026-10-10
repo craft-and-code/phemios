@@ -63,9 +63,8 @@ export function createPlayback(
   async function chooseCrossfade(ms: number) {
     if (busy()) return;
     try {
-      const next = { ...audio(), crossfadeMs: ms, ...(ms > 0 ? { policy: "dsp" as const } : {}) };
+      const next = { ...audio(), crossfadeMs: ms };
       parseAudioPreferences(JSON.stringify(next));
-      if (ms > 0 && policy() !== "dsp") await choosePolicy("dsp");
       if (ready() && device() !== "@hqplayer") await action("crossfade", ms);
       saveAudio(next);
     } catch (failure) {

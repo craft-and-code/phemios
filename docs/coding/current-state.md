@@ -231,3 +231,7 @@ Cover Flow keeps stable keyed album cards for animated keyboard/pointer movement
 The offline bilingual encyclopedia bundles original attributed reference material with category/text search and API references, without importing external articles or making navigation requests. Opaque account trophies use Aède’s capability-guarded owner endpoint; locked definitions remain server-only. Queue lyric acquisition deduplicates occurrences, keeps existing lyrics and runs one administrative task at a time, with source-bound identity checks and progress.
 
 Editorial press material is in `press/`, with bilingual copy, SVG branding, provenance and a separately licensed optional font. The artifact does not include real music artwork, private account information or hidden discovery definitions.
+
+### Stable seek and crossfade transport
+
+Active sequential seeks now preserve their authenticated visit and output through Aède reset epochs. Mixer seeks preserve the output while confirming/replacing individual voices. A bounded 5 ms callback transition avoids an abrupt seek discontinuity without counting synthetic or discarded PCM as listening. Latest deferred targets and applied tickets distinguish admission from confirmation. The footer crossfade action opens settings; duration changes neither change DSP policy nor restart the active stream. A running overlap retains its original length.

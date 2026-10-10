@@ -76,6 +76,8 @@ pub(super) fn stream(
     let mut channels = None;
     let mut seeking = initial > 0;
     let mut seek_sent = false;
+    let mut seek_ticket = None;
+    let mut deferred_seek = None;
     let mut offset = initial;
     let mut eof = None;
     let mut sent_frames = 0;
@@ -85,11 +87,38 @@ pub(super) fn stream(
     let mut final_ack = false;
     loop {
         let consumed = output.consumed.load(Ordering::Relaxed);
-        update(state, |s| {
-            s.position = offset + consumed.saturating_mul(1000) / u64::from(output.rate);
-            s.rate = output.rate;
-        })?;
-        match commands.try_recv() {
+        if !seeking {
+            update(state, |s| {
+                s.position = offset + consumed.saturating_mul(1000) / u64::from(output.rate);
+                s.rate = output.rate;
+            })?;
+        }
+        let command = if !seeking && channels.is_some() && deferred_seek.is_some() {
+            deferred_seek.take().ok_or(mpsc::TryRecvError::Empty)
+        } else {
+            commands.try_recv()
+        };
+        match command {
+            Ok(Command::Crossfade(value)) => update(state, |s| s.crossfade_ms = value)?,
+            Ok(Command::Seek(target, ticket)) if !seeking && channels.is_some() => {
+                signals.paused.store(true, Ordering::Relaxed);
+                let frames = output.reset()?;
+                send(
+                    &mut socket,
+                    json!({"type":"seek","epoch":epoch,"frames":frames,"position_ms":target}),
+                )?;
+                seeking = true;
+                seek_sent = true;
+                seek_ticket = Some(ticket);
+                update(state, |s| {
+                    s.position = target;
+                    s.status = "connecting";
+                })?;
+                progress = Instant::now();
+            }
+            Ok(command @ Command::Seek(_, _)) if seeking || channels.is_none() => {
+                deferred_seek = Some(command)
+            }
             Ok(command) => {
                 signals.paused.store(true, Ordering::Relaxed);
                 output.freeze()?;
@@ -106,8 +135,9 @@ pub(super) fn stream(
         if output.failed.load(Ordering::Relaxed) {
             return Err("La sortie audio a signalé une erreur ou une déconnexion.".into());
         }
-        if (consumed > acknowledged && ack_time.elapsed() >= Duration::from_millis(50))
-            || (eof == Some(consumed) && !final_ack)
+        if !seeking
+            && ((consumed > acknowledged && ack_time.elapsed() >= Duration::from_millis(50))
+                || (eof == Some(consumed) && !final_ack))
         {
             send(
                 &mut socket,
@@ -143,7 +173,12 @@ pub(super) fn stream(
                         } else if !seeking {
                             offset = format.position;
                             signals.paused.store(false, Ordering::Relaxed);
-                            update(state, |s| s.status = "playing")?;
+                            update(state, |s| {
+                                s.status = "playing";
+                                if let Some(ticket) = seek_ticket.take() {
+                                    s.seek_id = ticket;
+                                }
+                            })?;
                         }
                     }
                     Some("reset") => {
@@ -151,6 +186,11 @@ pub(super) fn stream(
                         offset = protocol::unsigned(&value, "position_ms")?;
                         seeking = false;
                         channels = None;
+                        eof = None;
+                        sent_frames = 0;
+                        acknowledged = 0;
+                        final_ack = false;
+                        ack_time = Instant::now();
                         send(&mut socket, json!({"type":"reset_ack","epoch":epoch}))?;
                         progress = Instant::now();
                     }

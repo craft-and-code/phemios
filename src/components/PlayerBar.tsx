@@ -215,16 +215,14 @@ export function PlayerBar() {
           <Icon name="visualizer" />
         </a>
         <button
-          class="icon-button"
+          class="icon-button quiet crossfade-control"
           aria-label={t("Fondu entre les titres")}
           title={t("Fondu entre les titres")}
           disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
           aria-pressed={player.crossfade() > 0 && player.policy() === "dsp"}
-          onClick={() =>
-            void player.chooseCrossfade(
-              player.crossfade() > 0 && player.policy() === "dsp" ? 0 : 3000,
-            )
-          }
+          onClick={() => {
+            if (audioSettings) audioSettings.open = !audioSettings.open;
+          }}
         >
           <Icon name="crossfade" />
         </button>
@@ -320,6 +318,11 @@ export function PlayerBar() {
                 onChange={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />
             </label>
+            <small>
+              {t(
+                "Le fondu nécessite le mode DSP. Ses réglages ne redémarrent pas le morceau ; un fondu déjà commencé se termine avec sa durée initiale.",
+              )}
+            </small>
             <small>
               {t(
                 "Sans DSP : effets désactivés ; adaptation au format de la sortie et volume restent actifs. Le flux PCM distant et la sortie système ne garantissent pas le bit-perfect.",
