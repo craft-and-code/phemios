@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { ResultCount } from "../components/ResultCount";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { Icon } from "../components/Icon";
@@ -361,7 +362,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
           </button>
         </div>
       </Show>
-      <p role="status">{message()}</p>
+      <Feedback message={message()} />
     </section>
   );
 }

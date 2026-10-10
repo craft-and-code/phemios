@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
@@ -64,16 +65,23 @@ export function LyricsDownload(props: { reference: string }) {
         </Show>
       </button>
       <Show when={error()}>
-        <small class="lyrics-action-result" role="alert">
-          {error()}
-        </small>
+        <Feedback
+          class="lyrics-action-result"
+          error
+          message={error()}
+          onClose={() => setError("")}
+        />
       </Show>
       <Show when={job() && !active()}>
-        <small class="lyrics-action-result" role="status">
-          {job()?.status === "completed"
-            ? job()?.result?.stdout || t("Tâche terminée.")
-            : job()?.error?.message || job()?.result?.stderr || t("Téléchargement impossible.")}
-        </small>
+        <Feedback
+          class="lyrics-action-result"
+          error={job()?.status !== "completed"}
+          message={
+            job()?.status === "completed"
+              ? job()?.result?.stdout || t("Tâche terminée.")
+              : job()?.error?.message || job()?.result?.stderr || t("Téléchargement impossible.")
+          }
+        />
       </Show>
     </span>
   );

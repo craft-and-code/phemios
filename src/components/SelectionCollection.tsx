@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { Icon } from "./Icon";
@@ -69,9 +70,11 @@ export function SelectionCollection(props: {
         <Icon name="library" />
       </button>
       <Show when={message()}>
-        <span class="selection-collection-notice" role="status">
-          {message()}
-        </span>
+        <Feedback
+          class="selection-collection-notice"
+          message={message()}
+          onClose={() => setMessage("")}
+        />
       </Show>
       <Show when={draft()}>
         {(_draft) => {
@@ -125,7 +128,7 @@ export function SelectionCollection(props: {
                     onInput={(e) => setName(e.currentTarget.value)}
                   />
                 </label>
-                <p role="alert">{error()}</p>
+                <Feedback error message={error()} onClose={() => setError("")} />
                 <button class="primary" disabled={!writable() || busy()}>
                   {t("Créer la collection")}{" "}
                 </button>

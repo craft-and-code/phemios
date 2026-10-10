@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { createSignal, Show } from "solid-js";
 import { downloadAnalysisAede } from "../platform/desktop";
@@ -57,15 +58,18 @@ export function AnalysisDownload(props: {
         </Show>
       </button>
       <Show when={path()}>
-        <small role="status">
-          {t("Enregistré :")} {path()}
-        </small>
+        <Feedback message={t("Enregistré :") + " " + path()} onClose={() => setPath("")} />
       </Show>
       <Show when={failure()}>
-        <small role="alert">
-          {failure()}{" "}
-          {t("Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin.")}{" "}
-        </small>
+        <Feedback
+          error
+          message={
+            failure() +
+            " " +
+            t("Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin.")
+          }
+          onClose={() => setFailure("")}
+        />
       </Show>
     </div>
   );

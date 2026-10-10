@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { SettingsPlayback } from "./SettingsPlayback";
 import { SettingsLanguage } from "./SettingsLanguage";
 import { SettingsNavigation } from "./SettingsNavigation";
@@ -77,9 +78,12 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </For>
       </div>
       <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-tab-${tab()}`}>
-        <p class="settings-save-status" role="status">
-          {library.savedSettings.status()}
-        </p>
+        <Show
+          when={library.savedSettings.status() === t("Enregistrement…")}
+          fallback={<Feedback message={library.savedSettings.status()} />}
+        >
+          <p role="status">{library.savedSettings.status()}</p>
+        </Show>
         <Show when={library.savedSettings.error()}>
           <p class="notice" role="alert">
             {library.savedSettings.error()}

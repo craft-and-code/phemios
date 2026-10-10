@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createResource, createSignal, For, Show, onCleanup } from "solid-js";
@@ -321,7 +322,7 @@ export function SettingsLibraries() {
           </div>
         )}
       </Show>
-      <p role="alert">{error()}</p>
+      <Feedback error message={error()} onClose={() => setError("")} />
     </div>
   );
 }

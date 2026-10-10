@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { normalizeName } from "../library/filtering";
 import { suggestionVocabulary } from "../library/tag-preferences";
 import { referenceSource } from "../library/sources";
@@ -331,13 +332,14 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       <Show when={library.tagPreferences.error()}>
         <p role="alert">{library.tagPreferences.error()}</p>
       </Show>
-      <p role="status">
-        {pending()
-          ? t("Enregistrement dans Aède…")
-          : dirty()
-            ? t("Notes et tags non enregistrés.")
-            : message()}
-      </p>
+      <Show
+        when={pending() || dirty()}
+        fallback={<Feedback message={message()} onClose={() => setMessage("")} />}
+      >
+        <p role="status">
+          {pending() ? t("Enregistrement dans Aède…") : t("Notes et tags non enregistrés.")}
+        </p>
+      </Show>
       <Show when={failure()}>
         <p role="alert">
           {failure()} {t("Les notes en cours sont conservées.")}

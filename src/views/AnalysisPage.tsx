@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import {
   initialCoverageSort,
   nextCoverageSort,
@@ -97,16 +98,11 @@ export function AnalysisPage(props: { query: string }) {
         </button>
       </div>
       <Show when={notice().message}>
-        <div class="analysis-download-notice" role={notice().failure ? "alert" : "status"}>
-          <span>{notice().message}</span>
-          <button
-            class="icon-button quiet icon-close"
-            aria-label={t("Masquer la notification")}
-            onClick={() => setNotice({ message: "", failure: false })}
-          >
-            <Icon name="close" />
-          </button>
-        </div>
+        <Feedback
+          message={notice().message}
+          error={notice().failure}
+          onClose={() => setNotice({ message: "", failure: false })}
+        />
       </Show>
       <Show when={!library.session()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>

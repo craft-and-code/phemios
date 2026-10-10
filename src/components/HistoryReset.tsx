@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { createEffect, createSignal, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -52,7 +53,7 @@ export function HistoryReset(props: { onReset: () => void }) {
           </button>
         </div>
       </Show>
-      <p role="status">{message()}</p>
+      <Feedback message={message()} />
     </>
   );
 }

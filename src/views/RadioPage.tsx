@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { radioCountryPreference, radioCountryKey, resetRadioCriteria } from "../radio/location";
 import { EmptyState } from "../components/EmptyState";
@@ -30,7 +31,8 @@ export function RadioPage(props: { query: string }) {
     [countError, setCountError] = createSignal("");
   let criteria = { name: "", country: "", tag: "", secureOnly: true },
     alive = true,
-    pendingSearch = false;
+    pendingSearch = false,
+    searchEpoch = 0;
   // A late result may populate this page only while its owner is mounted.
   onCleanup(() => {
     alive = false;
@@ -45,6 +47,7 @@ export function RadioPage(props: { query: string }) {
     }
   });
   async function search(page = 0, fresh = false) {
+    if (fresh) searchEpoch += 1;
     if (busy()) {
       if (fresh) pendingSearch = true;
       return;
@@ -58,13 +61,14 @@ export function RadioPage(props: { query: string }) {
       }
       criteria = { name: name(), country: country(), tag: tag(), secureOnly: secureOnly() };
     }
+    const epoch = searchEpoch;
     setBusy(true);
     setError("");
     try {
       const response = parseStations(
         await searchRadio(criteria.name, criteria.country, criteria.tag, page, criteria.secureOnly),
       );
-      if (!alive || criteria.country !== country()) return;
+      if (!alive || epoch !== searchEpoch || criteria.country !== country()) return;
       setStations(response.stations);
       setMore(response.more);
       setOffset(page);
@@ -81,7 +85,7 @@ export function RadioPage(props: { query: string }) {
           if (alive) setCountError(t("Le total de l’annuaire est indisponible."));
         }
     } catch (failure) {
-      if (alive)
+      if (alive && epoch === searchEpoch)
         setError(failure instanceof Error ? failure.message : t("Annuaire radio indisponible."));
     } finally {
       if (alive) {
@@ -143,7 +147,7 @@ export function RadioPage(props: { query: string }) {
           </p>
         </Show>
         <Show when={error()}>
-          <p role="alert">{error()}</p>
+          <Feedback error message={error()} onClose={() => setError("")} />
         </Show>
         <Show when={count()}>
           <p class="muted">

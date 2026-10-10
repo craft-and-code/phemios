@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -100,7 +101,7 @@ export function RenameCollection(props: { name: string; onRenamed: (name: string
         </form>
       </Show>
       <Show when={error()}>
-        <small role="alert">{error()}</small>
+        <Feedback error message={error()} onClose={() => setError("")} />
       </Show>
     </div>
   );

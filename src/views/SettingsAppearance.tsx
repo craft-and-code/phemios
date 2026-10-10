@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { announceSetting } from "../library/saved-settings";
 import { readTheme, writeTheme } from "../library/themes";
@@ -189,11 +190,9 @@ export function SettingsAppearance() {
         </button>
       </div>
       <Show when={notice()}>
-        <p class="notice" role="status">
-          {notice()}
-        </p>
+        <Feedback message={notice()} onClose={() => setNotice("")} />
       </Show>
-      <p role="alert">{error()}</p>
+      <Feedback error message={error()} onClose={() => setError("")} />
     </div>
   );
 }

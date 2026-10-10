@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { createEffect, createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -80,7 +81,7 @@ export function DeleteCollection(props: { name: string; onDeleted: () => void })
         </div>
       </Show>
       <Show when={error()}>
-        <p role="alert">{error()}</p>
+        <Feedback error message={error()} onClose={() => setError("")} />
       </Show>
     </div>
   );

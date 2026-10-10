@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { exportStatistics, isNative } from "../platform/desktop";
 import { csvDocument, statisticsCsv, type CsvRow } from "../library/statistics-csv";
@@ -159,14 +160,10 @@ export function StatisticsPage() {
         </div>
       </div>
       <Show when={exportStatus()}>
-        <p class="notice" role="status">
-          {exportStatus()}
-        </p>
+        <Feedback message={exportStatus()} onClose={() => setExportStatus("")} />
       </Show>
       <Show when={exportError()}>
-        <p class="notice" role="alert">
-          {exportError()}
-        </p>
+        <Feedback error message={exportError()} onClose={() => setExportError("")} />
       </Show>
       <Show when={!library.session()}>
         <p class="notice">

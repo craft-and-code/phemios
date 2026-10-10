@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
 import { createSignal, Show } from "solid-js";
@@ -98,7 +99,7 @@ export function M3UExport(props: { release: string; title: string }) {
         )}
       </Show>
       <Show when={error()}>
-        <p role="status">{error()}</p>
+        <Feedback message={error()} />
       </Show>
     </div>
   );

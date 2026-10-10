@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -230,7 +231,7 @@ export function SettingsAccounts() {
           <button disabled={busy()}>{t("Modifier et se déconnecter")}</button>
         </form>
       </Show>
-      <p role="alert">{error()}</p>
+      <Feedback error message={error()} onClose={() => setError("")} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createSignal, For, Show, onCleanup } from "solid-js";
 import { t, locale } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -75,7 +76,7 @@ export function PodcastsPage(props: { query: string }) {
         </Show>
       </form>
       <Show when={error() || subscriptions.error()}>
-        <p role="alert">{error() || subscriptions.error()}</p>
+        <Feedback error message={error() || subscriptions.error()} />
       </Show>
       <Show
         when={subscriptions.feeds().length}

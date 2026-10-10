@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { Icon } from "../components/Icon";
@@ -141,12 +142,10 @@ export function SettingsPlayback() {
         )}
       </p>
       <Show when={message()}>
-        <p role="status">{message()}</p>
+        <Feedback message={message()} />
       </Show>
       <Show when={error()}>
-        <p class="notice" role="alert">
-          {error()}
-        </p>
+        <Feedback error message={error()} onClose={() => setError("")} />
       </Show>
     </section>
   );

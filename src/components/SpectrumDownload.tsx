@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { createSignal, Show } from "solid-js";
 import { downloadSpectrumAede } from "../platform/desktop";
@@ -31,7 +32,7 @@ export function SpectrumDownload(props: { reference: string }) {
         <Icon name="download" />
       </button>
       <Show when={message()}>
-        <small role="status">{message()}</small>
+        <Feedback message={message()} />
       </Show>
     </div>
   );

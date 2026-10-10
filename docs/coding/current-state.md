@@ -187,3 +187,7 @@ HQPlayer follow-up adds an optional explicit LAN control output and retained dev
 ### Radio home and selection feedback
 
 The circular reset inside the radio globe returns to the explicit OS locale region, clears station name/style filters and requests that country's stations while retaining the HTTPS preference. With no OS region, it returns to all countries; language alone is not geolocation. Both geographical views expose the same keyboard country picker, while catalogue country buttons retain additive selection. Catalog and label result counts appear in the first visible rail only, or its controls when both rails are hidden. Favourites, ratings, tags and evaluated collections show full selection counts independently of pagination. Playback settings buttons share icon/text alignment with the appearance preview.
+
+### Dismissible action messages
+
+Transient action notices now share `Feedback`: a right-hand close icon, bounded wrapping and automatic dismissal after 10 seconds (15 for failures), paused for reading/focus. Timer regression coverage verifies replacement, manual dismissal, remaining-time pause/resume and cleanup. Long-lived loading, connection and diagnostic states remain visible while relevant. Radio search generations discard obsolete results after resetting the globe, even if the previous request targets the same country.

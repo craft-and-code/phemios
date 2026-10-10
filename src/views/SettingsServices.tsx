@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
@@ -329,9 +330,7 @@ export function SettingsServices() {
           )}
         </For>
       </div>
-      <p class="service-status" role="status">
-        {message()}
-      </p>
+      <Feedback message={message()} />
     </div>
   );
 }
