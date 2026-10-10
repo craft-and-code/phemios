@@ -6,16 +6,19 @@ use std::sync::{Arc, Mutex, mpsc::Receiver};
 pub(super) fn run(
     client: Client,
     tracks: Vec<String>,
-    mut index: usize,
+    index: usize,
     output: (String, super::Policy),
     commands: Receiver<Command>,
     state: &Mutex<State>,
     signals: &Arc<Signals>,
 ) -> Result<(), String> {
     let (mut device, mut policy) = output;
+    let mut queue = super::queue::Queue::new(tracks.len(), index);
     let mut position = 0;
     let mut paused = false;
     loop {
+        synchronize(&mut queue, state)?;
+        let index = queue.index();
         let action = if paused {
             commands.recv().map_err(|_| "Lecteur fermé.")?
         } else {
@@ -39,8 +42,8 @@ pub(super) fn run(
             )? {
                 Some(command) => command,
                 None => {
-                    if index + 1 < tracks.len() {
-                        index += 1;
+                    synchronize(&mut queue, state)?;
+                    if queue.next() {
                         position = 0;
                         continue;
                     }
@@ -54,7 +57,15 @@ pub(super) fn run(
             .lock()
             .map_err(|_| "État audio indisponible.")?
             .position;
+        synchronize(&mut queue, state)?;
         match action {
+            Command::Jump(value) => {
+                if !queue.jump(value) {
+                    return Err("Position de file invalide.".into());
+                }
+                position = 0;
+                paused = false;
+            }
             Command::Policy(value) => {
                 policy = value;
                 update(state, |s| s.policy = value)?;
@@ -69,14 +80,13 @@ pub(super) fn run(
             }
             Command::Resume => {
                 if state.lock().map_err(|_| "État audio indisponible.")?.status == "ended" {
-                    index = 0;
+                    queue.first();
                     position = 0;
                 }
                 paused = false;
             }
             Command::Next => {
-                if index + 1 < tracks.len() {
-                    index += 1;
+                if queue.next() {
                     position = 0;
                     paused = false;
                 } else {
@@ -85,8 +95,8 @@ pub(super) fn run(
                 }
             }
             Command::Previous => {
-                if position <= 3000 && index > 0 {
-                    index -= 1;
+                if position <= 3000 {
+                    queue.previous();
                 }
                 position = 0;
                 paused = false;
@@ -104,4 +114,9 @@ pub(super) fn run(
             }
         }
     }
+}
+
+fn synchronize(queue: &mut super::queue::Queue, state: &Mutex<State>) -> Result<(), String> {
+    let state = state.lock().map_err(|_| "État audio indisponible.")?;
+    queue.synchronize(&state.queue, state.shuffled)
 }

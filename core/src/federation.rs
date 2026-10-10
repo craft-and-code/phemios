@@ -114,3 +114,39 @@ pub fn map(value: &mut Value, source: Source, incoming: bool) -> Result<(), Stri
 #[cfg(test)]
 #[path = "federation_tests.rs"]
 mod tests;
+
+/// Resolve and unwrap known request selectors before choosing a native client.
+/// Track lyrics use `track`, while ordinary catalog routes use `ref`/`reference`.
+pub fn request_origin(
+    query: &mut std::collections::BTreeMap<String, String>,
+    body: &mut Option<Value>,
+    fallback: Source,
+) -> Result<Source, String> {
+    let hint = ["ref", "reference", "track"]
+        .iter()
+        .find_map(|key| query.get(*key).map(String::as_str))
+        .or_else(|| {
+            body.as_ref().and_then(|value| {
+                ["release", "reference", "track"]
+                    .iter()
+                    .find_map(|key| value[*key].as_str())
+            })
+        });
+    let origin = hint
+        .map(resolve)
+        .transpose()?
+        .map_or(fallback, |value| value.0);
+    for key in ["ref", "reference", "track"] {
+        if let Some(reference) = query.get_mut(key) {
+            let (owner, raw) = resolve(reference)?;
+            if owner != origin {
+                return Err("Origines incompatibles.".into());
+            }
+            *reference = raw;
+        }
+    }
+    if let Some(value) = body {
+        map(value, origin, false)?;
+    }
+    Ok(origin)
+}

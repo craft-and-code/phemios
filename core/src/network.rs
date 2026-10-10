@@ -397,12 +397,15 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/v1/artist"
                     | "/api/v1/track"
                     | "/api/v1/lyrics"
+                    | "/api/v1/waveform"
                     | "/api/v1/query"
                     | "/api/v1/labels"
                     | "/api/v1/label"
                     | "/api/me/v1/missing"
                     | "/api/me/v1/annotation"
                     | "/api/me/v1/annotations"
+                    | "/api/me/v1/preferences"
+                    | "/api/me/v1/moods"
                     | "/api/me/v1/m3u"
                     | "/api/me/v1/collections"
                     | "/api/me/v1/collection"
@@ -415,11 +418,16 @@ fn allowed(method: &str, path: &str) -> bool {
         "PUT" => matches!(
             path,
             "/api/me/v1/annotation"
+                | "/api/me/v1/moods"
                 | "/api/me/v1/collection"
                 | "/api/auth/v1/password"
                 | "/api/me/v1/missing"
         ),
-        "PATCH" => path == "/api/me/v1/collection" || account_path(path, false),
+        "PATCH" => {
+            path == "/api/me/v1/collection"
+                || path == "/api/me/v1/preferences"
+                || account_path(path, false)
+        }
         "DELETE" => {
             account_path(path, true)
                 || matches!(
@@ -435,6 +443,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/m3u"
                     | "/api/admin/v1/scan"
                     | "/api/admin/v1/fetch"
+                    | "/api/admin/v1/lyrics"
                     | "/api/admin/v1/accounts"
             ) || task_path(path, true)
         }

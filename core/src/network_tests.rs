@@ -420,3 +420,15 @@ fn name_only_collection_edits_have_a_narrow_native_route() {
     assert!(!allowed("PATCH", "/api/admin/v1/collection"));
     assert!(!allowed("PATCH", "/api/me/v1/collections"));
 }
+#[test]
+fn new_preferences_lyrics_moods_and_waveform_paths_keep_narrow_method_boundaries() {
+    assert!(allowed("GET", "/api/me/v1/preferences"));
+    assert!(allowed("PATCH", "/api/me/v1/preferences"));
+    assert!(!allowed("POST", "/api/me/v1/preferences"));
+    assert!(allowed("GET", "/api/v1/waveform"));
+    assert!(!allowed("PUT", "/api/v1/waveform"));
+    assert!(allowed("GET", "/api/me/v1/moods"));
+    assert!(allowed("PUT", "/api/me/v1/moods"));
+    assert!(allowed("POST", "/api/admin/v1/lyrics"));
+    assert!(!allowed("POST", "/api/me/v1/lyrics"));
+}

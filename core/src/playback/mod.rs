@@ -2,6 +2,7 @@
 mod actor;
 mod output;
 mod protocol;
+mod queue;
 mod socket;
 mod stream;
 use crate::network::Client;
@@ -16,6 +17,7 @@ use std::thread::JoinHandle;
 #[derive(Clone)]
 enum Command {
     Policy(Policy),
+    Jump(usize),
     Pause,
     Resume,
     Next,
@@ -63,6 +65,8 @@ struct State {
     confirmed: bool,
     device: String,
     policy: Policy,
+    shuffled: bool,
+    queue: Vec<usize>,
 }
 /// One bounded actor owns the socket and device; no credential enters the UI or audio callback.
 pub struct Player {
@@ -106,7 +110,7 @@ impl Player {
             0.
         };
         Ok(
-            json!({"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -151,6 +155,8 @@ impl Player {
         *self.state.lock().map_err(|_| "État audio indisponible.")? = State {
             status: "connecting",
             total: tracks.len(),
+            index,
+            queue: (0..tracks.len()).collect(),
             device: device.clone(),
             policy,
             ..State::default()
@@ -233,10 +239,40 @@ impl Player {
                 .seek(value.as_u64().ok_or("Position invalide.")?)
                 .map(|_| ());
         }
+        if action == "shuffle" {
+            let enabled = value.as_bool().ok_or("Lecture aléatoire invalide.")?;
+            let worker = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
+            if worker
+                .as_ref()
+                .is_none_or(|worker| worker.handle.is_finished())
+            {
+                return Err("Aucune lecture active.".into());
+            }
+            let mut state = self.state.lock().map_err(|_| "État audio indisponible.")?;
+            if state.queue.is_empty() {
+                return Err("Aucune lecture active.".into());
+            }
+            let mut queue = queue::Queue::new(state.total, state.index);
+            queue.synchronize(&state.queue, state.shuffled)?;
+            queue.shuffle(enabled)?;
+            state.queue = queue.order().to_vec();
+            state.shuffled = queue.shuffled();
+            return Ok(());
+        }
         let command = match action {
             "policy" => Command::Policy(Policy::parse(value.as_str().ok_or("Mode invalide.")?)?),
             "pause" => Command::Pause,
             "resume" => Command::Resume,
+            "jump" => Command::Jump(
+                value
+                    .as_u64()
+                    .filter(|index| {
+                        self.state
+                            .lock()
+                            .is_ok_and(|state| *index < state.total as u64)
+                    })
+                    .ok_or("Position de file invalide.")? as usize,
+            ),
             "next" => Command::Next,
             "previous" => Command::Previous,
             "stop" => Command::Stop,

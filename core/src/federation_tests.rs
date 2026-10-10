@@ -35,3 +35,25 @@ fn collection_album_members_keep_their_origin() {
     map(&mut value, Source::Local, true).unwrap();
     assert_eq!(value["items"][0], qualify("release:first", Source::Local));
 }
+
+#[test]
+fn track_lyrics_selectors_route_to_their_actual_library_and_unwrap_engine_references() {
+    let local = qualify("track:signal", Source::Local);
+    let mut query = std::collections::BTreeMap::from([("track".into(), local.clone())]);
+    assert_eq!(
+        request_origin(&mut query, &mut None, Source::Server).unwrap(),
+        Source::Local
+    );
+    assert_eq!(query["track"], "track:signal");
+    let mut body = Some(json!({"track":local}));
+    assert_eq!(
+        request_origin(&mut Default::default(), &mut body, Source::Server).unwrap(),
+        Source::Local
+    );
+    assert_eq!(body.unwrap()["track"], "track:signal");
+    let mut mixed = std::collections::BTreeMap::from([
+        ("track".into(), qualify("track:signal", Source::Local)),
+        ("ref".into(), "release:remote".into()),
+    ]);
+    assert!(request_origin(&mut mixed, &mut None, Source::Server).is_err());
+}

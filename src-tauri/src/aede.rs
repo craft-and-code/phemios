@@ -150,31 +150,11 @@ pub(crate) async fn aede_request(
     state: State<'_, Aede>,
 ) -> Result<Value, String> {
     bridge(version)?;
-    let hint = query
-        .get("ref")
-        .or_else(|| query.get("reference"))
-        .map(String::as_str)
-        .or_else(|| {
-            body.as_ref()
-                .and_then(|v| v["release"].as_str().or_else(|| v["reference"].as_str()))
-        });
-    let origin = hint
-        .map(phemios_core::federation::resolve)
-        .transpose()?
-        .map(|v| v.0)
-        .unwrap_or(self::source(source.as_deref())?);
-    for key in ["ref", "reference"] {
-        if let Some(reference) = query.get_mut(key) {
-            let (owner, raw) = phemios_core::federation::resolve(reference)?;
-            if owner != origin {
-                return Err("Origines incompatibles.".into());
-            }
-            *reference = raw;
-        }
-    }
-    if let Some(value) = body.as_mut() {
-        phemios_core::federation::map(value, origin, false)?;
-    }
+    let origin = phemios_core::federation::request_origin(
+        &mut query,
+        &mut body,
+        self::source(source.as_deref())?,
+    )?;
     if origin == phemios_core::federation::Source::Local
         && path.starts_with("/api/admin/v1/accounts/phemios-local")
         && method != "GET"
