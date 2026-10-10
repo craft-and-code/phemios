@@ -59,7 +59,7 @@ export function LyricsDownload(props: { reference: string }) {
         aria-busy={active()}
         onClick={() => void fetchWords()}
       >
-        <Show when={active()} fallback={<Icon name="download" />}>
+        <Show when={active()} fallback={<Icon name="lyrics-download" />}>
           <span class="spinner" />
         </Show>
       </button>

@@ -73,6 +73,14 @@ fn preferred_stream(url: &str) -> &str {
         url
     }
 }
+fn country_filter(country: &str) -> (&'static str, String) {
+    let country = country.trim();
+    if country.len() == 2 && country.bytes().all(|value| value.is_ascii_alphabetic()) {
+        ("countrycode", country.to_ascii_uppercase())
+    } else {
+        ("country", country.to_owned())
+    }
+}
 impl Directory {
     fn read(&self, host: &str, path: &str, query: &[(&str, &str)]) -> Result<Value, String> {
         let mut request = self
@@ -133,9 +141,10 @@ impl Directory {
         }
         let host = self.mirror()?;
         let offset = offset.to_string();
+        let (country_field, country_value) = country_filter(country);
         let mut query = vec![
             ("name", name.trim()),
-            ("country", country.trim()),
+            (country_field, country_value.as_str()),
             ("tag", tag.trim()),
             ("offset", &offset),
             ("limit", "51"),

@@ -550,3 +550,55 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
     box-shadow: 0 16px 60px #0008;
   }
 }
+
+/* Playback gives the actual scene the full available width. */
+.playback-page {
+  max-width: none;
+  width: 100%;
+}
+.playback-stage {
+  min-width: 0;
+}
+.audio-scene {
+  height: clamp(350px, 62vh, 850px);
+}
+.scene-controls {
+  gap: 4px;
+  margin-top: 10px;
+}
+.scene-controls button[aria-pressed="true"] {
+  color: var(--accent);
+  background: var(--surface);
+}
+.scene-controls .icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+}
+.playback-current-lyrics {
+  margin: 12px auto;
+  min-height: 2em;
+  text-align: center;
+  color: var(--accent);
+  font-size: clamp(16px, 2vw, 24px);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+.playback-queue .queue-track {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 18px;
+  align-items: start;
+}
+.playback-queue .queue-track-number,
+.playback-queue .queue-track-state {
+  line-height: 20px;
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
+.playback-queue .queue-track-state svg {
+  margin-top: 2px;
+}
+.playback-queue strong {
+  line-height: 20px;
+}

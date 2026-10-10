@@ -162,3 +162,9 @@ Synced local lyrics follow the consumed source clock; clicking a timed line seek
 Radio reuses the bundled country globe, with a side column on wide windows and stacked layout on narrow windows. An explicit saved country wins; otherwise an explicit OS locale region centres/selects the default. Language alone never establishes geographic location. Country selection submits directory lookup without autoplay. Label index sorting supports name or album count and either direction; detail albums use chronological order consistent with label playback. Missing discography albums have reduced artwork appearance; local coverage precedes completeness in Statistics.
 
 The Moods page keeps its captured account/source lifecycle, explicit rule editing and paged playback assembly together as a focused module-size exception. Matching/validation policies remain in separate frontend/core modules.
+
+## Playback action refinements
+
+Radio country selection uses ISO alpha-2 codes end-to-end, including the system-region default; legacy saved names remain accepted. Radio Browser queries use `countrycode` for these codes, independent of translated globe labels. Live US acceptance returns 51 HTTPS entries in the first page.
+
+Each track has one lyrics action slot: the document-with-arrow icon explicitly acquires missing words, then the document icon toggles retained words in place after completion. Playback displays only the supplied current LRC group; unsynchronized plain lyrics remain accessible from track rows without inventing a timeline. Empty timed cues clear the phrase. The queue opener disappears while the closeable queue pane is open. Scene selection uses discrete icons and the current Canvas scene fills the available width; no visualization dependency was added.

@@ -71,7 +71,6 @@ export function TrackResults(props: {
               : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
           </small>
           <div class="track-actions">
-            <LyricsDownload reference={props.track.reference} />
             <Show when={props.track.analysis_available ?? props.track.analyses.length > 0}>
               <button
                 class="icon-button quiet"
@@ -101,7 +100,10 @@ export function TrackResults(props: {
                 <Icon name="spectrum" />
               </button>
             </Show>
-            <Show when={words.available() || words.visible()}>
+            <Show
+              when={words.available() || words.visible()}
+              fallback={<LyricsDownload reference={props.track.reference} />}
+            >
               <button
                 class="icon-button quiet"
                 title={t("Afficher ou masquer les paroles")}

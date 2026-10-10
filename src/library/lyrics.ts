@@ -36,3 +36,14 @@ export function activeLyricTime(
       latest = line.at_ms;
   return latest;
 }
+
+/** Only supplied timed groups may drive the Playback phrase; plain text has no invented clock. */
+export function currentLyricText(lyrics: Lyrics | null | undefined, position: number): string {
+  const time = activeLyricTime(lyrics, position);
+  return time === null
+    ? ""
+    : (lyrics?.lines
+        .filter((line) => line.at_ms === time)
+        .map((line) => line.text)
+        .join("\n") ?? "");
+}

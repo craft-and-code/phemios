@@ -1,6 +1,8 @@
 const paths: Record<string, string> = {
   moods: "M3 15c4-10 5 10 9 0s5 10 9 0M3 9c4-10 5 10 9 0s5 10 9 0",
   visualizer: "M3 4h18v14H3V4ZM8 22h8M12 18v4M6 11l3-3 3 6 3-5 3 2",
+  "lyrics-download": "M4 3h11v9M4 3v17h7M7 7h5M7 11h5M16 11v10m-4-4 4 4 4-4",
+  landscape: "M2 20 9 7l4 7 3-5 6 11H2Z",
   lyrics: "M5 4h14v16H5V4ZM8 8h8M8 12h8M8 16h5",
   plus: "M5 12h14M12 5v14",
   minus: "M5 12h14",

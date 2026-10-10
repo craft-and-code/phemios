@@ -4,8 +4,7 @@ export function systemRadioCountry(languages: readonly string[]): string {
   for (const language of languages)
     try {
       const region = new Intl.Locale(language).region;
-      if (region && /^[A-Z]{2}$/.test(region))
-        return new Intl.DisplayNames(["en"], { type: "region" }).of(region) ?? "";
+      if (region && /^[A-Z]{2}$/.test(region)) return region;
     } catch {
       /* Invalid OS locale entries do not establish a country. */
     }

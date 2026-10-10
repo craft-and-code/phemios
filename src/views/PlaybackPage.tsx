@@ -3,8 +3,7 @@ import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { announceSetting } from "../library/saved-settings";
-import { parseLyrics } from "../library/lyrics";
-import { LyricsText } from "../components/LyricsText";
+import { parseLyrics, currentLyricText } from "../library/lyrics";
 import { AudioScene } from "../components/AudioScene";
 import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
@@ -37,7 +36,7 @@ export function PlaybackPage() {
     window.addEventListener("phemios-settings-loaded", restore);
     onCleanup(() => window.removeEventListener("phemios-settings-loaded", restore));
   });
-  const [words, { refetch }] = createResource(
+  const [words] = createResource(
     () => player.current()?.reference || false,
     async (reference) => {
       try {
@@ -92,26 +91,38 @@ export function PlaybackPage() {
               <h1>{player.current()?.title}</h1>
               <p>{player.current()?.artist}</p>
             </div>
-            <button
-              class="icon-button"
-              aria-label={t("Afficher ou masquer la liste de lecture")}
-              title={t("Afficher ou masquer la liste de lecture")}
-              aria-pressed={queue()}
-              onClick={() => setQueue(!queue())}
-            >
-              <Icon name="list" />
-            </button>
+            <Show when={!queue()}>
+              <button
+                class="icon-button quiet"
+                aria-label={t("Afficher ou masquer la liste de lecture")}
+                title={t("Afficher ou masquer la liste de lecture")}
+                aria-pressed={queue()}
+                onClick={() => setQueue(!queue())}
+              >
+                <Icon name="list" />
+              </button>
+            </Show>
           </header>
           <div class="scene-controls">
-            <button aria-pressed={scene() === "sphere"} onClick={() => choose("sphere")}>
-              {t("Sphère")}
-            </button>
-            <button aria-pressed={scene() === "waves"} onClick={() => choose("waves")}>
-              {t("Vagues")}
-            </button>
-            <button aria-pressed={scene() === "landscape"} onClick={() => choose("landscape")}>
-              {t("Relief")}
-            </button>
+            <For
+              each={[
+                { id: "sphere" as const, icon: "globe", label: t("Sphère") },
+                { id: "waves" as const, icon: "wave", label: t("Vagues") },
+                { id: "landscape" as const, icon: "landscape", label: t("Relief") },
+              ]}
+            >
+              {(item) => (
+                <button
+                  class="icon-button quiet"
+                  title={item.label}
+                  aria-label={item.label}
+                  aria-pressed={scene() === item.id}
+                  onClick={() => choose(item.id)}
+                >
+                  <Icon name={item.icon} />
+                </button>
+              )}
+            </For>
           </div>
           <AudioScene
             scene={scene()}
@@ -123,28 +134,12 @@ export function PlaybackPage() {
               {error()}
             </p>
           </Show>
-          <section class="playback-lyrics">
-            <div class="page-heading">
-              <h2>{t("Paroles")}</h2>
-              <button
-                class="icon-button"
-                aria-label={t("Actualiser les paroles")}
-                title={t("Actualiser les paroles")}
-                disabled={words.loading}
-                onClick={() => void refetch()}
-              >
-                <Show when={words.loading} fallback={<Icon name="refresh" />}>
-                  <span class="spinner" />
-                </Show>
-              </button>
-            </div>
-            <Show when={words()?.error}>
-              <p role="alert">{words()?.error}</p>
-            </Show>
-            <Show when={lyrics()} fallback={<p class="muted">{t("Aucune parole disponible.")}</p>}>
-              {(value) => <LyricsText lyrics={value()} reference={player.current()!.reference} />}
-            </Show>
-          </section>
+          <Show when={words()?.reference === player.current()?.reference && words()?.error}>
+            <p class="notice" role="alert">
+              {words()?.error}
+            </p>
+          </Show>
+          <p class="playback-current-lyrics">{currentLyricText(lyrics(), player.seekPosition())}</p>
         </div>
         <Show when={queue()}>
           <aside class="playback-queue">
@@ -163,10 +158,11 @@ export function PlaybackPage() {
                 {(row) => (
                   <li classList={{ current: row.index === player.state().index }}>
                     <button
+                      class="queue-track"
                       disabled={player.busy()}
                       onClick={() => void player.action("jump", row.index)}
                     >
-                      <small>
+                      <small class="queue-track-number">
                         {row.number}/{row.albumTotal}
                       </small>
                       <span>
@@ -175,9 +171,11 @@ export function PlaybackPage() {
                           {row.artist} · {row.album?.title}
                         </small>
                       </span>
-                      <Show when={row.index === player.state().index}>
-                        <Icon name={player.state().status === "playing" ? "volume" : "pause"} />
-                      </Show>
+                      <span class="queue-track-state">
+                        <Show when={row.index === player.state().index}>
+                          <Icon name={player.state().status === "playing" ? "volume" : "pause"} />
+                        </Show>
+                      </span>
                     </button>
                   </li>
                 )}

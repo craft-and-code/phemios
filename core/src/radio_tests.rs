@@ -43,3 +43,10 @@ fn retired_rmc_mp3_uses_the_same_broadcaster_https_hls_without_touching_other_st
         assert_eq!(preferred_stream(url), url);
     }
 }
+
+#[test]
+fn country_codes_select_the_iso_field_instead_of_translated_names() {
+    assert_eq!(country_filter("US"), ("countrycode", "US".to_owned()));
+    assert_eq!(country_filter("fr"), ("countrycode", "FR".to_owned()));
+    assert_eq!(country_filter("Canada"), ("country", "Canada".to_owned()));
+}

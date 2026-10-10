@@ -125,7 +125,7 @@ export function CountryGlobe(props: {
         const match = props.artists.find((a) => codeFor(a) === country.code);
         props.onSelect(
           props.directory
-            ? country.name
+            ? country.code
             : (match?.country ?? countryName(country.code) ?? country.name),
           additiveCountrySelection(event, isMac()),
         );
@@ -152,7 +152,7 @@ export function CountryGlobe(props: {
                 )}
             >
               {(country) => (
-                <option value={country.name}>{displayCountry(country.code, country.name)}</option>
+                <option value={country.code}>{displayCountry(country.code, country.name)}</option>
               )}
             </For>
           </select>
