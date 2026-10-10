@@ -36,3 +36,21 @@ it("interleaves missing and owned discography entries from oldest to newest, ret
   expect(albumEntries(owned).map((row) => row.album.title)).toEqual(["Alpha", "Zebra", "Undated"]);
   expect(albumEntries(owned, [missing], true)[1]?.missing).toBe(missing);
 });
+it("reverses dated discographies without promoting unknown years", () => {
+  const album = (title: string, year: number | null): Album => ({
+    reference: `release:${title}`,
+    artist: "artist:signal",
+    title,
+    year,
+    compilation: false,
+    tags: [],
+  });
+  expect(
+    albumEntries(
+      [album("Older", 1980), album("Newer", 2000), album("Unknown", null)],
+      [],
+      true,
+      true,
+    ).map((row) => row.album.title),
+  ).toEqual(["Newer", "Older", "Unknown"]);
+});

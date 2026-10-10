@@ -58,7 +58,7 @@ export function createJobs(connected: () => boolean) {
       timer = window.setTimeout(() => void poll(), 1200);
     else timer = undefined;
   }
-  async function start(kind: "analyze" | "spectrum", release: string, force: boolean) {
+  async function start(kind: "analyze" | "spectrum" | "lyrics", release: string, force: boolean) {
     setError("");
     if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
       throw new Error(t("Quatre tâches sont déjà actives."));
@@ -66,7 +66,7 @@ export function createJobs(connected: () => boolean) {
       `/api/admin/v1/${kind}`,
       {},
       "POST",
-      { release, force, threads: 2 },
+      kind === "lyrics" ? { track: release } : { release, force, threads: 2 },
     );
     setJobs((rows) => [...rows, { ...result, kind, release, source: referenceSource(release) }]);
     if (timer === undefined) timer = window.setTimeout(() => void poll(), 300);

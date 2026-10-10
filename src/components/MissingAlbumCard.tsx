@@ -4,7 +4,7 @@ import type { MissingAlbum } from "../library/missing";
 import { useLibrary } from "../library/context";
 import { SourceBadge } from "./SourceBadge";
 import { Icon } from "./Icon";
-/** No cover is invented for unowned albums; an opaque neutral tile preserves the distinction. */
+/** No cover is invented for unowned albums; a reduced cover preserves the distinction. */
 export function MissingAlbumCard(props: { album: MissingAlbum }) {
   const library = useLibrary(),
     [busy, setBusy] = createSignal(false),

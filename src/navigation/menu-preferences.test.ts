@@ -38,3 +38,11 @@ it("preserves malformed saved menus and surfaces write failures", () => {
     ),
   ).toThrow("No space");
 });
+it("places a new mood menu in its default group when the previous menu order was untouched", () => {
+  const previous = ids.filter((id) => id !== "moods");
+  expect(
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 1, order: previous, hidden: [] }),
+    }).order,
+  ).toEqual(ids);
+});

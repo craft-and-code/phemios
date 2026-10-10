@@ -150,7 +150,7 @@ export function LabelPage(props: {
                   disabled={!selected().length}
                 />
               </div>
-              <AlbumGrid albums={selected()} reverse={reverse()} emptyIcon="label" />
+              <AlbumGrid albums={selected()} reverse={reverse()} chronological emptyIcon="label" />
               <Show when={row().releases.length > albums().length}>
                 <p class="notice">
                   {t(

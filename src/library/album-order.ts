@@ -18,11 +18,16 @@ export function albumEntries(
   ];
   if (!chronological && !missing.length) return entries;
   return entries.sort((a, b) => {
-    const years = chronological ? (a.album.year ?? Infinity) - (b.album.year ?? Infinity) : 0;
+    if (chronological && (a.album.year === null || b.album.year === null)) {
+      if (a.album.year !== b.album.year) return a.album.year === null ? 1 : -1;
+    }
+    const years = chronological
+      ? ((a.album.year ?? 0) - (b.album.year ?? 0)) * (reverse ? -1 : 1)
+      : 0;
     return (
       (Number.isNaN(years) ? 0 : years) ||
       normalizeName(a.album.title).localeCompare(normalizeName(b.album.title)) *
-        (chronological || !reverse ? 1 : -1) ||
+        (reverse ? -1 : 1) ||
       a.album.reference.localeCompare(b.album.reference)
     );
   });

@@ -232,3 +232,53 @@
 .radio-stations .radio-favourite {
   flex-shrink: 0;
 }
+
+.radio-explorer {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.radio-world {
+  position: sticky;
+  top: 16px;
+}
+.radio-globe-country {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.radio-world .globe-display {
+  height: 300px;
+}
+.radio-world .globe-panel {
+  min-height: 0;
+}
+.radio-search-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 1000px) {
+  .radio-explorer {
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .radio-world .globe-display {
+    height: 240px;
+  }
+}
+@media (max-width: 750px) {
+  .radio-explorer {
+    grid-template-columns: 1fr;
+  }
+  .radio-world {
+    position: static;
+    max-width: 360px;
+    width: 100%;
+    margin: auto;
+  }
+  .radio-world .globe-display {
+    height: 260px;
+  }
+}

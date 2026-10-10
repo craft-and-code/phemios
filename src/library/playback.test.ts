@@ -126,9 +126,9 @@ it("toggles mute while retaining the latest audible volume", async () => {
     dispose();
   });
 });
-it("remembers countdown only for the identified user session", () => {
+it("retains countdown on the device for the identified account and publishes its account preference", () => {
   const held = new Map<string, string>();
-  vi.stubGlobal("sessionStorage", {
+  vi.stubGlobal("localStorage", {
     getItem: (k: string) => held.get(k) ?? null,
     setItem: (k: string, v: string) => held.set(k, v),
   });
@@ -292,6 +292,36 @@ it("ends refresh visibly on failure and discards an old session's late outputs",
     expect(player.outputs()).toEqual([]);
     expect(player.error()).toBe("");
     expect(vi.getTimerCount()).toBe(0);
+    dispose();
+  });
+});
+it("retains queue row identities across clock polls and updates them only when occurrence order changes", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      index: 0,
+      queue: [0, 1],
+      position_ms: 100,
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist");
+    const rows = player.queue();
+    await vi.advanceTimersByTimeAsync(120);
+    expect(player.queue()).toBe(rows);
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      index: 0,
+      queue: [1, 0],
+      position_ms: 400,
+    });
+    await vi.advanceTimersByTimeAsync(120);
+    expect(player.queue().map((row) => row.index)).toEqual([1, 0]);
     dispose();
   });
 });

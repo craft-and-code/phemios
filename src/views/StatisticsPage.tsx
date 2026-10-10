@@ -195,6 +195,50 @@ export function StatisticsPage() {
           <p class="muted">{t("Annotations de votre compte chargées en mémoire.")}</p>
         </section>
       </Show>
+      <section>
+        <h2>{t("Couverture du catalogue local")}</h2>
+        <div class="stat-tiles">
+          <For
+            each={
+              [
+                [
+                  t("Albums sans année"),
+                  library.albums().filter((album) => album.year === null).length,
+                ],
+                [
+                  t("Artistes d’album sans origine"),
+                  principals().filter((artist) => artist.country === null).length,
+                ],
+                [
+                  t("Biographies récupérées"),
+                  principals().filter((artist) => !!artist.biography).length,
+                ],
+                [
+                  t("Bannières disponibles"),
+                  principals().filter((artist) => artist.media?.banner).length,
+                ],
+                [
+                  t("Arrière-plans disponibles"),
+                  principals().filter((artist) => artist.media?.background).length,
+                ],
+                [
+                  t("Portraits disponibles"),
+                  principals().filter((artist) => artist.media?.portrait).length,
+                ],
+                [t("Images chargées"), library.mediaProgress()[0] - library.mediaErrors()],
+                [t("Images indisponibles"), library.mediaErrors()],
+              ] as const
+            }
+          >
+            {(item) => (
+              <div>
+                <span>{item[0]}</span>
+                <StatValue value={numberLabel(item[1])} />
+              </div>
+            )}
+          </For>
+        </div>
+      </section>
       <Show when={currentReport()} keyed>
         {(value) => (
           <>
@@ -315,50 +359,6 @@ export function StatisticsPage() {
           </>
         )}
       </Show>
-      <section>
-        <h2>{t("Couverture du catalogue local")}</h2>
-        <div class="stat-tiles">
-          <For
-            each={
-              [
-                [
-                  t("Albums sans année"),
-                  library.albums().filter((album) => album.year === null).length,
-                ],
-                [
-                  t("Artistes d’album sans origine"),
-                  principals().filter((artist) => artist.country === null).length,
-                ],
-                [
-                  t("Biographies récupérées"),
-                  principals().filter((artist) => !!artist.biography).length,
-                ],
-                [
-                  t("Bannières disponibles"),
-                  principals().filter((artist) => artist.media?.banner).length,
-                ],
-                [
-                  t("Arrière-plans disponibles"),
-                  principals().filter((artist) => artist.media?.background).length,
-                ],
-                [
-                  t("Portraits disponibles"),
-                  principals().filter((artist) => artist.media?.portrait).length,
-                ],
-                [t("Images chargées"), library.mediaProgress()[0] - library.mediaErrors()],
-                [t("Images indisponibles"), library.mediaErrors()],
-              ] as const
-            }
-          >
-            {(item) => (
-              <div>
-                <span>{item[0]}</span>
-                <StatValue value={numberLabel(item[1])} />
-              </div>
-            )}
-          </For>
-        </div>
-      </section>
     </section>
   );
 }

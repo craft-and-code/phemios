@@ -8,6 +8,8 @@ export type Section =
   | "countries"
   | "genres"
   | "labels"
+  | "moods"
+  | "playback"
   | "rated"
   | "tags"
   | "favourites"
@@ -36,6 +38,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "countries", label: t("Pays"), symbol: "globe" },
   { id: "genres", label: t("Genres"), symbol: "genres" },
   { id: "labels", label: t("Labels"), symbol: "label" },
+  { id: "moods", label: t("Ambiances"), symbol: "moods" },
   { id: "favourites", label: t("Favoris"), symbol: "heart" },
   { id: "rated", label: t("Albums notés"), symbol: "star" },
   { id: "tags", label: t("Tags"), symbol: "tags" },
@@ -55,6 +58,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#\/?/, "");
   if (!path) return { kind: "section", section: "artists" };
+  if (path === "playback") return { kind: "section", section: "playback" };
   if (path === "settings") return { kind: "section", section: "settings" };
   const section = sections.find((candidate) => candidate.id === path);
   if (section) return { kind: "section", section: section.id };

@@ -1,5 +1,15 @@
+import { geoCentroid } from "d3-geo";
+import { countryGeometry } from "../geography/geometry";
 import { t, countryName as displayCountry } from "../i18n";
-import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+  For,
+} from "solid-js";
 import {
   countryAt,
   unproject,
@@ -15,6 +25,8 @@ const names = new Intl.DisplayNames(["fr"], { type: "region" });
 const countryName = (code: string) => (/^[A-Z]{2}$/.test(code) ? names.of(code) : undefined);
 /** Locally bundled borders and a manual, keyboard-accessible globe. */
 export function CountryGlobe(props: {
+  directory?: boolean;
+  focus?: string;
   artists: readonly Artist[];
   selected: readonly (string | null)[];
   onSelect: (value: string | undefined, additive?: boolean) => void;
@@ -35,7 +47,11 @@ export function CountryGlobe(props: {
     countries()?.find((c) => c.name === artist.country || countryName(c.code) === artist.country)
       ?.code;
   const available = () =>
-    new Set(props.artists.map(codeFor).filter((code): code is string => !!code));
+    new Set(
+      props.directory
+        ? (countries() ?? []).map((country) => country.code)
+        : props.artists.map(codeFor).filter((code): code is string => !!code),
+    );
   const selectedCodes = () =>
     new Set(
       (countries() ?? [])
@@ -46,6 +62,15 @@ export function CountryGlobe(props: {
         )
         .map((c) => c.code),
     );
+  createEffect(() => {
+    const country = countries()?.find(
+      (country) => props.focus === country.code || props.focus === country.name,
+    );
+    if (country) {
+      const point = geoCentroid(countryGeometry(country));
+      if (point.every(Number.isFinite)) setCenter([point[0], point[1]]);
+    }
+  });
   const redraw = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
@@ -99,7 +124,9 @@ export function CountryGlobe(props: {
       if (country) {
         const match = props.artists.find((a) => codeFor(a) === country.code);
         props.onSelect(
-          match?.country ?? countryName(country.code) ?? country.name,
+          props.directory
+            ? country.name
+            : (match?.country ?? countryName(country.code) ?? country.name),
           additiveCountrySelection(event, isMac()),
         );
         setHover(country);
@@ -109,6 +136,28 @@ export function CountryGlobe(props: {
   }
   return (
     <div class="globe-panel">
+      <Show when={props.directory}>
+        <label class="radio-globe-country">
+          {t("Pays")}
+          <select
+            value={props.selected[0] ?? ""}
+            onChange={(event) => props.onSelect(event.currentTarget.value || undefined)}
+          >
+            <option value="">{t("Tous")}</option>
+            <For
+              each={(countries() ?? [])
+                .slice()
+                .sort((a, b) =>
+                  displayCountry(a.code, a.name).localeCompare(displayCountry(b.code, b.name)),
+                )}
+            >
+              {(country) => (
+                <option value={country.name}>{displayCountry(country.code, country.name)}</option>
+              )}
+            </For>
+          </select>
+        </label>
+      </Show>
       <div class="globe-display">
         <canvas
           ref={(element) => {

@@ -1,6 +1,8 @@
 import { t } from "../i18n";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
+  shuffled: boolean;
+  queue: readonly number[];
   status: "idle" | "connecting" | "playing" | "paused" | "ended" | "error";
   reference: string;
   index: number;
@@ -22,6 +24,8 @@ export interface AudioOutput {
   default: boolean;
 }
 export const idlePlayback: PlaybackState = {
+  shuffled: false,
+  queue: [],
   status: "idle",
   reference: "",
   index: 0,
@@ -76,8 +80,21 @@ export function parsePlayback(value: unknown): PlaybackState {
     (typeof v.level !== "number" || !Number.isFinite(v.level) || v.level < 0 || v.level > 1)
   )
     throw new Error(t("Niveau audio invalide."));
+  if (v.shuffled !== undefined && typeof v.shuffled !== "boolean")
+    throw new Error(t("File de lecture invalide."));
+  if (
+    v.queue !== undefined &&
+    (!Array.isArray(v.queue) ||
+      v.queue.length > 4096 ||
+      (v.queue.length && v.queue.length !== v.total) ||
+      new Set(v.queue).size !== v.queue.length ||
+      !v.queue.every((index) => count(index) && index < Number(v.total)))
+  )
+    throw new Error(t("File de lecture invalide."));
   return {
     ...v,
+    shuffled: v.shuffled ?? false,
+    queue: v.queue ?? [],
     seek_id: v.seek_id ?? 0,
     level: v.level ?? 0,
     levels: v.levels ?? [0, 0, 0, 0],

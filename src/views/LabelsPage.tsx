@@ -12,8 +12,16 @@ import { Icon } from "../components/Icon";
 export function LabelsPage(props: { query: string }) {
   const library = useLibrary(),
     [offset, setOffset] = createSignal(0);
+  const [sort, setSort] = createSignal<"name" | "albums">("name"),
+    [descending, setDescending] = createSignal(false);
   const [pages] = createResource(
-    () => ({ sources: library.trackSources(), query: props.query, offset: offset() }),
+    () => ({
+      sources: library.trackSources(),
+      query: props.query,
+      offset: offset(),
+      sort: sort(),
+      descending: descending(),
+    }),
     async (key) => {
       return Promise.all(
         key.sources.map(async (source) => {
@@ -24,7 +32,8 @@ export function LabelsPage(props: { query: string }) {
                 {
                   offset: String(key.offset),
                   limit: "50",
-                  sort: "name",
+                  sort: key.sort,
+                  order: key.descending ? "desc" : "asc",
                   ...(key.query.trim() ? { q: key.query.trim() } : {}),
                 },
                 "GET",
@@ -35,7 +44,14 @@ export function LabelsPage(props: { query: string }) {
               source.source,
               source.scannedAt,
             );
-            return { ...page, source: source.source, identity: source.identity, query: key.query };
+            return {
+              ...page,
+              source: source.source,
+              identity: source.identity,
+              query: key.query,
+              sort: key.sort,
+              descending: key.descending,
+            };
           } catch (failure) {
             return {
               items: [],
@@ -43,6 +59,8 @@ export function LabelsPage(props: { query: string }) {
               source: source.source,
               identity: source.identity,
               query: key.query,
+              sort: key.sort,
+              descending: key.descending,
               error: String(failure),
             };
           }
@@ -52,7 +70,7 @@ export function LabelsPage(props: { query: string }) {
   );
   createEffect(
     on(
-      () => props.query,
+      () => [props.query, sort(), descending()],
       () => setOffset(0),
     ),
   );
@@ -60,12 +78,52 @@ export function LabelsPage(props: { query: string }) {
     pages()?.filter(
       (page) =>
         page.query === props.query &&
+        page.sort === sort() &&
+        page.descending === descending() &&
         library
           .trackSources()
           .some((source) => source.source === page.source && source.identity === page.identity),
     ) ?? [];
   return (
     <section class="page labels-page">
+      <div class="label-toolbar">
+        <button
+          class="icon-button"
+          title={t("Trier par nom")}
+          aria-label={t("Trier par nom")}
+          aria-pressed={sort() === "name"}
+          onClick={() => {
+            setSort("name");
+            setOffset(0);
+          }}
+        >
+          <Icon name="alphabet" />
+        </button>
+        <button
+          class="icon-button"
+          title={t("Trier par nombre d’albums")}
+          aria-label={t("Trier par nombre d’albums")}
+          aria-pressed={sort() === "albums"}
+          onClick={() => {
+            setSort("albums");
+            setOffset(0);
+          }}
+        >
+          <Icon name="disc" />
+        </button>
+        <button
+          class="icon-button"
+          title={t("Inverser le tri")}
+          aria-label={t("Inverser le tri")}
+          aria-pressed={descending()}
+          onClick={() => {
+            setDescending(!descending());
+            setOffset(0);
+          }}
+        >
+          <Icon name="sort" />
+        </button>
+      </div>
       <Show when={!library.trackSources().length}>
         <p class="notice">{t("Connectez-vous pour parcourir les labels de votre bibliothèque.")}</p>
       </Show>

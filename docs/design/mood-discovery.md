@@ -1,6 +1,6 @@
-# Mood discovery: feasibility proposal
+# Mood discovery
 
-This is a researched proposal, not an implemented menu or a new dependency. No Tune implementation was consulted for this proposal.
+The first explainable tag/genre menu is implemented; automatic musical-emotion inference remains a researched proposal. No Tune implementation was consulted. No model or external product dependency was added.
 
 ## Reusing retained FlacCompagnon results
 
@@ -19,3 +19,9 @@ The primary [ISMIR 2018 audio/lyrics mood study](https://arxiv.org/abs/1809.0727
 ## Proposed architecture
 
 Aède should own explicit cancellable batch analysis and cache derived per-track results with model/version, input freshness and uncertainty. Reuse its decoded-audio path and source identities; never write tags or source files. Phémios would present atmosphere cards or an energy/valence map, source/analysis progress, explanations and personal overrides. Saved atmospheres should evaluate current available results, with missing/stale counts visible. Start with a representative labelled control set before scanning the complete collection; verify resource and inference budgets before selecting a product dependency.
+
+## Implemented first profile
+
+The Ambiances sidebar menu is configurable through Settings Navigation. Aède's dependency-free `aede-moods` crate owns exact normalized tag/genre rules. Five transparent starter recipes can be edited; users can add their own name/criteria. The authenticated source stores rules per owner; the UI reports matching counts and the tag/genre evidence for each result. Artist tags contribute only the principal discography, not guest performances. Track/album tags and catalog genres contribute directly. Unclassified tracks are not assigned fabricated emotional scores.
+
+Playback gathers the current paged match set (maximum 4096 tracks) and starts its complete chronological queue through the native player. Local/Server account scopes stay explicit where both exist. Account/source changes discard late results. Existing FlacCompagnon integrity/mastering values do not currently choose atmospheres; tempo, learned embeddings and calibrated emotional inference remain separate prospective work described above.

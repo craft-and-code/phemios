@@ -1,3 +1,5 @@
+import { PlaybackPage } from "./PlaybackPage";
+import { MoodsPage } from "./MoodsPage";
 import { Switch, Match } from "solid-js";
 import { type Section } from "../navigation/routes";
 import { RatedPage } from "./RatedPage";
@@ -13,6 +15,12 @@ import { AnalysisPage } from "./AnalysisPage";
 export function WorkspacePage(props: { section: Section; query: string }) {
   return (
     <Switch>
+      <Match when={props.section === "playback"}>
+        <PlaybackPage />
+      </Match>
+      <Match when={props.section === "moods"}>
+        <MoodsPage />
+      </Match>
       <Match when={props.section === "rated"}>
         <RatedPage query={props.query} />
       </Match>

@@ -1,3 +1,4 @@
+import { WaveformSeek } from "./WaveformSeek";
 import { PlayingFavourite } from "./PlayingFavourite";
 import { t } from "../i18n";
 import { For, Show } from "solid-js";
@@ -80,9 +81,11 @@ export function PlayerBar() {
         <div class="transport-buttons">
           <button
             class="icon-button"
-            disabled
+            disabled={disabled()}
             aria-label={t("Lecture aléatoire")}
-            title={t("Lecture aléatoire : prochain raccordement")}
+            title={t("Lecture aléatoire")}
+            aria-pressed={state().shuffled}
+            onClick={() => void player.action("shuffle", !state().shuffled)}
           >
             <Icon name="shuffle" />
           </button>
@@ -136,7 +139,12 @@ export function PlayerBar() {
           </div>
           <button
             class="icon-button"
-            disabled={disabled() || state().index + 1 >= state().total}
+            disabled={
+              disabled() ||
+              (state().queue.length
+                ? state().queue.indexOf(state().index) + 1 >= state().total
+                : state().index + 1 >= state().total)
+            }
             aria-label={t("Morceau suivant")}
             onClick={() => void player.action("next")}
           >
@@ -153,22 +161,7 @@ export function PlayerBar() {
         </div>
         <div class="playback-progress">
           <small>{time(position())}</small>
-          <input
-            type="range"
-            min="0"
-            max={state().duration_ms ?? 1}
-            step="1000"
-            value={position()}
-            disabled={(!active() && !player.seeking()) || player.busy() || !state().duration_ms}
-            aria-label={t("Position de lecture")}
-            onInput={(event) => player.previewSeek(Number(event.currentTarget.value))}
-            onChange={(event) => {
-              const selected = Number(event.currentTarget.value);
-              void player.seek(selected);
-            }}
-            onPointerCancel={player.clearSeekPreview}
-            onBlur={player.clearSeekPreview}
-          />
+          <WaveformSeek />
           <button
             class="time-toggle"
             aria-label={
@@ -184,6 +177,19 @@ export function PlayerBar() {
         </div>
       </div>
       <div class="player-options">
+        <a
+          class="icon-button"
+          href="#/playback"
+          aria-label={t("Ouvrir la vue Lecture")}
+          title={t("Ouvrir la vue Lecture")}
+          aria-disabled={!active()}
+          tabindex={active() ? 0 : -1}
+          onClick={(event) => {
+            if (!active()) event.preventDefault();
+          }}
+        >
+          <Icon name="visualizer" />
+        </a>
         <details
           class="audio-settings"
           ref={(element) => {

@@ -31,7 +31,6 @@ export function RadioSearch(props: {
         <For
           each={[
             { key: "name" as const, label: t("Station"), placeholder: t("Nom de la station…") },
-            { key: "country" as const, label: t("Pays"), placeholder: t("France, Germany…") },
             { key: "tag" as const, label: t("Style"), placeholder: t("rock, jazz, classical…") },
           ]}
         >

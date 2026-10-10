@@ -1,3 +1,4 @@
+import { CountryGlobe } from "../components/CountryGlobe";
 import { radioCountryPreference, radioCountryKey } from "../radio/location";
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
@@ -28,7 +29,8 @@ export function RadioPage(props: { query: string }) {
     [loaded, setLoaded] = createSignal(false),
     [countError, setCountError] = createSignal("");
   let criteria = { name: "", country: "", tag: "", secureOnly: true },
-    alive = true;
+    alive = true,
+    pendingSearch = false;
   // A late result may populate this page only while its owner is mounted.
   onCleanup(() => {
     alive = false;
@@ -43,7 +45,10 @@ export function RadioPage(props: { query: string }) {
     }
   });
   async function search(page = 0, fresh = false) {
-    if (busy()) return;
+    if (busy()) {
+      if (fresh) pendingSearch = true;
+      return;
+    }
     if (fresh) {
       try {
         localStorage.setItem(radioCountryKey, JSON.stringify(country()));
@@ -59,7 +64,7 @@ export function RadioPage(props: { query: string }) {
       const response = parseStations(
         await searchRadio(criteria.name, criteria.country, criteria.tag, page, criteria.secureOnly),
       );
-      if (!alive) return;
+      if (!alive || criteria.country !== country()) return;
       setStations(response.stations);
       setMore(response.more);
       setOffset(page);
@@ -79,208 +84,229 @@ export function RadioPage(props: { query: string }) {
       if (alive)
         setError(failure instanceof Error ? failure.message : t("Annuaire radio indisponible."));
     } finally {
-      if (alive) setBusy(false);
+      if (alive) {
+        setBusy(false);
+        if (pendingSearch) {
+          pendingSearch = false;
+          void search(0, true);
+        }
+      }
     }
   }
   return (
-    <section class="page radio-page">
-      <p class="intro">{t("Explorez les radios Internet du monde entier.")}</p>
-      <RadioSearch
-        value={{ name: name(), country: country(), tag: tag(), secureOnly: secureOnly() }}
-        change={(value) => {
-          if (value.name !== undefined) setName(value.name);
-          if (value.country !== undefined) setCountry(value.country);
-          if (value.tag !== undefined) setTag(value.tag);
-          if (value.secureOnly !== undefined) setSecureOnly(value.secureOnly);
-        }}
-        submit={() => void search(0, true)}
-        busy={busy()}
-        available={isNative()}
-      />
-      <RadioFavourites
-        favourites={favourites}
-        play={(station) => void radio.start(station)}
-        busy={radio.status() === "connecting"}
-      />
+    <section class="page radio-page radio-explorer">
+      <aside class="radio-world">
+        <CountryGlobe
+          artists={[]}
+          directory
+          selected={country() ? [country()] : []}
+          focus={country()}
+          onSelect={(value) => {
+            setCountry(value ?? "");
+            if (isNative()) void search(0, true);
+          }}
+        />
+      </aside>
+      <div class="radio-results">
+        <p class="intro">{t("Explorez les radios Internet du monde entier.")}</p>
+        <RadioSearch
+          value={{ name: name(), country: country(), tag: tag(), secureOnly: secureOnly() }}
+          change={(value) => {
+            if (value.name !== undefined) setName(value.name);
+            if (value.country !== undefined) setCountry(value.country);
+            if (value.tag !== undefined) setTag(value.tag);
+            if (value.secureOnly !== undefined) setSecureOnly(value.secureOnly);
+          }}
+          submit={() => void search(0, true)}
+          busy={busy()}
+          available={isNative()}
+        />
+        <RadioFavourites
+          favourites={favourites}
+          play={(station) => void radio.start(station)}
+          busy={radio.status() === "connecting"}
+        />
 
-      <Show when={!isNative()}>
-        <p class="notice">
-          {t("L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.")}{" "}
-        </p>
-      </Show>
-      <Show when={error()}>
-        <p role="alert">{error()}</p>
-      </Show>
-      <Show when={count()}>
-        <p class="muted">
-          {count()!.toLocaleString(locale())}{" "}
-          {t(
-            "entrées dans Radio Browser · recherche dans l’annuaire complet · affichage par 50.",
-          )}{" "}
-        </p>
-      </Show>
-      <Show when={countError()}>
-        <small>{countError()}</small>
-      </Show>
-      <Show when={stations().length}>
-        <div class="radio-tuner">
-          <div class="radio-display">
-            <Icon name="radio" />
-            <div>
-              <small>
-                {t("RADIO INTERNET · STATION")} {String(offset() + selected() + 1).padStart(2, "0")}
-              </small>
-              <strong>{chosen()?.name}</strong>
-              <span>
-                {countryName(chosen()?.countryCode, chosen()?.country ?? null)} ·{" "}
-                {chosen()?.codec || t("Format inconnu")}
-                {chosen()?.bitrate ? ` · ${chosen()?.bitrate} kbit/s` : ""}
-              </span>
-            </div>
-            <Show when={chosen()}>
-              {(station) => (
-                <button
-                  type="button"
-                  class="icon-button quiet radio-favourite"
-                  aria-label={
-                    favourites.has(station().uuid)
-                      ? t("Retirer {0} des radios favorites", station().name)
-                      : t("Ajouter {0} aux radios favorites", station().name)
-                  }
-                  aria-pressed={favourites.has(station().uuid)}
-                  onClick={() => favourites.toggle(station())}
-                >
-                  <Icon name="heart" />
-                </button>
-              )}
-            </Show>
-            <button
-              class="play-button"
-              aria-label={t("Écouter la station sélectionnée")}
-              disabled={busy() || radio.status() === "connecting"}
-              onClick={() => {
-                const station = chosen();
-                if (station) void radio.start(station);
-              }}
-            >
-              <Icon name="play" />
-            </button>
-          </div>
-          <div class="radio-dial">
-            <svg class="radio-scale" viewBox="0 0 900 120" aria-hidden="true">
-              <path
-                class="radio-wave"
-                d="M0 70 Q25 20 50 70 T100 70 T150 70 T200 70 T250 70 T300 70 T350 70 T400 70 T450 70 T500 70 T550 70 T600 70 T650 70 T700 70 T750 70 T800 70 T850 70 T900 70"
-              />
-              <For each={Array.from({ length: stations().length }, (_, i) => i)}>
-                {(i) => {
-                  const x = () => 20 + (i / Math.max(1, stations().length - 1)) * 860;
-                  return (
-                    <g>
-                      <line x1={x()} x2={x()} y1={i % 5 === 0 ? 40 : 54} y2="90" />
-                      <Show when={i % 5 === 0}>
-                        <text x={x()} y="110" text-anchor="middle">
-                          {String(offset() + i + 1).padStart(2, "0")}
-                        </text>
-                      </Show>
-                    </g>
-                  );
-                }}
-              </For>
-              <line
-                class="radio-needle"
-                x1={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
-                x2={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
-                y1="10"
-                y2="92"
-              />
-            </svg>
-            <input
-              class="radio-dial-input"
-              type="range"
-              min="0"
-              max={stations().length - 1}
-              step="1"
-              value={selected()}
-              aria-label={t("Sélectionner une station sur le cadran")}
-              aria-valuetext={chosen()?.name ?? ""}
-              onInput={(e) => setSelected(Number(e.currentTarget.value))}
-            />
-          </div>
+        <Show when={!isNative()}>
+          <p class="notice">
+            {t("L’annuaire et l’écoute Internet sont disponibles dans l’application desktop.")}{" "}
+          </p>
+        </Show>
+        <Show when={error()}>
+          <p role="alert">{error()}</p>
+        </Show>
+        <Show when={count()}>
           <p class="muted">
+            {count()!.toLocaleString(locale())}{" "}
             {t(
-              "Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis lancez l’écoute.",
+              "entrées dans Radio Browser · recherche dans l’annuaire complet · affichage par 50.",
             )}{" "}
           </p>
-        </div>
-        <ul class="radio-stations">
-          <For each={stations()}>
-            {(station, i) => (
-              <li classList={{ selected: selected() === i() }}>
-                <button
-                  class="radio-station"
-                  aria-pressed={selected() === i()}
-                  onClick={() => setSelected(i())}
-                >
-                  <span class="radio-station-number">
-                    {String(offset() + i() + 1).padStart(2, "0")}
-                  </span>
-                  <span>
-                    <strong>{station.name}</strong>
+        </Show>
+        <Show when={countError()}>
+          <small>{countError()}</small>
+        </Show>
+        <Show when={stations().length}>
+          <div class="radio-tuner">
+            <div class="radio-display">
+              <Icon name="radio" />
+              <div>
+                <small>
+                  {t("RADIO INTERNET · STATION")}{" "}
+                  {String(offset() + selected() + 1).padStart(2, "0")}
+                </small>
+                <strong>{chosen()?.name}</strong>
+                <span>
+                  {countryName(chosen()?.countryCode, chosen()?.country ?? null)} ·{" "}
+                  {chosen()?.codec || t("Format inconnu")}
+                  {chosen()?.bitrate ? ` · ${chosen()?.bitrate} kbit/s` : ""}
+                </span>
+              </div>
+              <Show when={chosen()}>
+                {(station) => (
+                  <button
+                    type="button"
+                    class="icon-button quiet radio-favourite"
+                    aria-label={
+                      favourites.has(station().uuid)
+                        ? t("Retirer {0} des radios favorites", station().name)
+                        : t("Ajouter {0} aux radios favorites", station().name)
+                    }
+                    aria-pressed={favourites.has(station().uuid)}
+                    onClick={() => favourites.toggle(station())}
+                  >
+                    <Icon name="heart" />
+                  </button>
+                )}
+              </Show>
+              <button
+                class="play-button"
+                aria-label={t("Écouter la station sélectionnée")}
+                disabled={busy() || radio.status() === "connecting"}
+                onClick={() => {
+                  const station = chosen();
+                  if (station) void radio.start(station);
+                }}
+              >
+                <Icon name="play" />
+              </button>
+            </div>
+            <div class="radio-dial">
+              <svg class="radio-scale" viewBox="0 0 900 120" aria-hidden="true">
+                <path
+                  class="radio-wave"
+                  d="M0 70 Q25 20 50 70 T100 70 T150 70 T200 70 T250 70 T300 70 T350 70 T400 70 T450 70 T500 70 T550 70 T600 70 T650 70 T700 70 T750 70 T800 70 T850 70 T900 70"
+                />
+                <For each={Array.from({ length: stations().length }, (_, i) => i)}>
+                  {(i) => {
+                    const x = () => 20 + (i / Math.max(1, stations().length - 1)) * 860;
+                    return (
+                      <g>
+                        <line x1={x()} x2={x()} y1={i % 5 === 0 ? 40 : 54} y2="90" />
+                        <Show when={i % 5 === 0}>
+                          <text x={x()} y="110" text-anchor="middle">
+                            {String(offset() + i + 1).padStart(2, "0")}
+                          </text>
+                        </Show>
+                      </g>
+                    );
+                  }}
+                </For>
+                <line
+                  class="radio-needle"
+                  x1={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
+                  x2={20 + (selected() / Math.max(1, stations().length - 1)) * 860}
+                  y1="10"
+                  y2="92"
+                />
+              </svg>
+              <input
+                class="radio-dial-input"
+                type="range"
+                min="0"
+                max={stations().length - 1}
+                step="1"
+                value={selected()}
+                aria-label={t("Sélectionner une station sur le cadran")}
+                aria-valuetext={chosen()?.name ?? ""}
+                onInput={(e) => setSelected(Number(e.currentTarget.value))}
+              />
+            </div>
+            <p class="muted">
+              {t(
+                "Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis lancez l’écoute.",
+              )}{" "}
+            </p>
+          </div>
+          <ul class="radio-stations">
+            <For each={stations()}>
+              {(station, i) => (
+                <li classList={{ selected: selected() === i() }}>
+                  <button
+                    class="radio-station"
+                    aria-pressed={selected() === i()}
+                    onClick={() => setSelected(i())}
+                  >
+                    <span class="radio-station-number">
+                      {String(offset() + i() + 1).padStart(2, "0")}
+                    </span>
+                    <span>
+                      <strong>{station.name}</strong>
+                      <small>
+                        {countryName(station.countryCode, station.country)} ·{" "}
+                        {station.tags || t("Style non renseigné")}
+                      </small>
+                    </span>
                     <small>
-                      {countryName(station.countryCode, station.country)} ·{" "}
-                      {station.tags || t("Style non renseigné")}
+                      {station.codec}
+                      {station.bitrate ? ` · ${station.bitrate}k` : ""}
                     </small>
-                  </span>
-                  <small>
-                    {station.codec}
-                    {station.bitrate ? ` · ${station.bitrate}k` : ""}
-                  </small>
-                </button>
-                <button
-                  type="button"
-                  class="icon-button quiet radio-favourite"
-                  aria-label={
-                    favourites.has(station.uuid)
-                      ? t("Retirer {0} des radios favorites", station.name)
-                      : t("Ajouter {0} aux radios favorites", station.name)
-                  }
-                  aria-pressed={favourites.has(station.uuid)}
-                  onClick={() => favourites.toggle(station)}
-                >
-                  <Icon name="heart" />
-                </button>
-              </li>
-            )}
-          </For>
-        </ul>
-        <div class="page-heading">
-          <button
-            disabled={busy() || offset() === 0}
-            onClick={() => void search(Math.max(0, offset() - 50))}
-          >
-            {t("Précédentes")}{" "}
-          </button>
-          <span>
-            {t("Stations")} {offset() + 1}–{offset() + stations().length}
-          </span>
-          <button disabled={busy() || !more()} onClick={() => void search(offset() + 50)}>
-            {t("Suivantes")}{" "}
-          </button>
-        </div>
-      </Show>
-      <Show when={loaded() && !stations().length && !busy()}>
-        <EmptyState icon="radio">{t("Aucune station pour ces critères.")}</EmptyState>
-      </Show>
-      <p class="radio-credit">
-        {t("Annuaire communautaire")}{" "}
-        <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer">
-          {t("Radio Browser")}{" "}
-        </a>
-        {t(
-          ". Chaque entrée décrit un flux ; certaines stations ont plusieurs flux. L’écoute utilise les codecs et la sortie système du navigateur intégré.",
-        )}{" "}
-      </p>
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-button quiet radio-favourite"
+                    aria-label={
+                      favourites.has(station.uuid)
+                        ? t("Retirer {0} des radios favorites", station.name)
+                        : t("Ajouter {0} aux radios favorites", station.name)
+                    }
+                    aria-pressed={favourites.has(station.uuid)}
+                    onClick={() => favourites.toggle(station)}
+                  >
+                    <Icon name="heart" />
+                  </button>
+                </li>
+              )}
+            </For>
+          </ul>
+          <div class="page-heading">
+            <button
+              disabled={busy() || offset() === 0}
+              onClick={() => void search(Math.max(0, offset() - 50))}
+            >
+              {t("Précédentes")}{" "}
+            </button>
+            <span>
+              {t("Stations")} {offset() + 1}–{offset() + stations().length}
+            </span>
+            <button disabled={busy() || !more()} onClick={() => void search(offset() + 50)}>
+              {t("Suivantes")}{" "}
+            </button>
+          </div>
+        </Show>
+        <Show when={loaded() && !stations().length && !busy()}>
+          <EmptyState icon="radio">{t("Aucune station pour ces critères.")}</EmptyState>
+        </Show>
+        <p class="radio-credit">
+          {t("Annuaire communautaire")}{" "}
+          <a href="https://www.radio-browser.info/" target="_blank" rel="noreferrer">
+            {t("Radio Browser")}{" "}
+          </a>
+          {t(
+            ". Chaque entrée décrit un flux ; certaines stations ont plusieurs flux. L’écoute utilise les codecs et la sortie système du navigateur intégré.",
+          )}{" "}
+        </p>
+      </div>
     </section>
   );
 }

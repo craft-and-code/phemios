@@ -1,3 +1,4 @@
+import { LyricsDownload } from "./LyricsDownload";
 import { t } from "../i18n";
 import type { JSX } from "solid-js";
 import { createEffect, createResource, createSignal, createUniqueId, For, Show } from "solid-js";
@@ -61,6 +62,7 @@ export function TrackResults(props: {
               : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
           </small>
           <div class="track-actions">
+            <LyricsDownload reference={props.track.reference} />
             <Show when={props.track.analysis_available ?? props.track.analyses.length > 0}>
               <button
                 class="icon-button quiet"

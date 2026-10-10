@@ -146,3 +146,17 @@ Tag selection and card offset belong to the navigation shell, so a detail return
 `players_discover` accepts the bridge version only. The core invokes fixed macOS/Windows commands or reads Linux mount information, with a 256 KiB result bound and a three-second process deadline. It neither mounts shares nor accesses Aède credentials nor writes to media. The result is only a mounted destination candidate. Actual copy/encoding remains unavailable.
 
 The coverage page keeps its bounded resource, sort headers and expandable job rows together as a coherent size exception. Parsing and sort policy stay independently tested; layout fixes do not move acquisition rules into presentation.
+
+## Complete waveform and optional playback workspace
+
+The footer uses Aède's complete-track adaptive peak envelope, not realtime or synthetic peaks. Source-guarded decoding is cached by precise file identity; the existing seek preview/native ticket policy remains responsible for dragging, clicks and applied positions. Empty playback has a line; pause retains the envelope. Errors are visible and do not replace real data with a demonstration curve. Radio/podcast live timelines retain their own player contracts.
+
+The footer monitor/wave icon alone opens Playback; starting a track never navigates automatically. The workspace offers perspective-projected 3D particle sphere, waves and relief scenes, driven by four native output-RMS response envelopes measured from consumed samples. Pause freezes the pose, hidden documents stop animation and reduced-motion users get a static view. This first renderer uses Canvas with 3D geometry, not an added WebGL framework. The optional right queue shows actual occurrence order, including shuffle, and can jump to an occurrence; duplicate tracks remain distinct.
+
+Native shuffle permutes only the future tail, preserves the current/played occurrences and does not pause/restart the stream. Disabling restores the future original order. The displayed duration/remaining preference now persists through the authenticated account contract as well as the device store. Repeat remains a separate unconnected control.
+
+Synced local lyrics follow the consumed source clock; clicking a timed line seeks. Track action icons can request exact-track LRCLIB acquisition through Aède's trusted local-admin job, with actual task status/failure. LRCLIB requires no API key. Existing words/audio/tags are preserved; a newly written adjacent sidecar is readable without rescanning. HTTPS admin restrictions still apply.
+
+Radio reuses the bundled country globe, with a side column on wide windows and stacked layout on narrow windows. An explicit saved country wins; otherwise an explicit OS locale region centres/selects the default. Language alone never establishes geographic location. Country selection submits directory lookup without autoplay. Label index sorting supports name or album count and either direction; detail albums use chronological order consistent with label playback. Missing discography albums have reduced artwork appearance; local coverage precedes completeness in Statistics.
+
+The Moods page keeps its captured account/source lifecycle, explicit rule editing and paged playback assembly together as a focused module-size exception. Matching/validation policies remain in separate frontend/core modules.

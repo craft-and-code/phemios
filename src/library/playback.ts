@@ -1,5 +1,6 @@
+import { announceSetting } from "./saved-settings";
 import { t } from "../i18n";
-import { createSignal, onCleanup, type Accessor } from "solid-js";
+import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 import {
   playbackControl,
   playbackOutputs,
@@ -40,7 +41,7 @@ export function createPlayback(
   function identify(key: string) {
     preferenceKey = `phemios.playback-time:${key}`;
     try {
-      setRemaining(sessionStorage.getItem(preferenceKey) === "remaining");
+      setRemaining(localStorage.getItem(preferenceKey) === "remaining");
     } catch {
       setError(t("Préférence de durée indisponible."));
     }
@@ -50,7 +51,9 @@ export function createPlayback(
     setRemaining(next);
     if (preferenceKey)
       try {
-        sessionStorage.setItem(preferenceKey, next ? "remaining" : "duration");
+        localStorage.setItem(preferenceKey, next ? "remaining" : "duration");
+        localStorage.setItem("phemios.duration", JSON.stringify(next));
+        announceSetting("phemios.duration", JSON.stringify(next));
       } catch {
         setError(t("Préférence de durée non mémorisée."));
       }
@@ -91,6 +94,34 @@ export function createPlayback(
       await refresh(epoch);
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
+    } finally {
+      if (epoch === generation) setBusy(false);
+    }
+  }
+  async function startSelection(value: unknown) {
+    if (!ready() || busy() || !catalog) return;
+    beforeStart();
+    setBusy(true);
+    setError("");
+    cancel();
+    const epoch = generation;
+    try {
+      const data = catalog(),
+        rows = playbackSelection(value, data.albums, data.artists);
+      await playbackStart(
+        rows.map((row) => row.reference),
+        device(),
+        0,
+        policy(),
+      );
+      if (epoch !== generation) return;
+      setSelection(rows);
+      await refresh(epoch);
+    } catch (failure) {
+      if (epoch === generation) {
+        setError(message(failure));
+        throw failure;
+      }
     } finally {
       if (epoch === generation) setBusy(false);
     }
@@ -246,11 +277,36 @@ export function createPlayback(
     preferenceKey = "";
     setPolicy("without-effects");
   }
+  const restoreTime = () => {
+    try {
+      const next = localStorage.getItem("phemios.duration") === "true";
+      setRemaining(next);
+      if (preferenceKey) localStorage.setItem(preferenceKey, next ? "remaining" : "duration");
+    } catch {
+      setError(t("Préférence de durée indisponible."));
+    }
+  };
+  if (typeof window !== "undefined")
+    window.addEventListener("phemios-settings-loaded", restoreTime);
   onCleanup(() => {
+    if (typeof window !== "undefined")
+      window.removeEventListener("phemios-settings-loaded", restoreTime);
     progress.reset();
     lifetime++;
     cancelDiscovery();
     cancel();
+  });
+  const queueOrder = createMemo(() => state().queue, undefined, {
+    equals: (previous, next) =>
+      previous.length === next.length && previous.every((index, offset) => index === next[offset]),
+  });
+  const orderedQueue = createMemo(() => {
+    const rows = selection(),
+      order = queueOrder();
+    return (order.length ? order : rows.map((_, index) => index)).map((index) => ({
+      ...rows[index]!,
+      index,
+    }));
   });
   return {
     seek: progress.seek,
@@ -261,6 +317,7 @@ export function createPlayback(
     target,
     setTarget,
     startReference,
+    startSelection,
     identify,
     remaining,
     toggleTime,
@@ -280,6 +337,7 @@ export function createPlayback(
     chooseOutput,
     volume,
     reset,
+    queue: orderedQueue,
     current: () => {
       const row = selection()[state().index];
       return row?.reference === state().reference ? row : undefined;
