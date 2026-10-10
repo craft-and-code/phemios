@@ -40,3 +40,6 @@ pub mod hqplayer;
 
 /// Explicit streaming downloads of public podcast enclosures.
 pub mod podcast_download;
+
+/// Explicit attributed public encyclopedia retrieval.
+pub mod encyclopedia;

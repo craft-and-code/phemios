@@ -1,0 +1,25 @@
+# Encyclopedia contracts
+
+## Local reference and explicit public exploration
+
+The existing 25 original bilingual reference entries remain bundled, attributed and available without an account or network. Their category/text search is unchanged. Separate Wikipedia and Saved articles tabs distinguish external text from project editorial content. Choosing a tab, language, or saved article never fetches content. The Wikipedia search form is explicit, has a 200-character limit, and returns at most twenty main-namespace titles. Queries are sent to the selected French or English Wikipedia edition; they never include Aède identity or credentials.
+
+`core::encyclopedia` owns a fixed-host HTTPS MediaWiki Action API client, independent of Tauri and Aède sessions. `src-tauri::encyclopedia` exposes only versioned search(language, query) and article(language, page ID) commands, with a single bounded active-request gate. Hostnames are constructed from the two permitted languages, public DNS policy is reused, redirects/proxies are disabled, the descriptive User-Agent links to the related Aède project site, requests have a 15-second deadline and responses are capped at one MiB. Search snippets are not requested or interpreted. IDs, namespace, page count, revision and text are validated before returning typed projections; the frontend validates again. Service errors, empty/missing extracts, limits and network failures are visible, not replaced with invented reference content. Browser preview has no external request capability.
+
+## Reading and attribution
+
+Article reading uses `prop=extracts|info`, `explaintext=1`, `exsectionformat=wiki`. TextExtracts is a stable read API with known extraction limitations and no active new-feature maintenance. It provides text rather than a complete rendering: images, tables and some references are omitted. The reader labels this limitation and links to the original. Heading markers become semantic local headings, and all other content is literal Solid text; no remote HTML, scripts, styles or media are loaded. Text has a 512 KiB native limit. No article text is bundled into the product or tests from Wikipedia.
+
+Each copy retains edition, page ID, title, full received text, revision reported by the same query, and retrieval timestamp. Attribution links are built locally from validated identifiers: current article, reported revision, author/history page, and CC BY-SA 4.0 licence. The API extract is not a byte-for-byte historical revision export; extraction can omit material and reflect service caching. Consult the original revision/history for complete wording, author evidence and additional source attribution. Phémios does not claim authorship or endorsement.
+
+## Explicit device-local copies
+
+Saving is an explicit action. Versioned `phemios.encyclopedia.v1` browser storage retains up to 40 copies within three MiB of serialized characters, with edition/page identity and replacement of the same page only on save. The application does not synchronize these public reading copies with Aède accounts. Reopening a retained page uses its copy without network; refresh explicitly requests current text, which replaces the saved copy only after Save. Removing a copy affects no original or editorial entry. The standard WebView storage quota can be lower; failed writes remain visible and leave the last confirmed copy intact. Unreadable stores are not overwritten. No automatic quota eviction occurs.
+
+Generation guards discard responses after page return, edition changes or disposal; no old search/article replaces another selection. Refresh failure leaves readable retained content in place. Shared action controls, dismissible notices, empty states and theme tokens are reused.
+
+## Verification and sources
+
+Pure behavioural tests cover identity/namespace/size checks, literal markup, adjacent headings, edition separation, copy replacement, corrupt and failed stores, quota limits, explicit network actions, duplicate requests, late results, errors and offline reopening. `cargo run -p phemios-core --example encyclopedia_probe --locked` explicitly probes the real French and English service without recording article prose or credentials. Normal tests are offline.
+
+Primary contracts: [MediaWiki search](https://www.mediawiki.org/wiki/API:Search), [TextExtracts](https://www.mediawiki.org/wiki/Extension:TextExtracts), [Wikimedia Terms of Use](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), [Wikimedia User-Agent policy](https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy).

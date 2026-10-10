@@ -1,5 +1,6 @@
 const paths: Record<string, string> = {
   crossfade: "M3 5h4c4 0 6 14 10 14h4M3 19h4c4 0 6-14 10-14h4",
+  "chevron-right": "m9 6 6 6-6 6",
   book: "M12 5c-3-3-7-3-10-2v16c3-1 7-1 10 2m0-16c3-3 7-3 10-2v16c-3-1-7-1-10 2V5Z",
   trophy:
     "M7 3h10v6a5 5 0 0 1-10 0V3ZM7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4M12 14v6M7 21h10",

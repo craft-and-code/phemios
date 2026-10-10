@@ -215,12 +215,12 @@
       "en": "APIs to extend the encyclopedia"
     },
     "body": {
-      "fr": "MusicBrainz propose des métadonnées structurées en JSON ; MediaWiki expose le contenu des pages. L’encyclopédie actuelle reste locale. Une importation future devra respecter la licence de chaque source, conserver son attribution et être demandée explicitement.",
-      "en": "MusicBrainz provides structured JSON metadata; MediaWiki exposes page content. This encyclopedia currently remains local. A future import must respect each source licence, retain attribution and be explicitly requested."
+      "fr": "MusicBrainz propose des métadonnées structurées en JSON. Dans l’espace Wikipédia, une recherche explicite permet de consulter des textes en français ou en anglais, avec source, historique et licence CC BY-SA 4.0. Une copie enregistrée reste consultable hors connexion sur cet appareil. Les fiches de référence intégrées ne nécessitent aucun accès au réseau.",
+      "en": "MusicBrainz provides structured JSON metadata. The Wikipedia space supports explicit searches and reading in French or English, with source, history and CC BY-SA 4.0 licence. Saved copies remain available offline on this device. Bundled reference entries require no network access."
     },
     "source": {
-      "title": "MediaWiki · REST API",
-      "url": "https://www.mediawiki.org/wiki/API:REST_API"
+      "title": "MediaWiki · Action API",
+      "url": "https://www.mediawiki.org/wiki/API:Main_page"
     }
   },
   {
