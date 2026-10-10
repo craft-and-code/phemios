@@ -1,3 +1,5 @@
+import { QueueSave } from "./QueueSave";
+import { locale } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -37,6 +39,30 @@ export function PlaybackQueue(props: { onClose: () => void }) {
       <div class="page-heading">
         <h2>{t("Liste de lecture")}</h2>
         <button
+          class="icon-button quiet icon-close"
+          aria-label={t("Fermer")}
+          onClick={props.onClose}
+        >
+          <Icon name="close" />
+        </button>
+      </div>
+      <div class="queue-actions">
+        <button
+          class="icon-button quiet"
+          disabled={!reorderable() || player.queue().length < 2}
+          aria-label={t("Trier la liste de lecture par titre")}
+          title={t("Trier la liste de lecture par titre")}
+          onClick={() =>
+            reorder(
+              [...player.queue()]
+                .sort((a, b) => a.title.localeCompare(b.title, locale()) || a.index - b.index)
+                .map((row) => row.index),
+            )
+          }
+        >
+          <Icon name="alphabet" />
+        </button>
+        <button
           class="icon-button quiet"
           disabled={!reorderable() || player.queue().length < 2}
           aria-label={t("Inverser la liste de lecture")}
@@ -45,13 +71,7 @@ export function PlaybackQueue(props: { onClose: () => void }) {
         >
           <Icon name="reverse" />
         </button>
-        <button
-          class="icon-button quiet icon-close"
-          aria-label={t("Fermer")}
-          onClick={props.onClose}
-        >
-          <Icon name="close" />
-        </button>
+        <QueueSave />
       </div>
       <Show when={player.error()}>
         <Feedback error message={player.error()} />

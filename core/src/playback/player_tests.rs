@@ -145,3 +145,17 @@ fn manual_queue_order_preserves_sound_and_rejects_stale_selections() {
     assert_eq!(player.snapshot().unwrap()["queue"], json!([3, 2, 1, 0]));
     player.halt().unwrap();
 }
+
+#[test]
+fn crossfade_and_repeat_are_bounded_idle_controls_without_network_or_audio() {
+    let player = Player::default();
+    player.control("crossfade", json!(2500)).unwrap();
+    player.control("repeat", json!("all")).unwrap();
+    assert_eq!(player.snapshot().unwrap()["crossfade_ms"], 2500);
+    assert_eq!(player.snapshot().unwrap()["repeat"], "all");
+    for value in [json!(-1), json!(10001), json!(1.5), json!("500")] {
+        assert!(player.control("crossfade", value).is_err());
+    }
+    assert!(player.control("repeat", json!("random")).is_err());
+    assert_eq!(player.snapshot().unwrap()["status"], "idle");
+}

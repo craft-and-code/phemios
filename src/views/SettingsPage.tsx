@@ -1,3 +1,4 @@
+import { SettingsShortcuts } from "./SettingsShortcuts";
 import { Feedback } from "../components/Feedback";
 import { SettingsPlayback } from "./SettingsPlayback";
 import { SettingsLanguage } from "./SettingsLanguage";
@@ -32,6 +33,7 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
               "language",
               "appearance",
               "navigation",
+              "shortcuts",
             ],
             index = ids.indexOf(tab());
           const next = ["ArrowRight", "ArrowDown"].includes(event.key)
@@ -59,6 +61,7 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
             { icon: "alphabet", id: "language", label: t("Langue") },
             { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
             { icon: "menu", id: "navigation", label: t("Navigation") },
+            { icon: "keyboard", id: "shortcuts", label: t("Raccourcis") },
           ]}
         >
           {(item) => (
@@ -91,6 +94,9 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </Show>
         <Show when={tab() === "tags"}>
           <SettingsTags />
+        </Show>
+        <Show when={tab() === "shortcuts"}>
+          <SettingsShortcuts />
         </Show>
         <Show when={tab() === "navigation"}>
           <SettingsNavigation menu={props.menu} />

@@ -56,3 +56,9 @@ it("validates seek acknowledgements and the FlacCompagnon output level", () => {
   for (const level of [-0.1, 1.1, "0.6"])
     expect(() => parsePlayback({ ...state, level })).toThrow();
 });
+
+it("retains repeat modes and refuses unknown modes without inventing playback", () => {
+  expect(parsePlayback({ ...state, repeat: "one" }).repeat).toBe("one");
+  expect(parsePlayback(state).repeat).toBe("off");
+  expect(() => parsePlayback({ ...state, repeat: "forever" })).toThrow();
+});

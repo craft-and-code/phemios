@@ -52,6 +52,19 @@ impl Queue {
             true
         }
     }
+    pub fn advance(&mut self, repeat: &str, natural: bool) -> bool {
+        if natural && repeat == "one" {
+            return true;
+        }
+        if self.next() {
+            return true;
+        }
+        if repeat == "all" {
+            self.first();
+            return true;
+        }
+        false
+    }
     pub fn previous(&mut self) {
         self.cursor = self.cursor.saturating_sub(1);
     }

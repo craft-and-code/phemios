@@ -28,6 +28,8 @@ fn bridge_requests_cannot_supply_another_url_or_arbitrary_admin_command() {
     assert!(!allowed("GET", "/api/admin/v1/tasks/1/../../accounts"));
     assert!(allowed("POST", "/api/admin/v1/tasks/42/cancel"));
     assert!(allowed("PUT", "/api/me/v1/annotation"));
+    assert!(allowed("GET", "/api/me/v1/search"));
+    assert!(!allowed("POST", "/api/me/v1/search"));
 }
 #[test]
 fn server_errors_do_not_echo_secrets_or_untrusted_response_text() {

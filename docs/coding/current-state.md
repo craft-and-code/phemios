@@ -217,3 +217,7 @@ Optional radio station counts run outside search busy state; initial mirror disc
 Account favourite records distinguish a missing key from a malformed stored value (including falsy JSON values). Unreadable records remain unavailable for editing rather than being replaced implicitly; a regression test covers that distinction.
 
 Enrichment uses capability-guarded MusicBrainz-first tasks; interface refinements are described in native-integration and interface documentation.
+
+## Advanced discovery and transport follow-up
+
+Owner-scoped technical/personal query pages and filtered collections require Aède's advertised `advanced_search` capability. Queue M3U publication preserves occurrence order and duplicates; collections preserve membership criteria. The coverage table projects retained FLAC MD5 and Ogg CRC states, explicitly separating unknown, obsolete and unsupported results. The Albums-only reusable Cover Flow renders at most nine cached neighbours and supports keyboard, wheel and direct positioning. Configurable portable shortcuts suspend in text-editing contexts and synchronize their validated non-secret map with the account. The queue exposes alphabetical ordering, reversal, collection and M3U actions below its title. DSP crossfade uses two consumed-frame authenticated visits on a continuous native output; repeat off/one/all is connected to native occurrence traversal.

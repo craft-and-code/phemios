@@ -1,4 +1,5 @@
-export type CoverageColumn = "title" | "current" | "missing" | "stale" | "failed" | "spectra";
+export type CoverageColumn =
+  "title" | "current" | "missing" | "stale" | "failed" | "spectra" | "integrity";
 export interface CoverageSort {
   column: CoverageColumn;
   direction: "asc" | "desc";

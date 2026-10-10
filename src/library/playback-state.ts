@@ -2,6 +2,7 @@ import { t } from "../i18n";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
   shuffled: boolean;
+  repeat: "off" | "one" | "all";
   queue: readonly number[];
   status: "idle" | "connecting" | "playing" | "paused" | "ended" | "error";
   reference: string;
@@ -26,6 +27,7 @@ export interface AudioOutput {
 }
 export const idlePlayback: PlaybackState = {
   shuffled: false,
+  repeat: "off",
   queue: [],
   status: "idle",
   reference: "",
@@ -84,6 +86,8 @@ export function parsePlayback(value: unknown): PlaybackState {
     (typeof v.level !== "number" || !Number.isFinite(v.level) || v.level < 0 || v.level > 1)
   )
     throw new Error(t("Niveau audio invalide."));
+  if (v.repeat !== undefined && !["off", "one", "all"].includes(String(v.repeat)))
+    throw new Error(t("Répétition invalide."));
   if (v.shuffled !== undefined && typeof v.shuffled !== "boolean")
     throw new Error(t("File de lecture invalide."));
   if (
@@ -98,6 +102,7 @@ export function parsePlayback(value: unknown): PlaybackState {
   return {
     ...v,
     shuffled: v.shuffled ?? false,
+    repeat: v.repeat ?? "off",
     queue: v.queue ?? [],
     seek_id: v.seek_id ?? 0,
     queue_id: v.queue_id ?? 0,

@@ -1,9 +1,12 @@
+import { createShortcuts, shortcutAction } from "./navigation/shortcuts";
 import { createMenuPreferences, visibleMenu, menuItem } from "./navigation/menu-preferences";
 import { LabelsPage } from "./views/LabelsPage";
 import { LabelPage } from "./views/LabelPage";
 import { createToolPreferences } from "./library/tool-preferences";
 import { t } from "./i18n";
 import {
+  onMount,
+  onCleanup,
   createEffect,
   ErrorBoundary,
   createMemo,
@@ -44,6 +47,7 @@ export function App() {
   const library = useLibrary();
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
+  const shortcuts = createShortcuts();
   const visibleMenus = createMemo(() => visibleMenu(menu.value()).map(menuItem));
   const connectionPanel = () => false;
   const setConnectionPanel = (_value: boolean) => {
@@ -86,6 +90,7 @@ export function App() {
   const [selectedTag, setSelectedTag] = createSignal<readonly string[]>([]);
   const [tagOffset, setTagOffset] = createSignal(0);
   const [reverse, setReverse] = createSignal(false);
+  const [coverFlow, setCoverFlow] = createSignal(false);
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
     section = navigation.section;
@@ -109,6 +114,38 @@ export function App() {
           ? (current() as { reference: string }).reference
           : ""),
     );
+  });
+  onMount(() => {
+    function key(event: KeyboardEvent) {
+      const editing =
+        event.target instanceof Element &&
+        !!event.target.closest("input, textarea, select, [contenteditable], dialog[open]");
+      const action = shortcutAction(event, shortcuts.value(), editing);
+      if (!action) return;
+      event.preventDefault();
+      const player = library.player;
+      if (action === "search") document.querySelector<HTMLInputElement>(".search input")?.focus();
+      else if (action === "advanced") navigation.navigate("#/advanced-search");
+      else if (action === "settings") navigation.navigate("#/settings");
+      else if (action === "playback") navigation.navigate("#/playback");
+      else if (action === "queue") {
+        if (section() === "playback") window.dispatchEvent(new Event("phemios-queue-toggle"));
+      } else if (!player.busy()) {
+        if (action === "toggle")
+          void (player.state().status === "playing"
+            ? player.action("pause")
+            : player.state().status === "paused"
+              ? player.action("resume")
+              : player.target()
+                ? player.startReference()
+                : Promise.resolve());
+        else if (action === "mute") void player.toggleMute();
+        else if (["playing", "paused", "ended"].includes(player.state().status))
+          void player.action(action);
+      }
+    }
+    window.addEventListener("keydown", key);
+    onCleanup(() => window.removeEventListener("keydown", key));
   });
   const backLink = navigation.backLink;
   const context = () =>
@@ -342,6 +379,17 @@ export function App() {
               >
                 <Icon name="layers" />
               </button>
+              <Show when={current().kind === "section" && section() === "albums"}>
+                <button
+                  class="icon-button"
+                  title={t("Cover Flow")}
+                  aria-label={t("Cover Flow")}
+                  aria-pressed={coverFlow()}
+                  onClick={() => setCoverFlow(!coverFlow())}
+                >
+                  <Icon name="cover-flow" />
+                </button>
+              </Show>
               <SelectionCollection section={section()} filters={filters()} />
             </Show>
           </div>
@@ -454,6 +502,7 @@ export function App() {
                     filters={filters()}
                     setFilters={setFilters}
                     reverse={reverse()}
+                    coverFlow={coverFlow()}
                   />
                 </Show>
               </Show>

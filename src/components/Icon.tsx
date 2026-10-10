@@ -1,4 +1,7 @@
 const paths: Record<string, string> = {
+  "cover-flow": "M7 5h10v14H7V5ZM3 7l-2 1v8l2 1V7ZM21 7l2 1v8l-2 1V7Z",
+  keyboard:
+    "M2 5h20v14H2V5ZM5 9h.01M9 9h.01M13 9h.01M17 9h.01M5 13h.01M9 13h.01M13 13h.01M17 13h.01M7 16h10",
   grip: "M8 5h.01M16 5h.01M8 12h.01M16 12h.01M8 19h.01M16 19h.01",
   reverse: "M7 3v18m-4-4 4 4 4-4M17 21V3m-4 4 4-4 4 4",
   playlist: "M3 3h11v18H3V3ZM6 7h5M6 11h5M18 8v9M18 10l4-1M18 17a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
@@ -47,6 +50,8 @@ const paths: Record<string, string> = {
   next: "M19 5v14M5 5l11 7-11 7V5Z",
   pause: "M8 5v14M16 5v14",
   repeat: "m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3",
+  "repeat-one":
+    "m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3M11 10l2-1v6m-2 0h4",
   shuffle: "M3 5c10 0 6 14 16 14m-3-3 3 3-3 3M3 19c10 0 6-14 16-14m-3-3 3 3-3 3",
   volume: "M3 9h4l5-4v14l-5-4H3V9ZM16 8a6 6 0 0 1 0 8M19 4a11 11 0 0 1 0 16",
   menu: "M3 6h18M3 12h18M3 18h18",

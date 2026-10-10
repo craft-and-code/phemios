@@ -1,3 +1,5 @@
+import { parseAudioPreferences } from "./audio-preferences";
+import { parseShortcuts } from "../navigation/shortcuts-policy";
 import { readPreferences, applyPreferences } from "./preferences";
 import { readMenuPreferences } from "../navigation/menu-preferences";
 import { readToolPreferences } from "./tool-preferences";
@@ -12,6 +14,8 @@ export const accountSettingKeys = [
   "phemios.tools.v1",
   "phemios.duration",
   "phemios.visualizer",
+  "phemios.shortcuts.v1",
+  "phemios.audio.v1",
 ] as const;
 /** Publish only explicitly supported non-secret settings after a successful local write. */
 export function announceSetting(key: string, raw: string) {
@@ -35,6 +39,8 @@ export function parseAccountSettings(raw: unknown): Record<string, unknown> {
       if (key === "phemios.appearance") readPreferences(storage);
       if (key === "phemios.navigation.v1") readMenuPreferences(storage);
       if (key === "phemios.tools.v1") readToolPreferences(storage);
+      if (key === "phemios.audio.v1") parseAudioPreferences(JSON.stringify(value));
+      if (key === "phemios.shortcuts.v1") parseShortcuts(JSON.stringify(value));
       if (key === "phemios.duration" && typeof value !== "boolean")
         throw new Error(t("Préférences de compte invalides."));
       if (key === "phemios.visualizer" && !["sphere", "waves", "landscape"].includes(String(value)))

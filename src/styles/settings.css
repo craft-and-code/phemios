@@ -628,3 +628,25 @@
 .server-roots > :last-child {
   margin-bottom: 0;
 }
+
+.shortcut-rows {
+  display: grid;
+  gap: 12px;
+}
+.shortcut-rows > label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 220px) 28px;
+  gap: 12px;
+  align-items: center;
+}
+.shortcut-rows input {
+  text-align: center;
+}
+.shortcut-rows .icon-close {
+  width: 28px;
+}
+@media (max-width: 650px) {
+  .shortcut-rows > label {
+    grid-template-columns: minmax(0, 1fr) 100px 28px;
+  }
+}

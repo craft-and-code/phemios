@@ -1,3 +1,4 @@
+import { IntegrityStatus } from "../components/IntegrityStatus";
 import { Feedback } from "../components/Feedback";
 import {
   initialCoverageSort,
@@ -60,6 +61,8 @@ export function AnalysisPage(props: { query: string }) {
         throw Error(
           t("Mettez à jour puis redémarrez Aède pour afficher la couverture des analyses."),
         );
+      if (key.sort.column === "integrity" && !status.capabilities?.includes("analysis_integrity"))
+        throw Error(t("Mettez à jour puis redémarrez Aède pour trier les analyses."));
       if (!status.capabilities?.includes("analysis_coverage_sort"))
         throw Error(t("Mettez à jour puis redémarrez Aède pour trier les analyses."));
       const data = parseCoverage(
@@ -157,6 +160,7 @@ export function AnalysisPage(props: { query: string }) {
                             ["stale", "Périmées"],
                             ["failed", "Échecs"],
                             ["spectra", "Spectres"],
+                            ["integrity", "MD5 / CRC"],
                           ] as const
                         }
                       >
@@ -238,6 +242,9 @@ export function AnalysisPage(props: { query: string }) {
                               {row.spectra}/{row.tracks}
                             </td>
                             <td>
+                              <IntegrityStatus value={row.integrity} />
+                            </td>
+                            <td>
                               <div class="coverage-actions">
                                 <button
                                   class="icon-button quiet"
@@ -269,7 +276,7 @@ export function AnalysisPage(props: { query: string }) {
                           </tr>
                           <Show when={selected() === row.reference}>
                             <tr class="analysis-expanded">
-                              <td colSpan={7}>
+                              <td colSpan={8}>
                                 <p class="muted">
                                   {t(
                                     "Les analyses actuelles sont réutilisées. Le recalcul doit être demandé explicitement.",

@@ -20,6 +20,9 @@ export function PlaybackPage() {
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
   onMount(() => {
+    const toggleQueue = () => setQueue((value) => !value);
+    window.addEventListener("phemios-queue-toggle", toggleQueue);
+    onCleanup(() => window.removeEventListener("phemios-queue-toggle", toggleQueue));
     function restore() {
       try {
         const raw = localStorage.getItem("phemios.visualizer");

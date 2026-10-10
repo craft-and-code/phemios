@@ -31,3 +31,26 @@ it("validates retained coverage partitions, paging and scan epochs without inven
   ).toThrow();
   expect(() => parseCoverage({ ...sample(), total: 5 }, 0, 1)).toThrow();
 });
+
+it("refuses contradictory integrity counters while preserving unknown legacy coverage", () => {
+  const integrity = {
+    ok: 1,
+    ko: 1,
+    no_hash: 1,
+    unchecked: 1,
+    stale: 0,
+    unsupported: 0,
+    md5: 3,
+    crc: 1,
+  };
+  const row = { ...sample(), items: [{ ...sample().items[0], integrity }] };
+  expect(parseCoverage(row, 0, 1).items[0]?.integrity?.ko).toBe(1);
+  expect(parseCoverage(sample(), 0, 1).items[0]?.integrity).toBeUndefined();
+  expect(() =>
+    parseCoverage(
+      { ...row, items: [{ ...row.items[0], integrity: { ...integrity, ok: 5 } }] },
+      0,
+      1,
+    ),
+  ).toThrow();
+});

@@ -15,6 +15,19 @@ export async function saveBrowsingCollection(
       ? (status as { capabilities?: unknown }).capabilities
       : undefined;
   if (!isCurrent()) return;
+  if (!expression.startsWith("browse-v1:")) {
+    if (!Array.isArray(capabilities) || !capabilities.includes("advanced_search"))
+      throw new Error(t("Mettez à jour puis redémarrez Aède pour la recherche avancée."));
+    if (isCurrent())
+      await requestAede(
+        "/api/me/v1/collection",
+        { name },
+        "PUT",
+        { expression: expression || "played:>=0", create_only: true },
+        source,
+      );
+    return;
+  }
   if (!Array.isArray(capabilities) || !capabilities.includes("dynamic_browse_collections"))
     throw new Error(
       t(

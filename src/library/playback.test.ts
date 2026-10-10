@@ -76,8 +76,7 @@ it("rejects a late native result after logout and leaves no playback poll", asyn
     );
     const player = createPlayback(() => true);
     const pending = player.start(tracks, album, "Artist");
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(playbackState).toHaveBeenCalledOnce());
     player.reset();
     complete({ ...idlePlayback, status: "playing", reference: "track:one", total: 2 });
     await pending;
@@ -351,6 +350,27 @@ it("stops playback when moving to HQPlayer and sends the engine mute toggle", as
     await player.start(tracks, album, "Fixture");
     await player.toggleMute();
     expect(playbackControl).toHaveBeenCalledWith("mute", null);
+    dispose();
+  });
+});
+
+it("does not start audio when logout occurs during preference configuration", async () => {
+  await createRoot(async (dispose) => {
+    let release!: () => void;
+    vi.mocked(playbackControl).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const player = createPlayback(() => true);
+    const pending = player.start(tracks, album, "Artist");
+    await Promise.resolve();
+    player.reset();
+    release();
+    await pending;
+    expect(playbackStart).not.toHaveBeenCalled();
+    expect(playbackState).not.toHaveBeenCalled();
     dispose();
   });
 });

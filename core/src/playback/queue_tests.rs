@@ -24,3 +24,16 @@ fn shuffle_keeps_current_and_played_occurrences_and_restores_only_future_order()
     assert_eq!(queue.index(), 19);
     assert!(!queue.jump(99));
 }
+
+#[test]
+fn repeat_restarts_one_naturally_and_wraps_all_without_losing_edited_order() {
+    let mut queue = Queue::new(3, 1);
+    queue.synchronize(&[2, 1, 0], false).unwrap();
+    assert!(queue.advance("one", true));
+    assert_eq!(queue.index(), 1);
+    assert!(queue.advance("one", false));
+    assert_eq!(queue.index(), 0);
+    assert!(!queue.advance("off", true));
+    assert!(queue.advance("all", true));
+    assert_eq!(queue.index(), 2);
+}

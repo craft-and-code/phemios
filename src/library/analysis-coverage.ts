@@ -5,12 +5,23 @@ export interface CoverageCounts {
   failed: number;
   missing: number;
 }
+export interface IntegrityCounts {
+  ok: number;
+  ko: number;
+  no_hash: number;
+  unchecked: number;
+  unsupported: number;
+  stale: number;
+  md5: number;
+  crc: number;
+}
 export interface CoverageAlbum extends CoverageCounts {
   reference: string;
   title: string;
   artist: string | null;
   tracks: number;
   spectra: number;
+  integrity?: IntegrityCounts;
 }
 export interface CoveragePage {
   items: CoverageAlbum[];
@@ -39,6 +50,28 @@ function counts(row: Record<string, unknown>, total: number): CoverageCounts {
   if (Object.values(values).reduce((a, b) => a + b, 0) !== total)
     throw Error(t("Couverture des analyses invalide."));
   return values;
+}
+function integrity(value: unknown, total: number): IntegrityCounts | undefined {
+  if (value === undefined) return;
+  const row = object(value);
+  const result = Object.fromEntries(
+    ["ok", "ko", "no_hash", "unchecked", "unsupported", "stale", "md5", "crc"].map((key) => [
+      key,
+      count(row[key]),
+    ]),
+  ) as unknown as IntegrityCounts;
+  if (
+    result.ok +
+      result.ko +
+      result.no_hash +
+      result.unchecked +
+      result.unsupported +
+      result.stale !==
+      total ||
+    result.md5 + result.crc > total
+  )
+    throw Error(t("Couverture des analyses invalide."));
+  return result;
 }
 /** Complete lightweight pages distinguish unavailable/stale data from measured zero coverage. */
 export function parseCoverage(
@@ -81,6 +114,7 @@ export function parseCoverage(
       tracks,
       spectra,
       ...counts(item, tracks),
+      ...(item.integrity === undefined ? {} : { integrity: integrity(item.integrity, tracks)! }),
     };
   });
   return {

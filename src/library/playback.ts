@@ -1,3 +1,9 @@
+import {
+  audioPreferenceKey,
+  defaultAudioPreferences,
+  parseAudioPreferences,
+  type AudioPreferences,
+} from "./audio-preferences";
 import { announceSetting } from "./saved-settings";
 import { t } from "../i18n";
 import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
@@ -31,6 +37,41 @@ export function createPlayback(
     [target, setTarget] = createSignal(""),
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
+  const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
+  function restoreAudio() {
+    try {
+      const next = parseAudioPreferences(localStorage.getItem(audioPreferenceKey));
+      setAudio(next);
+      setPolicy(next.policy);
+    } catch (failure) {
+      setError(message(failure));
+    }
+  }
+  restoreAudio();
+  function saveAudio(next: AudioPreferences) {
+    const raw = JSON.stringify(next);
+    parseAudioPreferences(raw);
+    localStorage.setItem(audioPreferenceKey, raw);
+    setAudio(next);
+    announceSetting(audioPreferenceKey, raw);
+  }
+  async function configureAudio() {
+    if (device() === "@hqplayer") return;
+    await playbackControl("crossfade", audio().crossfadeMs);
+    await playbackControl("repeat", audio().repeat);
+  }
+  async function chooseCrossfade(ms: number) {
+    if (busy()) return;
+    try {
+      const next = { ...audio(), crossfadeMs: ms, ...(ms > 0 ? { policy: "dsp" as const } : {}) };
+      parseAudioPreferences(JSON.stringify(next));
+      if (ms > 0 && policy() !== "dsp") await choosePolicy("dsp");
+      if (ready() && device() !== "@hqplayer") await action("crossfade", ms);
+      saveAudio(next);
+    } catch (failure) {
+      setError(message(failure));
+    }
+  }
   const progress = createSeekProgress(
     state,
     (position) => playbackControl("seek", position),
@@ -61,6 +102,11 @@ export function createPlayback(
   async function choosePolicy(value: string) {
     if (!["without-effects", "dsp"].includes(value) || busy()) return;
     setPolicy(value);
+    try {
+      saveAudio({ ...audio(), policy: value as AudioPreferences["policy"] });
+    } catch (failure) {
+      setError(message(failure));
+    }
     if (["playing", "paused"].includes(state().status)) await action("policy", value);
   }
   async function startReference(reference = target()) {
@@ -83,6 +129,8 @@ export function createPlayback(
       if (epoch !== generation) return;
       const data = catalog(),
         rows = playbackSelection(response, data.albums, data.artists);
+      await configureAudio();
+      if (epoch !== generation) return;
       await playbackStart(
         rows.map((r) => r.reference),
         device(),
@@ -108,6 +156,8 @@ export function createPlayback(
     try {
       const data = catalog(),
         rows = playbackSelection(value, data.albums, data.artists);
+      await configureAudio();
+      if (epoch !== generation) return;
       await playbackStart(
         rows.map((row) => row.reference),
         device(),
@@ -158,6 +208,8 @@ export function createPlayback(
     const epoch = generation;
     try {
       await playbackControl(command, value);
+      if (command === "repeat" && ["off", "one", "all"].includes(String(value)))
+        saveAudio({ ...audio(), repeat: value as AudioPreferences["repeat"] });
       await refresh(epoch);
     } catch (failure) {
       if (epoch === generation) {
@@ -178,6 +230,8 @@ export function createPlayback(
     try {
       if (!tracks.length || tracks.length > 4096 || index < 0 || index >= tracks.length)
         throw new Error(t("Sélection limitée à 4096 pistes."));
+      await configureAudio();
+      if (epoch !== generation) return;
       await playbackStart(
         tracks.map((t) => t.reference),
         device(),
@@ -265,6 +319,8 @@ export function createPlayback(
     }
   }
   function reset() {
+    if (typeof window !== "undefined")
+      window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
     cancelDiscovery();
@@ -292,9 +348,13 @@ export function createPlayback(
   };
   if (typeof window !== "undefined")
     window.addEventListener("phemios-settings-loaded", restoreTime);
+  if (typeof window !== "undefined")
+    window.addEventListener("phemios-settings-loaded", restoreAudio);
   onCleanup(() => {
     if (typeof window !== "undefined")
       window.removeEventListener("phemios-settings-loaded", restoreTime);
+    if (typeof window !== "undefined")
+      window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
     cancelDiscovery();
@@ -327,6 +387,8 @@ export function createPlayback(
     toggleTime,
     policy,
     choosePolicy,
+    chooseCrossfade,
+    crossfade: () => audio().crossfadeMs,
     toggleMute,
     state,
     outputs,

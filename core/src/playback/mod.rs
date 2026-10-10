@@ -1,5 +1,8 @@
 //! Native consumed-frame PCM client for Aède's authenticated playback contract.
 mod actor;
+mod crossfade;
+mod crossfade_mix;
+mod crossfade_source;
 mod output;
 mod protocol;
 mod queue;
@@ -17,6 +20,7 @@ use std::thread::JoinHandle;
 #[derive(Clone)]
 enum Command {
     Policy(Policy),
+    Crossfade(u64),
     Jump(usize),
     Pause,
     Resume,
@@ -67,6 +71,8 @@ struct State {
     device: String,
     policy: Policy,
     shuffled: bool,
+    repeat: &'static str,
+    crossfade_ms: u64,
     queue: Vec<usize>,
 }
 /// One bounded actor owns the socket and device; no credential enters the UI or audio callback.
@@ -113,7 +119,7 @@ impl Player {
             0.
         };
         Ok(
-            json!({"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -155,7 +161,19 @@ impl Player {
         let (tx, rx) = mpsc::sync_channel(32);
         let state = self.state.clone();
         let signals = self.signals.clone();
+        let crossfade_ms = self
+            .state
+            .lock()
+            .map_err(|_| "État audio indisponible.")?
+            .crossfade_ms;
+        let repeat = self
+            .state
+            .lock()
+            .map_err(|_| "État audio indisponible.")?
+            .repeat;
         *self.state.lock().map_err(|_| "État audio indisponible.")? = State {
+            repeat,
+            crossfade_ms,
             status: "connecting",
             total: tracks.len(),
             index,
@@ -228,6 +246,34 @@ impl Player {
     }
     /// Narrow transport controls; unsupported values are explicit errors.
     pub fn control(&self, action: &str, value: Value) -> Result<(), String> {
+        if action == "crossfade" {
+            let ms = value
+                .as_u64()
+                .filter(|ms| *ms <= 10000)
+                .ok_or("Durée du fondu invalide.")?;
+            let worker = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
+            if let Some(worker) = worker
+                .as_ref()
+                .filter(|worker| !worker.handle.is_finished())
+            {
+                worker
+                    .commands
+                    .try_send(Command::Crossfade(ms))
+                    .map_err(|_| "Lecteur occupé, réessayez.".to_owned())?;
+                self.signals.paused.store(true, Ordering::Relaxed);
+                return Ok(());
+            }
+            return update(&self.state, |state| state.crossfade_ms = ms);
+        }
+        if action == "repeat" {
+            let repeat = match value.as_str() {
+                Some("off") => "off",
+                Some("one") => "one",
+                Some("all") => "all",
+                _ => return Err("Répétition invalide.".into()),
+            };
+            return update(&self.state, |s| s.repeat = repeat);
+        }
         if action == "volume" {
             let volume = value
                 .as_f64()

@@ -31,19 +31,41 @@ pub(super) fn run(
                 s.confirmed = false;
                 s.device = device.clone();
             })?;
-            match stream(
-                &client,
-                &tracks[index],
-                position,
-                (&device, policy),
-                &commands,
-                state,
-                signals,
-            )? {
+            let crossfade_ms = state
+                .lock()
+                .map_err(|_| "État audio indisponible.")?
+                .crossfade_ms;
+            let result = if crossfade_ms > 0 && matches!(policy, super::Policy::Dsp) {
+                super::crossfade::stream(
+                    &client,
+                    &tracks,
+                    (index, position),
+                    &device,
+                    crossfade_ms,
+                    &commands,
+                    state,
+                    signals,
+                )
+            } else {
+                stream(
+                    &client,
+                    &tracks[index],
+                    position,
+                    (&device, policy),
+                    &commands,
+                    state,
+                    signals,
+                )
+            }?;
+            queue.jump(state.lock().map_err(|_| "État audio indisponible.")?.index);
+            match result {
                 Some(command) => command,
                 None => {
                     synchronize(&mut queue, state)?;
-                    if queue.next() {
+                    if queue.advance(
+                        state.lock().map_err(|_| "État audio indisponible.")?.repeat,
+                        true,
+                    ) {
                         position = 0;
                         continue;
                     }
@@ -66,6 +88,9 @@ pub(super) fn run(
                 position = 0;
                 paused = false;
             }
+            Command::Crossfade(value) => {
+                update(state, |s| s.crossfade_ms = value)?;
+            }
             Command::Policy(value) => {
                 policy = value;
                 update(state, |s| s.policy = value)?;
@@ -86,7 +111,10 @@ pub(super) fn run(
                 paused = false;
             }
             Command::Next => {
-                if queue.next() {
+                if queue.advance(
+                    state.lock().map_err(|_| "État audio indisponible.")?.repeat,
+                    false,
+                ) {
                     position = 0;
                     paused = false;
                 } else {

@@ -142,9 +142,10 @@ export function PlayerBar() {
             class="icon-button"
             disabled={
               disabled() ||
-              (state().queue.length
-                ? state().queue.indexOf(state().index) + 1 >= state().total
-                : state().index + 1 >= state().total)
+              (state().repeat !== "all" &&
+                (state().queue.length
+                  ? state().queue.indexOf(state().index) + 1 >= state().total
+                  : state().index + 1 >= state().total))
             }
             aria-label={t("Morceau suivant")}
             onClick={() => void player.action("next")}
@@ -153,11 +154,24 @@ export function PlayerBar() {
           </button>
           <button
             class="icon-button"
-            disabled
+            disabled={!player.ready() || player.busy() || state().device === "@hqplayer"}
             aria-label={t("Répétition")}
-            title={t("Répétition : prochain raccordement")}
+            aria-pressed={state().repeat !== "off"}
+            title={t(
+              state().repeat === "one"
+                ? "Répéter le morceau"
+                : state().repeat === "all"
+                  ? "Répéter la sélection"
+                  : "Répétition désactivée",
+            )}
+            onClick={() =>
+              void player.action(
+                "repeat",
+                state().repeat === "off" ? "all" : state().repeat === "all" ? "one" : "off",
+              )
+            }
           >
-            <Icon name="repeat" />
+            <Icon name={state().repeat === "one" ? "repeat-one" : "repeat"} />
           </button>
         </div>
         <div class="playback-progress">

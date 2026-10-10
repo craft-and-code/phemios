@@ -1,3 +1,4 @@
+import { CoverFlow } from "../components/CoverFlow";
 import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
@@ -20,6 +21,7 @@ export function LibraryPage(props: {
   filters: Filters;
   setFilters: (filters: Filters) => void;
   reverse: boolean;
+  coverFlow?: boolean;
 }) {
   const library = useLibrary();
   const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
@@ -86,11 +88,18 @@ export function LibraryPage(props: {
           <Show
             when={artistView()}
             fallback={
-              <AlbumGrid
-                albums={albums()}
-                reverse={props.reverse}
-                emptyIcon={sectionIcon(props.section)}
-              />
+              <Show
+                when={props.section === "albums" && props.coverFlow}
+                fallback={
+                  <AlbumGrid
+                    albums={albums()}
+                    reverse={props.reverse}
+                    emptyIcon={sectionIcon(props.section)}
+                  />
+                }
+              >
+                <CoverFlow albums={albums()} />
+              </Show>
             }
           >
             <ul class="artist-grid">

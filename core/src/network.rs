@@ -414,6 +414,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/collections"
                     | "/api/me/v1/collection"
                     | "/api/me/v1/collection/albums"
+                    | "/api/me/v1/search"
                     | "/api/me/v1/history"
             ) || task_path(path, false)
                 || playlist_path(path)
@@ -496,3 +497,7 @@ fn account_path(path: &str, sessions: bool) -> bool {
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
 }
+
+#[cfg(test)]
+#[path = "network_test_support.rs"]
+pub(crate) mod test_support;
