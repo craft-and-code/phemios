@@ -1,3 +1,5 @@
+import { EncyclopediaPage } from "./EncyclopediaPage";
+import { AchievementsPage } from "./AchievementsPage";
 import { AdvancedSearchPage } from "./AdvancedSearchPage";
 
 import { PlaybackPage } from "./PlaybackPage";
@@ -23,6 +25,12 @@ export function WorkspacePage(props: { section: Section; query: string }) {
   return (
     <Suspense fallback={<p role="status">{t("Chargement…")}</p>}>
       <Switch>
+        <Match when={props.section === "encyclopedia"}>
+          <EncyclopediaPage query={props.query} />
+        </Match>
+        <Match when={props.section === "achievements"}>
+          <AchievementsPage />
+        </Match>
         <Match when={props.section === "advanced-search"}>
           <AdvancedSearchPage />
         </Match>

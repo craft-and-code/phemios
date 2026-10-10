@@ -48,13 +48,36 @@ export function AdvancedSearchPage() {
       );
       if (!status.capabilities?.includes("advanced_search"))
         throw new Error(t("Mettez à jour puis redémarrez Aède pour la recherche avancée."));
-      return requestAede(
+      const identity = library.sessionFor(
+        source === "local" ? "track:@phemios/local/identity" : "track:identity",
+      );
+      const answer = await requestAede(
         "/api/me/v1/search",
         { expression: saved.expression, offset: String(at), limit: "50" },
         "GET",
         null,
         source,
       );
+      if (
+        identity !==
+        library.sessionFor(source === "local" ? "track:@phemios/local/identity" : "track:identity")
+      )
+        throw new Error(t("Session invalide."));
+      if (
+        at === 0 &&
+        status.capabilities.includes("private_achievements") &&
+        identity &&
+        identity.account.role !== "auditor"
+      ) {
+        await requestAede(
+          "/api/me/v1/achievements",
+          {},
+          "POST",
+          { advanced_search: true },
+          source,
+        ).catch(() => undefined);
+      }
+      return answer;
     });
   });
   const [results] = createResource(

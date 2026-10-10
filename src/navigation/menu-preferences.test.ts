@@ -77,3 +77,21 @@ it("retains movable headings/spacers across reload and omits groups with every m
     saveMenuPreferences(store, { order: [...order, "separator:bad/path"], hidden: [] }),
   ).toThrow();
 });
+
+it("moves the legacy default tools order but preserves explicitly customised tools", () => {
+  const legacy = defaultMenuOrder().filter(
+    (r) => !["achievements", "encyclopedia", "relations"].includes(r),
+  );
+  legacy.splice(legacy.indexOf("analysis") + 1, 0, "relations");
+  const migrated = readMenuPreferences({
+    getItem: () => JSON.stringify({ version: 2, order: legacy, hidden: [] }),
+  }).order;
+  expect(migrated.indexOf("relations")).toBeLessThan(migrated.indexOf("doctor"));
+  expect(migrated.indexOf("encyclopedia")).toBeGreaterThan(migrated.indexOf("podcasts"));
+  const custom = moveMenu(defaultMenuOrder(), "relations", "analysis");
+  expect(
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 2, order: custom, hidden: [] }),
+    }).order,
+  ).toEqual(custom);
+});

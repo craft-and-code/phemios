@@ -4,6 +4,7 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { announceSetting } from "../library/saved-settings";
 import { parseLyrics, currentLyricText } from "../library/lyrics";
+import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
 import { AudioScene } from "../components/AudioScene";
@@ -17,6 +18,7 @@ export function PlaybackPage() {
   const library = useLibrary(),
     player = library.player,
     [queue, setQueue] = createSignal(false),
+    [spectrum, setSpectrum] = createSignal(false),
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
   onMount(() => {
@@ -25,6 +27,12 @@ export function PlaybackPage() {
     onCleanup(() => window.removeEventListener("phemios-queue-toggle", toggleQueue));
     function restore() {
       try {
+        const savedBands = localStorage.getItem("phemios.spectrum");
+        if (savedBands !== null) {
+          const value = JSON.parse(savedBands);
+          if (typeof value !== "boolean") throw new Error(t("Préférences invalides."));
+          setSpectrum(value);
+        }
         const raw = localStorage.getItem("phemios.visualizer");
         if (raw) {
           const value = JSON.parse(raw);
@@ -127,8 +135,34 @@ export function PlaybackPage() {
                 </button>
               )}
             </For>
+            <button
+              class="icon-button quiet"
+              title={t("Afficher les fréquences")}
+              aria-label={t("Afficher les fréquences")}
+              aria-pressed={spectrum()}
+              disabled={!player.state().spectrum_hz || player.state().device === "@hqplayer"}
+              onClick={() => {
+                try {
+                  const value = !spectrum();
+                  localStorage.setItem("phemios.spectrum", JSON.stringify(value));
+                  announceSetting("phemios.spectrum", JSON.stringify(value));
+                  setSpectrum(value);
+                } catch (failure) {
+                  setError(String(failure));
+                }
+              }}
+            >
+              <Icon name="spectrum" />
+            </button>
           </div>
           <div class="playback-visuals">
+            <Show when={spectrum() && player.state().spectrum_hz}>
+              <FrequencyBars
+                levels={player.state().spectrum ?? []}
+                frequencies={player.state().spectrum_hz ?? []}
+                rate={player.state().sample_rate}
+              />
+            </Show>
             <AudioScene
               scene={scene()}
               playing={player.state().status === "playing"}

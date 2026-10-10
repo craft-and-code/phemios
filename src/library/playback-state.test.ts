@@ -62,3 +62,17 @@ it("retains repeat modes and refuses unknown modes without inventing playback", 
   expect(parsePlayback(state).repeat).toBe("off");
   expect(() => parsePlayback({ ...state, repeat: "forever" })).toThrow();
 });
+
+it("validates measured frequency banks together without inventing legacy data", () => {
+  const spectrum = Array(24).fill(0.2),
+    spectrum_hz = Array.from({ length: 24 }, (_, i) => 32 * (i + 1));
+  expect(parsePlayback({ ...state, spectrum, spectrum_hz }).spectrum).toEqual(spectrum);
+  expect(parsePlayback(state).spectrum).toBeUndefined();
+  for (const change of [
+    { spectrum: Array(23).fill(0) },
+    { spectrum: [NaN, ...spectrum.slice(1)] },
+    { spectrum_hz: [0, ...spectrum_hz.slice(1)] },
+    { spectrum_hz: undefined },
+  ])
+    expect(() => parsePlayback({ ...state, spectrum, spectrum_hz, ...change })).toThrow();
+});

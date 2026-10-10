@@ -195,6 +195,7 @@ export function createJobs(
     );
     if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
     track(result, kind, source, release);
+    return result.task_id;
   }
   async function cancel(id: number, source: SourceId = "server") {
     await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", {}, source);

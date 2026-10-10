@@ -24,7 +24,8 @@ export function SettingsShortcuts() {
       .replace("Space", t("Espace"))
       .replace("ArrowLeft", "←")
       .replace("ArrowRight", "→")
-      .replace("Comma", ",");
+      .replace("Comma", ",")
+      .replaceAll("+", " + ");
   return (
     <section class="settings-card">
       <div class="section-heading">

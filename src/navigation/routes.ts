@@ -1,5 +1,7 @@
 import { t } from "../i18n";
 export type Section =
+  | "encyclopedia"
+  | "achievements"
   | "artists"
   | "albums"
   | "tracks"
@@ -44,13 +46,15 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "rated", label: t("Albums notés"), symbol: "star" },
   { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
+  { id: "achievements", label: t("Trophées"), symbol: "trophy" },
   { id: "history", label: t("Historique"), symbol: "history" },
   { id: "playlists", label: t("Exports M3U"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
+  { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },
+  { id: "relations", label: t("Relations"), symbol: "graph" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
   { id: "analysis", label: t("Analyses"), symbol: "wave" },
-  { id: "relations", label: t("Relations"), symbol: "graph" },
   { id: "statistics", label: t("Statistiques"), symbol: "stats" },
   { id: "players", label: t("Lecteurs externes"), symbol: "drive" },
 ];

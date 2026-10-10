@@ -24,9 +24,20 @@ const headings = {
   "heading:tools": "OUTILS",
 } as const;
 export function menuHeading(id: Section): MenuItem {
-  if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
+  if (
+    [
+      "moods",
+      "favourites",
+      "rated",
+      "tags",
+      "collections",
+      "history",
+      "playlists",
+      "achievements",
+    ].includes(id)
+  )
     return "heading:personal";
-  if (["radio", "podcasts"].includes(id)) return "heading:sources";
+  if (["radio", "podcasts", "encyclopedia"].includes(id)) return "heading:sources";
   if (["doctor", "analysis", "relations", "statistics", "players"].includes(id))
     return "heading:tools";
   return "heading:library";
@@ -84,8 +95,22 @@ function validate(raw: unknown): MenuPreferences {
     [...value.order, ...value.hidden].some((id) => !ids().includes(id as Section))
   )
     throw new Error(t("Configuration du menu illisible."));
-  const saved = value.order,
-    oldDefault = ids().filter((id) => saved.includes(id));
+  const saved = [...value.order];
+  const tools = saved.filter((id) =>
+    ["doctor", "analysis", "relations", "statistics", "players"].includes(id),
+  );
+  if (tools.join(",") === "doctor,analysis,relations,statistics,players") {
+    saved.splice(saved.indexOf("relations"), 1);
+    saved.splice(saved.indexOf("doctor"), 0, "relations");
+  }
+  for (const id of ["encyclopedia", "achievements"] as const) {
+    if (!saved.includes(id) && value.version === 2) {
+      const anchor = id === "encyclopedia" ? "podcasts" : "history";
+      const at = saved.indexOf(anchor);
+      if (at >= 0) saved.splice(at + (id === "encyclopedia" ? 1 : 0), 0, id);
+    }
+  }
+  const oldDefault = ids().filter((id) => saved.includes(id));
   const untouched =
     value.version === 1 &&
     saved.length === oldDefault.length &&

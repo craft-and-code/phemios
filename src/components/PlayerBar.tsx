@@ -61,7 +61,16 @@ export function PlayerBar() {
                 )}
               </Show>
               <PlayingBars reference={player.current()?.reference ?? ""} />
-              {player.current()?.title ?? t("Aucun morceau en lecture")}
+              <Show when={player.current()} fallback={t("Aucun morceau en lecture")}>
+                {(row) => (
+                  <a
+                    class="playing-track-link"
+                    href={`#/track/${encodeURIComponent(row().reference)}`}
+                  >
+                    {row().title}
+                  </a>
+                )}
+              </Show>
             </strong>
             <Show when={player.current()}>
               {(row) => <PlayingFavourite reference={row().reference} />}
@@ -205,6 +214,20 @@ export function PlayerBar() {
         >
           <Icon name="visualizer" />
         </a>
+        <button
+          class="icon-button"
+          aria-label={t("Fondu entre les titres")}
+          title={t("Fondu entre les titres")}
+          disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
+          aria-pressed={player.crossfade() > 0 && player.policy() === "dsp"}
+          onClick={() =>
+            void player.chooseCrossfade(
+              player.crossfade() > 0 && player.policy() === "dsp" ? 0 : 3000,
+            )
+          }
+        >
+          <Icon name="crossfade" />
+        </button>
         <details
           class="audio-settings"
           ref={(element) => {
@@ -282,6 +305,19 @@ export function PlayerBar() {
                     disabled: true,
                   },
                 ]}
+              />
+            </label>
+            <label>
+              {t("Fondu entre les titres")} · {player.crossfade() / 1000} s
+              <input
+                type="range"
+                min="0"
+                max="10000"
+                step="500"
+                value={player.crossfade()}
+                disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
+                aria-label={t("Durée du fondu")}
+                onChange={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />
             </label>
             <small>

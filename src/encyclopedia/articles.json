@@ -1,0 +1,274 @@
+[
+  {
+    "id": "loudness-war",
+    "category": "history",
+    "title": {
+      "fr": "La guerre du volume",
+      "en": "The loudness war"
+    },
+    "body": {
+      "fr": "La « loudness war » désigne la recherche d’un niveau perçu plus élevé, notamment par compression et limitation. Un master plus fort peut réduire les contrastes. Pour comparer deux éditions, égalisez le volume d’écoute ; l’édition la plus forte n’est pas nécessairement la plus fidèle.",
+      "en": "The loudness war describes the pursuit of greater perceived level, often through compression and limiting. A louder master can reduce contrasts. Match listening levels when comparing editions; the louder edition is not necessarily the more faithful one."
+    },
+    "source": {
+      "title": "AES · Vickers, 2010",
+      "url": "https://aes.org/publications/elibrary-page/?id=15598"
+    }
+  },
+  {
+    "id": "r128",
+    "category": "history",
+    "title": {
+      "fr": "2010 : mesurer le volume perçu",
+      "en": "2010: measuring perceived level"
+    },
+    "body": {
+      "fr": "La première version d’EBU R 128 date de 2010. Cette recommandation de diffusion vise un niveau moyen de −23 LUFS et associe niveau perçu, Loudness Range et True Peak. C’est une référence de diffusion, pas une obligation de remasteriser vos disques à cette valeur.",
+      "en": "The first EBU R 128 version dates from 2010. This broadcast recommendation targets −23 LUFS average loudness, alongside Loudness Range and True Peak. It is a broadcast reference, not a requirement to remaster your albums to that value."
+    },
+    "source": {
+      "title": "EBU R 128",
+      "url": "https://tech.ebu.ch/publications/r128"
+    }
+  },
+  {
+    "id": "lufs",
+    "category": "glossary",
+    "title": {
+      "fr": "LUFS : volume perçu",
+      "en": "LUFS: perceived loudness"
+    },
+    "body": {
+      "fr": "Le niveau intégré résume le programme mesuré selon BS.1770. Comparez les résultats obtenus avec la même méthode. Deux pistes de même niveau intégré peuvent avoir des attaques et des contrastes très différents. Ne confondez pas ce nombre avec la position du bouton de volume.",
+      "en": "Integrated loudness summarises the measured programme using BS.1770. Compare results measured by the same method. Tracks with equal integrated loudness can have very different transients and contrasts. This number is not your volume knob position."
+    },
+    "source": {
+      "title": "ITU-R BS.1770",
+      "url": "https://www.itu.int/rec/R-REC-BS.1770"
+    }
+  },
+  {
+    "id": "true-peak",
+    "category": "glossary",
+    "title": {
+      "fr": "True Peak et crête d’échantillon",
+      "en": "True Peak and sample peak"
+    },
+    "body": {
+      "fr": "Une crête d’échantillon décrit les valeurs numériques ; le True Peak estime les crêtes du signal reconstruit entre ces valeurs. Un résultat proche de la limite mérite une vérification à l’écoute. Le True Peak aide à apprécier la marge, sans établir à lui seul la qualité artistique.",
+      "en": "Sample peak describes stored numeric values; True Peak estimates reconstructed peaks between them. Results near the ceiling deserve a listening check. True Peak describes headroom, without determining artistic quality on its own."
+    },
+    "source": {
+      "title": "ITU-R BS.1770",
+      "url": "https://www.itu.int/rec/R-REC-BS.1770"
+    }
+  },
+  {
+    "id": "lra",
+    "category": "glossary",
+    "title": {
+      "fr": "LRA : variations du niveau",
+      "en": "LRA: loudness variation"
+    },
+    "body": {
+      "fr": "La Loudness Range complète la mesure du niveau intégré : elle décrit sa variation dans le programme. Une faible valeur peut convenir à un morceau dense, une valeur plus élevée à des contrastes marqués. Comparez des œuvres comparables ; ce n’est pas une note de qualité.",
+      "en": "Loudness Range complements integrated loudness by describing its variation over the programme. A small value can suit dense music; a larger value can reflect stronger contrasts. Compare comparable works; this is not a quality score."
+    },
+    "source": {
+      "title": "EBU Tech 3342",
+      "url": "https://tech.ebu.ch/publications/tech3342"
+    }
+  },
+  {
+    "id": "md5",
+    "category": "analysis",
+    "title": {
+      "fr": "MD5 FLAC : OK, KO ou absent",
+      "en": "FLAC MD5: OK, failed or absent"
+    },
+    "body": {
+      "fr": "Le bloc STREAMINFO peut contenir l’empreinte MD5 du PCM décodé. Une comparaison concordante vérifie ce contenu ; une empreinte absente ne prouve pas une corruption. Un MP3 n’a pas cette empreinte FLAC. L’empreinte du fichier entier est une autre mesure.",
+      "en": "STREAMINFO can hold an MD5 signature of decoded PCM. A matching comparison verifies that content; an absent signature does not prove corruption. MP3 has no FLAC signature. A hash of the whole file is a different measurement."
+    },
+    "source": {
+      "title": "Xiph · FLAC format",
+      "url": "https://www.xiph.org/flac/documentation_format_overview.html"
+    }
+  },
+  {
+    "id": "lossless",
+    "category": "glossary",
+    "title": {
+      "fr": "Sans perte ne signifie pas sans compression",
+      "en": "Lossless does not mean uncompressed"
+    },
+    "body": {
+      "fr": "FLAC compresse sans perte : le décodage retrouve les échantillons d’origine. La taille du fichier peut varier avec le contenu et le réglage de compression. Une petite taille n’est donc pas, à elle seule, une dégradation.",
+      "en": "FLAC compresses losslessly: decoding recovers the original samples. File size varies with content and compression settings. A smaller file alone therefore does not imply degradation."
+    },
+    "source": {
+      "title": "Xiph · FLAC",
+      "url": "https://www.xiph.org/flac/index.html"
+    }
+  },
+  {
+    "id": "check",
+    "category": "analysis",
+    "title": {
+      "fr": "Vérification et écoute répondent à deux questions",
+      "en": "Verification and listening answer different questions"
+    },
+    "body": {
+      "fr": "Le mode de test FLAC vérifie le flux sans écrire de fichier décodé. Une vérification technique réussie ne garantit pas un bon mastering. Commencez par l’intégrité, puis comparez les niveaux et écoutez les passages qui vous préoccupent.",
+      "en": "FLAC test mode checks the stream without writing a decoded file. Successful technical verification does not guarantee good mastering. Start with integrity, then compare levels and listen to the passages of concern."
+    },
+    "source": {
+      "title": "Xiph · outil FLAC",
+      "url": "https://xiph.org/flac/documentation_tools_flac.html"
+    }
+  },
+  {
+    "id": "spectrogram",
+    "category": "analysis",
+    "title": {
+      "fr": "Lire un spectre avec prudence",
+      "en": "Reading a spectrum carefully"
+    },
+    "body": {
+      "fr": "Un spectre décrit la répartition des fréquences. Une limite abrupte peut avoir plusieurs causes : instrument, enregistrement, filtrage ou encodage. Gardez le contexte du morceau ; ce dessin seul ne permet pas de certifier qu’un fichier vient d’un format avec perte.",
+      "en": "A spectrum describes frequency distribution. An abrupt limit can have several causes: instruments, recording, filtering or encoding. Keep the musical context; the image alone cannot certify that a file originated in a lossy format."
+    },
+    "source": {
+      "title": "Guide de lecture Phémios",
+      "url": "https://craft-and-code.github.io/FlacCompagnon/"
+    }
+  },
+  {
+    "id": "dynamic",
+    "category": "analysis",
+    "title": {
+      "fr": "Dynamique : comparer des passages",
+      "en": "Dynamics: comparing passages"
+    },
+    "body": {
+      "fr": "Observez les écarts entre attaques et niveau moyen, puis écoutez au même volume. Les chiffres décrivent des propriétés du signal, pas une préférence universelle. Gardez les mêmes paramètres d’analyse pour comparer des éditions.",
+      "en": "Observe differences between transients and average level, then listen at matched volume. Numbers describe signal properties, not a universal preference. Keep analysis settings identical when comparing editions."
+    },
+    "source": {
+      "title": "Guide de lecture Phémios",
+      "url": "https://craft-and-code.github.io/FlacCompagnon/"
+    }
+  },
+  {
+    "id": "missing",
+    "category": "analysis",
+    "title": {
+      "fr": "Pas de résultat n’est pas un mauvais résultat",
+      "en": "No result is not a bad result"
+    },
+    "body": {
+      "fr": "« Non analysé » signifie que cette mesure n’est pas disponible. Lancez l’analyse nécessaire, conservez son rapport et vérifiez sa portée : piste ou album. Des rapports différents peuvent exposer des champs différents sans que le fichier audio ait changé.",
+      "en": "Not analysed means the measurement is unavailable. Run the needed analysis, retain its report and check its scope: track or album. Different reports can expose different fields without any change to the audio file."
+    },
+    "source": {
+      "title": "Guide de lecture Phémios",
+      "url": "https://craft-and-code.github.io/FlacCompagnon/"
+    }
+  },
+  {
+    "id": "eq",
+    "category": "glossary",
+    "title": {
+      "fr": "DSP et égalisation",
+      "en": "DSP and equalisation"
+    },
+    "body": {
+      "fr": "Une égalisation utilise des filtres pour modifier certaines bandes de fréquences. La fréquence centrale et le facteur Q déterminent leur position et leur largeur. Le fondu mélange deux signaux : ce traitement modifie également les échantillons et appartient au mode DSP.",
+      "en": "Equalisation uses filters to change selected frequency bands. Centre frequency and Q determine position and width. Crossfade mixes two signals: it also changes samples and belongs to DSP mode."
+    },
+    "source": {
+      "title": "W3C · Audio EQ Cookbook",
+      "url": "https://www.w3.org/TR/audio-eq-cookbook/"
+    }
+  },
+  {
+    "id": "edition",
+    "category": "history",
+    "title": {
+      "fr": "Un album, plusieurs éditions",
+      "en": "One album, several editions"
+    },
+    "body": {
+      "fr": "MusicBrainz distingue l’enregistrement, la publication précise et le groupe de publications. Deux CD portant le même titre peuvent être des éditions différentes. Les crédits relient aussi des personnes et des œuvres sans les transformer en artiste principal de chaque album.",
+      "en": "MusicBrainz distinguishes recordings, specific releases and release groups. CDs with the same title can be different editions. Credits also connect people and works without making them the principal artist of every album."
+    },
+    "source": {
+      "title": "MusicBrainz · API",
+      "url": "https://musicbrainz.org/doc/MusicBrainz_API"
+    }
+  },
+  {
+    "id": "api",
+    "category": "sources",
+    "title": {
+      "fr": "Des API pour prolonger l’encyclopédie",
+      "en": "APIs to extend the encyclopedia"
+    },
+    "body": {
+      "fr": "MusicBrainz propose des métadonnées structurées en JSON ; MediaWiki expose le contenu des pages. L’encyclopédie actuelle reste locale. Une importation future devra respecter la licence de chaque source, conserver son attribution et être demandée explicitement.",
+      "en": "MusicBrainz provides structured JSON metadata; MediaWiki exposes page content. This encyclopedia currently remains local. A future import must respect each source licence, retain attribution and be explicitly requested."
+    },
+    "source": {
+      "title": "MediaWiki · REST API",
+      "url": "https://www.mediawiki.org/wiki/API:REST_API"
+    }
+  },
+  {
+    "id": "edison",
+    "category": "history",
+    "title": {
+      "fr": "1877 : une comptine dans un cylindre",
+      "en": "1877: a nursery rhyme on a cylinder"
+    },
+    "body": {
+      "fr": "La Library of Congress décrit l’essai du phonographe d’Edison en 1877 avec une comptine, récit devenu emblématique de l’enregistrement sonore. L’appareil utilisait une feuille d’étain sur un cylindre : une voix pouvait être enregistrée puis reproduite. Cette histoire rappelle que les premiers essais portaient déjà sur la restitution d’une performance, bien avant le disque numérique.",
+      "en": "The Library of Congress describes Edison’s 1877 phonograph test with a nursery rhyme, an account that became emblematic of sound recording. The device used tinfoil on a cylinder: a voice could be recorded and reproduced. Early experiments already concerned reproducing a performance, long before digital discs."
+    },
+    "source": {
+      "title": "Library of Congress · Cylinder phonograph",
+      "url": "https://www.loc.gov/collections/edison-company-motion-pictures-and-sound-recordings/articles-and-essays/history-of-edison-sound-recordings/history-of-the-cylinder-phonograph/"
+    }
+  },
+  {
+    "id": "cd",
+    "category": "history",
+    "title": {
+      "fr": "1982–1983 : le CD traverse les frontières",
+      "en": "1982–1983: the CD crosses borders"
+    },
+    "body": {
+      "fr": "Le Compact Disc a été développé conjointement par Philips et Sony. Philips situe le lancement au Japon à la fin de 1982, puis l’introduction en Europe en 1983. Un même support peut ainsi avoir plusieurs dates d’arrivée selon le marché ; gardez cette distinction lorsque vous comparez l’année d’une œuvre et celle de votre édition.",
+      "en": "Philips and Sony jointly developed the Compact Disc. Philips dates the Japanese launch to late 1982 and its European introduction to 1983. One medium can therefore have different launch dates by market; retain that distinction when comparing the year of a work with the year of your edition."
+    },
+    "source": {
+      "title": "Philips · Compact Disc, 1982–1983",
+      "url": "https://www.philips.com/a-w/about/news/media-library/20190101-Philips-Compact-Disc-player-1982-1983.html"
+    }
+  },
+  {
+    "id": "reading-report",
+    "category": "analysis",
+    "title": {
+      "fr": "Lire un rapport FlacCompagnon, étape par étape",
+      "en": "Reading a FlacCompagnon report, step by step"
+    },
+    "body": {
+      "fr": "Commencez par la portée : le rapport concerne-t-il cette piste, tout l’album, ou une ancienne version du fichier ? Vérifiez ensuite les données disponibles. Une absence de mesure signifie « inconnu », pas « mauvais ».\n\nPour l’intégrité, distinguez une vérification réussie, un échec, une empreinte absente et un format qui ne fournit pas cette empreinte. En cas d’échec confirmé, conservez le fichier et le rapport avant de comparer avec une sauvegarde.\n\nPour le son, comparez des éditions de la même œuvre avec les mêmes paramètres. Mettez les volumes d’écoute au même niveau, repérez les passages calmes et les attaques, puis écoutez-les. Le niveau intégré, les crêtes, les contrastes et le spectre décrivent des aspects complémentaires : aucun chiffre seul ne donne une note artistique.\n\nTéléchargez le JSON pour garder le détail et la portée de la mesure. Si deux pistes montrent des champs différents, vérifiez d’abord les rapports disponibles et leur version avant de conclure à une différence de qualité.",
+      "en": "Start with scope: does the report describe this track, the whole album or an older file version? Then check which measurements are available. An absent measurement means unknown, not bad.\n\nFor integrity, distinguish successful verification, failure, absent signature and a format that supplies no such signature. After a confirmed failure, retain the file and report before comparing with a backup.\n\nFor sound, compare editions of the same work using identical analysis settings. Match listening levels, identify quiet passages and transients, then listen. Integrated level, peaks, contrasts and spectrum describe complementary properties: no single number provides an artistic grade.\n\nDownload the JSON to retain measurement detail and scope. If tracks expose different fields, first inspect the available reports and their versions before concluding that quality differs."
+    },
+    "source": {
+      "title": "Guide de lecture Phémios / FlacCompagnon",
+      "url": "https://craft-and-code.github.io/FlacCompagnon/"
+    }
+  }
+]

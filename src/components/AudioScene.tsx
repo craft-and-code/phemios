@@ -1,5 +1,6 @@
 import { createEffect, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
+import { orbit, orbitDrag } from "../visualizer/orbit";
 import { particles, type Scene } from "../visualizer/particles";
 /** Perspective-projected 3D particles follow native consumed-sample RMS envelopes; pause holds the last pose. */
 export function AudioScene(props: { scene: Scene; playing: boolean; levels: readonly number[] }) {
@@ -9,6 +10,9 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     last = 0,
     lastDraw = 0,
     bands: readonly number[] = [0, 0, 0, 0];
+  let yaw = 0,
+    pitch = 0,
+    drag: { id: number; x: number; y: number; yaw: number; pitch: number } | undefined;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   function draw() {
     if (!canvas) return;
@@ -29,7 +33,9 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     ctx.clearRect(0, 0, width, height);
     const color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
       scale = Math.min(width, height) * 0.32;
-    const points = particles(props.scene, clock, reduced.matches ? [0, 0, 0, 0] : bands);
+    const points = particles(props.scene, clock, reduced.matches ? [0, 0, 0, 0] : bands).map((p) =>
+      orbit(p, yaw, pitch),
+    );
     points.sort((a, b) => b.z - a.z);
     for (const point of points) {
       const perspective = 3.4 / (3.4 + point.z),
@@ -52,7 +58,7 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     }
     const elapsed = last ? Math.min(100, timestamp - last) / 1000 : 0;
     last = timestamp;
-    clock += (elapsed * bands.reduce((sum, value) => sum + value, 0)) / 4;
+    clock += elapsed * (0.12 + bands.reduce((sum, value) => sum + value, 0) / 4);
     if (timestamp - lastDraw >= 33) {
       lastDraw = timestamp;
       draw();
@@ -94,6 +100,48 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
       class="audio-scene"
       ref={(element) => {
         canvas = element;
+      }}
+      tabindex="0"
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.currentTarget.focus();
+        drag = { id: event.pointerId, x: event.clientX, y: event.clientY, yaw, pitch };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (drag?.id === event.pointerId) {
+          [yaw, pitch] = orbitDrag(
+            drag.yaw,
+            drag.pitch,
+            event.clientX - drag.x,
+            event.clientY - drag.y,
+          );
+          draw();
+        }
+      }}
+      onPointerUp={() => {
+        drag = undefined;
+      }}
+      onPointerCancel={() => {
+        drag = undefined;
+      }}
+      onKeyDown={(event) => {
+        if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home"].includes(event.key))
+          return;
+        event.preventDefault();
+        if (event.key === "Home") {
+          yaw = 0;
+          pitch = 0;
+        } else {
+          [yaw, pitch] = orbitDrag(
+            yaw,
+            pitch,
+            event.key === "ArrowLeft" ? -15 : event.key === "ArrowRight" ? 15 : 0,
+            event.key === "ArrowUp" ? -15 : event.key === "ArrowDown" ? 15 : 0,
+          );
+        }
+        draw();
       }}
       role="img"
       aria-label={t("Animation 3D réactive au son. La pause fige l’animation.")}

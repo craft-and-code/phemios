@@ -1,4 +1,9 @@
 const paths: Record<string, string> = {
+  crossfade: "M3 6c8 0 10 12 18 12M3 18C11 18 13 6 21 6M3 3v18M21 3v18",
+  book: "M12 5c-3-3-7-3-10-2v16c3-1 7-1 10 2m0-16c3-3 7-3 10-2v16c-3-1-7-1-10 2V5Z",
+  trophy:
+    "M7 3h10v6a5 5 0 0 1-10 0V3ZM7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4M12 14v6M7 21h10",
+  lock: "M5 10h14v11H5V10ZM8 10V6a4 4 0 0 1 8 0v4M12 14v3",
   "cover-flow": "M7 5h10v14H7V5ZM3 7l-2 1v8l2 1V7ZM21 7l2 1v8l-2 1V7Z",
   keyboard:
     "M2 5h20v14H2V5ZM5 9h.01M9 9h.01M13 9h.01M17 9h.01M5 13h.01M9 13h.01M13 13h.01M17 13h.01M7 16h10",

@@ -379,7 +379,10 @@ export function App() {
                 title={t("Vue compacte")}
                 aria-label={t("Vue compacte")}
                 aria-pressed={compact()}
-                onClick={() => setCompact(!compact())}
+                onClick={() => {
+                  setCoverFlow(false);
+                  setCompact(!compact());
+                }}
               >
                 <Icon name="layers" />
               </button>
@@ -389,7 +392,10 @@ export function App() {
                   title={t("Cover Flow")}
                   aria-label={t("Cover Flow")}
                   aria-pressed={coverFlow()}
-                  onClick={() => setCoverFlow(!coverFlow())}
+                  onClick={() => {
+                    setCompact(false);
+                    setCoverFlow(!coverFlow());
+                  }}
                 >
                   <Icon name="cover-flow" />
                 </button>
@@ -411,6 +417,7 @@ export function App() {
               "tracks",
               "tags",
               "labels",
+              "encyclopedia",
               "radio",
               "podcasts",
               "settings",

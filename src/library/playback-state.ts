@@ -1,6 +1,8 @@
 import { t } from "../i18n";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
+  spectrum?: readonly number[];
+  spectrum_hz?: readonly number[];
   shuffled: boolean;
   repeat: "off" | "one" | "all";
   queue: readonly number[];
@@ -77,6 +79,18 @@ export function parsePlayback(value: unknown): PlaybackState {
       !v.levels.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1))
   )
     throw new Error(t("Niveaux audio invalides."));
+  if (
+    (v.spectrum !== undefined || v.spectrum_hz !== undefined) &&
+    (!Array.isArray(v.spectrum) ||
+      v.spectrum.length !== 24 ||
+      !v.spectrum.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1) ||
+      !Array.isArray(v.spectrum_hz) ||
+      v.spectrum_hz.length !== 24 ||
+      !v.spectrum_hz.every(
+        (n) => typeof n === "number" && Number.isFinite(n) && n > 0 && n <= 20000,
+      ))
+  )
+    throw new Error(t("Niveaux audio invalides."));
   if (v.queue_id !== undefined && !count(v.queue_id))
     throw new Error(t("File de lecture invalide."));
   if (v.seek_id !== undefined && !count(v.seek_id))
@@ -100,6 +114,9 @@ export function parsePlayback(value: unknown): PlaybackState {
   )
     throw new Error(t("File de lecture invalide."));
   return {
+    ...(v.spectrum === undefined
+      ? {}
+      : { spectrum: v.spectrum as number[], spectrum_hz: v.spectrum_hz as number[] }),
     ...v,
     shuffled: v.shuffled ?? false,
     repeat: v.repeat ?? "off",

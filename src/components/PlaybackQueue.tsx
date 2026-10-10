@@ -1,3 +1,4 @@
+import { QueueLyrics } from "./QueueLyrics";
 import { QueueSave } from "./QueueSave";
 import { locale } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -72,6 +73,7 @@ export function PlaybackQueue(props: { onClose: () => void }) {
           <Icon name="reverse" />
         </button>
         <QueueSave />
+        <QueueLyrics />
       </div>
       <Show when={player.error()}>
         <Feedback error message={player.error()} />
