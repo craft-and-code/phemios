@@ -18,3 +18,10 @@ pub(crate) fn runtime_info() -> RuntimeInfo {
         native: true,
     }
 }
+
+/// Open an explicit source URL in the system browser without exposing shell or file-opening capabilities.
+#[tauri::command]
+pub(crate) async fn external_open(version: u32, url: String) -> Result<(), String> {
+    crate::aede::bridge(version)?;
+    crate::aede::blocking(move || phemios_core::external_links::open_browser(&url)).await
+}

@@ -1426,5 +1426,13 @@
   "Aucun article enregistré dans cette sélection.": "No saved article in this selection.",
   "Chargement de l’article…": "Loading article…",
   "Fiches de référence": "Reference entries",
-  "Articles enregistrés": "Saved articles"
+  "Articles enregistrés": "Saved articles",
+  "Lien externe invalide.": "Invalid external link.",
+  "Seuls les liens HTTPS sans identifiants peuvent être ouverts.": "Only HTTPS links without credentials can be opened.",
+  "Navigateur système indisponible.": "System browser unavailable.",
+  "Impossible d’ouvrir le navigateur système.": "Unable to open the system browser.",
+  "Langue des articles": "Article language",
+  "Articles en français": "Articles in French",
+  "Articles en anglais": "Articles in English",
+  "Wikipédia": "Wikipedia"
 }

@@ -1,11 +1,13 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
-import { t, locale } from "../i18n";
+import { createMemo, createSignal, createEffect, on, For, Show } from "solid-js";
+import { t, locale, type Language } from "../i18n";
 import { encyclopediaRows } from "../encyclopedia/catalog";
 import { WikipediaPanel } from "../encyclopedia/WikipediaPanel";
 import { EmptyState } from "../components/EmptyState";
 /** Curated bilingual reference material stays available without an Aède account. */
 export function EncyclopediaPage(props: { query: string }) {
   const [mode, setMode] = createSignal<"reference" | "search" | "saved">("reference");
+  const [language, setLanguage] = createSignal<Language>(locale());
+  createEffect(on(locale, setLanguage));
   const [category, setCategory] = createSignal("");
   const rows = createMemo(() => encyclopediaRows(props.query, category(), locale()));
   return (
@@ -15,16 +17,42 @@ export function EncyclopediaPage(props: { query: string }) {
           {t("Fiches de référence")}
         </button>
         <button aria-pressed={mode() === "search"} onClick={() => setMode("search")}>
-          Wikipédia
+          {t("Wikipédia")}
         </button>
         <button aria-pressed={mode() === "saved"} onClick={() => setMode("saved")}>
           {t("Articles enregistrés")}
         </button>
+        <Show when={mode() !== "reference"}>
+          <div
+            class="choices wikipedia-language"
+            role="group"
+            aria-label={t("Langue des articles")}
+          >
+            <button
+              aria-pressed={language() === "fr"}
+              aria-label={t("Articles en français")}
+              onClick={() => setLanguage("fr")}
+            >
+              FR
+            </button>
+            <button
+              aria-pressed={language() === "en"}
+              aria-label={t("Articles en anglais")}
+              onClick={() => setLanguage("en")}
+            >
+              EN
+            </button>
+          </div>
+        </Show>
       </div>
       <Show
         when={mode() === "reference"}
         fallback={
-          <WikipediaPanel query={props.query} mode={mode() === "saved" ? "saved" : "search"} />
+          <WikipediaPanel
+            query={props.query}
+            language={language()}
+            mode={mode() === "saved" ? "saved" : "search"}
+          />
         }
       >
         <div class="choices">

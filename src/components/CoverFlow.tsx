@@ -1,4 +1,5 @@
-import { createMemo, createSignal, createEffect, on, For, Show } from "solid-js";
+import { createCoverScrub, animateCoverMove } from "../visualizer/cover-scrub";
+import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 import type { Album } from "../library/types";
 import { Artwork } from "./Artwork";
@@ -22,16 +23,34 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
   createEffect(
     on(
       () => props.albums.map((row) => row.reference).join("\0"),
-      () => setSelected(props.albums[0]?.reference ?? ""),
+      () => {
+        scrub.cancel();
+        setScrubbing(false);
+        setAnimated(false);
+        setSelected(props.albums[0]?.reference ?? "");
+      },
     ),
   );
-  const [dragging, setDragging] = createSignal(false);
+  const [dragging, setDragging] = createSignal(false),
+    [scrubbing, setScrubbing] = createSignal(false),
+    [animated, setAnimated] = createSignal(true);
   let drag: { id: number; x: number; start: number } | undefined,
     dragged = false;
   const choose = (value: number) => {
     const next = props.albums[Math.max(0, Math.min(props.albums.length - 1, value))];
-    if (next) setSelected(next.reference);
+    if (next) {
+      const target = props.albums.indexOf(next);
+      if (target === index()) return;
+      setAnimated(animateCoverMove(index(), target, scrubbing() || dragging()));
+      setSelected(next.reference);
+    }
   };
+  const scrub = createCoverScrub(choose);
+  const finishScrub = () => {
+    scrub.finish();
+    setScrubbing(false);
+  };
+  onCleanup(scrub.dispose);
   let movement = 0;
   return (
     <Show
@@ -40,6 +59,7 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
     >
       <div
         class="cover-flow"
+        classList={{ "flow-scrubbing": scrubbing(), "flow-jump": !animated() }}
         role="region"
         aria-label={t("Cover Flow")}
         tabindex="0"
@@ -162,7 +182,12 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
           step="1"
           value={index()}
           aria-label={t("Parcourir les pochettes")}
-          onInput={(event) => choose(Number(event.currentTarget.value))}
+          onPointerDown={() => setScrubbing(true)}
+          onPointerUp={finishScrub}
+          onPointerCancel={finishScrub}
+          onLostPointerCapture={finishScrub}
+          onChange={finishScrub}
+          onInput={(event) => scrub.move(Number(event.currentTarget.value))}
         />
       </div>
     </Show>

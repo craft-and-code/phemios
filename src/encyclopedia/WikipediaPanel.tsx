@@ -8,17 +8,17 @@ import { Icon } from "../components/Icon";
 import { createWikipediaExplorer } from "./explore";
 import { WikipediaReader } from "./WikipediaReader";
 /** Public exploration is explicit and account-independent; saved reading performs no request. */
-export function WikipediaPanel(props: { query: string; mode: "search" | "saved" }) {
-  const [term, setTerm] = createSignal(props.query),
-    [language, setLanguage] = createSignal<Language>(locale());
+export function WikipediaPanel(props: {
+  query: string;
+  mode: "search" | "saved";
+  language: Language;
+}) {
+  const [term, setTerm] = createSignal(props.query);
+  const language = () => props.language;
   const state = createWikipediaExplorer(
     { search: searchEncyclopedia, read: readEncyclopedia },
     language,
   );
-  createEffect(() => {
-    setLanguage(locale());
-    state.reset();
-  });
   createEffect(on(language, state.reset));
   createEffect(on(() => props.mode, state.back));
   onCleanup(state.dispose);
@@ -34,14 +34,6 @@ export function WikipediaPanel(props: { query: string; mode: "search" | "saved" 
   });
   return (
     <section class="wikipedia-panel" aria-label={t("Articles Wikipédia")}>
-      <div class="choices wikipedia-language">
-        <button aria-pressed={language() === "fr"} onClick={() => setLanguage("fr")}>
-          Français
-        </button>
-        <button aria-pressed={language() === "en"} onClick={() => setLanguage("en")}>
-          English
-        </button>
-      </div>
       <Show when={state.saved.error()}>
         <p class="error" role="alert">
           {state.saved.error()}

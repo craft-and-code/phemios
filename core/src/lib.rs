@@ -43,3 +43,6 @@ pub mod podcast_download;
 
 /// Explicit attributed public encyclopedia retrieval.
 pub mod encyclopedia;
+
+/// Validated system-browser handoff for explicit public source links.
+pub mod external_links;

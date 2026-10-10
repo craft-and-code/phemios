@@ -213,19 +213,28 @@ export function PlayerBar() {
         </div>
       </div>
       <div class="player-options">
-        <a
-          class="icon-button"
-          href="#/playback"
-          aria-label={t("Ouvrir la vue Lecture")}
-          title={t("Ouvrir la vue Lecture")}
-          aria-disabled={!active()}
-          tabindex={active() ? 0 : -1}
-          onClick={(event) => {
-            if (!active()) event.preventDefault();
-          }}
+        <Show
+          when={active()}
+          fallback={
+            <button
+              class="icon-button"
+              disabled
+              aria-label={t("Ouvrir la vue Lecture")}
+              title={t("Ouvrir la vue Lecture")}
+            >
+              <Icon name="visualizer" />
+            </button>
+          }
         >
-          <Icon name="visualizer" />
-        </a>
+          <a
+            class="icon-button"
+            href="#/playback"
+            aria-label={t("Ouvrir la vue Lecture")}
+            title={t("Ouvrir la vue Lecture")}
+          >
+            <Icon name="visualizer" />
+          </a>
+        </Show>
 
         <details
           class="audio-settings"

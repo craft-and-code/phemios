@@ -64,6 +64,7 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            commands::external_open,
             encyclopedia::encyclopedia_search,
             encyclopedia::encyclopedia_article,
             hqplayer::hqplayer_connect,

@@ -22,7 +22,7 @@ export function WikipediaReader(props: {
           {t("Retour aux articles")}
         </ActionButton>
         <span class="wikipedia-reader-status">
-          Wikipédia · {props.article.language.toUpperCase()}
+          {t("Wikipédia")} · {props.article.language.toUpperCase()}
           <Show when={props.retained}> · {t("Disponible hors connexion")}</Show>
         </span>
         <div class="wikipedia-reader-tools">

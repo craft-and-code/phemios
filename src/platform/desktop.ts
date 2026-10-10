@@ -163,3 +163,6 @@ export const searchEncyclopedia = (language: import("../i18n").Language, query: 
 /** Read one public main-namespace page as bounded plain text, never executable HTML. */
 export const readEncyclopedia = (language: import("../i18n").Language, pageId: number) =>
   nativeCall<unknown>("encyclopedia_article", { language, pageId });
+
+/** Explicit source-link activation uses a bounded HTTPS-only native browser handoff. */
+export const openExternalLink = (url: string) => nativeCall<void>("external_open", { url });

@@ -1,3 +1,6 @@
+import { Feedback } from "./components/Feedback";
+import { activateExternalLink } from "./navigation/external-links";
+import { isNative, openExternalLink } from "./platform/desktop";
 import { needsCatalogPrompt } from "./navigation/catalog-prompt";
 import { createShortcuts, shortcutAction } from "./navigation/shortcuts";
 import { createMenuPreferences, visibleMenu, menuItem } from "./navigation/menu-preferences";
@@ -150,6 +153,21 @@ export function App() {
     window.addEventListener("keydown", key);
     onCleanup(() => window.removeEventListener("keydown", key));
   });
+  const [externalError, setExternalError] = createSignal("");
+  const externalClick = (event: MouseEvent) => {
+    const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    if (event.defaultPrevented || !link) return false;
+    return activateExternalLink(
+      {
+        href: link.getAttribute("href") ?? "",
+        button: event.button,
+        preventDefault: () => event.preventDefault(),
+      },
+      isNative(),
+      openExternalLink,
+      setExternalError,
+    );
+  };
   const backLink = navigation.backLink;
   const context = () =>
     ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
@@ -161,7 +179,9 @@ export function App() {
       class="app"
       classList={{ "sidebar-hidden": !sidebar(), "density-compact": compact() }}
       onContextMenu={(event) => event.preventDefault()}
+      onAuxClick={externalClick}
       onClick={(event) => {
+        if (externalClick(event)) return;
         if (
           event.defaultPrevented ||
           event.button !== 0 ||
@@ -303,6 +323,7 @@ export function App() {
         </aside>
       </Show>
       <main id="content">
+        <Feedback message={externalError()} error onClose={() => setExternalError("")} />
         <Show when={library.error() && !connectionPanel()}>
           <p class="notice" role="alert">
             {library.error()}
