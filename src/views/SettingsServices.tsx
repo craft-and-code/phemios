@@ -184,7 +184,7 @@ export function SettingsServices() {
             checked={fanartPass()}
             onChange={(e) => setFanartPass(e.currentTarget.checked)}
           />
-          {t("Fanart.tv")}
+          {t("Fanart.tv · bannières et arrière-plans")}
         </label>
         <label class="check">
           <input
@@ -213,6 +213,7 @@ export function SettingsServices() {
           setBusy(true);
           setMessage("");
           const options = {
+            musicbrainz: true,
             summaries: summaries(),
             covers: covers(),
             images: covers(),
@@ -256,7 +257,7 @@ export function SettingsServices() {
       </button>
       <p class="muted">
         {t(
-          "Cette action contacte les services externes. Aucun enrichissement n’est lancé en ouvrant la bibliothèque ou les Paramètres.",
+          "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.",
         )}
       </p>
       <Show

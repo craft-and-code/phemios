@@ -1299,5 +1299,10 @@
   "Aucun export M3U enregistré.": "No saved M3U export.",
   "Sélectionnez un export M3U.": "Select an M3U export.",
   "Inverser la liste de lecture": "Reverse playback queue",
-  "La liste de lecture a changé.": "The playback queue has changed."
+  "La liste de lecture a changé.": "The playback queue has changed.",
+  "Avancée": "Advanced",
+  "Glisser pour déplacer · flèches haut/bas au clavier": "Drag to move · up/down arrow keys on the keyboard",
+  "Fanart.tv · bannières et arrière-plans": "Fanart.tv · banners and backgrounds",
+  "Mettez à jour puis redémarrez Aède pour identifier les nouveaux artistes avec MusicBrainz avant l’enrichissement.": "Update and restart Aède to identify new artists with MusicBrainz before enrichment.",
+  "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.": "MusicBrainz first identifies new artists and albums, then the selected services complete their data. Banners and backgrounds require Fanart.tv and its API key. Uncertain matches must be reviewed in Aède."
 }

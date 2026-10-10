@@ -46,3 +46,34 @@ it("does not attach an accepted job to an account replaced during the POST", asy
     /Session/,
   );
 });
+
+it("identifies new artists before the selected families within one server-owned task", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede)
+    .mockResolvedValueOnce({ capabilities: ["fetch_musicbrainz_first"] })
+    .mockResolvedValueOnce({ task_id: 12 });
+  expect(
+    await startSourceEnrichment(
+      "server",
+      { musicbrainz: true, covers: true, fanart: true, yes: true },
+      () => true,
+    ),
+  ).toEqual({ task_id: 12 });
+  expect(requestAede).toHaveBeenNthCalledWith(1, "/api/v1/status", {}, "GET", undefined, "server");
+  expect(requestAede).toHaveBeenLastCalledWith(
+    "/api/admin/v1/fetch",
+    {},
+    "POST",
+    { musicbrainz: true, covers: true, fanart: true, yes: true },
+    "server",
+  );
+});
+
+it("refuses an old server instead of silently skipping initial identification", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["fetch_discogs"] });
+  await expect(
+    startSourceEnrichment("server", { musicbrainz: true, summaries: true }, () => true),
+  ).rejects.toThrow(/MusicBrainz/);
+  expect(requestAede).toHaveBeenCalledTimes(1);
+});

@@ -21,7 +21,7 @@ export async function startSourceEnrichment(
   options: Record<string, boolean>,
   isCurrent: () => boolean,
 ): Promise<{ task_id: number }> {
-  if (options.discogs) {
+  if (options.discogs || options.musicbrainz) {
     const status = await requestAede<{ capabilities?: unknown }>(
       "/api/v1/status",
       {},
@@ -32,10 +32,20 @@ export async function startSourceEnrichment(
     if (
       !status ||
       !Array.isArray(status.capabilities) ||
-      !status.capabilities.includes("fetch_discogs")
+      (options.discogs && !status.capabilities.includes("fetch_discogs"))
     )
       throw new Error(
         t("Mettez à jour puis redémarrez Aède pour récupérer les biographies Discogs des labels."),
+      );
+    if (
+      options.musicbrainz &&
+      (!Array.isArray(status?.capabilities) ||
+        !status.capabilities.includes("fetch_musicbrainz_first"))
+    )
+      throw new Error(
+        t(
+          "Mettez à jour puis redémarrez Aède pour identifier les nouveaux artistes avec MusicBrainz avant l’enrichissement.",
+        ),
       );
   }
   if (!isCurrent()) throw new Error(t("Session invalide."));
