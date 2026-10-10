@@ -6,11 +6,25 @@ fn paused_and_empty_callbacks_do_not_acknowledge_silence_as_listening() {
     let signals = Signals::default();
     let consumed = AtomicU64::new(0);
     let mut samples = [1.; 4];
-    render(&mut samples, 2, &mut consumer, &signals, &consumed);
+    render(
+        &mut samples,
+        2,
+        &mut consumer,
+        &signals,
+        &consumed,
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     assert_eq!(samples, [0.; 4]);
     assert_eq!(consumed.load(Ordering::Relaxed), 0);
     signals.paused.store(false, Ordering::Relaxed);
-    render(&mut samples, 2, &mut consumer, &signals, &consumed);
+    render(
+        &mut samples,
+        2,
+        &mut consumer,
+        &signals,
+        &consumed,
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     assert_eq!(samples, [0.25, -0.25, 0., 0.]);
     assert_eq!(consumed.load(Ordering::Relaxed), 1);
 }
@@ -25,14 +39,28 @@ fn meters_follow_consumed_stereo_samples_and_clear_on_pause_or_starvation() {
     producer.push([-0.5, -0.25]).unwrap();
     let consumed = AtomicU64::new(0);
     let mut output = [0.; 4];
-    render(&mut output, 2, &mut consumer, &signals, &consumed);
+    render(
+        &mut output,
+        2,
+        &mut consumer,
+        &signals,
+        &consumed,
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     let levels = signals
         .levels
         .each_ref()
         .map(|v| f32::from_bits(v.load(Ordering::Relaxed)));
     assert_eq!(levels, [0.5, 0.5, 0.25, 0.25]);
     assert_eq!(output, [0.; 4]);
-    render(&mut output, 2, &mut consumer, &signals, &consumed);
+    render(
+        &mut output,
+        2,
+        &mut consumer,
+        &signals,
+        &consumed,
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     assert!(
         signals
             .levels
@@ -41,7 +69,14 @@ fn meters_follow_consumed_stereo_samples_and_clear_on_pause_or_starvation() {
     );
     producer.push([1., 1.]).unwrap();
     signals.paused.store(true, Ordering::Relaxed);
-    render(&mut output, 2, &mut consumer, &signals, &consumed);
+    render(
+        &mut output,
+        2,
+        &mut consumer,
+        &signals,
+        &consumed,
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     assert!(
         signals
             .levels
@@ -58,11 +93,25 @@ fn equalizer_level_measures_written_output_with_flaccompagnon_gain() {
     signals.paused.store(false, Ordering::Relaxed);
     producer.push([0.5, 0.25]).unwrap();
     let mut output = [0_f32; 2];
-    render(&mut output, 2, &mut consumer, &signals, &AtomicU64::new(0));
+    render(
+        &mut output,
+        2,
+        &mut consumer,
+        &signals,
+        &AtomicU64::new(0),
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     let expected = ((0.25_f32.powi(2) + 0.125_f32.powi(2)) / 2.).sqrt() * 4.;
     assert!((f32::from_bits(signals.level.load(Ordering::Relaxed)) - expected).abs() < 0.00001);
     signals.volume.store(0_f32.to_bits(), Ordering::Relaxed);
     producer.push([1., 1.]).unwrap();
-    render(&mut output, 2, &mut consumer, &signals, &AtomicU64::new(0));
+    render(
+        &mut output,
+        2,
+        &mut consumer,
+        &signals,
+        &AtomicU64::new(0),
+        &mut super::super::spectrum::Spectrum::new(48000),
+    );
     assert_eq!(signals.level.load(Ordering::Relaxed), 0_f32.to_bits());
 }

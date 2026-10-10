@@ -7,6 +7,7 @@ mod output;
 mod protocol;
 mod queue;
 mod socket;
+mod spectrum;
 mod stream;
 use crate::network::Client;
 use output::Signals;
@@ -118,8 +119,16 @@ impl Player {
         } else {
             0.
         };
+        let spectrum = if s.status == "playing" && !self.signals.paused.load(Ordering::Relaxed) {
+            self.signals
+                .spectrum
+                .each_ref()
+                .map(|v| f32::from_bits(v.load(Ordering::Relaxed)))
+        } else {
+            [0.; 24]
+        };
         Ok(
-            json!({"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.

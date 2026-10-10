@@ -434,3 +434,11 @@ fn new_preferences_lyrics_moods_and_waveform_paths_keep_narrow_method_boundaries
     assert!(allowed("POST", "/api/admin/v1/lyrics"));
     assert!(!allowed("POST", "/api/me/v1/lyrics"));
 }
+
+#[test]
+fn achievements_bridge_admits_only_owner_read_and_action_routes() {
+    assert!(allowed("GET", "/api/me/v1/achievements"));
+    assert!(allowed("POST", "/api/me/v1/achievements"));
+    assert!(!allowed("PUT", "/api/me/v1/achievements"));
+    assert!(!allowed("DELETE", "/api/me/v1/achievements"));
+}

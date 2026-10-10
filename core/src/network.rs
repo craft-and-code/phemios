@@ -415,6 +415,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/collection"
                     | "/api/me/v1/collection/albums"
                     | "/api/me/v1/search"
+                    | "/api/me/v1/achievements"
                     | "/api/me/v1/history"
             ) || task_path(path, false)
                 || playlist_path(path)
@@ -443,7 +444,8 @@ fn allowed(method: &str, path: &str) -> bool {
         "POST" => {
             matches!(
                 path,
-                "/api/admin/v1/analyze"
+                "/api/me/v1/achievements"
+                    | "/api/admin/v1/analyze"
                     | "/api/admin/v1/spectrum"
                     | "/api/me/v1/m3u"
                     | "/api/admin/v1/scan"

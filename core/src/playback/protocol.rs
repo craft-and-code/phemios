@@ -75,3 +75,30 @@ pub(super) fn format(value: &Value, reference: &str, rate: u32) -> Result<Format
         duration,
     })
 }
+
+/// Preserve server confirmation semantics while making known storage failures actionable.
+pub(super) fn failure(value: &Value) -> String {
+    let message = value["message"].as_str().unwrap_or("erreur du serveur");
+    let detail = match message {
+        "history source changed or became unavailable; rescan the library" => {
+            "Le fichier a changé ou est indisponible. Rescannez la bibliothèque."
+        }
+        "history storage remained busy; saving was not confirmed" => {
+            "L’historique est occupé. L’écoute n’a pas été confirmée ; réessayez."
+        }
+        "private history storage could not be read; retain the file and check the server log" => {
+            "L’historique est illisible. Aède conserve le fichier ; consultez ses journaux."
+        }
+        "private history storage could not be written; check disk space and permissions" => {
+            "Impossible d’écrire l’historique. Vérifiez l’espace disque et les permissions."
+        }
+        "history saving timed out; its final status is uncertain" => {
+            "La confirmation de l’historique a expiré. Vérifiez l’historique avant de relancer."
+        }
+        "the listening history could not be saved" => {
+            "L’historique n’a pas pu être enregistré. Consultez les journaux Aède pour la cause."
+        }
+        _ => message,
+    };
+    format!("Lecture Aède refusée : {detail}")
+}

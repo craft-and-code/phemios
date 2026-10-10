@@ -201,10 +201,7 @@ fn pump(
                         clock.confirmed.store(true, Ordering::Relaxed);
                     }
                     Some("error") => {
-                        return Err(format!(
-                            "Lecture Aède refusée : {}",
-                            value["message"].as_str().unwrap_or("erreur du serveur")
-                        ));
+                        return Err(protocol::failure(&value));
                     }
                     _ => return Err("Message de fondu inconnu.".into()),
                 }

@@ -11,6 +11,7 @@ pub(super) struct Signals {
     pub paused: AtomicBool,
     pub level: AtomicU32,
     pub levels: [AtomicU32; 4],
+    pub spectrum: [AtomicU32; 24],
 }
 impl Default for Signals {
     fn default() -> Self {
@@ -19,6 +20,7 @@ impl Default for Signals {
             paused: AtomicBool::new(true),
             level: AtomicU32::new(0_f32.to_bits()),
             levels: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
+            spectrum: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
         }
     }
 }
@@ -75,6 +77,7 @@ fn render<T: SizedSample + FromSample<f32>>(
     ring: &mut Consumer<[f32; 2]>,
     signals: &Signals,
     consumed: &AtomicU64,
+    spectrum: &mut super::spectrum::Spectrum,
 ) {
     let gain = f32::from_bits(signals.volume.load(Ordering::Relaxed));
     let mut frames = 0;
@@ -88,6 +91,7 @@ fn render<T: SizedSample + FromSample<f32>>(
             match ring.pop() {
                 Ok(frame) => {
                     frames += 1;
+                    spectrum.push(frame);
                     frame
                 }
                 Err(_) => [0., 0.],
@@ -110,6 +114,9 @@ fn render<T: SizedSample + FromSample<f32>>(
             target[0] = T::from_sample(sample[0] * gain);
             target[1] = T::from_sample(sample[1] * gain);
         }
+    }
+    for (target, value) in signals.spectrum.iter().zip(spectrum.finish()) {
+        target.store(value.to_bits(), Ordering::Relaxed);
     }
     let count = (output.len() / channels) as f64;
     let rms = |channel: usize| {
@@ -148,6 +155,9 @@ impl Output {
         for level in &signals.levels {
             level.store(0_f32.to_bits(), Ordering::Relaxed);
         }
+        for level in &signals.spectrum {
+            level.store(0_f32.to_bits(), Ordering::Relaxed);
+        }
         let (device, supported) = select(id)?;
         let rate = supported.sample_rate();
         let format = supported.sample_format();
@@ -156,6 +166,7 @@ impl Output {
         let (producer, mut ring) = RingBuffer::new((rate / 2) as usize);
         let consumed = Arc::new(AtomicU64::new(0));
         let failed = Arc::new(AtomicBool::new(false));
+        let mut spectrum = super::spectrum::Spectrum::new(rate);
         let count = consumed.clone();
         let failure = failed.clone();
         macro_rules! build {
@@ -163,7 +174,7 @@ impl Output {
                 device.build_output_stream(
                     config,
                     move |data: &mut [$sample], _| {
-                        render(data, channels, &mut ring, &signals, &count)
+                        render(data, channels, &mut ring, &signals, &count, &mut spectrum)
                     },
                     move |_| {
                         failure.store(true, Ordering::Relaxed);

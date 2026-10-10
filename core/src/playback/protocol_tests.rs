@@ -60,3 +60,19 @@ fn dsp_settings_are_explicit_and_strict_policy_is_refused() {
     assert_eq!(v["normalize"], "album");
     assert!(super::super::Policy::parse("bit-perfect").is_err());
 }
+
+#[test]
+fn history_failure_preserves_uncertainty_and_identifies_changed_sources() {
+    let unknown = json!({"message":"unrecognised server reason"});
+    assert!(failure(&unknown).contains("unrecognised server reason"));
+    assert!(
+        failure(
+            &json!({"message":"history source changed or became unavailable; rescan the library"})
+        )
+        .contains("Rescannez")
+    );
+    assert!(
+        failure(&json!({"message":"history saving timed out; its final status is uncertain"}))
+            .contains("Vérifiez l’historique")
+    );
+}

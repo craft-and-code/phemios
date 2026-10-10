@@ -174,10 +174,7 @@ pub(super) fn stream(
                         update(state, |s| s.confirmed = true)?;
                     }
                     Some("error") => {
-                        return Err(format!(
-                            "Lecture Aède refusée : {}",
-                            value["message"].as_str().unwrap_or("erreur du serveur")
-                        ));
+                        return Err(protocol::failure(&value));
                     }
                     _ => return Err("Message audio Aède inconnu.".into()),
                 }
