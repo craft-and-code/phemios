@@ -50,3 +50,26 @@ fn country_codes_select_the_iso_field_instead_of_translated_names() {
     assert_eq!(country_filter("fr"), ("countrycode", "FR".to_owned()));
     assert_eq!(country_filter("Canada"), ("country", "Canada".to_owned()));
 }
+#[test]
+fn transient_or_empty_country_mirrors_do_not_require_an_aede_login_to_recover() {
+    let mut calls = 0;
+    let value = retry_mirrors(&["one".into(), "two".into(), "three".into()], true, |_| {
+        calls += 1;
+        match calls {
+            1 => Err("offline".into()),
+            2 => Ok(json!([])),
+            _ => Ok(json!([{"countrycode":"US"}])),
+        }
+    })
+    .unwrap();
+    assert_eq!(calls, 3);
+    assert_eq!(value[0]["countrycode"], "US");
+    let mut calls = 0;
+    let value = retry_mirrors(&["one".into(), "two".into()], false, |_| {
+        calls += 1;
+        Ok(json!([]))
+    })
+    .unwrap();
+    assert_eq!(calls, 1);
+    assert_eq!(value, json!([]));
+}

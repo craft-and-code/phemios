@@ -13,10 +13,16 @@ async fn run(
     crate::aede::bridge(version)?;
     let directory = state.0.clone();
     crate::aede::blocking(move || {
+        // Network requests own a clone; statistics cannot block station resolution or search.
         let mut client = directory
-            .try_lock()
-            .map_err(|_| "Une demande radio est déjà en cours. Réessayez.")?;
-        operation(&mut client)
+            .lock()
+            .map_err(|_| "Annuaire radio indisponible.")?
+            .clone();
+        let reply = operation(&mut client);
+        *directory
+            .lock()
+            .map_err(|_| "Annuaire radio indisponible.")? = client;
+        reply
     })
     .await
 }

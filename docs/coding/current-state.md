@@ -195,3 +195,7 @@ Transient action notices now share `Feedback`: a right-hand close icon, bounded 
 ### Podcast episode downloads
 
 Explicit native episode downloads now save finite public media under Downloads/Phémios/Podcasts. Transfer activity replaces each action glyph, completion uses shared transient feedback, and failed/incomplete transfers remove their temporary file. Audio is streamed (one GiB/twenty-minute ceiling), preserving existing copies and never using Aède credentials. The browser preview cannot write native downloads. Unit and local HTTP fixtures verify redirects, media-type refusal, truncated cleanup, filename confinement, repeated-download preservation and late UI completion. Subscription playback remains online; this feature exports standalone episode files. No dependency was added.
+
+## Public radio retry and account favourites
+
+Radio directory and stream resolution are independent of Aède sessions, with short-lived cache locking and bounded validated mirror failover, including temporarily empty country pages. Favourites now use private owner preferences; an explicit legacy-device import preserves existing local records. Tests cover retry/empty semantics and sign-out/late owner response guards. No dependency changed.

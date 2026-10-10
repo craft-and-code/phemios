@@ -2,10 +2,10 @@ import { For, Show } from "solid-js";
 import { t, countryName } from "../i18n";
 import { Icon } from "./Icon";
 import type { Station } from "../radio/directory";
-import type { createRadioFavourites } from "../radio/favourites";
+import type { createAccountRadioFavourites } from "../radio/account-favourites";
 /** Saved stations play by UUID without searching the directory first. */
 export function RadioFavourites(props: {
-  favourites: ReturnType<typeof createRadioFavourites>;
+  favourites: ReturnType<typeof createAccountRadioFavourites>;
   play: (station: Station) => void;
   busy: boolean;
 }) {
@@ -41,7 +41,8 @@ export function RadioFavourites(props: {
                   class="icon-button quiet radio-favourite"
                   aria-pressed="true"
                   aria-label={t("Retirer {0} des radios favorites", station.name)}
-                  onClick={() => props.favourites.toggle(station)}
+                  disabled={props.favourites.busy()}
+                  onClick={() => void props.favourites.toggle(station)}
                 >
                   <Icon name="heart" />
                 </button>

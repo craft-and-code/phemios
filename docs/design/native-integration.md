@@ -192,3 +192,9 @@ The final browser component acceptance checks folder-tab positioning, theme prev
 ## Transient action feedback
 
 Shared `Feedback` provides close-on-demand messages with a right-hand cross and a ten-second display period (fifteen seconds for action failures). Pointer hover or keyboard focus pauses the remaining period; replacement content resets it and unmounting clears the timer. Closing feedback dismisses its presentation, not the underlying error or retained annotation. File paths wrap within available space. CSV/theme/report/spectrum/M3U exports, annotations, personal collection/history actions, settings saves and podcast/radio request failures use this component. Ongoing operation loaders, unsaved drafts, connection conditions, empty states and retained diagnostic records are durable state rather than temporary action notifications.
+
+## Account-independent radio availability
+
+Directory search, statistics, UUID stream resolution and WebView playback require no Aède principal. Native requests own a directory clone instead of holding its cache mutex across network I/O. Up to three validated Radio Browser mirrors are attempted on transport failures; an unfiltered first-page country search also retries a temporarily empty mirror. Text/tag/page filters preserve legitimate empty results. Cached validated mirrors survive bootstrap outages. No Aède authorization is sent.
+
+Radio favourites use the current owner's private `phemios.radio-favourites` preferences instead of installation-global state. Signed-out browsing/streaming remains available; favourite controls require a writable account. Explicit import may copy legacy public station metadata into the selected account, leaving the installation store intact. Late responses cannot cross account/source changes; an unreadable account store refuses writes. The existing 8192-byte preference limit is enforced visibly.

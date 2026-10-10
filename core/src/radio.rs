@@ -5,6 +5,7 @@ const BOOTSTRAP: &str = "https://all.api.radio-browser.info";
 const LIMIT: u64 = 1024 * 1024;
 
 /// A bounded directory client; construction and offline navigation perform no network requests.
+#[derive(Clone)]
 pub struct Directory {
     agent: ureq::Agent,
     mirrors: Vec<String>,
@@ -81,6 +82,24 @@ fn country_filter(country: &str) -> (&'static str, String) {
         ("country", country.to_owned())
     }
 }
+fn retry_mirrors(
+    hosts: &[String],
+    retry_empty: bool,
+    mut read: impl FnMut(&str) -> Result<Value, String>,
+) -> Result<Value, String> {
+    let mut empty = None;
+    let mut failure = "Radio Browser indisponible. Réessayez.".to_owned();
+    for host in hosts.iter().take(3) {
+        match read(host) {
+            Ok(value) if retry_empty && value.as_array().is_some_and(Vec::is_empty) => {
+                empty = Some(value)
+            }
+            Ok(value) => return Ok(value),
+            Err(error) => failure = error,
+        }
+    }
+    empty.ok_or(failure)
+}
 impl Directory {
     fn read(&self, host: &str, path: &str, query: &[(&str, &str)]) -> Result<Value, String> {
         let mut request = self
@@ -108,8 +127,17 @@ impl Directory {
             .is_none_or(|time| time.elapsed() >= Duration::from_secs(600))
         {
             // std supports forward DNS but not portable PTR lookup; use the documented server-list fallback.
-            self.mirrors = mirror_hosts(&self.read(BOOTSTRAP, "/json/servers", &[])?)?;
-            self.discovered = Some(Instant::now());
+            match self
+                .read(BOOTSTRAP, "/json/servers", &[])
+                .and_then(|value| mirror_hosts(&value))
+            {
+                Ok(hosts) => {
+                    self.mirrors = hosts;
+                    self.discovered = Some(Instant::now());
+                }
+                Err(error) if self.mirrors.is_empty() => return Err(error),
+                Err(_) => {} // Previously validated mirrors remain a usable fallback during bootstrap outages.
+            }
             self.next = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .map_or(0, |d| d.subsec_nanos() as usize)
@@ -155,7 +183,18 @@ impl Directory {
         if secure_only {
             query.push(("is_https", "true"));
         }
-        let stations = self.read(&host, "/json/stations/search", &query)?;
+        let mut hosts = vec![host];
+        for _ in 1..self.mirrors.len().min(3) {
+            hosts.push(self.mirror()?);
+        }
+        let stations = retry_mirrors(
+            &hosts,
+            offset == "0"
+                && name.trim().is_empty()
+                && tag.trim().is_empty()
+                && !country.trim().is_empty(),
+            |host| self.read(host, "/json/stations/search", &query),
+        )?;
         if !stations.as_array().is_some_and(|rows| rows.len() <= 51) {
             return Err("Page Radio Browser invalide.".into());
         }
@@ -164,7 +203,11 @@ impl Directory {
     /// Read external directory counts only after an explicit user request.
     pub fn statistics(&mut self) -> Result<Value, String> {
         let host = self.mirror()?;
-        self.read(&host, "/json/stats", &[])
+        let mut hosts = vec![host];
+        for _ in 1..self.mirrors.len().min(3) {
+            hosts.push(self.mirror()?);
+        }
+        retry_mirrors(&hosts, false, |host| self.read(host, "/json/stats", &[]))
     }
     /// Resolve one station and record its requested start using the provider's documented click endpoint.
     pub fn resolve(&mut self, uuid: &str) -> Result<Value, String> {
@@ -172,7 +215,13 @@ impl Directory {
             return Err("Identifiant radio invalide.".into());
         }
         let host = self.mirror()?;
-        let answer = self.read(&host, &format!("/json/url/{uuid}"), &[])?;
+        let mut hosts = vec![host];
+        for _ in 1..self.mirrors.len().min(3) {
+            hosts.push(self.mirror()?);
+        }
+        let answer = retry_mirrors(&hosts, false, |host| {
+            self.read(host, &format!("/json/url/{uuid}"), &[])
+        })?;
         if !(answer["ok"] == true || answer["ok"] == "true")
             || answer["stationuuid"] != uuid
             || answer["url"].as_str().is_none()

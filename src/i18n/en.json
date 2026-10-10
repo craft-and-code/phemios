@@ -1278,5 +1278,7 @@
   "Épisode vide ou trop volumineux (limite : 1 Go).": "Episode empty or too large (limit: 1 GB).",
   "Épisode incomplet ou trop volumineux (limite : 1 Go).": "Episode incomplete or too large (limit: 1 GB).",
   "Trop de copies de cet épisode existent.": "Too many copies of this episode already exist.",
-  "Un téléchargement podcast est déjà en cours.": "A podcast download is already in progress."
+  "Un téléchargement podcast est déjà en cours.": "A podcast download is already in progress.",
+  "La limite de favoris radio du compte est atteinte.": "The account radio favourites limit has been reached.",
+  "Importer les radios favorites de cet appareil": "Import radio favourites from this device"
 }

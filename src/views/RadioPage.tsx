@@ -4,18 +4,44 @@ import { radioCountryPreference, radioCountryKey, resetRadioCriteria } from "../
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
-import { createRadioFavourites } from "../radio/favourites";
+import { createAccountRadioFavourites } from "../radio/account-favourites";
+import { readRadioFavourites } from "../radio/favourites";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { createSignal, For, Show, onCleanup, onMount } from "solid-js";
 import { Icon } from "../components/Icon";
 import { useLibrary } from "../library/context";
-import { isNative, radioStatistics, searchRadio } from "../platform/desktop";
+import { isNative, radioStatistics, searchRadio, requestAede } from "../platform/desktop";
 import { parseStations, stationCount, type Station } from "../radio/directory";
 /** An Internet-station dial indexes the current directory page, without inventing FM frequencies. */
 export function RadioPage(props: { query: string }) {
-  const radio = useLibrary().radio;
-  const favourites = createRadioFavourites();
+  const library = useLibrary(),
+    radio = library.radio;
+  const favourites = createAccountRadioFavourites(
+    () => {
+      const session = library.session();
+      return session
+        ? `${library.source()}|${session.server}|${session.account.username}`
+        : undefined;
+    },
+    (owner, method, body) =>
+      requestAede(
+        "/api/me/v1/preferences",
+        {},
+        method,
+        body ?? null,
+        owner.startsWith("local|") ? "local" : "server",
+      ),
+  );
+  const legacy = () => {
+    try {
+      return readRadioFavourites(localStorage);
+    } catch {
+      return [];
+    }
+  };
+  const writable = () =>
+    favourites.available() && library.session()?.account.role !== "auditor" && !favourites.busy();
   const [name, setName] = createSignal(props.query),
     [country, setCountry] = createSignal(""),
     [tag, setTag] = createSignal("");
@@ -135,11 +161,18 @@ export function RadioPage(props: { query: string }) {
           busy={busy()}
           available={isNative()}
         />
-        <RadioFavourites
-          favourites={favourites}
-          play={(station) => void radio.start(station)}
-          busy={radio.status() === "connecting"}
-        />
+        <Show when={library.session()}>
+          <RadioFavourites
+            favourites={favourites}
+            play={(station) => void radio.start(station)}
+            busy={radio.status() === "connecting"}
+          />
+        </Show>
+        <Show when={writable() && !favourites.stations().length && legacy().length}>
+          <button onClick={() => void favourites.importDevice(legacy())}>
+            {t("Importer les radios favorites de cet appareil")}
+          </button>
+        </Show>
 
         <Show when={!isNative()}>
           <p class="notice">
@@ -187,7 +220,8 @@ export function RadioPage(props: { query: string }) {
                         : t("Ajouter {0} aux radios favorites", station().name)
                     }
                     aria-pressed={favourites.has(station().uuid)}
-                    onClick={() => favourites.toggle(station())}
+                    disabled={!writable()}
+                    onClick={() => void favourites.toggle(station())}
                   >
                     <Icon name="heart" />
                   </button>
@@ -285,7 +319,8 @@ export function RadioPage(props: { query: string }) {
                         : t("Ajouter {0} aux radios favorites", station.name)
                     }
                     aria-pressed={favourites.has(station.uuid)}
-                    onClick={() => favourites.toggle(station)}
+                    disabled={!writable()}
+                    onClick={() => void favourites.toggle(station)}
                   >
                     <Icon name="heart" />
                   </button>
