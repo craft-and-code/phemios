@@ -676,20 +676,22 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   box-shadow: inset 0 2px var(--accent);
   background: var(--surface);
 }
-.playback-queue .queue-move-controls {
-  display: grid;
-  flex: 0 0 22px;
-}
-.playback-queue .queue-move-controls button {
-  width: 22px;
-  height: 22px;
+.playback-queue li .queue-grip {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 28px;
   min-height: 0;
-  padding: 2px;
+  padding: 4px;
   justify-content: center;
+  cursor: grab;
+  touch-action: none;
 }
-.playback-queue .queue-move-controls svg {
-  width: 12px;
-  height: 12px;
+.playback-queue li .queue-grip:active {
+  cursor: grabbing;
+}
+.playback-queue li .queue-grip svg {
+  width: 16px;
+  height: 20px;
 }
 .playback-queue .queue-track {
   flex: 1;

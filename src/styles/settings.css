@@ -374,6 +374,7 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   padding-top: 10px;
+  padding-bottom: 12px;
   gap: 4px;
   background: var(--background);
   border-bottom: 1px solid var(--border);

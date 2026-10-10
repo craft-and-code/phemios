@@ -551,7 +551,7 @@ legend {
 /* Equal outer columns anchor the transport to the window centre, not title width. */
 .player-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 39vw, 620px) minmax(0, 1fr);
 }
 .player-bar .transport {
   display: grid;
@@ -670,4 +670,21 @@ legend {
   height: 28px;
   padding: 5px;
   margin: 0;
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+}
+.advanced-search-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: none;
+}
+.advanced-search-action:hover {
+  color: var(--accent);
 }

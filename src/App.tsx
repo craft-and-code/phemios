@@ -154,8 +154,16 @@ export function App() {
           {t("phémios")}
           <span>.</span>
         </a>
-        <label class="search">
-          <Icon name="search" />
+        <div class="search">
+          <a
+            class="advanced-search-action"
+            href="#/advanced-search"
+            title={t("Recherche avancée")}
+            aria-label={t("Recherche avancée")}
+          >
+            <Icon name="search" />
+            <span>{t("Avancée")}</span>
+          </a>
           <input
             type="search"
             aria-label={
@@ -177,15 +185,7 @@ export function App() {
               }
             }}
           />
-          <a
-            class="advanced-search-action icon-button quiet"
-            href="#/advanced-search"
-            title={t("Recherche avancée")}
-            aria-label={t("Recherche avancée")}
-          >
-            <Icon name="settings" />
-          </a>
-        </label>
+        </div>
         <a
           class="server-button settings-button"
           href="#/settings"

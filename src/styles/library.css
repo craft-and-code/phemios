@@ -1643,13 +1643,7 @@ button.metadata-link:hover {
   max-width: min(360px, calc(100vw - 48px));
   z-index: 60;
 }
-.advanced-search-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border: 0;
-}
+
 @media (max-width: 500px) {
   .collection-name-row {
     flex-wrap: wrap;

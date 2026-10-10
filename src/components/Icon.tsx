@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  grip: "M8 5h.01M16 5h.01M8 12h.01M16 12h.01M8 19h.01M16 19h.01",
   reverse: "M7 3v18m-4-4 4 4 4-4M17 21V3m-4 4 4-4 4 4",
   playlist: "M3 3h11v18H3V3ZM6 7h5M6 11h5M18 8v9M18 10l4-1M18 17a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
   help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z",
@@ -85,7 +86,7 @@ export function Icon(props: { name: string }) {
       height="18"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.6"
+      stroke-width={props.name === "grip" ? 3 : 1.6}
       stroke-linecap="round"
       stroke-linejoin="round"
       aria-hidden="true"
