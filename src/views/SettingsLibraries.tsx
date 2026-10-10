@@ -1,3 +1,5 @@
+import { ServerRoots } from "../components/ServerRoots";
+import { scanRootSelection } from "../library/server-roots";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
@@ -24,8 +26,7 @@ export function SettingsLibraries() {
     [busy, setBusy] = createSignal(false),
     [excluded, setExcluded] = createSignal(""),
     [task, setTask] = createSignal<Job>(),
-    [taskSource, setTaskSource] = createSignal<"local" | "server">("local"),
-    [remoteFolders, setRemoteFolders] = createSignal("");
+    [taskSource, setTaskSource] = createSignal<"local" | "server">("local");
   const [local, { refetch }] = createResource(() => !library.demo, localStatus);
   const [roots, { refetch: refreshRoots }] = createResource(
     () => library.localSession(),
@@ -240,47 +241,30 @@ export function SettingsLibraries() {
         <h2>{t("Serveur Aède")}</h2>
         <ConnectionPanel embedded onClose={() => {}} />
         <Show when={administrative()}>
-          <details>
-            <summary>{t("Dossiers et scan du serveur")}</summary>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void perform(async () => {
-                  setTaskSource("server");
-                  setTask(
-                    await requestAede<Job>(
-                      "/api/admin/v1/scan",
-                      {},
-                      "POST",
-                      {
-                        folders: remoteFolders()
-                          .split("\n")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                        full: full(),
-                        threads: threads(),
-                      },
-                      "server",
-                    ),
-                  );
-                });
-              }}
-            >
-              <label>
-                {t("Dossiers sur le serveur (un chemin absolu par ligne)")}{" "}
-                <textarea
-                  value={remoteFolders()}
-                  onInput={(e) => setRemoteFolders(e.currentTarget.value)}
-                />
-              </label>
-              <button disabled={busy()}>{t("Lancer le scan du serveur")}</button>
-            </form>
-            <p class="muted">
-              {t(
-                "Sans dossier indiqué, Aède analyse ses racines existantes. Le serveur gère ses montages et exclusions. Les routes d’administration sont désactivées sur HTTPS.",
-              )}{" "}
-            </p>
-          </details>
+          <ServerRoots
+            busy={
+              busy() ||
+              (taskSource() === "server" && ["queued", "running"].includes(task()?.status ?? ""))
+            }
+            revision={
+              taskSource() === "server" && task()?.status === "completed" ? task()!.task_id : 0
+            }
+            scan={(paths) =>
+              void perform(async () => {
+                const selection = scanRootSelection(paths);
+                setTaskSource("server");
+                setTask(
+                  await requestAede<Job>(
+                    "/api/admin/v1/scan",
+                    {},
+                    "POST",
+                    { ...selection, full: full(), threads: threads() },
+                    "server",
+                  ),
+                );
+              })
+            }
+          />
         </Show>
       </div>
       <Show when={task()}>

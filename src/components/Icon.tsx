@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z",
   moods: "M3 15c4-10 5 10 9 0s5 10 9 0M3 9c4-10 5 10 9 0s5 10 9 0",
   visualizer: "M3 4h18v14H3V4ZM8 22h8M12 18v4M6 11l3-3 3 6 3-5 3 2",
   "lyrics-download": "M3 4h10M3 8h10M3 12h7M3 16h7M18 3v14m-4-4 4 4 4-4M14 21h8",

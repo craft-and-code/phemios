@@ -78,17 +78,6 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </For>
       </div>
       <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-tab-${tab()}`}>
-        <Show
-          when={library.savedSettings.status() === t("Enregistrement…")}
-          fallback={<Feedback message={library.savedSettings.status()} />}
-        >
-          <p role="status">{library.savedSettings.status()}</p>
-        </Show>
-        <Show when={library.savedSettings.error()}>
-          <p class="notice" role="alert">
-            {library.savedSettings.error()}
-          </p>
-        </Show>
         <Show when={tab() === "accounts" && library.origins().length > 1}>
           <div class="choices" aria-label={t("Bibliothèque à administrer")}>
             <For each={library.origins()}>
@@ -126,6 +115,17 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </Show>
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />
+        </Show>
+        <Show
+          when={library.savedSettings.status() === t("Enregistrement…")}
+          fallback={<Feedback message={library.savedSettings.status()} />}
+        >
+          <p role="status">{library.savedSettings.status()}</p>
+        </Show>
+        <Show when={library.savedSettings.error()}>
+          <p class="notice" role="alert">
+            {library.savedSettings.error()}
+          </p>
         </Show>
       </div>
     </section>

@@ -199,3 +199,7 @@ Explicit native episode downloads now save finite public media under Downloads/P
 ## Public radio retry and account favourites
 
 Radio directory and stream resolution are independent of Aède sessions, with short-lived cache locking and bounded validated mirror failover, including temporarily empty country pages. Favourites now use private owner preferences; an explicit legacy-device import preserves existing local records. Tests cover retry/empty semantics and sign-out/late owner response guards. No dependency changed.
+
+## Joined settings cards and discovered server roots
+
+Settings folder tabs now join their first square-top card with consistent final-child padding. Restoring account settings is quiet. Account roles have inline help; expanded edits span their own two-field panel. Server roots are fetched in complete epoch-consistent pages and edited with plus/minus rows, applied only by an explicit scan. Synchronization shows its actual busy indicator and remains distinct from file discovery.

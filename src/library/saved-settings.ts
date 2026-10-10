@@ -92,7 +92,7 @@ export function createSavedSettings(
         loaded = true;
         window.dispatchEvent(new Event("phemios-settings-loaded"));
         window.dispatchEvent(new Event("phemios-preferences"));
-        setStatus(t("Préférences synchronisées avec votre compte."));
+        setStatus("");
       } catch (failure) {
         if (epoch === generation) setError(String(failure));
       }

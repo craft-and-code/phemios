@@ -1,3 +1,4 @@
+import { Icon } from "./Icon";
 import { t } from "../i18n";
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
 import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
@@ -158,10 +159,22 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
             </p>
           </Show>
           <p class="muted">{library.serverSession()?.server}</p>
-          <button disabled={library.busy()} onClick={() => library.sync("server")}>
-            {t("Synchroniser la bibliothèque")}{" "}
-          </button>
-          <button onClick={() => library.disconnect()}>{t("Se déconnecter")}</button>
+          <div class="settings-actions">
+            <button
+              disabled={library.busy()}
+              aria-busy={library.busy()}
+              onClick={() => void library.sync("server")}
+            >
+              <Show when={library.busy()} fallback={<Icon name="refresh" />}>
+                <span class="spinner" aria-hidden="true" />
+              </Show>
+              {library.busy() ? t("Synchronisation…") : t("Synchroniser la bibliothèque")}
+            </button>
+            <button disabled={library.busy()} onClick={() => void library.disconnect()}>
+              <Icon name="disconnect" />
+              {t("Se déconnecter")}
+            </button>
+          </div>
         </Show>
         <Show when={preferenceError()}>
           <p role="status">{preferenceError()}</p>

@@ -1280,5 +1280,17 @@
   "Trop de copies de cet épisode existent.": "Too many copies of this episode already exist.",
   "Un téléchargement podcast est déjà en cours.": "A podcast download is already in progress.",
   "La limite de favoris radio du compte est atteinte.": "The account radio favourites limit has been reached.",
-  "Importer les radios favorites de cet appareil": "Import radio favourites from this device"
+  "Importer les radios favorites de cet appareil": "Import radio favourites from this device",
+  "Comprendre les rôles des comptes": "Understand account roles",
+  "Gère les comptes, les scans et les tâches de la bibliothèque, ainsi que ses données personnelles.": "Manages accounts, library scans and tasks, as well as personal data.",
+  "Consulte et écoute la bibliothèque ; gère ses favoris, notes, tags et collections.": "Browses and plays the library; manages personal favourites, notes, tags and collections.",
+  "Consulte et écoute la bibliothèque, sans modifier les données.": "Browses and plays the library without changing data.",
+  "Liste des dossiers serveur invalide ou modifiée.": "Server folder list invalid or changed.",
+  "Indiquez de 1 à 64 dossiers absolus sur le serveur.": "Enter 1 to 64 absolute folders on the server.",
+  "Actualiser les dossiers": "Refresh folders",
+  "Dossier serveur {0}": "Server folder {0}",
+  "Retirer ce dossier du prochain scan": "Remove this folder from the next scan",
+  "Ajouter un dossier serveur": "Add a server folder",
+  "Appliquer les dossiers et scanner": "Apply folders and scan",
+  "Le scan découvre les nouveaux fichiers. Les changements de dossiers sont appliqués au lancement ; retirer une ligne ne supprime aucun fichier audio. La synchronisation recharge ensuite le catalogue connu.": "Scanning discovers new files. Folder changes take effect when the scan starts; removing a row does not delete audio files. Synchronization then reloads the known catalogue."
 }

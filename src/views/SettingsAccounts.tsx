@@ -1,3 +1,4 @@
+import { RoleHelp } from "../components/RoleHelp";
 import { Feedback } from "../components/Feedback";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { t } from "../i18n";
@@ -78,17 +79,20 @@ export function SettingsAccounts() {
           {(account) => (
             <div class="account-row">
               <strong>{account.username}</strong>
-              <ChoiceSelect
-                label={t("Rôle")}
-                value={account.role}
-                disabled={busy() || account.username === "phemios-local"}
-                onChange={(value) => void patch(account, { role: value })}
-                options={[
-                  { value: "admin", label: t("Administrateur") },
-                  { value: "user", label: t("Utilisateur") },
-                  { value: "auditor", label: t("Auditeur") },
-                ]}
-              />
+              <div class="account-role">
+                <RoleHelp />
+                <ChoiceSelect
+                  label={t("Rôle")}
+                  value={account.role}
+                  disabled={busy() || account.username === "phemios-local"}
+                  onChange={(value) => void patch(account, { role: value })}
+                  options={[
+                    { value: "admin", label: t("Administrateur") },
+                    { value: "user", label: t("Utilisateur") },
+                    { value: "auditor", label: t("Auditeur") },
+                  ]}
+                />
+              </div>
 
               <button
                 disabled={busy() || account.username === "phemios-local"}
@@ -179,7 +183,9 @@ export function SettingsAccounts() {
             />
           </label>
           <label>
-            {t("Rôle")}{" "}
+            <span class="role-label">
+              {t("Rôle")} <RoleHelp />
+            </span>
             <ChoiceSelect
               label={t("Rôle")}
               value={role()}

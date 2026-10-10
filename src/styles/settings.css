@@ -510,3 +510,116 @@
 .settings-actions > button > svg {
   flex-shrink: 0;
 }
+
+/* Folder tabs join the panel; every section keeps the same inner inset. */
+.settings-tabs {
+  margin-bottom: 0;
+}
+#settings-panel > .settings-card,
+#settings-panel > .settings-libraries > .settings-card:first-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: 0;
+}
+#settings-panel .settings-card > :last-child {
+  margin-bottom: 0;
+}
+.enrichment-jobs:empty {
+  display: none;
+}
+.server-roots {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.server-root-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.server-root-rows li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+}
+.server-root-rows input {
+  flex: 1;
+  min-width: 0;
+}
+.account-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(160px, 220px) auto auto;
+}
+.account-row details {
+  grid-column: 1 / -1;
+}
+.account-row details form {
+  max-width: none;
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+.account-row details form button {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+.account-role,
+.role-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-role .choice-select {
+  flex: 1;
+  min-width: 0;
+}
+.role-help {
+  position: relative;
+  flex-shrink: 0;
+}
+.role-help summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  color: var(--muted);
+}
+.role-help summary::-webkit-details-marker {
+  display: none;
+}
+.role-help summary:hover {
+  color: var(--accent);
+}
+.role-help .role-description {
+  position: absolute;
+  z-index: 12;
+  top: 100%;
+  right: 0;
+  width: min(360px, 75vw);
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  box-shadow: 0 8px 30px #0006;
+}
+.role-help p {
+  margin: 0 0 12px;
+}
+.role-help p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 850px) {
+  .account-row {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 1fr);
+  }
+}
+@media (max-width: 550px) {
+  .account-row details form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
