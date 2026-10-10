@@ -697,3 +697,47 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   flex: 1;
   min-width: 0;
 }
+
+/* The lyric overlay stays inside the scene, above the fixed transport. */
+.playback-page {
+  min-height: 100%;
+  padding: 18px 24px;
+}
+.playback-visuals {
+  position: relative;
+  height: max(320px, calc(100dvh - 270px));
+}
+.playback-visuals .audio-scene {
+  height: 100%;
+}
+.playback-current-lyrics {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: min(80%, 800px);
+  margin: 0;
+  padding: 12px 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.playback-current-lyrics:empty {
+  display: none;
+}
+.playback-current-lyrics:hover,
+.playback-current-lyrics:focus-visible {
+  border-color: var(--border);
+}
+.playback-current-lyrics.lyrics-dragging {
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  border-color: var(--accent);
+  opacity: 0.7;
+  cursor: grabbing;
+}
+.queue-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block: 10px;
+}

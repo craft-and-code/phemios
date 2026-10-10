@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseWaveform, waveformPath } from "./waveform";
+import { parseWaveform, waveformPath, waveformPosition } from "./waveform";
 it("keeps exact decoded bucket positions and refuses a misleading incomplete envelope", () => {
   const raw = {
     reference: "track:one",
@@ -13,4 +13,12 @@ it("keeps exact decoded bucket positions and refuses a misleading incomplete env
   expect(() => parseWaveform({ ...raw, peaks: [0.75] }, "track:one")).toThrow();
   expect(() => parseWaveform({ ...raw, reference: "track:two" }, "track:one")).toThrow();
   expect(() => parseWaveform({ ...raw, peaks: [NaN, 0] }, "track:one")).toThrow();
+});
+
+it("maps pointer positions to the drawn timeline, independent of the range thumb", () => {
+  expect(waveformPosition(250, 100, 600, 240000)).toBe(60000);
+  expect(waveformPosition(100, 100, 600, 240000)).toBe(0);
+  expect(waveformPosition(700, 100, 600, 240000)).toBe(240000);
+  expect(waveformPosition(900, 100, 600, 240000)).toBe(240000);
+  expect(waveformPosition(0, 100, 0, 240000)).toBe(0);
 });

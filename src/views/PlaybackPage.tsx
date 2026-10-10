@@ -4,6 +4,7 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { announceSetting } from "../library/saved-settings";
 import { parseLyrics, currentLyricText } from "../library/lyrics";
+import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
 import { AudioScene } from "../components/AudioScene";
 import { EmptyState } from "../components/EmptyState";
@@ -124,11 +125,14 @@ export function PlaybackPage() {
               )}
             </For>
           </div>
-          <AudioScene
-            scene={scene()}
-            playing={player.state().status === "playing"}
-            levels={player.state().levels}
-          />
+          <div class="playback-visuals">
+            <AudioScene
+              scene={scene()}
+              playing={player.state().status === "playing"}
+              levels={player.state().levels}
+            />
+            <PlaybackLyrics text={currentLyricText(lyrics(), player.seekPosition())} />
+          </div>
           <Show when={error()}>
             <p class="notice" role="alert">
               {error()}
@@ -139,7 +143,6 @@ export function PlaybackPage() {
               {words()?.error}
             </p>
           </Show>
-          <p class="playback-current-lyrics">{currentLyricText(lyrics(), player.seekPosition())}</p>
         </div>
         <Show when={queue()}>
           <PlaybackQueue onClose={() => setQueue(false)} />

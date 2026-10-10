@@ -40,12 +40,13 @@ export function createMissingCoverLoader(
       const held = entries.get(key(row));
       return held?.session === sessionFor(row.artist) ? held?.error : undefined;
     },
-    load: (row: MissingAlbum) => {
+    load: (row: MissingAlbum, retry = false) => {
       const session = sessionFor(row.artist),
         id = key(row),
         held = entries.get(id);
       if (!session || !supported(row.artist)) return Promise.resolve();
-      if (held?.session === session && !held.error) return held.promise;
+      if (held?.session === session && (!held.finished || (!retry && !held.error)))
+        return held.promise;
       forget(id);
       const source = referenceSource(row.artist);
       const entry: Entry = { session, promise: Promise.resolve() };

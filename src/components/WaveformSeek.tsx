@@ -2,7 +2,7 @@ import { createResource, createUniqueId, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { parseWaveform, waveformPath } from "../library/waveform";
+import { parseWaveform, waveformPath, waveformPosition } from "../library/waveform";
 /** Retains the full envelope on pause; an ordinary keyboard range supplies accessible seeking. */
 export function WaveformSeek() {
   const player = useLibrary().player,
@@ -26,6 +26,11 @@ export function WaveformSeek() {
       }
     },
   );
+  let pointer: number | undefined;
+  function position(event: PointerEvent & { currentTarget: HTMLInputElement }) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return waveformPosition(event.clientX, rect.left, rect.width, player.state().duration_ms ?? 0);
+  }
   const current = () =>
     ["playing", "paused", "connecting"].includes(player.state().status) &&
     result()?.reference === player.state().reference
@@ -66,13 +71,33 @@ export function WaveformSeek() {
         type="range"
         min="0"
         max={player.state().duration_ms ?? 1}
-        step="1000"
+        step="1"
         value={player.seekPosition()}
         disabled={disabled()}
         aria-label={t("Position de lecture")}
         onInput={(event) => player.previewSeek(Number(event.currentTarget.value))}
         onChange={(event) => void player.seek(Number(event.currentTarget.value))}
-        onPointerCancel={player.clearSeekPreview}
+        onPointerDown={(event) => {
+          if (disabled() || event.button !== 0) return;
+          event.preventDefault();
+          event.currentTarget.focus();
+          pointer = event.pointerId;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          player.previewSeek(position(event));
+        }}
+        onPointerMove={(event) => {
+          if (pointer === event.pointerId) player.previewSeek(position(event));
+        }}
+        onPointerUp={(event) => {
+          if (pointer !== event.pointerId) return;
+          pointer = undefined;
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          void player.seek(position(event));
+        }}
+        onPointerCancel={() => {
+          pointer = undefined;
+          player.clearSeekPreview();
+        }}
         onBlur={player.clearSeekPreview}
       />
       <Show when={result.loading}>

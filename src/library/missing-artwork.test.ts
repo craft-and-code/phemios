@@ -110,3 +110,18 @@ it("runs one acquisition per source and keeps the two sources independent", asyn
   pending[2]?.(new ArrayBuffer(0));
   await Promise.all([second, local]);
 });
+
+it("explicit refresh retries an absent cover using its missing group, never an owned edition", async () => {
+  const session = { account: { role: "user" } } as AccountSession;
+  const request = vi.fn(async () => new ArrayBuffer(0));
+  const loader = createMissingCoverLoader(
+    () => session,
+    () => true,
+    request,
+    () => {},
+  );
+  await loader.load(row);
+  await loader.load(row, true);
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(request).toHaveBeenLastCalledWith(row.artist, row.release_group, true);
+});

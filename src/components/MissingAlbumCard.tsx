@@ -32,30 +32,23 @@ export function MissingAlbumCard(props: { album: MissingAlbum }) {
       }}
     >
       <div class="missing-cover">
-        <a
-          href={`#/artist/${encodeURIComponent(props.album.artist)}`}
-          title={
-            library.missingArtwork.error(props.album) ??
-            t("Ouvrir l’artiste {0}", props.album.artist_name)
-          }
-        >
-          <div class="artwork real-art missing-release-art">
-            <Show when={library.missingArtwork.image(props.album)} fallback={<Icon name="disc" />}>
-              {(url) => (
-                <img
-                  src={url()}
-                  alt={t("Pochette : {0}", props.album.title)}
-                  title="Cover Art Archive · MusicBrainz"
-                  decoding="async"
-                />
-              )}
-            </Show>
-            <span class="missing-mark">
-              <Icon name="missing" />
-              {t("Manquant")}
-            </span>
-          </div>
-        </a>
+        <div class="artwork real-art missing-release-art">
+          <Show when={library.missingArtwork.image(props.album)} fallback={<Icon name="disc" />}>
+            {(url) => (
+              <img
+                src={url()}
+                alt={t("Pochette : {0}", props.album.title)}
+                title="Cover Art Archive · MusicBrainz"
+                decoding="async"
+              />
+            )}
+          </Show>
+          <span class="missing-mark">
+            <Icon name="missing" />
+            {t("Manquant")}
+          </span>
+        </div>
+
         <button
           class="icon-button missing-dismiss"
           title={t("Masquer cette suggestion")}
@@ -79,14 +72,39 @@ export function MissingAlbumCard(props: { album: MissingAlbum }) {
         >
           <Icon name="close" />
         </button>
+        <Show
+          when={["failed", "absent", "loading"].includes(
+            library.missingArtwork.status(props.album),
+          )}
+        >
+          <button
+            type="button"
+            class="icon-button missing-cover-retry"
+            title={t("Réessayer les pochettes")}
+            aria-label={t("Réessayer les pochettes")}
+            disabled={library.missingArtwork.status(props.album) === "loading"}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void library.missingArtwork.load(props.album, true);
+            }}
+          >
+            <Show
+              when={library.missingArtwork.status(props.album) === "loading"}
+              fallback={<Icon name="refresh" />}
+            >
+              <span class="spinner" />
+            </Show>
+          </button>
+        </Show>
       </div>
-      <a href={`#/artist/${encodeURIComponent(props.album.artist)}`}>
+      <div class="missing-album-title">
         <strong>{props.album.title}</strong>
         <small>
           {props.album.artist_name} · {props.album.year ?? t("Année inconnue")}{" "}
           <SourceBadge reference={props.album.artist} />
         </small>
-      </a>
+      </div>
       <Show when={error()}>
         <small role="alert">{error()}</small>
       </Show>

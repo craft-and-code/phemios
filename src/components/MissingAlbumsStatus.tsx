@@ -33,7 +33,7 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
           <Show when={counted("loading")}>
             <span>{t("Téléchargement en cours…")}</span>
           </Show>
-          <Show when={failed().length || counted("loading")}>
+          <Show when={failed().length || counted("absent") || counted("loading")}>
             <button
               class="icon-button quiet"
               aria-label={t("Réessayer les pochettes")}
@@ -41,7 +41,13 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
               disabled={counted("loading") > 0}
               aria-busy={counted("loading") > 0}
               onClick={() =>
-                void Promise.all(failed().map((row) => library.missingArtwork.load(row)))
+                void Promise.all(
+                  visible()
+                    .filter((row) =>
+                      ["failed", "absent"].includes(library.missingArtwork.status(row)),
+                    )
+                    .map((row) => library.missingArtwork.load(row, true)),
+                )
               }
             >
               <Show when={counted("loading")} fallback={<Icon name="refresh" />}>

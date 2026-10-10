@@ -42,7 +42,7 @@ interface Library {
   missingArtwork: {
     image: (row: import("./missing").MissingAlbum) => string | undefined;
     error: (row: import("./missing").MissingAlbum) => string | undefined;
-    load: (row: import("./missing").MissingAlbum) => Promise<void>;
+    load: (row: import("./missing").MissingAlbum, retry?: boolean) => Promise<void>;
     status: (
       row: import("./missing").MissingAlbum,
     ) => ReturnType<ReturnType<typeof createMissingCoverLoader>["status"]>;

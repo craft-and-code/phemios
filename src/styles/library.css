@@ -1655,3 +1655,15 @@ button.metadata-link:hover {
     margin-left: auto;
   }
 }
+
+.missing-cover-retry {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 3;
+  background: var(--surface);
+}
+.missing-album-title {
+  display: grid;
+  gap: 6px;
+}

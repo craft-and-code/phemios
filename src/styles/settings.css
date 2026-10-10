@@ -374,7 +374,7 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   padding-top: 10px;
-  padding-bottom: 12px;
+  padding-bottom: 0;
   gap: 4px;
   background: var(--background);
   border-bottom: 1px solid var(--border);
@@ -386,7 +386,7 @@
   border-bottom: 0;
   border-radius: 10px 10px 0 0;
   background: var(--surface);
-  padding: 10px 14px;
+  padding: 10px 14px 20px;
   white-space: nowrap;
 }
 .settings-tabs [role="tab"][aria-selected="true"] {

@@ -48,3 +48,10 @@ export function waveformPath(waveform: Waveform): string {
     })
     .join("");
 }
+
+/** A pointer addresses the full SVG width; native range thumbs have a shorter travel. */
+export function waveformPosition(x: number, left: number, width: number, duration: number): number {
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(duration) || duration <= 0)
+    return 0;
+  return Math.round(Math.max(0, Math.min(1, (x - left) / width)) * duration);
+}
