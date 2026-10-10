@@ -177,6 +177,14 @@ export function App() {
               }
             }}
           />
+          <a
+            class="advanced-search-action icon-button quiet"
+            href="#/advanced-search"
+            title={t("Recherche avancée")}
+            aria-label={t("Recherche avancée")}
+          >
+            <Icon name="settings" />
+          </a>
         </label>
         <a
           class="server-button settings-button"
@@ -264,7 +272,7 @@ export function App() {
           when={
             !library.artists().length &&
             !library.busy() &&
-            !["radio", "podcasts", "settings"].includes(section())
+            !["radio", "podcasts", "settings", "advanced-search"].includes(section())
           }
         >
           <div class="empty">

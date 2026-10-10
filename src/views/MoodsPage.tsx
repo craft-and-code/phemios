@@ -198,7 +198,6 @@ export function MoodsPage() {
                 setOffset(0);
               }}
             >
-              <Icon name="moods" />
               <strong>{moodName(mood.rule)}</strong>
               <small>{t("{0} pistes", mood.count)}</small>
             </button>

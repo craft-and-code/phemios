@@ -203,3 +203,7 @@ Radio directory and stream resolution are independent of Aède sessions, with sh
 ## Joined settings cards and discovered server roots
 
 Settings folder tabs now join their first square-top card with consistent final-child padding. Restoring account settings is quiet. Account roles have inline help; expanded edits span their own two-field panel. Server roots are fetched in complete epoch-consistent pages and edited with plus/minus rows, applied only by an explicit scan. Synchronization shows its actual busy indicator and remains distinct from file discovery.
+
+## Linked prose and export navigation
+
+Artist/label prose links complete unique known artist names in its own source without HTML insertion or changed attribution. A search-field action reserves an empty advanced-search view. Exports M3U has a distinct icon and ordered title preview with explicit download. Mood cards omit repeated identical icons; a documented Bliss review proposes calibrated acoustic features/exemplar ranking without installing a dependency or claiming inference from existing integrity measurements. Shared collection forms align their create action beside the name; notices keep readable width independent of toolbar parents.

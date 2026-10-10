@@ -1292,5 +1292,10 @@
   "Retirer ce dossier du prochain scan": "Remove this folder from the next scan",
   "Ajouter un dossier serveur": "Add a server folder",
   "Appliquer les dossiers et scanner": "Apply folders and scan",
-  "Le scan découvre les nouveaux fichiers. Les changements de dossiers sont appliqués au lancement ; retirer une ligne ne supprime aucun fichier audio. La synchronisation recharge ensuite le catalogue connu.": "Scanning discovers new files. Folder changes take effect when the scan starts; removing a row does not delete audio files. Synchronization then reloads the known catalogue."
+  "Le scan découvre les nouveaux fichiers. Les changements de dossiers sont appliqués au lancement ; retirer une ligne ne supprime aucun fichier audio. La synchronisation recharge ensuite le catalogue connu.": "Scanning discovers new files. Folder changes take effect when the scan starts; removing a row does not delete audio files. Synchronization then reloads the known catalogue.",
+  "Recherche avancée": "Advanced search",
+  "Exports M3U": "M3U exports",
+  "Choisissez un export pour vérifier ses titres, puis téléchargez-le pour un autre lecteur. Les chemins sont ceux du serveur Aède.": "Choose an export to check its tracks, then download it for another player. Paths belong to the Aède server.",
+  "Aucun export M3U enregistré.": "No saved M3U export.",
+  "Sélectionnez un export M3U.": "Select an M3U export."
 }

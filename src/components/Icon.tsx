@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  playlist: "M3 3h11v18H3V3ZM6 7h5M6 11h5M18 8v9M18 10l4-1M18 17a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
   help: "M9 9a3 3 0 1 1 5 2c-2 1-2 2-2 3M12 17h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z",
   moods: "M3 15c4-10 5 10 9 0s5 10 9 0M3 9c4-10 5 10 9 0s5 10 9 0",
   visualizer: "M3 4h18v14H3V4ZM8 22h8M12 18v4M6 11l3-3 3 6 3-5 3 2",
@@ -43,7 +44,7 @@ const paths: Record<string, string> = {
   previous: "M5 5v14M19 5 8 12l11 7V5Z",
   next: "M19 5v14M5 5l11 7-11 7V5Z",
   pause: "M8 5v14M16 5v14",
-  repeat: "M4 8h14l-3-3m3 3-3 3M20 16H6l3 3m-3-3 3-3",
+  repeat: "m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3",
   shuffle: "M3 5c10 0 6 14 16 14m-3-3 3 3-3 3M3 19c10 0 6-14 16-14m-3-3 3 3-3 3",
   volume: "M3 9h4l5-4v14l-5-4H3V9ZM16 8a6 6 0 0 1 0 8M19 4a11 11 0 0 1 0 16",
   menu: "M3 6h18M3 12h18M3 18h18",

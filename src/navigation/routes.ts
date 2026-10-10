@@ -23,7 +23,8 @@ export type Section =
   | "relations"
   | "players"
   | "statistics"
-  | "settings";
+  | "settings"
+  | "advanced-search";
 export type Route =
   | { kind: "section"; section: Section }
   | { kind: "artist" | "album" | "track" | "label"; reference: string }
@@ -44,7 +45,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
   { id: "history", label: t("Historique"), symbol: "history" },
-  { id: "playlists", label: t("Listes M3U"), symbol: "list" },
+  { id: "playlists", label: t("Exports M3U"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
@@ -59,6 +60,7 @@ export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#\/?/, "");
   if (!path) return { kind: "section", section: "artists" };
   if (path === "playback") return { kind: "section", section: "playback" };
+  if (path === "advanced-search") return { kind: "section", section: "advanced-search" };
   if (path === "settings") return { kind: "section", section: "settings" };
   const section = sections.find((candidate) => candidate.id === path);
   if (section) return { kind: "section", section: section.id };

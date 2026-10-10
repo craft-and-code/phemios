@@ -1,3 +1,4 @@
+import { BiographyText } from "../components/BiographyText";
 import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { SourceBadge } from "../components/SourceBadge";
 import { t, countryName } from "../i18n";
@@ -94,7 +95,12 @@ export function ArtistPage(props: {
         <div class="page artist-content">
           <section class="biography">
             <h2>{t("Biographie")}</h2>
-            <p>{props.artist.biography || t("Aucune biographie récupérée pour cet artiste.")}</p>
+            <p>
+              <BiographyText
+                reference={props.artist.reference}
+                text={props.artist.biography || t("Aucune biographie récupérée pour cet artiste.")}
+              />
+            </p>
             <Show when={props.artist.biographyCredit}>
               {(credit) => (
                 <small>

@@ -118,20 +118,23 @@ export function SelectionCollection(props: {
                   </button>
                 </div>
                 <p>{t("La collection conservera les critères de cette sélection.")} </p>
-                <label>
-                  {t("Nom")}{" "}
-                  <input
-                    autofocus
-                    required
-                    maxlength="128"
-                    value={name()}
-                    onInput={(e) => setName(e.currentTarget.value)}
-                  />
-                </label>
+                <div class="collection-name-row">
+                  <label>
+                    {t("Nom")}{" "}
+                    <input
+                      autofocus
+                      required
+                      maxlength="128"
+                      value={name()}
+                      onInput={(e) => setName(e.currentTarget.value)}
+                    />
+                  </label>
+                  <button class="primary" disabled={!writable() || busy()}>
+                    <Show when={busy()}>{<span class="spinner" />}</Show>
+                    {t("Créer la collection")}
+                  </button>
+                </div>
                 <Feedback error message={error()} onClose={() => setError("")} />
-                <button class="primary" disabled={!writable() || busy()}>
-                  {t("Créer la collection")}{" "}
-                </button>
               </form>
             </dialog>
           );

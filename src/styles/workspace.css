@@ -238,3 +238,49 @@
   background: var(--surface);
   overflow-wrap: anywhere;
 }
+.m3u-workspace {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr);
+  gap: 24px;
+}
+.m3u-library {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.m3u-library button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+  text-align: left;
+}
+.m3u-library strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.m3u-library small {
+  white-space: nowrap;
+}
+.m3u-preview {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+}
+.m3u-preview ol {
+  max-height: 60vh;
+  overflow: auto;
+  padding-left: 28px;
+}
+.m3u-preview li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 750px) {
+  .m3u-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

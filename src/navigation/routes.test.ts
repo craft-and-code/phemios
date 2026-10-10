@@ -11,3 +11,7 @@ it("opens stable references and refuses unknown or malformed URLs", () => {
   expect(parseRoute("#/artist/%XX")).toEqual({ kind: "not-found" });
   expect(parseRoute("")).toEqual({ kind: "section", section: "artists" });
 });
+
+it("reserves an empty advanced-search workspace outside sidebar menus", () => {
+  expect(parseRoute("#/advanced-search")).toEqual({ kind: "section", section: "advanced-search" });
+});

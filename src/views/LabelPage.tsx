@@ -1,3 +1,4 @@
+import { BiographyText } from "../components/BiographyText";
 import { createResource, createSignal, createEffect, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -100,7 +101,10 @@ export function LabelPage(props: {
               <section class="biography">
                 <h2>{t("Biographie")}</h2>
                 <p class="label-biography">
-                  {row().biography?.text || t("Aucune biographie récupérée pour ce label.")}
+                  <BiographyText
+                    reference={props.reference}
+                    text={row().biography?.text || t("Aucune biographie récupérée pour ce label.")}
+                  />
                 </p>
                 <Show when={row().biography}>
                   {(prose) => (
