@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
-import { commitTags, tagSuggestions, tagVocabulary } from "./tags";
+import { commitTags, completeTagDraft, tagSuggestions, tagVocabulary } from "./tags";
 import type { Annotation } from "./server";
-it("commits comma or Enter input as trimmed distinct tokens without empty pills", () => {
+it("commits Enter-confirmed comma-separated input as trimmed distinct tokens without empty pills", () => {
   expect(commitTags(["music"], " Music, live ,, jazz ")).toEqual(["music", "live", "jazz"]);
   expect(commitTags([], " cinéma ")).toEqual(["cinéma"]);
 });
@@ -28,4 +28,10 @@ it("bounds suggestions and preserves entered/saved spelling", () => {
     ),
   ).toHaveLength(8);
   expect(commitTags(["Rock"], "rock")).toEqual(["Rock"]);
+});
+it("completes the final comma-separated fragment without losing pending earlier tags", () => {
+  expect(completeTagDraft("music, li", "live")).toBe("music,live");
+  expect(commitTags([], completeTagDraft("music, li", "live"))).toEqual(["music", "live"]);
+  expect(tagSuggestions(["music", "live"], "music, li", [])).toEqual(["live"]);
+  expect(tagSuggestions(["music", "live"], "music, mu", [])).toEqual([]);
 });

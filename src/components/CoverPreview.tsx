@@ -1,10 +1,12 @@
 import { t } from "../i18n";
-import { onMount, onCleanup } from "solid-js";
+import { onMount, onCleanup, Show } from "solid-js";
 import type { Album } from "../library/types";
 import { Icon } from "./Icon";
 import { Artwork } from "./Artwork";
+import { useLibrary } from "../library/context";
 /** Native dialog provides Escape, keyboard focus containment and trigger restoration. */
 export function CoverPreview(props: { album: Album; onClose: () => void }) {
+  const library = useLibrary();
   let dialog: HTMLDialogElement | undefined;
   let heading: HTMLHeadingElement | undefined;
   onMount(() => {
@@ -45,7 +47,18 @@ export function CoverPreview(props: { album: Album; onClose: () => void }) {
             <Icon name="close" />
           </button>
         </div>
-        <Artwork album={props.album} />
+        <Show
+          when={library.image(props.album.reference, "cover")}
+          fallback={<Artwork album={props.album} />}
+        >
+          {(url) => (
+            <img
+              class="cover-preview-image"
+              src={url()}
+              alt={t("Pochette : {0}", props.album.title)}
+            />
+          )}
+        </Show>
       </div>
     </dialog>
   );

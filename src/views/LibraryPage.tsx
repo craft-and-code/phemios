@@ -3,17 +3,12 @@ import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
 import { SourceBadge } from "../components/SourceBadge";
 import { createMemo, For, Show } from "solid-js";
-import { CountryGlobe } from "../components/CountryGlobe";
+import { CountryExplorer } from "../components/CountryExplorer";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { CoverPlay } from "../components/CoverPlay";
 import { Artwork } from "../components/Artwork";
 import { useLibrary } from "../library/context";
-import {
-  browseArtists,
-  selectCountries,
-  additiveCountrySelection,
-  isMac,
-} from "../library/selection";
+import { browseArtists, selectCountries } from "../library/selection";
 import { catalogIndex, artistCardSelection } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Filters } from "../library/types";
@@ -65,138 +60,127 @@ export function LibraryPage(props: {
       classList={{ "country-library": props.section === "countries" }}
       aria-label={t("Catalogue")}
     >
-      <div class="page-heading">
-        <span role="status">
-          {artistView() ? artists().length : albums().length} {t("résultat(s)")}
-        </span>
-      </div>
-      <Show when={props.section === "countries"}>
-        <CountryGlobe artists={principals()} selected={countries()} onSelect={setCountry} />
-        <div class="choices" aria-label={t("Pays d’origine")}>
-          <button aria-pressed={countries().length === 0} onClick={() => setCountry(undefined)}>
-            {t("Tous")}{" "}
-          </button>
-          <For each={[...new Set(principals().map((item) => item.country))]}>
-            {(value) => (
-              <button
-                aria-pressed={countries().includes(value)}
-                onClick={(event) => setCountry(value, additiveCountrySelection(event, isMac()))}
+      <div classList={{ "country-layout": props.section === "countries" }}>
+        <Show when={props.section === "countries"}>
+          <CountryExplorer artists={principals()} selected={countries()} onSelect={setCountry} />
+        </Show>
+        <div class="library-results">
+          <div class="page-heading">
+            <span role="status">
+              {artistView() ? artists().length : albums().length} {t("résultat(s)")}
+            </span>
+          </div>
+          <Show when={props.section === "genres"}>
+            <div class="choices" aria-label={t("Genres")}>
+              <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>
+                {t("Tous")}{" "}
+              </button>
+              <For
+                each={[
+                  ...new Set(principals().flatMap((item) => item.genres ?? [item.genre])),
+                ].filter(Boolean)}
               >
-                {countryName(principals().find((a) => a.country === value)?.countryCode, value)}
-              </button>
-            )}
-          </For>
-        </div>
-      </Show>
-      <Show when={props.section === "genres"}>
-        <div class="choices" aria-label={t("Genres")}>
-          <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>
-            {t("Tous")}{" "}
-          </button>
-          <For
-            each={[...new Set(principals().flatMap((item) => item.genres ?? [item.genre]))].filter(
-              Boolean,
-            )}
+                {(value) => (
+                  <button aria-pressed={genres().includes(value)} onClick={() => setGenre(value)}>
+                    {value}
+                  </button>
+                )}
+              </For>
+            </div>
+          </Show>
+          <Show
+            when={artistView()}
+            fallback={
+              <AlbumGrid
+                albums={albums()}
+                reverse={props.reverse}
+                emptyIcon={sectionIcon(props.section)}
+              />
+            }
           >
-            {(value) => (
-              <button aria-pressed={genres().includes(value)} onClick={() => setGenre(value)}>
-                {value}
-              </button>
-            )}
-          </For>
-        </div>
-      </Show>
-      <Show
-        when={artistView()}
-        fallback={
-          <AlbumGrid
-            albums={albums()}
-            reverse={props.reverse}
-            emptyIcon={sectionIcon(props.section)}
-          />
-        }
-      >
-        <ul class="artist-grid">
-          <For each={artists()}>
-            {(artist) => {
-              const releases = index().albumsByArtist.get(artist.reference) ?? [];
-              const selection = artistCardSelection(artist, releases),
-                cover = selection.cover;
-              return (
-                <li>
-                  <div class="artist-card">
-                    <div class="artist-cover">
-                      <a
-                        class="artist-cover-link"
-                        href={`#/artist/${encodeURIComponent(artist.reference)}`}
-                      >
-                        <Show
-                          when={library.image(artist.reference, "portrait")}
-                          fallback={
+            <ul class="artist-grid">
+              <For each={artists()}>
+                {(artist) => {
+                  const releases = index().albumsByArtist.get(artist.reference) ?? [];
+                  const selection = artistCardSelection(artist, releases),
+                    cover = selection.cover;
+                  return (
+                    <li>
+                      <div class="artist-card">
+                        <div class="artist-cover">
+                          <a
+                            class="artist-cover-link"
+                            href={`#/artist/${encodeURIComponent(artist.reference)}`}
+                          >
                             <Show
-                              when={cover}
+                              when={library.image(artist.reference, "portrait")}
                               fallback={
-                                <div
-                                  class="artwork missing-art"
-                                  aria-label={t("Pas de pochette disponible")}
+                                <Show
+                                  when={cover}
+                                  fallback={
+                                    <div
+                                      class="artwork missing-art"
+                                      aria-label={t("Pas de pochette disponible")}
+                                    >
+                                      ♪
+                                    </div>
+                                  }
                                 >
-                                  ♪
-                                </div>
+                                  {(album) => <Artwork album={album()} />}
+                                </Show>
                               }
                             >
-                              {(album) => <Artwork album={album()} />}
+                              {(url) => (
+                                <div class="artwork real-art">
+                                  <img src={url()} alt={t("Portrait de {0}", artist.name)} />
+                                </div>
+                              )}
                             </Show>
-                          }
+                          </a>
+                          <CoverPlay reference={selection.reference} title={selection.title} />
+                        </div>
+                        <a
+                          class="artist-card-link"
+                          href={`#/artist/${encodeURIComponent(artist.reference)}`}
                         >
-                          {(url) => (
-                            <div class="artwork real-art">
-                              <img src={url()} alt={t("Portrait de {0}", artist.name)} />
-                            </div>
-                          )}
-                        </Show>
-                      </a>
-                      <CoverPlay reference={selection.reference} title={selection.title} />
-                    </div>
-                    <a
-                      class="artist-card-link"
-                      href={`#/artist/${encodeURIComponent(artist.reference)}`}
-                    >
-                      <div>
-                        <h2>
-                          {artist.name} <SourceBadge reference={artist.reference} />
-                        </h2>
-                        <p>
-                          {artist.genre} · {countryName(artist.countryCode, artist.country)}
-                        </p>
-                        <small>
-                          {releases.length} {t("albums · ouvrir la page")}
-                        </small>
+                          <div>
+                            <h2>
+                              {artist.name} <SourceBadge reference={artist.reference} />
+                            </h2>
+                            <p>
+                              {artist.genre} · {countryName(artist.countryCode, artist.country)}
+                            </p>
+                            <small>
+                              {releases.length} {t("albums · ouvrir la page")}
+                            </small>
+                          </div>
+                        </a>
+                        <CoverPlay
+                          class="artist-list-play"
+                          reference={selection.reference}
+                          title={selection.title}
+                        />
                       </div>
-                    </a>
-                    <CoverPlay
-                      class="artist-list-play"
-                      reference={selection.reference}
-                      title={selection.title}
-                    />
-                  </div>
-                </li>
-              );
-            }}
-          </For>
-        </ul>
-        <Show when={!artists().length}>
-          <EmptyState icon={sectionIcon(props.section)}>
-            {t("Aucun artiste dans cette sélection.")}{" "}
-          </EmptyState>
-        </Show>
-      </Show>
-      <Show when={library.demo}>
-        <p class="demo-note">
-          {t(
-            "Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la recherche globale d’Aède reste à raccorder.",
-          )}{" "}
-        </p>
-      </Show>
+                    </li>
+                  );
+                }}
+              </For>
+            </ul>
+            <Show when={!artists().length}>
+              <EmptyState icon={sectionIcon(props.section)}>
+                {t("Aucun artiste dans cette sélection.")}{" "}
+              </EmptyState>
+            </Show>
+          </Show>
+          <Show when={library.demo}>
+            <p class="demo-note">
+              {t(
+                "Données et visuels fictifs. La recherche porte sur les champs de ce catalogue ; la recherche globale d’Aède reste à raccorder.",
+              )}{" "}
+            </p>
+          </Show>
+        </div>
+      </div>
     </section>
   );
 }

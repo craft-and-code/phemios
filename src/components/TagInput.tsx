@@ -9,7 +9,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { commitTags, tagSuggestions } from "../library/tags";
+import { commitTags, completeTagDraft, tagSuggestions } from "../library/tags";
 import { Icon } from "./Icon";
 /** Token editor with a current-owner saved vocabulary and a readable pending fragment on save. */
 export function TagInput(props: {
@@ -80,25 +80,15 @@ export function TagInput(props: {
           onFocus={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onInput={(event) => {
-            const value = event.currentTarget.value,
-              pieces = value.split(",");
-            if (pieces.length > 1) {
-              const entered = pieces.slice(0, -1).join(",");
-              props.onEntered?.(commitTags([], entered));
-              props.onChange(commitTags(props.value, entered));
-              event.currentTarget.value = pieces.at(-1) ?? "";
-            }
-            fragment(pieces.at(-1) ?? "");
+            fragment(event.currentTarget.value);
             setOpen(true);
           }}
           onKeyDown={(event) => {
             if (event.isComposing) return;
-            if (event.key === "Enter" || event.key === ",") {
+            if (event.key === "Enter") {
               event.preventDefault();
               commit(
-                event.key === "Enter" && active() >= 0
-                  ? (suggestions()[active()] ?? draft())
-                  : draft(),
+                active() >= 0 ? completeTagDraft(draft(), suggestions()[active()] ?? "") : draft(),
               );
             } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
@@ -131,7 +121,7 @@ export function TagInput(props: {
                 role="option"
                 aria-selected={active() === index()}
                 onPointerDown={(event) => event.preventDefault()}
-                onClick={() => commit(tag)}
+                onClick={() => commit(completeTagDraft(draft(), tag))}
               >
                 {tag}
               </li>
@@ -158,7 +148,7 @@ export function TagInput(props: {
       </div>
       <small>
         {t(
-          "Entrée ou virgule pour créer une pastille. Les tags sont enregistrés avec les notes.",
+          "Validez avec Entrée. Séparez plusieurs tags par des virgules. Les tags sont enregistrés avec les notes.",
         )}{" "}
       </small>
     </div>

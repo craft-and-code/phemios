@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { albumTracks, discGroups } from "./album-tracks";
+import { albumTracks, discGroups, hasMultipleDiscs } from "./album-tracks";
 import { requestAede } from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 const rows = Array.from({ length: 85 }, (_, i) => ({
@@ -12,6 +12,12 @@ const rows = Array.from({ length: 85 }, (_, i) => ({
   analysis_available: i === 0,
   spectrum_available: false,
 }));
+it("shows a disc label only when the album has distinct known CDs", () => {
+  expect(hasMultipleDiscs([{ disc_no: 1 }, { disc_no: 1 }])).toBe(false);
+  expect(hasMultipleDiscs([{ disc_no: null }, { disc_no: 1 }])).toBe(false);
+  expect(hasMultipleDiscs([{ disc_no: 1 }, { disc_no: 2 }])).toBe(true);
+  expect(hasMultipleDiscs([])).toBe(false);
+});
 it("loads a four-disc album from bounded pages, retaining duplicate titles and play indices", async () => {
   vi.mocked(requestAede).mockImplementation(async (_path, query) => {
     const offset = Number(query?.offset);

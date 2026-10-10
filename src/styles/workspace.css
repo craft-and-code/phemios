@@ -42,12 +42,25 @@
   min-width: 0;
 }
 .coverage-cover {
+  display: block;
   flex: 0 0 48px;
-}
-.coverage-cover .artwork {
   width: 48px;
   height: 48px;
+}
+.analysis-table .coverage-cover .artwork {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 48px;
+  max-height: 48px;
   padding: 0;
+  display: grid;
+  place-items: center;
+}
+.coverage-cover .cover-fallback {
+  padding: 0;
+  margin: 0;
   display: grid;
   place-items: center;
 }

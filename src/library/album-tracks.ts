@@ -8,6 +8,13 @@ export interface AlbumTrack extends Track {
   analysis_available: boolean;
   spectrum_available: boolean;
 }
+/** Unknown disc numbers do not establish a multi-disc release. */
+export function hasMultipleDiscs(tracks: readonly Pick<AlbumTrack, "disc_no">[]): boolean {
+  return (
+    new Set(tracks.map((track) => track.disc_no).filter((disc) => disc !== null && disc > 0)).size >
+    1
+  );
+}
 const object = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error(t("Page de pistes Aède invalide."));

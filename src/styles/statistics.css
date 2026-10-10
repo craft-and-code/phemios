@@ -46,6 +46,7 @@
   overflow: hidden;
 }
 .stat-tiles strong {
+  min-width: 0;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-size: 24px;

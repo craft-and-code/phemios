@@ -12,7 +12,7 @@ export function PodcastsPage(props: { query: string }) {
     subscriptions = createSubscriptions(),
     [url, setUrl] = createSignal(""),
     [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
-    [busy, setBusy] = createSignal(false),
+    [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
   let alive = true;
   onCleanup(() => {
@@ -23,9 +23,9 @@ export function PodcastsPage(props: { query: string }) {
     (feed()?.episodes ?? []).filter((e) =>
       `${e.title} ${e.summary}`.toLocaleLowerCase().includes(props.query.toLocaleLowerCase()),
     );
-  async function load(value: string) {
+  async function load(value: string, action: "subscribe" | "refresh" = "subscribe") {
     if (busy()) return;
-    setBusy(true);
+    setBusy(action);
     setError("");
     try {
       const source = podcastUrl(value.trim()),
@@ -39,7 +39,7 @@ export function PodcastsPage(props: { query: string }) {
     } catch (e) {
       if (alive) setError(String(e));
     } finally {
-      if (alive) setBusy(false);
+      if (alive) setBusy("");
     }
   }
   return (
@@ -59,13 +59,13 @@ export function PodcastsPage(props: { query: string }) {
             placeholder="https://example.org/podcast.xml"
             value={url()}
             onInput={(e) => setUrl(e.currentTarget.value)}
-            disabled={busy()}
+            disabled={!!busy()}
           />
         </label>
-        <button class="primary" disabled={busy() || !isNative()}>
+        <button class="primary" disabled={!!busy() || !isNative()}>
           {t("S’abonner")}
         </button>
-        <Show when={busy()}>
+        <Show when={busy() === "subscribe"}>
           <span class="job-activity" role="status">
             <span class="spinner" aria-hidden="true" />
             {t("Chargement du podcast…")}
@@ -100,16 +100,22 @@ export function PodcastsPage(props: { query: string }) {
                   <h2>{current().title}</h2>
                   <button
                     class="icon-button"
-                    disabled={busy() || !isNative()}
+                    disabled={!!busy() || !isNative()}
+                    aria-busy={busy() === "refresh"}
                     aria-label={t("Actualiser les épisodes")}
                     title={t("Actualiser les épisodes")}
-                    onClick={() => void load(current().url)}
+                    onClick={() => void load(current().url, "refresh")}
                   >
-                    <Icon name="refresh" />
+                    <Show when={busy() === "refresh"} fallback={<Icon name="refresh" />}>
+                      <span class="spinner" aria-hidden="true" />
+                      <span class="sr-only" role="status">
+                        {t("Chargement du podcast…")}
+                      </span>
+                    </Show>
                   </button>
                   <button
                     class="icon-button quiet icon-close"
-                    disabled={busy()}
+                    disabled={!!busy()}
                     aria-label={t("Se désabonner")}
                     title={t("Se désabonner")}
                     onClick={() => {

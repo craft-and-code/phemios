@@ -10,6 +10,7 @@ import {
 import { additiveCountrySelection, isMac } from "../library/selection";
 import { drawGlobe } from "../geography/draw";
 import type { Artist } from "../library/types";
+import { Icon } from "./Icon";
 const names = new Intl.DisplayNames(["fr"], { type: "region" });
 const countryName = (code: string) => (/^[A-Z]{2}$/.test(code) ? names.of(code) : undefined);
 /** Locally bundled borders and a manual, keyboard-accessible globe. */
@@ -156,20 +157,29 @@ export function CountryGlobe(props: {
           }}
         />
         <div class="globe-zoom">
-          <button aria-label={t("Réduire le globe")} onClick={() => zoomBy(-0.2)}>
-            −
-          </button>
-          <button aria-label={t("Agrandir le globe")} onClick={() => zoomBy(0.2)}>
-            +
+          <button
+            class="icon-button"
+            aria-label={t("Réduire le globe")}
+            onClick={() => zoomBy(-0.2)}
+          >
+            <Icon name="minus" />
           </button>
           <button
+            class="icon-button"
+            aria-label={t("Agrandir le globe")}
+            onClick={() => zoomBy(0.2)}
+          >
+            <Icon name="plus" />
+          </button>
+          <button
+            class="icon-button"
             aria-label={t("Réinitialiser le globe")}
             onClick={() => {
               setCenter([8, 22]);
               setZoom(1);
             }}
           >
-            ↺
+            <Icon name="refresh" />
           </button>
         </div>
       </div>
@@ -178,22 +188,22 @@ export function CountryGlobe(props: {
         <p class="globe-country" aria-live="polite">
           {hover() ? displayCountry(hover()!.code, hover()!.name) : t("Explorez les pays")}
         </p>
-        <p>
-          {t(
-            "Tournez le globe, zoomez et choisissez un pays. Les pays représentés dans la bibliothèque sont illuminés.",
-          )}{" "}
-          {isMac() ? t("⌘ + clic") : t("Ctrl + clic")}{" "}
-          {t("pour ajouter ou retirer un pays de la sélection.")}{" "}
-        </p>
-        <small>{t("L’origine vient des informations d’artiste disponibles dans Aède.")}</small>
+        <details class="globe-help">
+          <summary>{t("Comment utiliser le globe")}</summary>
+          <p>
+            {t(
+              "Tournez le globe, zoomez et choisissez un pays. Les pays représentés dans la bibliothèque sont illuminés.",
+            )}{" "}
+            {isMac() ? t("⌘ + clic") : t("Ctrl + clic")}{" "}
+            {t("pour ajouter ou retirer un pays de la sélection.")}{" "}
+          </p>
+          <small>{t("L’origine vient des informations d’artiste disponibles dans Aède.")}</small>
+        </details>
         <Show when={countries.error}>
           <p role="alert">
             {t("Impossible de charger les frontières. Utilisez les boutons de pays.")}
           </p>
         </Show>
-        <button class="quiet" onClick={() => props.onSelect(undefined)}>
-          {t("Tous les pays")}{" "}
-        </button>
       </div>
     </div>
   );

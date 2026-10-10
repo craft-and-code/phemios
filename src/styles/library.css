@@ -296,25 +296,52 @@
   }
 }
 
-.globe-panel {
+/* The parent container reflects usable catalogue width, including a hidden sidebar. */
+.library-page {
+  container-type: inline-size;
+}
+.country-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.library-results {
+  min-width: 0;
+}
+.library-results:has(> .empty-state) {
   display: flex;
-  align-items: center;
-  gap: 30px;
-  margin: 0 0 24px;
+  flex-direction: column;
+  min-height: 360px;
+}
+/* Other catalogue pages keep their full remaining-height empty state. */
+.library-page:not(.country-library) > div:has(> .library-results > .empty-state),
+.library-page:not(.country-library) .library-results:has(> .empty-state) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.country-exploration {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  min-width: 0;
+}
+.globe-panel {
+  margin: 0 0 16px;
   border: 1px solid #28525a;
   border-radius: 12px;
-  background: radial-gradient(ellipse at 30% 50%, #0a2730, #111619 70%);
+  background: radial-gradient(ellipse at 30% 35%, #0a2730, #111619 70%);
   overflow: hidden;
 }
 .globe-display {
   position: relative;
-  width: 55%;
-  flex: 0 0 55%;
 }
 .globe-display canvas {
   display: block;
   width: 100%;
-  height: 320px;
+  height: 300px;
   cursor: grab;
   touch-action: none;
 }
@@ -323,41 +350,65 @@
 }
 .globe-zoom {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
+  bottom: 10px;
+  right: 12px;
   display: flex;
   gap: 6px;
 }
-.globe-zoom button {
-  padding: 4px 9px;
+.globe-zoom .icon-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
   background: #11272ce8;
   border-color: #38616b;
 }
+.globe-zoom .icon-button svg {
+  width: 18px;
+  height: 18px;
+}
 .globe-caption {
-  padding: 24px 24px 24px 0;
+  padding: 0 18px 18px;
 }
 .globe-caption p:not(.eyebrow) {
   color: #b0c1c2;
   font-size: 12px;
 }
-.globe-caption .globe-country {
-  font-size: 23px !important;
-  color: #deeff0 !important;
-  margin: 12px 0;
+.globe-caption p.globe-country {
+  font-size: 20px;
+  color: #deeff0;
+  margin: 10px 0;
+  height: 50px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.globe-caption button {
-  display: block;
-  margin-top: 18px;
+.globe-help {
+  color: #b0c1c2;
+  font-size: 12px;
 }
-@media (max-width: 900px) {
-  .globe-panel {
-    gap: 10px;
+.globe-help summary {
+  cursor: pointer;
+}
+.country-exploration > .choices {
+  margin-bottom: 0;
+}
+@container (max-width: 700px) {
+  .country-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
   }
-  .globe-caption {
-    padding-right: 14px;
+  .country-exploration {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
   .globe-display canvas {
-    height: 280px;
+    height: 240px;
   }
 }
 .real-art {
@@ -579,8 +630,15 @@ pre {
 }
 .cover-dialog .artwork {
   width: min(75vw, 68dvh);
+  border: 0;
+  background: none !important;
 }
-.cover-dialog .artwork img {
+.cover-preview-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(75vw, 900px);
+  max-height: 68dvh;
   object-fit: contain;
 }
 .cover-dialog-heading {
@@ -1162,20 +1220,15 @@ button.metadata-link:hover {
 }
 .missing-cover > .missing-dismiss {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 22px;
-  height: 22px;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
   display: grid;
   place-items: center;
-  padding: 5px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--surface);
 }
 .missing-dismiss svg {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
 }
 .missing-notice {
   display: flex;
@@ -1262,7 +1315,8 @@ button.metadata-link:hover {
 .album-card:hover strong {
   color: var(--accent);
 }
-.cover-play.icon-button {
+.cover-play.icon-button,
+.missing-dismiss.icon-button {
   width: 30px;
   height: 30px;
   padding: 6px;

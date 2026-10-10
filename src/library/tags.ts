@@ -12,6 +12,12 @@ export function commitTags(selected: readonly string[], draft: string): string[]
       return true;
     });
 }
+/** Choosing a suggestion replaces only the final fragment; earlier comma-separated input stays pending. */
+export function completeTagDraft(draft: string, suggestion: string): string {
+  const fragments = draft.split(",");
+  fragments[fragments.length - 1] = suggestion;
+  return fragments.join(",");
+}
 /** Suggestions use only saved annotations loaded for the current account, never other owners. */
 export function tagVocabulary(annotations: readonly (Annotation | undefined)[]): string[] {
   return commitTags(
@@ -25,8 +31,9 @@ export function tagSuggestions(
   draft: string,
   selected: readonly string[],
 ): string[] {
-  const prefix = normalizeName(draft),
-    held = new Set(selected.map(normalizeName));
+  const fragments = draft.split(","),
+    prefix = normalizeName(fragments.at(-1) ?? ""),
+    held = new Set([...selected, ...fragments.slice(0, -1)].map(normalizeName));
   return prefix
     ? vocabulary
         .filter((tag) => normalizeName(tag).startsWith(prefix) && !held.has(normalizeName(tag)))

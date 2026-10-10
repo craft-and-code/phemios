@@ -1,4 +1,6 @@
 import { project, type Country, type Point } from "./projection";
+import { geoPath } from "d3-geo";
+import { countryGeometry, globeProjection } from "./geometry";
 /** Draw only the front hemisphere, without a permanent animation loop. */
 export function drawGlobe(
   canvas: HTMLCanvasElement,
@@ -13,6 +15,7 @@ export function drawGlobe(
   const w = canvas.clientWidth,
     h = canvas.clientHeight,
     ratio = Math.min(window.devicePixelRatio, 2);
+  if (!w || !h) return;
   canvas.width = w * ratio;
   canvas.height = h * ratio;
   ctx.scale(ratio, ratio);
@@ -35,24 +38,10 @@ export function drawGlobe(
   sea.addColorStop(1, "#040f19");
   ctx.fillStyle = sea;
   ctx.fillRect(0, 0, w, h);
+  const path = geoPath(globeProjection(center, radius, [cx, cy]), ctx);
   for (const country of countries) {
     ctx.beginPath();
-    let visible = false;
-    for (const polygon of country.polygons)
-      for (const ring of polygon) {
-        let active = false;
-        for (const vertex of ring) {
-          const p = project(vertex, center);
-          if (p.z >= 0) {
-            if (active) ctx.lineTo(cx + p.x * radius, cy + p.y * radius);
-            else ctx.moveTo(cx + p.x * radius, cy + p.y * radius);
-            active = true;
-            visible = true;
-          } else active = false;
-        }
-        ctx.closePath();
-      }
-    if (!visible) continue;
+    path(countryGeometry(country));
     ctx.fillStyle = selected.has(country.code)
       ? "#d8f36a"
       : available.has(country.code)

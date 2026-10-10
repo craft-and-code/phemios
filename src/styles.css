@@ -195,14 +195,17 @@ button.icon-close:focus-visible {
 }
 
 /* Result views reserve remaining space, rather than leaving an empty message in a corner. */
-main:has(> .page > .empty-state) {
+main:has(> .page > .empty-state),
+main:has(> .library-page:not(.country-library) .library-results > .empty-state) {
   display: flex;
   flex-direction: column;
 }
-main:has(> .page > .empty-state) > * {
+main:has(> .page > .empty-state) > *,
+main:has(> .library-page:not(.country-library) .library-results > .empty-state) > * {
   flex-shrink: 0;
 }
-.page:has(> .empty-state) {
+.page:has(> .empty-state),
+.library-page:not(.country-library):has(.library-results > .empty-state) {
   flex: 1;
   min-height: 0;
   display: flex;

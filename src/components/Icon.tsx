@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  plus: "M5 12h14M12 5v14",
+  minus: "M5 12h14",
   "chevron-up": "m6 15 6-6 6 6",
   "chevron-down": "m6 9 6 6 6-6",
   check: "M5 12l4 4L19 6",

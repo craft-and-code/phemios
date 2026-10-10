@@ -71,3 +71,11 @@ Committed tag pills are removed only with their explicit cross; Backspace/Delete
 Collections creation aligns at the right and the icon toggles its inline form, preserving an unsaved name/rule while closed. Dismissal crosses share an unframed hit target, with keyboard focus retained. Output refresh shares the close cross’s horizontal centre and the select’s vertical centre. Missing-cover retry uses a refresh glyph and acquisition activity.
 
 Coverage rows keep a fixed 72 px height, complete single-line action groups, a resident 48 px cover, ellipsized title/artist with their full tooltip, and Play last. Sorting still belongs to Aède before paging. Statistics cells share equal grid dimensions; measured value text scales down only when necessary, keeping the full measurement/unit on one line. Doctor severity and Refresh share one stable toolbar; refresh activity does not remove the previous result while loading.
+
+## Artwork and measurement refinement
+
+Missing-album dismissal uses the same 30 px top-right overlay geometry and 8 px inset as cover Play. Enlarged resident images preserve their intrinsic ratio without an inner artwork border or square wrapper; only the outer dialog frames the image. Coverage artwork remains 48 px square in both density modes, including unavailable-image fallbacks.
+
+Track detail reads its bounded album placements before showing a CD label: a single known CD or unknown numbering is not evidence of multiple discs. Multiple distinct known CDs expose the current placement's CD label. Sibling-read failures remain explicit.
+
+Commas remain in the annotation draft. Enter commits all comma-separated fragments as pills; autocomplete completes the last fragment while preserving previous pending tags. Committed pills still require their cross for removal. Statistics reserves inner breathing space and proportionally fits complete value/unit text after font readiness and width changes, without allowing text min-content width to enlarge its cell.

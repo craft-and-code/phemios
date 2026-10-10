@@ -11,6 +11,7 @@ import { Artwork } from "../components/Artwork";
 import { AnnotationPanel } from "../components/AnnotationPanel";
 import { fileSize, trackDuration } from "../library/detail-format";
 import { TrackResults } from "../components/TrackResults";
+import { albumTracks, hasMultipleDiscs } from "../library/album-tracks";
 /** Track facts, credits, annotations and retained results share the catalog detail conventions. */
 export function TrackPage(props: { reference: string }) {
   const library = useLibrary();
@@ -19,6 +20,10 @@ export function TrackPage(props: { reference: string }) {
     async (ref) => parseTrackDetail(await requestAede("/api/v1/track", { ref }), ref),
   );
   const album = () => library.albums().find((a) => a.reference === detail()?.release);
+  const [siblings] = createResource(
+    () => library.sessionFor(props.reference) && !detail.loading && detail()?.release,
+    (reference) => albumTracks(reference),
+  );
   const format = (v: number | null, unit: string) =>
     v === null ? t("Non renseigné") : `${v.toLocaleString(locale())} ${unit}`;
   return (
@@ -58,9 +63,17 @@ export function TrackPage(props: { reference: string }) {
                   {(a) => (
                     <p>
                       <a href={`#/album/${encodeURIComponent(a().reference)}`}>{a().title}</a>{" "}
-                      {t("· CD")} {row().disc_no ?? "?"} {t("· Piste")} {row().track_no ?? "?"}
+                      <Show when={hasMultipleDiscs(siblings() ?? [])}>
+                        {t("· CD")} {row().disc_no ?? "?"}{" "}
+                      </Show>
+                      {t("· Piste")} {row().track_no ?? "?"}
                     </p>
                   )}
+                </Show>
+                <Show when={siblings.error}>
+                  <small role="alert">
+                    {t("Pistes indisponibles :")} {String(siblings.error)}
+                  </small>
                 </Show>
                 <button
                   class="icon-button detail-play"
