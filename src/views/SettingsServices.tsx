@@ -293,7 +293,11 @@ export function SettingsServices() {
                     class="icon-button quiet"
                     title={t("Annuler la tâche")}
                     aria-label={t("Annuler la tâche")}
-                    onClick={() => void library.tasks.cancel(job.task_id, job.source ?? "server")}
+                    onClick={() =>
+                      void library.tasks
+                        .cancel(job.task_id, job.source ?? "server")
+                        .catch((failure) => setMessage(String(failure)))
+                    }
                   >
                     <Icon name="close" />
                   </button>

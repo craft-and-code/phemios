@@ -26,7 +26,11 @@ export function LabelPage(props: {
     alive = false;
   });
   const [result] = createResource(
-    () => ({ reference: props.reference, session: library.sessionFor(props.reference) }),
+    () => ({
+      reference: props.reference,
+      session: library.sessionFor(props.reference),
+      catalog: library.albums(),
+    }),
     async (key) => {
       if (!key.session)
         return {

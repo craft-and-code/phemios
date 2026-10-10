@@ -124,7 +124,12 @@ export function createJobs(
         null,
         source,
       );
-      if (!info.capabilities?.includes("administrative_tasks_list")) return;
+      if (
+        disposed ||
+        (options && identity !== options.session(source)) ||
+        !info.capabilities?.includes("administrative_tasks_list")
+      )
+        return;
       const rows = await requestAede<Job[]>("/api/admin/v1/tasks", {}, "GET", null, source);
       if (disposed || (options && identity !== options.session(source))) return;
       if (
@@ -171,8 +176,7 @@ export function createJobs(
         if (owners.get(source) !== identity) {
           owners.set(source, identity);
           setJobs((rows) => rows.filter((row) => row.source !== source));
-          if (identity?.account.role === "admin" && identity.server.startsWith("http://"))
-            void restore(source);
+          if (identity?.account.role === "admin") void restore(source);
         }
       }
     });

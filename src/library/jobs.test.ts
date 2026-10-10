@@ -130,3 +130,23 @@ it("restores actual running enrichment jobs and syncs confirmed completion witho
   expect(changed).toHaveBeenCalledWith("server");
   expect(request.mock.calls.some((call) => call[0] === "/api/admin/v1/fetch")).toBe(false);
 });
+
+it("keeps a newly accepted task when an older restore response arrives", async () => {
+  const jobs = controller();
+  let finish!: (v: unknown) => void;
+  request
+    .mockResolvedValueOnce({ capabilities: ["administrative_tasks_list"] })
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+  const restore = jobs.restore("server");
+  await Promise.resolve();
+  await Promise.resolve();
+  jobs.track({ task_id: 12 }, "fetch", "server");
+  finish([]);
+  await restore;
+  expect(jobs.jobs()[0]?.task_id).toBe(12);
+});
