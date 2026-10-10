@@ -1,3 +1,8 @@
+import {
+  initialCoverageSort,
+  nextCoverageSort,
+  type CoverageColumn,
+} from "../library/coverage-sort";
 import { activeReleaseJob } from "../library/jobs";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -11,6 +16,7 @@ import { Icon } from "../components/Icon";
 /** Retained-result coverage is read separately from explicit acquisition and recomputation jobs. */
 export function AnalysisPage(props: { query: string }) {
   const library = useLibrary(),
+    [sort, setSort] = createSignal(initialCoverageSort),
     [offset, setOffset] = createSignal(0),
     [revision, setRevision] = createSignal(0),
     [selected, setSelected] = createSignal(""),
@@ -29,6 +35,7 @@ export function AnalysisPage(props: { query: string }) {
         session: library.session(),
         source: library.source(),
         offset: offset(),
+        sort: sort(),
         query: props.query,
         revision: revision(),
         completed: library.tasks
@@ -50,10 +57,18 @@ export function AnalysisPage(props: { query: string }) {
         throw Error(
           t("Mettez à jour puis redémarrez Aède pour afficher la couverture des analyses."),
         );
+      if (!status.capabilities?.includes("analysis_coverage_sort"))
+        throw Error(t("Mettez à jour puis redémarrez Aède pour trier les analyses."));
       const data = parseCoverage(
         await requestAede(
           "/api/v1/presentation/analysis",
-          { offset: String(key.offset), limit: "50", q: key.query },
+          {
+            offset: String(key.offset),
+            limit: "50",
+            q: key.query,
+            sort: key.sort.column,
+            direction: key.sort.direction,
+          },
           "GET",
           null,
           key.source,
@@ -135,12 +150,45 @@ export function AnalysisPage(props: { query: string }) {
                 <table class="analysis-table">
                   <thead>
                     <tr>
-                      <th>{t("Album")}</th>
-                      <th>{t("Présentes")}</th>
-                      <th>{t("Manquantes")}</th>
-                      <th>{t("Périmées")}</th>
-                      <th>{t("Échecs")}</th>
-                      <th>{t("Spectres")}</th>
+                      <For
+                        each={
+                          [
+                            ["title", "Album"],
+                            ["current", "Présentes"],
+                            ["missing", "Manquantes"],
+                            ["stale", "Périmées"],
+                            ["failed", "Échecs"],
+                            ["spectra", "Spectres"],
+                          ] as const
+                        }
+                      >
+                        {([column, label]) => (
+                          <th
+                            aria-sort={
+                              sort().column === column
+                                ? sort().direction === "asc"
+                                  ? "ascending"
+                                  : "descending"
+                                : "none"
+                            }
+                          >
+                            <button
+                              class="coverage-sort"
+                              onClick={() => {
+                                setOffset(0);
+                                setSort(nextCoverageSort(sort(), column as CoverageColumn));
+                              }}
+                            >
+                              {t(label)}
+                              <Show when={sort().column === column}>
+                                <Icon
+                                  name={sort().direction === "asc" ? "chevron-up" : "chevron-down"}
+                                />
+                              </Show>
+                            </button>
+                          </th>
+                        )}
+                      </For>
                       <th>{t("Actions")}</th>
                     </tr>
                   </thead>

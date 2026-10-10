@@ -66,8 +66,7 @@
   overflow-wrap: anywhere;
 }
 .collection-create {
-  align-self: flex-start;
-  margin-bottom: 16px;
+  align-self: center;
 }
 .collection-form {
   margin-bottom: 20px;

@@ -1,3 +1,4 @@
+import { Icon } from "../components/Icon";
 import { RenameCollection } from "../components/RenameCollection";
 import { SelectionCollection } from "../components/SelectionCollection";
 import { personalCollectionExpression } from "../library/personal-collection";
@@ -119,6 +120,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
       <Show when={props.section === "favourites"}>
         <div class="personal-selection-actions">
           <SelectionCollection
+            disabled={!favourites().length}
             expression={personalCollectionExpression("favourites", props.query)}
           />
         </div>
@@ -134,20 +136,24 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
-        <button
-          class="collection-create"
-          aria-expanded={editingCollection()}
-          aria-controls="collection-editor"
-          disabled={!library.session() || library.session()?.account.role === "auditor"}
-          onClick={() => {
-            setName("");
-            setExpression("");
-            setEditingCollection(true);
-            queueMicrotask(() => nameInput?.focus());
-          }}
-        >
-          {t("Créer une collection")}
-        </button>
+        <div class="personal-selection-actions">
+          <button
+            class="icon-button collection-create"
+            title={t("Créer une collection")}
+            aria-label={t("Créer une collection")}
+            aria-expanded={editingCollection()}
+            aria-controls="collection-editor"
+            disabled={!library.session() || library.session()?.account.role === "auditor"}
+            onClick={() => {
+              setName("");
+              setExpression("");
+              setEditingCollection(true);
+              queueMicrotask(() => nameInput?.focus());
+            }}
+          >
+            <Icon name="library" />
+          </button>
+        </div>
         <Show when={editingCollection()}>
           <form
             id="collection-editor"

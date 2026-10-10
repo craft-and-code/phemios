@@ -616,3 +616,51 @@ legend {
   width: 36px;
   height: 36px;
 }
+
+.playing-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.player-bar .playing-title-line strong {
+  min-width: 0;
+}
+.playing-favourite {
+  display: inline-flex;
+  flex: 0 0 auto;
+  position: relative;
+}
+.playing-favourite > small {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 250px;
+  white-space: normal;
+  color: #efb6aa;
+  background: var(--surface);
+  padding: 8px;
+}
+.audio-settings-panel {
+  padding-top: 44px;
+}
+.audio-settings-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+.audio-output-row {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+.audio-output-row > label {
+  flex: 1;
+  min-width: 0;
+}
+.audio-output-refresh.icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  margin-bottom: 2px;
+}

@@ -1,3 +1,4 @@
+import { PlayingFavourite } from "./PlayingFavourite";
 import { t } from "../i18n";
 import { For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -10,6 +11,7 @@ const time = (ms: number | null) =>
     : `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")}`;
 /** The transport follows native consumed frames, independent of the open catalog page. */
 export function PlayerBar() {
+  let audioSettings: HTMLDetailsElement | undefined;
   const player = useLibrary().player,
     state = player.state;
   const position = player.seekPosition;
@@ -47,17 +49,22 @@ export function PlayerBar() {
           )}
         </Show>
         <span>
-          <strong>
+          <span class="playing-title-line">
+            <strong>
+              <Show when={player.current()}>
+                {(row) => (
+                  <span class="playing-position">
+                    {row().number}/{row().albumTotal} ·{" "}
+                  </span>
+                )}
+              </Show>
+              <PlayingBars reference={player.current()?.reference ?? ""} />
+              {player.current()?.title ?? t("Aucun morceau en lecture")}
+            </strong>
             <Show when={player.current()}>
-              {(row) => (
-                <span class="playing-position">
-                  {row().number}/{row().albumTotal} ·{" "}
-                </span>
-              )}
+              {(row) => <PlayingFavourite reference={row().reference} />}
             </Show>
-            <PlayingBars reference={player.current()?.reference ?? ""} />
-            {player.current()?.title ?? t("Aucun morceau en lecture")}
-          </strong>
+          </span>
           <small>
             {player.current()?.artist} {player.current() ? "· " : ""}
             {status()}
@@ -177,7 +184,12 @@ export function PlayerBar() {
         </div>
       </div>
       <div class="player-options">
-        <details class="audio-settings">
+        <details
+          class="audio-settings"
+          ref={(element) => {
+            audioSettings = element;
+          }}
+        >
           <summary
             class="icon-button"
             aria-label={t("Réglages audio")}
@@ -186,40 +198,52 @@ export function PlayerBar() {
             <Icon name="settings" />
           </summary>
           <div class="audio-settings-panel">
-            <label>
-              {t("Sortie audio")}{" "}
-              <select
-                aria-label={t("Sortie audio")}
-                disabled={!player.ready() || player.busy() || player.discovering()}
-                value={player.device()}
-                onFocus={() => {
-                  if (!player.outputs().length) void player.discover();
-                }}
-                onChange={(e) => void player.chooseOutput(e.currentTarget.value)}
-              >
-                <option value="">{t("Sortie système")}</option>
-                <For each={player.outputs()}>
-                  {(output) => (
-                    <option value={output.id}>
-                      {output.name}
-                      {output.default ? t(" (par défaut)") : ""}
-                    </option>
-                  )}
-                </For>
-              </select>
-            </label>
             <button
-              class="icon-button"
-              aria-busy={player.discovering()}
-              aria-label={t("Actualiser les sorties audio")}
-              title={t("Actualiser les sorties audio")}
-              disabled={!player.ready() || player.busy() || player.discovering()}
-              onClick={() => void player.discover()}
+              class="icon-button quiet audio-settings-close"
+              aria-label={t("Fermer les réglages audio")}
+              title={t("Fermer")}
+              onClick={() => {
+                if (audioSettings) audioSettings.open = false;
+              }}
             >
-              <Show when={player.discovering()} fallback={<Icon name="refresh" />}>
-                <span class="spinner" aria-hidden="true" />
-              </Show>
+              <Icon name="close" />
             </button>
+            <div class="audio-output-row">
+              <label>
+                {t("Sortie audio")}{" "}
+                <select
+                  aria-label={t("Sortie audio")}
+                  disabled={!player.ready() || player.busy() || player.discovering()}
+                  value={player.device()}
+                  onFocus={() => {
+                    if (!player.outputs().length) void player.discover();
+                  }}
+                  onChange={(e) => void player.chooseOutput(e.currentTarget.value)}
+                >
+                  <option value="">{t("Sortie système")}</option>
+                  <For each={player.outputs()}>
+                    {(output) => (
+                      <option value={output.id}>
+                        {output.name}
+                        {output.default ? t(" (par défaut)") : ""}
+                      </option>
+                    )}
+                  </For>
+                </select>
+              </label>
+              <button
+                class="icon-button audio-output-refresh"
+                aria-busy={player.discovering()}
+                aria-label={t("Actualiser les sorties audio")}
+                title={t("Actualiser les sorties audio")}
+                disabled={!player.ready() || player.busy() || player.discovering()}
+                onClick={() => void player.discover()}
+              >
+                <Show when={player.discovering()} fallback={<Icon name="refresh" />}>
+                  <span class="spinner" aria-hidden="true" />
+                </Show>
+              </button>
+            </div>
             <Show when={player.discovering()}>
               <small role="status">{t("Actualisation des sorties audio…")}</small>
             </Show>

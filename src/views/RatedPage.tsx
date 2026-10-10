@@ -58,9 +58,12 @@ export function RatedPage(props: { query: string }) {
             if (next < minimum()) setMinimum(next);
           }}
         />
-        <SelectionCollection
-          expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
-        />
+        <div class="selection-create-action">
+          <SelectionCollection
+            disabled={!albums().length}
+            expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
+          />
+        </div>
       </div>
       <Show
         when={library.session()}

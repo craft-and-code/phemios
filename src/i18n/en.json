@@ -1098,5 +1098,9 @@
   "Flux RSS indisponible ou adresse non publique.": "RSS feed unavailable or address not public.",
   "Flux RSS trop grand ou interrompu.": "RSS feed too large or interrupted.",
   "Le flux RSS doit utiliser UTF-8.": "The RSS feed must use UTF-8.",
-  "Une demande podcast est déjà en cours. Réessayez.": "A podcast request is already running. Try again."
+  "Une demande podcast est déjà en cours. Réessayez.": "A podcast request is already running. Try again.",
+  "Ajouter la piste en lecture aux favoris": "Favourite the playing track",
+  "Retirer la piste en lecture des favoris": "Remove the playing track from favourites",
+  "Fermer les réglages audio": "Close audio settings",
+  "Mettez à jour puis redémarrez Aède pour trier les analyses.": "Update and restart Aède to sort analysis coverage."
 }

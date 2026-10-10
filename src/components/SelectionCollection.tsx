@@ -9,6 +9,7 @@ export function SelectionCollection(props: {
   section?: string;
   filters?: Filters;
   expression?: string;
+  disabled?: boolean;
 }) {
   const library = useLibrary(),
     [draft, setDraft] = createSignal<string>(),
@@ -39,7 +40,7 @@ export function SelectionCollection(props: {
     <>
       <button
         class="icon-button"
-        disabled={!writable()}
+        disabled={!writable() || props.disabled}
         aria-label={t("Créer une collection depuis cette sélection")}
         title={t("Créer une collection depuis ces filtres")}
         onClick={() => {

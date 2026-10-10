@@ -129,3 +129,11 @@ Rated albums and Favourites expose collection creation for their current owner-p
 Podcasts adds explicit RSS/Atom subscriptions beside Radio, retained offline episode metadata, refresh/unsubscribe and finite WebView playback in the shared footer. Pause retains position; seek, mute/volume and Stop share the established controls. Bounded public native retrieval never sends Aède credentials; saved metadata remains independent from music identities/history. No dependency is added. See [podcasts](../design/podcasts.md).
 
 The complete gate passes 174 TypeScript behavior tests, 12 Node tooling checks and 54 independent Rust core tests; declaration documentation covers 137 modules. Isolated native acceptance verifies private rated collection creation/atomic rename, audio icon alignment/hover, real Radio France RSS parsing and muted finite playback with pause, seek and resume. Subscriptions survive restart without an Aède session. Other platforms and acoustic fidelity remain separate acceptance.
+
+## Catalogue actions and analysis ordering — 2026-10-10
+
+Artist Play stays anchored to the cover while compact Play remains at the right. Track primary rows are clickable through their full height, keeping album links and result actions independent. Scrollbars use the active theme. Collection creation aligns across rated/favourite/collection pages and empty rated/favourite selections disable its icon. Podcast activity moves beneath the input/button row.
+
+The footer's track favourite sends an explicit source/account-scoped loved-only patch, ignores late Next/account answers and synchronizes detail hearts. Audio settings includes a close cross and smaller output-menu refresh. Analysis columns sort the complete matching catalog through Aède, starting with missing counts descending; the active header shows a small chevron. A separate [mood-discovery proposal](../design/mood-discovery.md) distinguishes retained technical measurements from additional musical ML inference; no dependency or mood menu is introduced.
+
+The complete gate passes 177 TypeScript behavior tests, 12 Node tooling checks and 54 independent Rust core tests; frontend declarations cover 140 modules. Isolated macOS checks use a fictional catalog and copied test account. Other operating systems and physical audio fidelity remain separate acceptance.

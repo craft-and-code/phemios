@@ -96,6 +96,10 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       if (saved) library.updateAnnotation(props.reference, saved);
     }),
   );
+  createEffect(() => {
+    const saved = library.annotations[props.reference];
+    if (!pending()) setFavourite(saved?.loved ?? false);
+  });
   const current = (held: ReturnType<typeof annotationWriter>) => !disposed && held === writer();
   async function quickSave(field: "rating" | "loved", value: number | boolean | null) {
     const held = writer(),

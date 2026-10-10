@@ -125,34 +125,42 @@ export function LibraryPage(props: {
               return (
                 <li>
                   <div class="artist-card">
+                    <div class="artist-cover">
+                      <a
+                        class="artist-cover-link"
+                        href={`#/artist/${encodeURIComponent(artist.reference)}`}
+                      >
+                        <Show
+                          when={library.image(artist.reference, "portrait")}
+                          fallback={
+                            <Show
+                              when={cover}
+                              fallback={
+                                <div
+                                  class="artwork missing-art"
+                                  aria-label={t("Pas de pochette disponible")}
+                                >
+                                  ♪
+                                </div>
+                              }
+                            >
+                              {(album) => <Artwork album={album()} />}
+                            </Show>
+                          }
+                        >
+                          {(url) => (
+                            <div class="artwork real-art">
+                              <img src={url()} alt={t("Portrait de {0}", artist.name)} />
+                            </div>
+                          )}
+                        </Show>
+                      </a>
+                      <CoverPlay reference={selection.reference} title={selection.title} />
+                    </div>
                     <a
                       class="artist-card-link"
                       href={`#/artist/${encodeURIComponent(artist.reference)}`}
                     >
-                      <Show
-                        when={library.image(artist.reference, "portrait")}
-                        fallback={
-                          <Show
-                            when={cover}
-                            fallback={
-                              <div
-                                class="artwork missing-art"
-                                aria-label={t("Pas de pochette disponible")}
-                              >
-                                ♪
-                              </div>
-                            }
-                          >
-                            {(album) => <Artwork album={album()} />}
-                          </Show>
-                        }
-                      >
-                        {(url) => (
-                          <div class="artwork real-art">
-                            <img src={url()} alt={t("Portrait de {0}", artist.name)} />
-                          </div>
-                        )}
-                      </Show>
                       <div>
                         <h2>
                           {artist.name} <SourceBadge reference={artist.reference} />
@@ -165,7 +173,11 @@ export function LibraryPage(props: {
                         </small>
                       </div>
                     </a>
-                    <CoverPlay reference={selection.reference} title={selection.title} />
+                    <CoverPlay
+                      class="artist-list-play"
+                      reference={selection.reference}
+                      title={selection.title}
+                    />
                   </div>
                 </li>
               );

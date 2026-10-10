@@ -44,68 +44,70 @@ export function TrackResults(props: {
   const values = () =>
     props.track.analyses.length ? props.track.analyses : (detail()?.analyses ?? []);
   return (
-    <li>
-      <div class="track-heading">
-        <span class="track-number">{props.number}.</span>
-        <PlayingBars reference={props.track.reference} />
-        <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
-          {props.track.title}
-        </a>
-        <Show when={props.origin}>
-          <SourceBadge reference={props.track.reference} />
-        </Show>
-        <small>
-          {duration() === null
-            ? t("Durée inconnue")
-            : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
-        </small>
-        <div class="track-actions">
-          <button
-            class="icon-button quiet"
-            disabled={
-              !library.sessionFor(props.track.reference) ||
-              library.sessionFor(props.track.reference)?.account.role === "auditor" ||
-              library.player.busy()
-            }
-            aria-label={t("Lire {0}", props.track.title)}
-            onClick={props.onPlay}
-          >
-            <Icon name="play" />
-          </button>
-          <Show when={props.track.analysis_available ?? props.track.analyses.length > 0}>
+    <li class="track-row">
+      <div class="track-main-row">
+        <div class="track-heading">
+          <span class="track-number">{props.number}.</span>
+          <PlayingBars reference={props.track.reference} />
+          <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
+            {props.track.title}
+          </a>
+          <Show when={props.origin}>
+            <SourceBadge reference={props.track.reference} />
+          </Show>
+          <small>
+            {duration() === null
+              ? t("Durée inconnue")
+              : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
+          </small>
+          <div class="track-actions">
             <button
               class="icon-button quiet"
-              title={t("Afficher ou masquer l’analyse FlacCompagnon")}
-              aria-label={t("Analyse FlacCompagnon de {0}", props.track.title)}
-              aria-expanded={analysis()}
-              aria-controls={`${id}-analysis`}
-              aria-pressed={analysis()}
-              onClick={() => setAnalysis(!analysis())}
+              disabled={
+                !library.sessionFor(props.track.reference) ||
+                library.sessionFor(props.track.reference)?.account.role === "auditor" ||
+                library.player.busy()
+              }
+              aria-label={t("Lire {0}", props.track.title)}
+              onClick={props.onPlay}
             >
-              <Icon name="wave" />
+              <Icon name="play" />
             </button>
-          </Show>
-          <Show when={props.track.spectrum_available}>
-            <button
-              class="icon-button quiet"
-              title={t("Afficher ou masquer le spectre")}
-              aria-label={t("Spectre de {0}", props.track.title)}
-              aria-expanded={spectrum()}
-              aria-controls={`${id}-spectrum`}
-              aria-pressed={spectrum()}
-              onClick={() => {
-                const visible = !spectrum();
-                setSpectrum(visible);
-              }}
-            >
-              <Icon name="spectrum" />
-            </button>
-          </Show>
+            <Show when={props.track.analysis_available ?? props.track.analyses.length > 0}>
+              <button
+                class="icon-button quiet"
+                title={t("Afficher ou masquer l’analyse FlacCompagnon")}
+                aria-label={t("Analyse FlacCompagnon de {0}", props.track.title)}
+                aria-expanded={analysis()}
+                aria-controls={`${id}-analysis`}
+                aria-pressed={analysis()}
+                onClick={() => setAnalysis(!analysis())}
+              >
+                <Icon name="wave" />
+              </button>
+            </Show>
+            <Show when={props.track.spectrum_available}>
+              <button
+                class="icon-button quiet"
+                title={t("Afficher ou masquer le spectre")}
+                aria-label={t("Spectre de {0}", props.track.title)}
+                aria-expanded={spectrum()}
+                aria-controls={`${id}-spectrum`}
+                aria-pressed={spectrum()}
+                onClick={() => {
+                  const visible = !spectrum();
+                  setSpectrum(visible);
+                }}
+              >
+                <Icon name="spectrum" />
+              </button>
+            </Show>
+          </div>
         </div>
+        <Show when={props.context}>
+          <div class="track-context">{props.context}</div>
+        </Show>
       </div>
-      <Show when={props.context}>
-        <div class="track-context">{props.context}</div>
-      </Show>
       <Show when={analysis()}>
         <div id={`${id}-analysis`} class="track-analysis">
           <div class="analysis-result-heading">

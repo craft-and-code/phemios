@@ -1292,29 +1292,37 @@ button.metadata-link:hover {
 }
 .artist-card {
   position: relative;
-  padding: 0;
-  display: block;
+  padding: 16px;
+  display: flex;
 }
 .artist-card-link {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 16px;
-  height: 100%;
+  flex: 1;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
 }
-.artist-card > .cover-play {
+.artist-cover {
+  position: relative;
+  width: 100px;
+  flex: 0 0 100px;
+}
+.artist-cover-link {
+  display: block;
+}
+.artist-cover > .cover-play {
   position: absolute;
-  left: 78px;
-  top: 22px;
+  right: 8px;
+  top: 8px;
   opacity: 0;
   pointer-events: none;
 }
-.artist-card:hover > .cover-play,
-.artist-card:focus-within > .cover-play {
+.artist-card:hover .artist-cover > .cover-play,
+.artist-card:focus-within .artist-cover > .cover-play {
   opacity: 1;
   pointer-events: auto;
+}
+.artist-card > .artist-list-play {
+  display: none;
 }
 .tagged-playable {
   position: relative;
@@ -1338,18 +1346,19 @@ button.metadata-link:hover {
   pointer-events: auto;
 }
 .density-compact .artist-card {
-  padding: 0;
-  display: block;
-}
-.density-compact .artist-card-link {
   padding: 8px 12px;
-  padding-right: 54px;
+  display: flex;
 }
-.density-compact .artist-card > .cover-play {
-  left: auto;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+.density-compact .artist-cover {
+  width: 56px;
+  flex-basis: 56px;
+}
+.density-compact .artist-cover > .cover-play {
+  display: none;
+}
+.density-compact .artist-card > .artist-list-play {
+  display: inline-flex;
+  position: static;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1366,7 +1375,7 @@ button.metadata-link:hover {
 }
 @media (hover: none) {
   .album-card > .cover-play,
-  .artist-card > .cover-play,
+  .artist-cover > .cover-play,
   .tagged-playable > .cover-play {
     opacity: 1;
     pointer-events: auto;
@@ -1427,4 +1436,60 @@ button.metadata-link:hover {
 .density-compact .tagged-playable > .cover-play.icon-button {
   border-radius: 7px;
   background: var(--surface);
+}
+
+.track-row > .track-heading {
+  padding: 8px 0;
+}
+.track-main-row {
+  position: relative;
+  display: flow-root;
+}
+.track-main-row > .track-heading {
+  padding: 8px 0;
+}
+.track-main-row .track-context a {
+  position: relative;
+  z-index: 1;
+}
+.track-list > .track-row {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.track-title::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.track-actions,
+.track-heading .source-badge {
+  position: relative;
+  z-index: 1;
+}
+.track-heading:hover .track-title {
+  color: var(--accent);
+}
+.selection-create-action {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.coverage-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+}
+.analysis-table .coverage-sort {
+  padding: 0;
+  background: none;
+  border: 0;
 }

@@ -214,3 +214,28 @@ main:has(> .page > .empty-state) > * {
   margin: 0;
   max-width: 520px;
 }
+
+/* Thin native scrollbars retain the OS interaction while using the active theme. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
