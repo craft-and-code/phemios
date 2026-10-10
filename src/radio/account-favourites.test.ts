@@ -50,3 +50,16 @@ it("stores favourites in the authenticated preferences and never stores stream t
   expect(JSON.stringify(request.mock.calls[1])).not.toContain("token");
   dispose();
 });
+it("refuses a malformed stored value rather than replacing it with an empty favourite list", async () => {
+  let dispose!: () => void, favourites!: ReturnType<typeof createAccountRadioFavourites>;
+  const request = vi.fn(async () => ({ values: { "phemios.radio-favourites": false } }));
+  createRoot((end) => {
+    dispose = end;
+    favourites = createAccountRadioFavourites(() => "one", request);
+  });
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(favourites.available()).toBe(false);
+  expect(favourites.error()).not.toBe("");
+  dispose();
+});

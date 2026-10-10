@@ -33,7 +33,7 @@ export function createAccountRadioFavourites(
           Array.isArray(response.values)
         )
           throw Error(t("Favoris radio illisibles."));
-        const rows = response.values?.[radioAccountKey]
+        const rows = Object.hasOwn(response.values, radioAccountKey)
           ? decode(response.values[radioAccountKey])
           : [];
         if (epoch === generation) {
