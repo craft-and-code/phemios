@@ -1,9 +1,18 @@
-import { createResource, createSignal, For, Show, onMount, onCleanup } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Show,
+  onMount,
+  onCleanup,
+  on,
+} from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
-import { requestAede } from "../platform/desktop";
+import { createTrackLyrics } from "../library/track-lyrics";
 import { announceSetting } from "../library/saved-settings";
-import { parseLyrics, currentLyricText } from "../library/lyrics";
+import { currentLyricText } from "../library/lyrics";
 import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
@@ -11,7 +20,6 @@ import { AudioScene } from "../components/AudioScene";
 import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
 import { Artwork } from "../components/Artwork";
-import { referenceSource } from "../library/sources";
 import type { Scene } from "../visualizer/particles";
 /** Optional playback workspace; the queue and visuals use the same native clock as the footer. */
 export function PlaybackPage() {
@@ -48,30 +56,28 @@ export function PlaybackPage() {
     window.addEventListener("phemios-settings-loaded", restore);
     onCleanup(() => window.removeEventListener("phemios-settings-loaded", restore));
   });
-  const [words] = createResource(
-    () => player.current()?.reference || false,
-    async (reference) => {
-      try {
-        return {
-          reference,
-          lyrics: parseLyrics(
-            await requestAede(
-              "/api/v1/lyrics",
-              { track: reference },
-              "GET",
-              null,
-              referenceSource(reference),
-            ),
-            reference,
-          ),
-        };
-      } catch (failure) {
-        return { reference, error: String(failure), lyrics: null };
-      }
-    },
+  const words = createTrackLyrics({
+    reference: () => player.current()?.reference ?? "",
+    available: () => undefined,
+    session: () => library.sessionFor(player.current()?.reference ?? ""),
+    jobs: library.tasks.jobs,
+    detail: true,
+  });
+  const lyrics = words.lyrics;
+  const [phrase, setPhrase] = createSignal(0);
+  createEffect(
+    on(
+      () => player.current()?.reference,
+      () => setPhrase(0),
+    ),
   );
-  const lyrics = () =>
-    words()?.reference === player.current()?.reference ? words()?.lyrics : undefined;
+  const plain = createMemo(() =>
+    lyrics()?.synced === false
+      ? lyrics()!
+          .lines.map((row) => row.text)
+          .filter((text) => text.trim())
+      : [],
+  );
   const active = () =>
     !!player.current() && ["playing", "paused", "connecting"].includes(player.state().status);
   function choose(value: Scene) {
@@ -100,8 +106,20 @@ export function PlaybackPage() {
               )}
             </Show>
             <div>
-              <h1>{player.current()?.title}</h1>
-              <p>{player.current()?.artist}</p>
+              <h1>
+                <a href={`#/track/${encodeURIComponent(player.current()?.reference ?? "")}`}>
+                  {player.current()?.title}
+                </a>
+              </h1>
+              <p>
+                <Show when={player.current()?.album?.artist} fallback={player.current()?.artist}>
+                  {(artist) => (
+                    <a href={`#/artist/${encodeURIComponent(artist())}`}>
+                      {player.current()?.artist}
+                    </a>
+                  )}
+                </Show>
+              </p>
             </div>
             <Show when={!queue()}>
               <button
@@ -168,16 +186,45 @@ export function PlaybackPage() {
               playing={player.state().status === "playing"}
               levels={player.state().levels}
             />
-            <PlaybackLyrics text={currentLyricText(lyrics(), player.seekPosition())} />
+            <Show when={plain().length}>
+              <div class="untimed-lyrics-controls">
+                <button
+                  class="icon-button quiet"
+                  disabled={phrase() === 0}
+                  aria-label={t("Phrase précédente")}
+                  onClick={() => setPhrase((value) => value - 1)}
+                >
+                  <Icon name="previous" />
+                </button>
+                <small>
+                  {t("Paroles non synchronisées")} · {phrase() + 1}/{plain().length}
+                </small>
+                <button
+                  class="icon-button quiet"
+                  disabled={phrase() + 1 >= plain().length}
+                  aria-label={t("Phrase suivante")}
+                  onClick={() => setPhrase((value) => value + 1)}
+                >
+                  <Icon name="next" />
+                </button>
+              </div>
+            </Show>
+            <PlaybackLyrics
+              text={
+                lyrics()?.synced === false
+                  ? (plain()[phrase()] ?? "")
+                  : currentLyricText(lyrics(), player.seekPosition())
+              }
+            />
           </div>
           <Show when={error()}>
             <p class="notice" role="alert">
               {error()}
             </p>
           </Show>
-          <Show when={words()?.reference === player.current()?.reference && words()?.error}>
+          <Show when={words.error()}>
             <p class="notice" role="alert">
-              {words()?.error}
+              {words.error()}
             </p>
           </Show>
         </div>

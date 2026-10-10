@@ -126,3 +126,30 @@ it("only probes legacy details, and keeps absent words distinct from malformed a
   expect(words.error()).toContain("invalides");
   dispose();
 });
+
+it("keeps loaded playback words stable through same-reference clock polls", async () => {
+  vi.mocked(requestAede).mockResolvedValue(answer);
+  const [clock, setClock] = createSignal(0);
+  let dispose!: () => void;
+  createRoot((end) => {
+    dispose = end;
+    return createTrackLyrics({
+      reference: () => {
+        clock();
+        return "track:one";
+      },
+      available: () => undefined,
+      session: () => session,
+      jobs: () => [],
+      detail: true,
+    });
+  });
+  await settle();
+  expect(requestAede).toHaveBeenCalledOnce();
+  setClock(100);
+  await settle();
+  setClock(200);
+  await settle();
+  expect(requestAede).toHaveBeenCalledOnce();
+  dispose();
+});

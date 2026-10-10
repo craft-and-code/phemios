@@ -235,3 +235,7 @@ Editorial press material is in `press/`, with bilingual copy, SVG branding, prov
 ### Stable seek and crossfade transport
 
 Active sequential seeks now preserve their authenticated visit and output through Aède reset epochs. Mixer seeks preserve the output while confirming/replacing individual voices. A bounded 5 ms callback transition avoids an abrupt seek discontinuity without counting synthetic or discarded PCM as listening. Latest deferred targets and applied tickets distinguish admission from confirmation. The footer crossfade action opens settings; duration changes neither change DSP policy nor restart the active stream. A running overlap retains its original length.
+
+### Podcast evidence and playback interface follow-up
+
+Podcast episodes retain a device-local listened marker from the union of actual media played ranges (90% of known duration), with stale-generation and corrupt-store guards. Playback refreshes retained words after completed acquisitions without refetching on clock polls, shows plain words through manual phrase controls and links its header to detail views. Queue acquisition is third, disables fully retained lyrics and places provider failures below actions. Cover Flow Play hover and playing-thumbnail accent borders are consistent; Advanced Search uses the reusable aligned ActionButton. HQPlayer retains its full secondary-card border. Trophies and Encyclopedia use the Tools defaults with a one-time migration; the encyclopedia now contains 25 original bilingual attributed entries.

@@ -270,5 +270,133 @@
       "title": "Guide de lecture Phémios / FlacCompagnon",
       "url": "https://craft-and-code.github.io/FlacCompagnon/"
     }
+  },
+  {
+    "id": "flac-test",
+    "category": "analysis",
+    "title": {
+      "fr": "Vérifier un FLAC : décoder et comparer",
+      "en": "Checking FLAC: decode and compare"
+    },
+    "body": {
+      "fr": "Le test FLAC décode le flux et compare son empreinte audio à celle conservée dans STREAMINFO. Un flux lisible peut malgré tout présenter une différence d’empreinte. Une signature absente ne permet pas cette comparaison ; elle ne prouve pas que le fichier est corrompu.",
+      "en": "FLAC testing decodes the stream and compares its audio digest with STREAMINFO. A readable stream may still have a digest mismatch. An absent signature prevents this comparison; it does not prove corruption."
+    },
+    "source": {
+      "title": "Xiph · FLAC command-line tool",
+      "url": "https://www.xiph.org/flac/documentation_tools_flac.html"
+    }
+  },
+  {
+    "id": "audio-vs-file-hash",
+    "category": "analysis",
+    "title": {
+      "fr": "Empreinte audio et empreinte du fichier",
+      "en": "Audio digest and file digest"
+    },
+    "body": {
+      "fr": "Le MD5 de STREAMINFO porte sur le son PCM non compressé. Une empreinte du fichier complet porte aussi sur son conteneur et ses métadonnées. Les deux contrôles répondent à des questions différentes : égalité audio et égalité de tous les octets.",
+      "en": "STREAMINFO MD5 covers uncompressed PCM audio. A whole-file digest also covers the container and metadata. These checks answer different questions: audio equality and equality of all bytes."
+    },
+    "source": {
+      "title": "Xiph · FLAC format overview",
+      "url": "https://www.xiph.org/flac/documentation_format_overview.html"
+    }
+  },
+  {
+    "id": "flac-padding",
+    "category": "glossary",
+    "title": {
+      "fr": "Métadonnées FLAC et espace réservé",
+      "en": "FLAC metadata and reserved space"
+    },
+    "body": {
+      "fr": "Les blocs PADDING réservent de la place aux métadonnées. Ils ne représentent pas du silence dans le morceau. Une modification de métadonnées peut ainsi conserver le son tout en changeant les octets du fichier.",
+      "en": "PADDING blocks reserve space for metadata. They do not represent silence within the track. A metadata edit can therefore preserve audio while changing file bytes."
+    },
+    "source": {
+      "title": "Xiph · FLAC metadata API",
+      "url": "https://xiph.org/flac/api/index.html"
+    }
+  },
+  {
+    "id": "multidisc",
+    "category": "glossary",
+    "title": {
+      "fr": "Album, édition et plusieurs disques",
+      "en": "Album, edition and multiple discs"
+    },
+    "body": {
+      "fr": "Une édition MusicBrainz peut contenir plusieurs supports, chacun avec sa liste de pistes. Deux pistes numéro 1 sur deux CD différents ne sont pas des doublons. Le titre de l’album seul ne suffit pas à identifier une édition.",
+      "en": "A MusicBrainz release may contain several media, each with its own track list. Track 1 on two different discs does not imply a duplicate. An album title alone cannot identify an edition."
+    },
+    "source": {
+      "title": "MusicBrainz · Release",
+      "url": "https://musicbrainz.org/doc/Release"
+    }
+  },
+  {
+    "id": "release-group",
+    "category": "sources",
+    "title": {
+      "fr": "Pourquoi plusieurs éditions d’un album ?",
+      "en": "Why multiple editions of one album?"
+    },
+    "body": {
+      "fr": "MusicBrainz regroupe les éditions d’un même album dans un release group. L’édition standard, l’édition deluxe et une réédition peuvent rester des objets distincts avec des pistes, dates et pays différents. Cette distinction aide à comparer une discographie aux fichiers possédés.",
+      "en": "MusicBrainz groups editions of an album within a release group. Standard, deluxe and reissued versions may remain separate objects with different tracks, dates and countries. This distinction helps compare a discography with owned files."
+    },
+    "source": {
+      "title": "MusicBrainz · Release Group",
+      "url": "https://musicbrainz.org/doc/Release_Group"
+    }
+  },
+  {
+    "id": "vorbis-comments",
+    "category": "glossary",
+    "title": {
+      "fr": "Balises Vorbis : des valeurs répétables",
+      "en": "Vorbis comments: repeatable values"
+    },
+    "body": {
+      "fr": "Les commentaires Vorbis portent des couples nom/valeur en UTF-8. Un champ peut apparaître plusieurs fois, notamment pour plusieurs artistes. Une application qui écrase ces valeurs en une seule chaîne peut perdre une partie des crédits.",
+      "en": "Vorbis comments carry UTF-8 name/value pairs. A field can appear several times, for example for several artists. Collapsing these values into one string can lose credit information."
+    },
+    "source": {
+      "title": "Xiph · Vorbis comment header",
+      "url": "https://xiph.org/vorbis/doc/v-comment.html"
+    }
+  },
+  {
+    "id": "replaygain-tags",
+    "category": "glossary",
+    "title": {
+      "fr": "ReplayGain : une indication de volume",
+      "en": "ReplayGain: a level adjustment hint"
+    },
+    "body": {
+      "fr": "Les champs REPLAYGAIN indiquent un ajustement relatif de volume au lecteur. La présence de ces balises n’impose pas qu’un lecteur applique le gain. Les balises et le réglage d’écoute sont distincts du mastering du morceau.",
+      "en": "REPLAYGAIN fields tell a player a relative level adjustment. Their presence does not force a player to apply gain. Tags and playback adjustment are distinct from the track’s mastering."
+    },
+    "source": {
+      "title": "Xiph · VorbisComment",
+      "url": "https://wiki.xiph.org/VorbisComment"
+    }
+  },
+  {
+    "id": "api-rate-limits",
+    "category": "sources",
+    "title": {
+      "fr": "Enrichissement : pourquoi patienter ?",
+      "en": "Enrichment: why wait?"
+    },
+    "body": {
+      "fr": "MusicBrainz limite les requêtes pour préserver son service. Une récupération doit identifier le client, espacer les demandes et conserver les réponses déjà obtenues. Relancer sans cesse un lot n’accélère pas nécessairement son enrichissement.",
+      "en": "MusicBrainz limits requests to protect its service. Acquisition should identify the client, space requests and retain completed answers. Repeatedly restarting a batch does not necessarily speed enrichment up."
+    },
+    "source": {
+      "title": "MusicBrainz · Rate limiting",
+      "url": "https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting"
+    }
   }
 ]

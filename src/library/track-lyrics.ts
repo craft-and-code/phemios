@@ -29,36 +29,48 @@ export function createTrackLyrics(options: {
           row.status === "completed",
       )?.task_id;
   });
-  const [words, { refetch }] = createResource(
+  const identity = createMemo(
     () => {
       const reference = options.reference(),
         session = options.session(),
         version = completed();
-      return session &&
+      return reference &&
+        session &&
         (visible() ||
           version !== undefined ||
           (options.detail && options.available() === undefined))
-        ? { reference, session, version }
+        ? { reference, session, version, expanded: visible() }
         : false;
     },
-    async ({ reference, session }) => {
-      try {
-        const raw = await requestAede(
-          "/api/v1/lyrics",
-          { track: reference },
-          "GET",
-          null,
-          referenceSource(reference),
-        );
-        if (reference !== options.reference() || session !== options.session())
-          throw new Error(t("Session invalide."));
-        return { reference, session, lyrics: parseLyrics(raw, reference), error: "" };
-      } catch (failure) {
-        // Resource errors must stay inside the optional panel, never break track navigation.
-        return { reference, session, lyrics: null, error: String(failure) };
-      }
+    undefined,
+    {
+      equals: (a, b) =>
+        a === b ||
+        (!!a &&
+          !!b &&
+          a.reference === b.reference &&
+          a.session === b.session &&
+          a.version === b.version &&
+          a.expanded === b.expanded),
     },
   );
+  const [words, { refetch }] = createResource(identity, async ({ reference, session }) => {
+    try {
+      const raw = await requestAede(
+        "/api/v1/lyrics",
+        { track: reference },
+        "GET",
+        null,
+        referenceSource(reference),
+      );
+      if (reference !== options.reference() || session !== options.session())
+        throw new Error(t("Session invalide."));
+      return { reference, session, lyrics: parseLyrics(raw, reference), error: "" };
+    } catch (failure) {
+      // Resource errors must stay inside the optional panel, never break track navigation.
+      return { reference, session, lyrics: null, error: String(failure) };
+    }
+  });
   const current = () => {
     const value = words();
     return value?.reference === options.reference() && value.session === options.session()

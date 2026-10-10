@@ -516,7 +516,7 @@
 .settings-tabs {
   margin-bottom: 0;
 }
-#settings-panel > .settings-card,
+#settings-panel > .settings-card:first-child,
 #settings-panel > .settings-libraries > .settings-card:first-child {
   border-top-left-radius: 0;
   border-top-right-radius: 0;

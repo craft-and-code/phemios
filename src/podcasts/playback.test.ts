@@ -88,3 +88,35 @@ it("ignores a late start after Stop and releases interrupted or stalled audio", 
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+it("marks listened episodes from actual played ranges, never from a seek or a stale media callback", async () => {
+  await createRoot(async (dispose) => {
+    const first = fixture(),
+      second = fixture(),
+      complete = vi.fn();
+    let ranges: [number, number][] = [[88, 90]];
+    first.media.played = () => ranges;
+    second.media.played = () => [[0, 89]];
+    const create = vi.fn().mockReturnValueOnce(first.media).mockReturnValueOnce(second.media);
+    const player = createPodcastPlayback(async () => {}, create, complete);
+    await player.start(feed, feed.episodes[0]!);
+    first.time(90, 90);
+    first.change("ended");
+    expect(complete).not.toHaveBeenCalled();
+    ranges = [
+      [0, 45],
+      [30, 82],
+    ];
+    first.time(82, 90);
+    expect(complete).toHaveBeenCalledExactlyOnceWith(feed.url, feed.episodes[0]!.id);
+    first.change("ended");
+    expect(complete).toHaveBeenCalledOnce();
+    await player.start(feed, feed.episodes[0]!);
+    first.time(90, 90);
+    first.change("ended");
+    expect(complete).toHaveBeenCalledOnce();
+    second.time(89, 90);
+    expect(complete).toHaveBeenCalledTimes(2);
+    dispose();
+  });
+});

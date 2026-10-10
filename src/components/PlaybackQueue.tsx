@@ -72,8 +72,8 @@ export function PlaybackQueue(props: { onClose: () => void }) {
         >
           <Icon name="reverse" />
         </button>
-        <QueueSave />
         <QueueLyrics />
+        <QueueSave />
       </div>
       <Show when={player.error()}>
         <Feedback error message={player.error()} />

@@ -839,7 +839,8 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   border: 1px solid var(--border);
   box-shadow: 0 14px 34px #0008;
 }
-.cover-flow-card a:hover .artwork {
+.cover-flow-card:hover .artwork,
+.cover-flow-card:focus-within .artwork {
   border-color: var(--accent);
 }
 .cover-flow-card .cover-play {
@@ -1058,7 +1059,7 @@ main:has(> .playback-page) > :not(.playback-page) {
   border-radius: 14px;
   background: var(--surface);
 }
-.achievement-card > .icon {
+.achievement-card > svg {
   width: 32px;
   height: 32px;
   color: var(--accent);
@@ -1072,18 +1073,101 @@ main:has(> .playback-page) > :not(.playback-page) {
   color: var(--muted);
   background: transparent;
 }
-.achievement-card.locked > .icon {
+.achievement-card.locked > svg {
   color: var(--muted);
 }
 .queue-lyrics {
-  position: static;
+  display: contents;
 }
 .queue-lyrics-result {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  position: static;
+  flex-basis: 100%;
+  min-width: 0;
 }
 .queue-actions {
   position: relative;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 14px;
+  vertical-align: middle;
+}
+.action-button > svg,
+.action-button > .spinner {
+  flex: 0 0 18px;
+}
+.action-button > span:not(.spinner) {
+  line-height: 1.2;
+}
+.advanced-search-fields .settings-field-grid > div > .choices {
+  margin: 0;
+}
+.advanced-search-fields .settings-field-grid > div > .choices button {
+  min-height: 38px;
+}
+.playing-cover:hover .artwork,
+.playing-cover:focus-visible .artwork,
+.playback-view-header a:hover .artwork,
+.playback-view-header a:focus-visible .artwork {
+  border-color: var(--accent);
+}
+.playback-view-header h1 a,
+.playback-view-header p a {
+  color: inherit;
+  text-decoration: none;
+}
+.playback-view-header h1 a:hover,
+.playback-view-header p a:hover {
+  color: var(--accent);
+}
+.podcast-listened {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+}
+.podcast-listened svg {
+  width: 14px;
+  height: 14px;
+}
+.untimed-lyrics-controls {
+  position: absolute;
+  z-index: 3;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+}
+.untimed-lyrics-controls small {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.transport-buttons .crossfade-control {
+  border: 0;
+  background: transparent;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+}
+
+.transport-buttons {
+  position: relative;
+}
+.transport-buttons .crossfade-control {
+  position: absolute;
+  left: calc(50% + 110px);
+}
+@media (max-width: 780px) {
+  .transport-buttons .crossfade-control {
+    display: none;
+  }
 }

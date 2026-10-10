@@ -9,6 +9,7 @@ import { SelectionCollection } from "../components/SelectionCollection";
 import { StarRating } from "../components/StarRating";
 import { Feedback } from "../components/Feedback";
 import { EmptyState } from "../components/EmptyState";
+import { ActionButton } from "../components/ActionButton";
 import { Icon } from "../components/Icon";
 /** Explicit submissions share Aède's owner-private evaluator and bounded catalog paging. */
 export function AdvancedSearchPage() {
@@ -263,12 +264,15 @@ export function AdvancedSearchPage() {
           >
             {t("Réinitialiser")}
           </button>
-          <button class="primary" disabled={!library.trackSources().length || results.loading}>
-            <Show when={results.loading} fallback={<Icon name="search" />}>
-              <span class="spinner" />
-            </Show>
+          <ActionButton
+            type="submit"
+            class="primary"
+            icon="search"
+            busy={results.loading}
+            disabled={!library.trackSources().length}
+          >
             {t("Rechercher")}
-          </button>
+          </ActionButton>
         </div>
       </form>
       <Feedback error message={error()} onClose={() => setError("")} />

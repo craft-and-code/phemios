@@ -77,8 +77,11 @@ export function PodcastsPage(props: { query: string }) {
           </span>
         </Show>
       </form>
-      <Show when={error() || subscriptions.error()}>
-        <Feedback error message={error() || subscriptions.error()} />
+      <Show when={error() || subscriptions.error() || library.podcastListened.error()}>
+        <Feedback
+          error
+          message={error() || subscriptions.error() || library.podcastListened.error()}
+        />
       </Show>
       <Feedback
         message={downloads.message()}
@@ -182,6 +185,11 @@ export function PodcastsPage(props: { query: string }) {
                               ? ` · ${Math.floor(row.duration / 60)}:${String(Math.floor(row.duration % 60)).padStart(2, "0")}`
                               : ""}
                           </small>
+                          <Show when={library.podcastListened.has(current().url, row.id)}>
+                            <small class="podcast-listened">
+                              <Icon name="check" /> {t("Écouté")}
+                            </small>
+                          </Show>
                           <Show when={row.summary}>
                             <p>{row.summary}</p>
                           </Show>

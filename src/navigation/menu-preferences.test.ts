@@ -95,3 +95,23 @@ it("moves the legacy default tools order but preserves explicitly customised too
     }).order,
   ).toEqual(custom);
 });
+
+it("groups discoveries under Tools with Encyclopedia immediately before external players", () => {
+  const order = defaultMenuOrder();
+  expect(order.indexOf("achievements")).toBeGreaterThan(order.indexOf("heading:tools"));
+  expect(order[order.indexOf("players") - 1]).toBe("encyclopedia");
+  const legacy = order.filter((id) => !["encyclopedia", "achievements"].includes(id));
+  legacy.splice(legacy.indexOf("history"), 0, "achievements");
+  legacy.splice(legacy.indexOf("podcasts") + 1, 0, "encyclopedia");
+  const restored = readMenuPreferences({
+    getItem: () => JSON.stringify({ version: 2, order: legacy, hidden: ["achievements"] }),
+  });
+  expect(restored.order).toEqual(order);
+  expect(restored.hidden).toEqual(["achievements"]);
+  const custom = moveMenu(order, "encyclopedia", "artists");
+  expect(
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 2, order: custom, hidden: [] }),
+    }).order,
+  ).toEqual(custom);
+});

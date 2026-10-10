@@ -1,7 +1,9 @@
 import { createSignal, onCleanup } from "solid-js";
+import { episodeListened } from "./listened";
 import { t } from "../i18n";
 import { podcastUrl, type Episode, type Podcast } from "./feed";
 export interface PodcastMedia {
+  played?: () => readonly (readonly [number, number])[];
   source: (url: string) => void;
   play: () => Promise<void>;
   pause: () => void;
@@ -18,6 +20,11 @@ export function browserPodcastMedia(): PodcastMedia {
   const audio = new Audio();
   audio.preload = "metadata";
   return {
+    played: () =>
+      Array.from(
+        { length: audio.played.length },
+        (_, i) => [audio.played.start(i), audio.played.end(i)] as const,
+      ),
     source: (url) => {
       audio.src = url;
     },
@@ -55,6 +62,7 @@ export function browserPodcastMedia(): PodcastMedia {
 export function createPodcastPlayback(
   beforePlay: () => Promise<void>,
   createMedia = browserPodcastMedia,
+  completed: (feed: string, id: string) => void = () => {},
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -110,6 +118,14 @@ export function createPodcastPlayback(
       if (epoch !== held) return;
       const audio = createMedia();
       media = audio;
+      let marked = false;
+      function markListened() {
+        if (marked || epoch !== held || !audio.played) return;
+        if (episodeListened(audio.played(), duration())) {
+          marked = true;
+          completed(feed.url, row.id);
+        }
+      }
       audio.callbacks(
         (next) => {
           if (epoch !== held || status() === "paused") return;
@@ -118,6 +134,7 @@ export function createPodcastPlayback(
             return;
           }
           setStatus(next);
+          if (next === "ended") markListened();
           if (next === "connecting") watch(held);
           else clearTimeout(stall);
         },
@@ -125,6 +142,7 @@ export function createPodcastPlayback(
           if (epoch !== held) return;
           if (Number.isFinite(pos) && pos >= 0) setPosition(pos);
           if (Number.isFinite(total) && total > 0) setDuration(total);
+          if (status() !== "paused") markListened();
         },
       );
       audio.volume(volume());

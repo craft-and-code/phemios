@@ -17,7 +17,8 @@ import {
   type ParentProps,
   type Accessor,
 } from "solid-js";
-import { createPodcastPlayback } from "../podcasts/playback";
+import { createListenedEpisodes } from "../podcasts/listened";
+import { browserPodcastMedia, createPodcastPlayback } from "../podcasts/playback";
 import { createRadioPlayback } from "../radio/playback";
 import { resolveRadio } from "../platform/desktop";
 import { createPlayback } from "./playback";
@@ -50,6 +51,7 @@ interface Library {
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
   podcast: ReturnType<typeof createPodcastPlayback>;
+  podcastListened: ReturnType<typeof createListenedEpisodes>;
   tasks: ReturnType<typeof createJobs>;
   artists: Accessor<readonly Artist[]>;
   albums: Accessor<readonly Album[]>;
@@ -182,14 +184,19 @@ export function LibraryProvider(props: ParentProps) {
         throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
     }
   });
-  const podcast = createPodcastPlayback(async () => {
-    radio.stop();
-    if (["playing", "paused", "connecting"].includes(player.state().status)) {
-      await player.action("stop");
-      if (["playing", "paused", "connecting"].includes(player.state().status))
-        throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer le podcast."));
-    }
-  });
+  const podcastListened = createListenedEpisodes();
+  const podcast = createPodcastPlayback(
+    async () => {
+      radio.stop();
+      if (["playing", "paused", "connecting"].includes(player.state().status)) {
+        await player.action("stop");
+        if (["playing", "paused", "connecting"].includes(player.state().status))
+          throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer le podcast."));
+      }
+    },
+    browserPodcastMedia,
+    podcastListened.mark,
+  );
 
   createEffect(() => {
     const account = session();
@@ -452,6 +459,7 @@ export function LibraryProvider(props: ParentProps) {
     tasks,
     radio,
     podcast,
+    podcastListened,
     player,
     artists,
     albums,

@@ -182,6 +182,18 @@ export function PlayerBar() {
           >
             <Icon name={state().repeat === "one" ? "repeat-one" : "repeat"} />
           </button>
+          <button
+            class="icon-button quiet crossfade-control"
+            aria-label={t("Fondu entre les titres")}
+            title={t("Fondu entre les titres")}
+            disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
+            aria-pressed={player.crossfade() > 0 && player.policy() === "dsp"}
+            onClick={() => {
+              if (audioSettings) audioSettings.open = !audioSettings.open;
+            }}
+          >
+            <Icon name="crossfade" />
+          </button>
         </div>
         <div class="playback-progress">
           <small>{time(position())}</small>
@@ -214,18 +226,7 @@ export function PlayerBar() {
         >
           <Icon name="visualizer" />
         </a>
-        <button
-          class="icon-button quiet crossfade-control"
-          aria-label={t("Fondu entre les titres")}
-          title={t("Fondu entre les titres")}
-          disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
-          aria-pressed={player.crossfade() > 0 && player.policy() === "dsp"}
-          onClick={() => {
-            if (audioSettings) audioSettings.open = !audioSettings.open;
-          }}
-        >
-          <Icon name="crossfade" />
-        </button>
+
         <details
           class="audio-settings"
           ref={(element) => {
