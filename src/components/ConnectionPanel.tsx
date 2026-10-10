@@ -70,7 +70,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
       >
         <Show when={!props.embedded}>
           <button
-            class="connection-close"
+            class="connection-close icon-close"
             aria-label={t("Fermer la connexion")}
             onClick={props.onClose}
           >

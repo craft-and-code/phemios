@@ -1,6 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
+import { Icon } from "./Icon";
 /** Reversible suggestions retain MusicBrainz evidence and the originating account. */
 export function MissingAlbumsStatus(props: { artist?: string }) {
   const library = useLibrary(),
@@ -32,13 +33,20 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
           <Show when={counted("loading")}>
             <span>{t("Téléchargement en cours…")}</span>
           </Show>
-          <Show when={failed().length}>
+          <Show when={failed().length || counted("loading")}>
             <button
+              class="icon-button quiet"
+              aria-label={t("Réessayer les pochettes")}
+              title={t("Réessayer les pochettes")}
+              disabled={counted("loading") > 0}
+              aria-busy={counted("loading") > 0}
               onClick={() =>
                 void Promise.all(failed().map((row) => library.missingArtwork.load(row)))
               }
             >
-              {t("Réessayer les pochettes")}
+              <Show when={counted("loading")} fallback={<Icon name="refresh" />}>
+                <span class="spinner" aria-hidden="true" />
+              </Show>
             </button>
           </Show>
         </p>

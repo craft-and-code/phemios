@@ -108,7 +108,7 @@ export function PodcastsPage(props: { query: string }) {
                     <Icon name="refresh" />
                   </button>
                   <button
-                    class="icon-button quiet"
+                    class="icon-button quiet icon-close"
                     disabled={busy()}
                     aria-label={t("Se désabonner")}
                     title={t("Se désabonner")}

@@ -30,6 +30,9 @@
   color: var(--accent-text);
   border-color: var(--accent);
 }
+.tag-choices button[aria-pressed="true"]:hover {
+  color: var(--accent-text);
+}
 .tagged-card {
   min-width: 0;
 }

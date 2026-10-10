@@ -25,7 +25,6 @@ import { useLibrary } from "./library/context";
 import { SettingsPage } from "./views/SettingsPage";
 import { sourceLabel } from "./library/sources";
 import { createScopedFilters } from "./navigation/scoped-filters";
-import { ActiveFilters } from "./components/ActiveFilters";
 import { parseRoute, sections } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
@@ -271,19 +270,6 @@ export function App() {
             </button>
           </div>
         </Show>
-        <Show
-          when={
-            current().kind === "section" &&
-            !["radio", "podcasts", "settings", "statistics", "doctor"].includes(section())
-          }
-        >
-          <ActiveFilters
-            value={filters()}
-            setValue={setFilters}
-            domain={yearDomain()}
-            catalog={hasFilters()}
-          />
-        </Show>
         <Show when={hasFilters() && library.artists().length}>
           <FilterBar
             value={filters()}
@@ -319,7 +305,6 @@ export function App() {
             </Show>
             <span>{library.busy() ? t("Synchronisation…") : ""}</span>
             <Show when={hasFilters()}>
-              <SelectionCollection section={section()} filters={filters()} />
               <button
                 class="icon-button"
                 title={t("Inverser l’ordre alphabétique")}
@@ -338,6 +323,7 @@ export function App() {
               >
                 <Icon name="layers" />
               </button>
+              <SelectionCollection section={section()} filters={filters()} />
             </Show>
           </div>
         </Show>

@@ -145,10 +145,10 @@ export function PersonalPage(props: { section: Section; query: string }) {
             aria-controls="collection-editor"
             disabled={!library.session() || library.session()?.account.role === "auditor"}
             onClick={() => {
-              setName("");
-              setExpression("");
-              setEditingCollection(true);
-              queueMicrotask(() => nameInput?.focus());
+              if (saving()) return;
+              const open = !editingCollection();
+              setEditingCollection(open);
+              if (open) queueMicrotask(() => nameInput?.focus());
             }}
           >
             <Icon name="library" />

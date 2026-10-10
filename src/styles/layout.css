@@ -646,21 +646,28 @@ legend {
 }
 .audio-settings-close {
   position: absolute;
-  right: 8px;
+  right: 18px;
   top: 8px;
 }
 .audio-output-row {
-  display: flex;
-  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
   gap: 8px;
 }
 .audio-output-row > label {
-  flex: 1;
+  display: contents;
   min-width: 0;
+}
+.audio-output-label > span {
+  grid-column: 1 / -1;
+}
+.audio-output-label > select {
+  grid-column: 1;
 }
 .audio-output-refresh.icon-button {
   width: 28px;
   height: 28px;
   padding: 5px;
-  margin-bottom: 2px;
+  margin: 0;
 }

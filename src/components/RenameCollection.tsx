@@ -87,7 +87,7 @@ export function RenameCollection(props: { name: string; onRenamed: (name: string
           </button>
           <button
             type="button"
-            class="icon-button quiet"
+            class="icon-button quiet icon-close"
             disabled={busy()}
             aria-label={t("Annuler")}
             onClick={() => {

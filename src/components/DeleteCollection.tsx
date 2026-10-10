@@ -70,7 +70,7 @@ export function DeleteCollection(props: { name: string; onDeleted: () => void })
             <Icon name="trash" />
           </button>
           <button
-            class="icon-button quiet"
+            class="icon-button quiet icon-close"
             disabled={busy()}
             aria-label={t("Annuler")}
             onClick={() => setConfirm(false)}

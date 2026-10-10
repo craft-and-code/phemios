@@ -199,7 +199,7 @@ export function PlayerBar() {
           </summary>
           <div class="audio-settings-panel">
             <button
-              class="icon-button quiet audio-settings-close"
+              class="icon-button quiet icon-close audio-settings-close"
               aria-label={t("Fermer les réglages audio")}
               title={t("Fermer")}
               onClick={() => {
@@ -209,8 +209,8 @@ export function PlayerBar() {
               <Icon name="close" />
             </button>
             <div class="audio-output-row">
-              <label>
-                {t("Sortie audio")}{" "}
+              <label class="audio-output-label">
+                <span>{t("Sortie audio")}</span>{" "}
                 <select
                   aria-label={t("Sortie audio")}
                   disabled={!player.ready() || player.busy() || player.discovering()}

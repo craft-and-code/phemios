@@ -144,3 +144,5 @@ Tag selection and card offset belong to the navigation shell, so a detail return
 `/api/v1/presentation/analysis` is a read-only retained-result projection advertised by `analysis_coverage`. Complete bounded pages carry a scan epoch, disjoint counts and an all-files summary; source/account checks prevent old resources from being rendered after source replacement. The native bridge permits only GET. M3U summaries use `grouped_m3u_exports` semantics for exact-name/ordered-selection repeats, preserving historical data.
 
 `players_discover` accepts the bridge version only. The core invokes fixed macOS/Windows commands or reads Linux mount information, with a 256 KiB result bound and a three-second process deadline. It neither mounts shares nor accesses Aède credentials nor writes to media. The result is only a mounted destination candidate. Actual copy/encoding remains unavailable.
+
+The coverage page keeps its bounded resource, sort headers and expandable job rows together as a coherent size exception. Parsing and sort policy stay independently tested; layout fixes do not move acquisition rules into presentation.

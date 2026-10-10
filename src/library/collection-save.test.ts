@@ -73,3 +73,19 @@ it("refuses personal browse criteria on legacy servers and preserves their ratin
     create_only: true,
   });
 });
+
+it("refuses tag rules on legacy servers before any mutation", async () => {
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  const expression = 'browse-v1:{"view":"tags","tags":["music"]}';
+  await expect(saveBrowsingCollection("Tags", expression, () => true)).rejects.toThrow(/tags/);
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  vi.mocked(requestAede).mockResolvedValue({
+    capabilities: ["dynamic_browse_collections", "dynamic_browse_tags"],
+  });
+  await saveBrowsingCollection("Tags", expression, () => true);
+  expect(requestAede).toHaveBeenLastCalledWith("/api/me/v1/collection", { name: "Tags" }, "PUT", {
+    expression,
+    create_only: true,
+  });
+});

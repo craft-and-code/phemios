@@ -1275,8 +1275,9 @@ button.metadata-link:hover {
   position: absolute;
   right: 8px;
   top: 8px;
+  z-index: 2;
   opacity: 0;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .album-card:hover > .cover-play,
 .album-card:focus-within > .cover-play,
@@ -1313,8 +1314,9 @@ button.metadata-link:hover {
   position: absolute;
   right: 8px;
   top: 8px;
+  z-index: 2;
   opacity: 0;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .artist-card:hover .artist-cover > .cover-play,
 .artist-card:focus-within .artist-cover > .cover-play {
@@ -1333,6 +1335,21 @@ button.metadata-link:hover {
 }
 .density-compact .album-card .album-title-link {
   min-width: 0;
+}
+.density-compact .album-title-link::before,
+.density-compact .artist-card-link::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.density-compact .album-card > .cover-play,
+.density-compact .artist-card > .artist-list-play {
+  position: relative;
+  z-index: 2;
+}
+.density-compact .artist-card:hover h2 {
+  color: var(--accent);
 }
 .density-compact .album-card > .album-year {
   width: auto;
@@ -1410,7 +1427,7 @@ button.metadata-link:hover {
   top: 8px;
   right: 8px;
   opacity: 0;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .detail-cover-actions:hover > .cover-play,
 .detail-cover-actions:focus-within > .cover-play {
@@ -1438,15 +1455,15 @@ button.metadata-link:hover {
   background: var(--surface);
 }
 
-.track-row > .track-heading {
-  padding: 8px 0;
-}
 .track-main-row {
   position: relative;
   display: flow-root;
 }
 .track-main-row > .track-heading {
-  padding: 8px 0;
+  padding: 10px 0;
+}
+.track-main-row .track-context {
+  margin: -2px 0 10px 38px;
 }
 .track-main-row .track-context a {
   position: relative;
@@ -1492,4 +1509,8 @@ button.metadata-link:hover {
   padding: 0;
   background: none;
   border: 0;
+}
+.coverage-sort > svg {
+  width: 12px;
+  height: 12px;
 }

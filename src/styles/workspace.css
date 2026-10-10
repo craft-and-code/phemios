@@ -5,6 +5,8 @@
 .analysis-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 940px;
 }
 .analysis-table th,
 .analysis-table td {
@@ -18,8 +20,63 @@
   color: var(--muted);
 }
 .analysis-table td:first-child {
-  min-width: 180px;
-  white-space: normal;
+  overflow: hidden;
+}
+.analysis-table th:not(:first-child, :last-child) {
+  width: 108px;
+}
+.analysis-table th:last-child {
+  width: 146px;
+}
+.coverage-row {
+  height: 72px;
+}
+.coverage-row td {
+  height: 72px;
+  padding-block: 10px;
+}
+.coverage-album {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.coverage-cover {
+  flex: 0 0 48px;
+}
+.coverage-cover .artwork {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.coverage-title {
+  min-width: 0;
+}
+.coverage-title > a,
+.coverage-title > small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coverage-row:hover .artwork {
+  border-color: var(--accent);
+}
+.coverage-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.coverage-actions > * {
+  flex: 0 0 auto;
+}
+.coverage-actions .cover-play.icon-button {
+  border-radius: 7px;
+  background: var(--surface);
 }
 .analysis-table a {
   color: var(--text);
@@ -70,6 +127,7 @@
 }
 .collection-form {
   margin-bottom: 20px;
+  margin-left: auto;
 }
 
 .analysis-table .analysis-expanded td {
@@ -150,4 +208,20 @@
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
+}
+.selection-collection {
+  position: relative;
+  flex: 0 0 auto;
+}
+.selection-collection-notice {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 3;
+  width: min(320px, 70vw);
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
 }

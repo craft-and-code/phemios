@@ -1,4 +1,3 @@
-import { CoverPlay } from "../components/CoverPlay";
 import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
@@ -47,7 +46,6 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
           >
             <Artwork album={props.album} />
           </button>
-          <CoverPlay reference={props.album.reference} title={props.album.title} />
         </div>
         <Show when={enlarged()}>
           <CoverPreview album={props.album} onClose={() => setEnlarged(false)} />

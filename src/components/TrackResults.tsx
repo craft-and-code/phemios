@@ -61,18 +61,6 @@ export function TrackResults(props: {
               : `${Math.floor(duration()! / 60000)}:${String(Math.floor(duration()! / 1000) % 60).padStart(2, "0")}`}
           </small>
           <div class="track-actions">
-            <button
-              class="icon-button quiet"
-              disabled={
-                !library.sessionFor(props.track.reference) ||
-                library.sessionFor(props.track.reference)?.account.role === "auditor" ||
-                library.player.busy()
-              }
-              aria-label={t("Lire {0}", props.track.title)}
-              onClick={props.onPlay}
-            >
-              <Icon name="play" />
-            </button>
             <Show when={props.track.analysis_available ?? props.track.analyses.length > 0}>
               <button
                 class="icon-button quiet"
@@ -102,6 +90,18 @@ export function TrackResults(props: {
                 <Icon name="spectrum" />
               </button>
             </Show>
+            <button
+              class="icon-button quiet"
+              disabled={
+                !library.sessionFor(props.track.reference) ||
+                library.sessionFor(props.track.reference)?.account.role === "auditor" ||
+                library.player.busy()
+              }
+              aria-label={t("Lire {0}", props.track.title)}
+              onClick={props.onPlay}
+            >
+              <Icon name="play" />
+            </button>
           </div>
         </div>
         <Show when={props.context}>

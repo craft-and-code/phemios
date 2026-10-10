@@ -28,53 +28,58 @@ export function DoctorPage() {
   );
   return (
     <section class="page doctor-page">
-      <div class="section-heading">
+      <div class="doctor-toolbar">
+        <div class="choices" aria-label={t("Sévérité des diagnostics")}>
+          <button
+            aria-pressed={!severity()}
+            onClick={() => {
+              setOffset(0);
+              setSeverity("");
+            }}
+          >
+            {t("Tous")}
+          </button>
+          <For each={["error", "warning", "info"] as const}>
+            {(value) => (
+              <button
+                aria-pressed={severity() === value}
+                onClick={() => {
+                  setOffset(0);
+                  setSeverity(value);
+                }}
+              >
+                {t(severityLabels[value])}
+              </button>
+            )}
+          </For>
+        </div>
         <button
           class="icon-button quiet"
           aria-label={t("Actualiser Doctor")}
           title={t("Actualiser Doctor")}
+          aria-busy={report.loading}
           disabled={!library.session() || report.loading}
           onClick={() => refetch()}
         >
-          <Icon name="refresh" />
+          <Show when={report.loading} fallback={<Icon name="refresh" />}>
+            <span class="spinner" aria-hidden="true" />
+          </Show>
         </button>
-      </div>
-      <div class="choices" aria-label={t("Sévérité des diagnostics")}>
-        <button
-          aria-pressed={!severity()}
-          onClick={() => {
-            setOffset(0);
-            setSeverity("");
-          }}
-        >
-          {t("Tous")}{" "}
-        </button>
-        <For each={["error", "warning", "info"] as const}>
-          {(value) => (
-            <button
-              aria-pressed={severity() === value}
-              onClick={() => {
-                setOffset(0);
-                setSeverity(value);
-              }}
-            >
-              {t(severityLabels[value])}
-            </button>
-          )}
-        </For>
       </div>
       <Show when={!library.session()}>
         <p class="notice">{t("Connectez Aède pour lire les diagnostics.")}</p>
       </Show>
       <Show when={report.loading}>
-        <p role="status">{t("Lecture des diagnostics…")}</p>
+        <span class="sr-only" role="status">
+          {t("Lecture des diagnostics…")}
+        </span>
       </Show>
       <Show when={report.error}>
         <p role="alert">
           {t("Doctor indisponible :")} {String(report.error)}
         </p>
       </Show>
-      <Show when={report() && !report.loading && !report.error}>
+      <Show when={library.session() && report() && !report.error}>
         {(_ready) => (
           <>
             <div class="doctor-summary">

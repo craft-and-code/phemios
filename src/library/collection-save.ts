@@ -22,6 +22,10 @@ export async function saveBrowsingCollection(
     genres?: unknown;
     view?: string;
   };
+  if (criteria.view === "tags" && !capabilities.includes("dynamic_browse_tags"))
+    throw new Error(
+      t("Mettez à jour puis redémarrez Aède pour conserver les tags dans une collection."),
+    );
   if (
     Array.isArray(criteria.genres) &&
     criteria.genres.length &&

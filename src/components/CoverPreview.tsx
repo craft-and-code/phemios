@@ -38,7 +38,7 @@ export function CoverPreview(props: { album: Album; onClose: () => void }) {
             {props.album.title}
           </h2>
           <button
-            class="icon-button quiet"
+            class="icon-button quiet icon-close"
             aria-label={t("Fermer la pochette")}
             onClick={props.onClose}
           >

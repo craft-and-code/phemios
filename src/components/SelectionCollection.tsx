@@ -37,7 +37,7 @@ export function SelectionCollection(props: {
     }
   }
   return (
-    <>
+    <div class="selection-collection">
       <button
         class="icon-button"
         disabled={!writable() || props.disabled}
@@ -55,7 +55,9 @@ export function SelectionCollection(props: {
         <Icon name="library" />
       </button>
       <Show when={message()}>
-        <span role="status">{message()}</span>
+        <span class="selection-collection-notice" role="status">
+          {message()}
+        </span>
       </Show>
       <Show when={draft()}>
         {(_draft) => {
@@ -90,7 +92,7 @@ export function SelectionCollection(props: {
                   </h2>
                   <button
                     type="button"
-                    class="icon-button quiet"
+                    class="icon-button quiet icon-close"
                     aria-label={t("Fermer")}
                     disabled={busy()}
                     onClick={() => setDraft(undefined)}
@@ -118,6 +120,6 @@ export function SelectionCollection(props: {
           );
         }}
       </Show>
-    </>
+    </div>
   );
 }

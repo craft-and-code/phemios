@@ -13,6 +13,8 @@ import { EmptyState } from "../components/EmptyState";
 import { JobControls } from "../components/JobControls";
 import { AnalysisDownload } from "../components/AnalysisDownload";
 import { Icon } from "../components/Icon";
+import { Artwork } from "../components/Artwork";
+import { CoverPlay } from "../components/CoverPlay";
 /** Retained-result coverage is read separately from explicit acquisition and recomputation jobs. */
 export function AnalysisPage(props: { query: string }) {
   const library = useLibrary(),
@@ -98,7 +100,7 @@ export function AnalysisPage(props: { query: string }) {
         <div class="analysis-download-notice" role={notice().failure ? "alert" : "status"}>
           <span>{notice().message}</span>
           <button
-            class="icon-button quiet"
+            class="icon-button quiet icon-close"
             aria-label={t("Masquer la notification")}
             onClick={() => setNotice({ message: "", failure: false })}
           >
@@ -196,12 +198,39 @@ export function AnalysisPage(props: { query: string }) {
                     <For each={value().items}>
                       {(row) => (
                         <>
-                          <tr>
+                          <tr class="coverage-row">
                             <td>
-                              <a href={`#/album/${encodeURIComponent(row.reference)}`}>
-                                {row.title}
-                              </a>
-                              <small>{row.artist ?? t("Artistes divers")}</small>
+                              <div class="coverage-album">
+                                <a
+                                  class="coverage-cover"
+                                  href={`#/album/${encodeURIComponent(row.reference)}`}
+                                  aria-label={row.title}
+                                >
+                                  <Show
+                                    when={library
+                                      .albums()
+                                      .find((album) => album.reference === row.reference)}
+                                    fallback={
+                                      <div class="artwork missing-art">
+                                        <Icon name="disc" />
+                                      </div>
+                                    }
+                                  >
+                                    {(album) => <Artwork album={album()} thumbnail />}
+                                  </Show>
+                                </a>
+                                <div class="coverage-title">
+                                  <a
+                                    href={`#/album/${encodeURIComponent(row.reference)}`}
+                                    title={row.title}
+                                  >
+                                    {row.title}
+                                  </a>
+                                  <small title={row.artist ?? t("Artistes divers")}>
+                                    {row.artist ?? t("Artistes divers")}
+                                  </small>
+                                </div>
+                              </div>
                             </td>
                             <td>
                               {row.current}/{row.tracks}
@@ -213,7 +242,7 @@ export function AnalysisPage(props: { query: string }) {
                               {row.spectra}/{row.tracks}
                             </td>
                             <td>
-                              <div class="choices">
+                              <div class="coverage-actions">
                                 <button
                                   class="icon-button quiet"
                                   aria-label={t("Gérer les analyses de {0}", row.title)}
@@ -238,6 +267,7 @@ export function AnalysisPage(props: { query: string }) {
                                     onStatus={(message, failure) => setNotice({ message, failure })}
                                   />
                                 </Show>
+                                <CoverPlay reference={row.reference} title={row.title} />
                               </div>
                             </td>
                           </tr>

@@ -1102,5 +1102,6 @@
   "Ajouter la piste en lecture aux favoris": "Favourite the playing track",
   "Retirer la piste en lecture des favoris": "Remove the playing track from favourites",
   "Fermer les réglages audio": "Close audio settings",
-  "Mettez à jour puis redémarrez Aède pour trier les analyses.": "Update and restart Aède to sort analysis coverage."
+  "Mettez à jour puis redémarrez Aède pour trier les analyses.": "Update and restart Aède to sort analysis coverage.",
+  "Mettez à jour puis redémarrez Aède pour conserver les tags dans une collection.": "Update and restart Aède to retain tags in a collection."
 }

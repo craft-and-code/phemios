@@ -113,8 +113,7 @@ export function TagInput(props: {
               event.preventDefault();
               setOpen(false);
               setActive(-1);
-            } else if (event.key === "Backspace" && !draft() && props.value.length)
-              props.onChange(props.value.slice(0, -1));
+            }
           }}
         />
       </div>

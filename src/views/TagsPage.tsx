@@ -11,6 +11,8 @@ import { selectTags, additiveCountrySelection, isMac } from "../library/selectio
 import { referenceSource } from "../library/sources";
 import { SourceBadge } from "../components/SourceBadge";
 import { Icon } from "../components/Icon";
+import { SelectionCollection } from "../components/SelectionCollection";
+import { tagCollectionExpression } from "../library/personal-collection";
 /** Every personal tagged target gets a card; unavailable references remain visible in the result count. */
 export function TagsPage(props: {
   query: string;
@@ -66,6 +68,12 @@ export function TagsPage(props: {
   };
   return (
     <section class="page tags-page">
+      <div class="personal-selection-actions">
+        <SelectionCollection
+          disabled={!entries().some((row) => referenceSource(row.reference) === library.source())}
+          expression={tagCollectionExpression(props.selected, props.query)}
+        />
+      </div>
       <Show when={!library.localSession() && !library.serverSession()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>

@@ -15,6 +15,7 @@ import {
   type Page,
 } from "../library/statistics";
 import { StatisticsTable, type StatRow } from "../components/StatisticsTable";
+import { StatValue } from "../components/StatValue";
 /** Server totals stay distinct from public snapshot coverage and current-owner annotations. */
 export function StatisticsPage() {
   const library = useLibrary(),
@@ -112,7 +113,7 @@ export function StatisticsPage() {
           {(tile) => (
             <div>
               <span>{tile[0]}</span>
-              <strong>{tile[1]}</strong>
+              <StatValue value={tile[1]} />
             </div>
           )}
         </For>
@@ -145,7 +146,7 @@ export function StatisticsPage() {
                   {(item) => (
                     <div>
                       <span>{item[0]}</span>
-                      <strong>{numberLabel(item[1])}</strong>
+                      <StatValue value={numberLabel(item[1])} />
                     </div>
                   )}
                 </For>
@@ -177,7 +178,7 @@ export function StatisticsPage() {
               {(item) => (
                 <div>
                   <span>{item[0]}</span>
-                  <strong>{numberLabel(item[1])}</strong>
+                  <StatValue value={numberLabel(item[1])} />
                 </div>
               )}
             </For>
@@ -352,7 +353,7 @@ export function StatisticsPage() {
             {(item) => (
               <div>
                 <span>{item[0]}</span>
-                <strong>{numberLabel(item[1])}</strong>
+                <StatValue value={numberLabel(item[1])} />
               </div>
             )}
           </For>
