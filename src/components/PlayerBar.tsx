@@ -1,7 +1,8 @@
+import { ChoiceSelect } from "./ChoiceSelect";
 import { WaveformSeek } from "./WaveformSeek";
 import { PlayingFavourite } from "./PlayingFavourite";
 import { t } from "../i18n";
-import { For, Show } from "solid-js";
+import { Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { PlayingBars } from "./PlayingBars";
 import { Artwork } from "./Artwork";
@@ -217,25 +218,22 @@ export function PlayerBar() {
             <div class="audio-output-row">
               <label class="audio-output-label">
                 <span>{t("Sortie audio")}</span>{" "}
-                <select
-                  aria-label={t("Sortie audio")}
+                <ChoiceSelect
+                  label={t("Sortie audio")}
                   disabled={!player.ready() || player.busy() || player.discovering()}
                   value={player.device()}
                   onFocus={() => {
                     if (!player.outputs().length) void player.discover();
                   }}
-                  onChange={(e) => void player.chooseOutput(e.currentTarget.value)}
-                >
-                  <option value="">{t("Sortie système")}</option>
-                  <For each={player.outputs()}>
-                    {(output) => (
-                      <option value={output.id}>
-                        {output.name}
-                        {output.default ? t(" (par défaut)") : ""}
-                      </option>
-                    )}
-                  </For>
-                </select>
+                  onChange={(value) => void player.chooseOutput(value)}
+                  options={[
+                    { value: "", label: t("Sortie système") },
+                    ...player.outputs().map((output) => ({
+                      value: output.id,
+                      label: output.name + (output.default ? t(" (par défaut)") : ""),
+                    })),
+                  ]}
+                />
               </label>
               <button
                 class="icon-button audio-output-refresh"
@@ -255,18 +253,21 @@ export function PlayerBar() {
             </Show>
             <label>
               {t("Mode de lecture")}{" "}
-              <select
-                aria-label={t("Mode de lecture")}
+              <ChoiceSelect
+                label={t("Mode de lecture")}
                 disabled={!player.ready() || player.busy()}
                 value={player.policy()}
-                onChange={(e) => void player.choosePolicy(e.currentTarget.value)}
-              >
-                <option value="without-effects">{t("Sans DSP")}</option>
-                <option value="dsp">{t("DSP · normalisation album")}</option>
-                <option value="bit-perfect" disabled>
-                  {t("Bit-perfect · indisponible sur ce flux")}{" "}
-                </option>
-              </select>
+                onChange={(value) => void player.choosePolicy(value)}
+                options={[
+                  { value: "without-effects", label: t("Sans DSP") },
+                  { value: "dsp", label: t("DSP · normalisation album") },
+                  {
+                    value: "bit-perfect",
+                    label: t("Bit-perfect · indisponible sur ce flux"),
+                    disabled: true,
+                  },
+                ]}
+              />
             </label>
             <small>
               {t(

@@ -1,3 +1,6 @@
+import { Icon } from "../components/Icon";
+import { exportStatistics, isNative } from "../platform/desktop";
+import { csvDocument, statisticsCsv, type CsvRow } from "../library/statistics-csv";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
@@ -19,7 +22,10 @@ import { StatValue } from "../components/StatValue";
 /** Server totals stay distinct from public snapshot coverage and current-owner annotations. */
 export function StatisticsPage() {
   const library = useLibrary(),
-    [refresh, setRefresh] = createSignal(0);
+    [refresh, setRefresh] = createSignal(0),
+    [exporting, setExporting] = createSignal(false),
+    [exportStatus, setExportStatus] = createSignal(""),
+    [exportError, setExportError] = createSignal("");
   const reader = createMemo(() => {
     refresh();
     const owner = library.source();
@@ -77,21 +83,91 @@ export function StatisticsPage() {
           [t("Participants du cache"), numberLabel(library.artists().length)],
         ];
   };
+  let pageElement!: HTMLElement;
+  async function downloadCsv() {
+    if (exporting()) return;
+    const session = library.session(),
+      source = library.source(),
+      read = reader();
+    const current = () => session === library.session() && source === library.source();
+    const extra: CsvRow[] = [];
+    for (const section of pageElement.querySelectorAll<HTMLElement>(".stat-tiles")) {
+      const heading =
+        section.parentElement?.querySelector("h2")?.textContent ?? t("Votre collection");
+      for (const tile of section.children)
+        extra.push([
+          heading,
+          tile.querySelector("span")?.textContent ?? "",
+          tile.querySelector(".stat-value")?.textContent ??
+            tile.lastElementChild?.textContent ??
+            "",
+          "",
+        ]);
+    }
+    const average = ratings().length
+      ? ratings().reduce((sum, value) => sum + (value?.rating ?? 0), 0) / ratings().length
+      : undefined;
+    if (average !== undefined) extra.push([t("Votre musique"), t("Note moyenne :"), average, "/5"]);
+    if (currentReport())
+      for (const [measure, value] of Object.entries(currentReport()!.completeness))
+        extra.push([t("Complétude des albums"), measure, value, "ratio"]);
+    setExporting(true);
+    setExportStatus("");
+    setExportError("");
+    try {
+      const document = read ? await statisticsCsv(read, extra, current) : csvDocument(extra);
+      if (!current()) throw new Error(t("Session invalide."));
+      const path = await exportStatistics(document);
+      if (path && current()) setExportStatus(t("CSV enregistré : {0}", path));
+    } catch (failure) {
+      if (current()) setExportError(String(failure));
+    } finally {
+      setExporting(false);
+    }
+  }
   return (
-    <section class="page statistics-page">
+    <section
+      ref={(element) => {
+        pageElement = element;
+      }}
+      class="page statistics-page"
+    >
       <div class="statistics-heading">
         <p>
           {t(
             "Ensemble de la bibliothèque · les filtres du catalogue ne modifient pas ces chiffres.",
           )}
         </p>
-        <button
-          disabled={!library.session() || report.loading}
-          onClick={() => setRefresh((value) => value + 1)}
-        >
-          {t("Actualiser")}{" "}
-        </button>
+        <div class="settings-actions">
+          <button
+            class="icon-button quiet"
+            title={t("Télécharger toutes les statistiques en CSV")}
+            aria-label={t("Télécharger toutes les statistiques en CSV")}
+            disabled={exporting() || report.loading || doctor.loading || !isNative()}
+            onClick={() => void downloadCsv()}
+          >
+            <Show when={exporting()} fallback={<Icon name="download" />}>
+              <span class="spinner" />
+            </Show>
+          </button>
+          <button
+            disabled={!library.session() || report.loading}
+            onClick={() => setRefresh((value) => value + 1)}
+          >
+            {t("Actualiser")}{" "}
+          </button>
+        </div>
       </div>
+      <Show when={exportStatus()}>
+        <p class="notice" role="status">
+          {exportStatus()}
+        </p>
+      </Show>
+      <Show when={exportError()}>
+        <p class="notice" role="alert">
+          {exportError()}
+        </p>
+      </Show>
       <Show when={!library.session()}>
         <p class="notice">
           {t(

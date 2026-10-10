@@ -136,3 +136,7 @@ export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed
 export const importTheme = () => nativeCall<string | null>("theme_import");
 export const exportTheme = (document: string) =>
   nativeCall<string | null>("theme_export", { document });
+
+/** Save the complete CSV only to a native user-selected destination. */
+export const exportStatistics = (document: string) =>
+  nativeCall<string | null>("statistics_export", { document });

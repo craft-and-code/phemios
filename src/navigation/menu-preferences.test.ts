@@ -1,13 +1,26 @@
 import { expect, it } from "vitest";
-import { readMenuPreferences, saveMenuPreferences, moveMenu } from "./menu-preferences";
+import {
+  readMenuPreferences,
+  saveMenuPreferences,
+  moveMenu,
+  defaultMenuOrder,
+  menuItem,
+  visibleMenu,
+} from "./menu-preferences";
 import { sections } from "./routes";
 const ids = sections.map((item) => item.id);
 it("shows all sections initially and appends newly available menus without losing a saved order", () => {
-  expect(readMenuPreferences({ getItem: () => null })).toEqual({ order: ids, hidden: [] });
+  expect(readMenuPreferences({ getItem: () => null })).toEqual({
+    order: defaultMenuOrder(),
+    hidden: [],
+  });
   const saved = { version: 1, order: ["podcasts", "albums"], hidden: ["albums"] };
   const value = readMenuPreferences({ getItem: () => JSON.stringify(saved) });
-  expect(value.order.slice(0, 2)).toEqual(["podcasts", "albums"]);
-  expect(value.order).toHaveLength(ids.length);
+  expect(value.order.filter((id) => menuItem(id).kind === "section").slice(0, 2)).toEqual([
+    "podcasts",
+    "albums",
+  ]);
+  expect(value.order.filter((id) => menuItem(id).kind === "section")).toHaveLength(ids.length);
   expect(value.hidden).toEqual(["albums"]);
 });
 it("moves one section to its chosen position without duplicating or dropping any section", () => {
@@ -44,5 +57,23 @@ it("places a new mood menu in its default group when the previous menu order was
     readMenuPreferences({
       getItem: () => JSON.stringify({ version: 1, order: previous, hidden: [] }),
     }).order,
-  ).toEqual(ids);
+  ).toEqual(defaultMenuOrder());
+});
+
+it("retains movable headings/spacers across reload and omits groups with every menu hidden", () => {
+  let raw: string | null = null;
+  const store = {
+    getItem: () => raw,
+    setItem: (_key: string, value: string) => {
+      raw = value;
+    },
+  };
+  const initial = readMenuPreferences(store);
+  const order = moveMenu([...initial.order, "separator:control"], "heading:personal", "artists");
+  saveMenuPreferences(store, { order, hidden: [] });
+  expect(readMenuPreferences(store).order).toEqual(order);
+  expect(visibleMenu({ ...initial, hidden: ids })).toEqual([]);
+  expect(() =>
+    saveMenuPreferences(store, { order: [...order, "separator:bad/path"], hidden: [] }),
+  ).toThrow();
 });

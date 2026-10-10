@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 mod aede;
 mod commands;
+mod exports;
 mod local;
 mod playback;
 mod podcast;
@@ -54,6 +55,7 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            exports::statistics_export,
             themes::theme_import,
             themes::theme_export,
             volumes::players_discover,

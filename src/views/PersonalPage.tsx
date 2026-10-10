@@ -1,3 +1,4 @@
+import { ChoiceSelect } from "../components/ChoiceSelect";
 import { Icon } from "../components/Icon";
 import { RenameCollection } from "../components/RenameCollection";
 import { SelectionCollection } from "../components/SelectionCollection";
@@ -240,18 +241,22 @@ export function PersonalPage(props: { section: Section; query: string }) {
       <Show when={props.section === "analysis" || props.section === "playlists"}>
         <label class="album-selection">
           {t("Album")}{" "}
-          <select value={selected()} onChange={(event) => setSelected(event.currentTarget.value)}>
-            <option value="">{t("Choisissez un album")}</option>
-            <For each={library.albums()}>
-              {(album) => (
-                <option value={album.reference}>
-                  {album.title} ·{" "}
-                  {library.artists().find((artist) => artist.reference === album.artist)?.name ??
-                    t("Artistes divers")}
-                </option>
-              )}
-            </For>
-          </select>
+          <ChoiceSelect
+            label={t("Choisissez un album")}
+            value={selected()}
+            onChange={setSelected}
+            options={[
+              { value: "", label: t("Choisissez un album") },
+              ...library.albums().map((album) => ({
+                value: album.reference,
+                label:
+                  album.title +
+                  " · " +
+                  (library.artists().find((artist) => artist.reference === album.artist)?.name ??
+                    t("Artistes divers")),
+              })),
+            ]}
+          />
         </label>
         <Show when={album()}>
           {(value) => (

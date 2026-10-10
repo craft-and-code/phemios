@@ -1,15 +1,8 @@
+import { ChoiceSelect } from "./ChoiceSelect";
 import { geoCentroid } from "d3-geo";
 import { countryGeometry } from "../geography/geometry";
 import { t, countryName as displayCountry } from "../i18n";
-import {
-  createEffect,
-  createResource,
-  createSignal,
-  onCleanup,
-  onMount,
-  Show,
-  For,
-} from "solid-js";
+import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from "solid-js";
 import {
   countryAt,
   unproject,
@@ -139,23 +132,23 @@ export function CountryGlobe(props: {
       <Show when={props.directory}>
         <label class="radio-globe-country">
           {t("Pays")}
-          <select
+          <ChoiceSelect
+            label={t("Pays")}
             value={props.selected[0] ?? ""}
-            onChange={(event) => props.onSelect(event.currentTarget.value || undefined)}
-          >
-            <option value="">{t("Tous")}</option>
-            <For
-              each={(countries() ?? [])
+            onChange={(value) => props.onSelect(value || undefined)}
+            options={[
+              { value: "", label: t("Tous") },
+              ...(countries() ?? [])
                 .slice()
                 .sort((a, b) =>
                   displayCountry(a.code, a.name).localeCompare(displayCountry(b.code, b.name)),
-                )}
-            >
-              {(country) => (
-                <option value={country.code}>{displayCountry(country.code, country.name)}</option>
-              )}
-            </For>
-          </select>
+                )
+                .map((country) => ({
+                  value: country.code,
+                  label: displayCountry(country.code, country.name),
+                })),
+            ]}
+          />
         </label>
       </Show>
       <div class="globe-display">

@@ -19,7 +19,7 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
       <div
         class="settings-tabs"
         role="tablist"
-        aria-orientation="vertical"
+        aria-orientation="horizontal"
         aria-label={t("Paramètres")}
         onKeyDown={(event) => {
           const ids = [

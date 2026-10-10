@@ -4,50 +4,116 @@ import { createSignal } from "solid-js";
 import { t } from "../i18n";
 import { sections, type Section } from "./routes";
 type Store = Pick<Storage, "getItem" | "setItem">;
+export type MenuItem =
+  | Section
+  | "heading:library"
+  | "heading:personal"
+  | "heading:sources"
+  | "heading:tools"
+  | `separator:${string}`;
 export interface MenuPreferences {
-  order: Section[];
-  hidden: Section[];
+  order: MenuItem[];
+  hidden: MenuItem[];
 }
 const key = "phemios.navigation.v1";
 const ids = () => sections.map((section) => section.id);
+const headings = {
+  "heading:library": "BIBLIOTHÈQUE",
+  "heading:personal": "VOTRE MUSIQUE",
+  "heading:sources": "SOURCES MUSICALES",
+  "heading:tools": "OUTILS",
+} as const;
+export function menuHeading(id: Section): MenuItem {
+  if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
+    return "heading:personal";
+  if (["radio", "podcasts"].includes(id)) return "heading:sources";
+  if (["doctor", "analysis", "relations", "statistics", "players"].includes(id))
+    return "heading:tools";
+  return "heading:library";
+}
+export function menuItem(id: MenuItem) {
+  const section = sections.find((row) => row.id === id);
+  return section
+    ? { ...section, kind: "section" as const }
+    : {
+        id,
+        kind: id.startsWith("separator:") ? ("separator" as const) : ("heading" as const),
+        label: id.startsWith("separator:")
+          ? t("Espacement")
+          : t(headings[id as keyof typeof headings]),
+        symbol: "menu",
+      };
+}
+function addHeadings(order: readonly MenuItem[]): MenuItem[] {
+  const retained = new Set(order),
+    result: MenuItem[] = [];
+  for (const id of order) {
+    if (ids().includes(id as Section)) {
+      const heading = menuHeading(id as Section);
+      if (!retained.has(heading)) {
+        result.push(heading);
+        retained.add(heading);
+      }
+    }
+    result.push(id);
+  }
+  return result;
+}
+export const defaultMenuOrder = () => addHeadings(ids());
 function validate(raw: unknown): MenuPreferences {
   const value = raw as { version?: unknown; order?: unknown; hidden?: unknown };
-  const valid = (rows: unknown): rows is Section[] =>
+  const validId = (id: unknown): id is MenuItem =>
+    typeof id === "string" &&
+    (ids().includes(id as Section) ||
+      Object.hasOwn(headings, id) ||
+      /^separator:[a-zA-Z0-9-]{1,40}$/.test(id));
+  const valid = (rows: unknown): rows is MenuItem[] =>
     Array.isArray(rows) &&
-    rows.length <= ids().length &&
+    rows.length <= 96 &&
     new Set(rows).size === rows.length &&
-    rows.every((id) => ids().includes(id));
-  if (!value || value.version !== 1 || !valid(value.order) || !valid(value.hidden))
+    rows.every(validId);
+  if (
+    !value ||
+    (value.version !== 1 && value.version !== 2) ||
+    !valid(value.order) ||
+    !valid(value.hidden)
+  )
     throw new Error(t("Configuration du menu illisible."));
-  const savedOrder = value.order;
-  const oldDefault = ids().filter((id) => savedOrder.includes(id));
-  const order =
-    value.order.every((id, index) => id === oldDefault[index]) &&
-    value.order.length === oldDefault.length
-      ? ids()
-      : value.order;
-  return {
-    order: [...order, ...ids().filter((id) => !order.includes(id))],
-    hidden: [...value.hidden],
-  };
+  if (
+    value.version === 1 &&
+    [...value.order, ...value.hidden].some((id) => !ids().includes(id as Section))
+  )
+    throw new Error(t("Configuration du menu illisible."));
+  const saved = value.order,
+    oldDefault = ids().filter((id) => saved.includes(id));
+  const untouched =
+    value.version === 1 &&
+    saved.length === oldDefault.length &&
+    saved.every((id, index) => id === oldDefault[index]);
+  const order = addHeadings(
+    untouched ? ids() : [...saved, ...ids().filter((id) => !saved.includes(id))],
+  );
+  if (order.length > 96 || value.hidden.some((id) => !order.includes(id)))
+    throw new Error(t("Configuration du menu illisible."));
+  return { order, hidden: [...value.hidden] };
 }
 /** New sections remain visible by default; corrupt preferences are never replaced implicitly. */
 export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPreferences {
   const raw = storage.getItem(key);
-  if (raw === null) return { order: ids(), hidden: [] };
+  if (raw === null) return { order: defaultMenuOrder(), hidden: [] };
   if (raw.length > 8192) throw new Error(t("Configuration du menu illisible."));
   return validate(JSON.parse(raw));
 }
 /** Check the retained store before publishing a validated device-local menu configuration. */
 export function saveMenuPreferences(storage: Store, value: MenuPreferences): MenuPreferences {
   readMenuPreferences(storage);
-  const next = validate({ version: 1, ...value });
-  storage.setItem(key, JSON.stringify({ version: 1, ...next }));
-  announceSetting(key, JSON.stringify({ version: 1, ...next }));
+  const next = validate({ version: 2, ...value });
+  storage.setItem(key, JSON.stringify({ version: 2, ...next }));
+  announceSetting(key, JSON.stringify({ version: 2, ...next }));
   return next;
 }
 /** Move one item before a target; invalid or self targets retain the complete original order. */
-export function moveMenu(order: readonly Section[], item: Section, before: Section): Section[] {
+export function moveMenu(order: readonly MenuItem[], item: MenuItem, before: MenuItem): MenuItem[] {
   if (item === before || !order.includes(item) || !order.includes(before)) return [...order];
   const next = order.filter((id) => id !== item);
   next.splice(next.indexOf(before), 0, item);
@@ -55,7 +121,10 @@ export function moveMenu(order: readonly Section[], item: Section, before: Secti
 }
 /** The shell and Settings share this confirmed state; saving failure leaves navigation unchanged. */
 export function createMenuPreferences(storage: Store = localStorage) {
-  const [value, setValue] = createSignal<MenuPreferences>({ order: ids(), hidden: [] });
+  const [value, setValue] = createSignal<MenuPreferences>({
+    order: defaultMenuOrder(),
+    hidden: [],
+  });
   const [error, setError] = createSignal("");
   try {
     setValue(readMenuPreferences(storage));
@@ -86,15 +155,18 @@ export function createMenuPreferences(storage: Store = localStorage) {
       }
     },
     reset() {
-      this.update({ order: ids(), hidden: [] });
+      this.update({ order: defaultMenuOrder(), hidden: [] });
     },
   };
 }
-/** Group headings follow the chosen order, never empty or repeated merely because a leading menu is hidden. */
-export function menuGroup(id: Section): string {
-  if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
-    return t("VOTRE MUSIQUE");
-  if (["radio", "podcasts"].includes(id)) return t("SOURCES MUSICALES");
-  if (["doctor", "analysis", "relations", "statistics", "players"].includes(id)) return t("OUTILS");
-  return t("BIBLIOTHÈQUE");
+/** Empty groups disappear while explicit spacers retain their chosen position. */
+export function visibleMenu(value: MenuPreferences): MenuItem[] {
+  const order = value.order.filter((id) => !value.hidden.includes(id));
+  return order.filter((id, index) => {
+    if (!id.startsWith("heading:")) return true;
+    const end = order.findIndex((next, i) => i > index && next.startsWith("heading:"));
+    return order
+      .slice(index + 1, end < 0 ? undefined : end)
+      .some((next) => menuItem(next).kind === "section");
+  });
 }

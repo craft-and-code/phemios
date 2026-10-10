@@ -1,3 +1,4 @@
+import { Icon } from "../components/Icon";
 import { announceSetting } from "../library/saved-settings";
 import { readTheme, writeTheme } from "../library/themes";
 import { importTheme, exportTheme, isNative } from "../platform/desktop";
@@ -54,10 +55,45 @@ export function SettingsAppearance() {
       <h2>{t("Couleurs et thèmes")}</h2>
       <div class="theme-preview">
         <span>{t("Aperçu")}</span>
-        <strong>
-          Phémios<span style={{ color: value().accent }}> ·</span>
-        </strong>
-        <small>{t("Votre bibliothèque, vos couleurs.")}</small>
+        <div class="theme-preview-shell">
+          <aside>
+            <img src="/favicon.svg" alt="Phémios" width="44" height="44" />
+            <span class="wordmark">
+              phémios<span class="brand-dot">.</span>
+            </span>
+            <span class="theme-preview-menu">
+              <Icon name="disc" />
+              {t("Albums")}
+            </span>
+          </aside>
+          <div class="theme-preview-content">
+            <small>{t("Votre bibliothèque, vos couleurs.")}</small>
+            <input
+              readonly
+              aria-label={t("Aperçu du champ de recherche")}
+              value={t("Rechercher dans la bibliothèque")}
+            />
+            <div class="settings-actions">
+              <button class="primary" type="button">
+                <Icon name="play" />
+                {t("Lecture")}
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                aria-pressed="true"
+                aria-label={t("Favoris")}
+              >
+                <Icon name="heart" />
+              </button>
+              <span class="tag-pill">music</span>
+            </div>
+            <div class="theme-preview-player">
+              <Icon name="volume" />
+              <span>{t("Barre de lecture")}</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="color-settings">
         <For

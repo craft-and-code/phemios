@@ -1,3 +1,4 @@
+import { ChoiceSelect } from "../components/ChoiceSelect";
 import { createSignal, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { readPreferences, applyPreferences } from "../library/preferences";
@@ -28,13 +29,14 @@ export function SettingsLanguage() {
       <h2>{t("Langue")}</h2>
       <label>
         {t("Langue de l’interface")}
-        <select
+        <ChoiceSelect
+          label={t("Langue")}
           value={language()}
-          onChange={(event) => {
+          onChange={(selected) => {
             try {
               const next = {
                   ...readPreferences(localStorage),
-                  language: event.currentTarget.value as "fr" | "en",
+                  language: selected as "fr" | "en",
                 },
                 raw = JSON.stringify(next);
               localStorage.setItem("phemios.appearance", raw);
@@ -46,10 +48,11 @@ export function SettingsLanguage() {
               setError(String(failure));
             }
           }}
-        >
-          <option value="fr">Français</option>
-          <option value="en">English</option>
-        </select>
+          options={[
+            { value: "fr", label: "Français" },
+            { value: "en", label: "English" },
+          ]}
+        />
       </label>
       <p role="alert">{error()}</p>
     </section>

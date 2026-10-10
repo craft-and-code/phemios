@@ -1196,5 +1196,16 @@
   "Paroles de {0}": "Lyrics for {0}",
   "Chargement des paroles…": "Loading lyrics…",
   "Balise audio": "Audio tag",
-  "Fichier LRC": "LRC file"
+  "Fichier LRC": "LRC file",
+  "Choisir": "Choose",
+  "Espacement": "Spacing",
+  "Ajouter un espacement": "Add spacing",
+  "Supprimer l’espacement": "Remove spacing",
+  "Aperçu du champ de recherche": "Search field preview",
+  "Rechercher dans la bibliothèque": "Search your library",
+  "Trop de lignes pour cet export CSV.": "Too many rows for this CSV export.",
+  "Le catalogue a changé ; relancez l’export.": "The catalogue changed; restart the export.",
+  "CSV enregistré : {0}": "CSV saved: {0}",
+  "Télécharger toutes les statistiques en CSV": "Download all statistics as CSV",
+  "Liste des comptes Aède invalide.": "Invalid Aède account list."
 }

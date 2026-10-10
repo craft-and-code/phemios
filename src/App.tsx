@@ -1,4 +1,4 @@
-import { createMenuPreferences, menuGroup } from "./navigation/menu-preferences";
+import { createMenuPreferences, visibleMenu, menuItem } from "./navigation/menu-preferences";
 import { LabelsPage } from "./views/LabelsPage";
 import { LabelPage } from "./views/LabelPage";
 import { createToolPreferences } from "./library/tool-preferences";
@@ -43,12 +43,7 @@ export function App() {
   const library = useLibrary();
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
-  const visibleMenus = createMemo(() =>
-    menu
-      .value()
-      .order.filter((id) => !menu.value().hidden.includes(id))
-      .map((id) => sections.find((item) => item.id === id)!),
-  );
+  const visibleMenus = createMemo(() => visibleMenu(menu.value()).map(menuItem));
   const connectionPanel = () => false;
   const setConnectionPanel = (_value: boolean) => {
     navigation.navigate("#/settings");
@@ -203,23 +198,23 @@ export function App() {
         <aside class="sidebar" aria-label={t("Navigation principale")}>
           <nav>
             <For each={visibleMenus()}>
-              {(item, index) => (
+              {(item) => (
                 <>
-                  <Show
-                    when={
-                      index() === 0 ||
-                      menuGroup(visibleMenus()[index() - 1]!.id) !== menuGroup(item.id)
-                    }
-                  >
-                    <p class="nav-label">{menuGroup(item.id)}</p>
+                  <Show when={item.kind === "heading"}>
+                    <p class="nav-label">{t(item.label)}</p>
                   </Show>
-                  <a
-                    href={`#/${item.id}`}
-                    aria-current={section() === item.id ? "page" : undefined}
-                  >
-                    <Icon name={item.symbol} />
-                    <span>{t(item.label)}</span>
-                  </a>
+                  <Show when={item.kind === "separator"}>
+                    <div class="nav-spacer" aria-hidden="true" />
+                  </Show>
+                  <Show when={item.kind === "section"}>
+                    <a
+                      href={`#/${item.id}`}
+                      aria-current={section() === item.id ? "page" : undefined}
+                    >
+                      <Icon name={item.symbol} />
+                      <span>{t(item.label)}</span>
+                    </a>
+                  </Show>
                 </>
               )}
             </For>

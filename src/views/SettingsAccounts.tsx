@@ -1,13 +1,9 @@
+import { ChoiceSelect } from "../components/ChoiceSelect";
 import { t } from "../i18n";
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-interface Account {
-  id: string;
-  username: string;
-  role: string;
-  enabled: boolean;
-}
+import { createAccountList, type Account } from "../library/account-list";
 /** Aède retains password, role and last-administrator policy. The owned local principal is protected. */
 export function SettingsAccounts() {
   const library = useLibrary(),
@@ -20,19 +16,18 @@ export function SettingsAccounts() {
     [newPassword, setNewPassword] = createSignal("");
   const administrative = () =>
     library.session()?.account.role === "admin" && library.session()?.server.startsWith("http://");
-  const [accounts, { refetch }] = createResource(
-    () => (administrative() ? { source: library.source(), session: library.session() } : false),
-    (key) => requestAede<Account[]>("/api/admin/v1/accounts", {}, "GET", null, key.source),
-  );
+  const accounts = createAccountList(library.session, library.source);
   async function perform(work: () => Promise<unknown>) {
     if (busy()) return;
+    const owner = library.session(),
+      source = library.source();
     setBusy(true);
     setError("");
     try {
       await work();
-      await refetch();
+      if (owner === library.session() && source === library.source()) await accounts.refresh();
     } catch (e) {
-      setError(String(e));
+      if (owner === library.session() && source === library.source()) setError(String(e));
     } finally {
       setBusy(false);
     }
@@ -75,23 +70,25 @@ export function SettingsAccounts() {
           </p>
         }
       >
-        <Show when={accounts.error}>
-          <p role="alert">{String(accounts.error)}</p>
+        <Show when={accounts.error()}>
+          <p role="alert">{String(accounts.error())}</p>
         </Show>
-        <For each={accounts()}>
+        <For each={accounts.values()}>
           {(account) => (
             <div class="account-row">
               <strong>{account.username}</strong>
-              <select
-                aria-label={t("Rôle de {0}", account.username)}
-                disabled={busy() || account.username === "phemios-local"}
+              <ChoiceSelect
+                label={t("Rôle")}
                 value={account.role}
-                onChange={(e) => void patch(account, { role: e.currentTarget.value })}
-              >
-                <option value="admin">{t("Administrateur")}</option>
-                <option value="user">{t("Utilisateur")}</option>
-                <option value="auditor">{t("Auditeur")}</option>
-              </select>
+                disabled={busy() || account.username === "phemios-local"}
+                onChange={(value) => void patch(account, { role: value })}
+                options={[
+                  { value: "admin", label: t("Administrateur") },
+                  { value: "user", label: t("Utilisateur") },
+                  { value: "auditor", label: t("Auditeur") },
+                ]}
+              />
+
               <button
                 disabled={busy() || account.username === "phemios-local"}
                 onClick={() => void patch(account, { enabled: !account.enabled })}
@@ -182,11 +179,16 @@ export function SettingsAccounts() {
           </label>
           <label>
             {t("Rôle")}{" "}
-            <select value={role()} onChange={(e) => setRole(e.currentTarget.value)}>
-              <option value="user">{t("Utilisateur")}</option>
-              <option value="auditor">{t("Auditeur")}</option>
-              <option value="admin">{t("Administrateur")}</option>
-            </select>
+            <ChoiceSelect
+              label={t("Rôle")}
+              value={role()}
+              onChange={setRole}
+              options={[
+                { value: "user", label: t("Utilisateur") },
+                { value: "auditor", label: t("Auditeur") },
+                { value: "admin", label: t("Administrateur") },
+              ]}
+            />
           </label>
           <button disabled={busy()}>{t("Créer")}</button>
         </form>

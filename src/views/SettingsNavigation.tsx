@@ -1,13 +1,17 @@
 import { createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
-import { sections, type Section } from "../navigation/routes";
-import { moveMenu, type createMenuPreferences } from "../navigation/menu-preferences";
+import {
+  moveMenu,
+  menuItem,
+  type MenuItem,
+  type createMenuPreferences,
+} from "../navigation/menu-preferences";
 import { Icon } from "../components/Icon";
 /** Visibility and order apply immediately, with native drag and equivalent keyboard buttons. */
 export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPreferences> }) {
-  const [dragged, setDragged] = createSignal<Section>(),
-    [target, setTarget] = createSignal<Section>();
-  const move = (id: Section, delta: number) => {
+  const [dragged, setDragged] = createSignal<MenuItem>(),
+    [target, setTarget] = createSignal<MenuItem>();
+  const move = (id: MenuItem, delta: number) => {
     const order = [...props.menu.value().order],
       index = order.indexOf(id),
       destination = index + delta;
@@ -26,7 +30,7 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
       <ol class="menu-settings">
         <For each={props.menu.value().order}>
           {(id, index) => {
-            const item = sections.find((row) => row.id === id)!;
+            const item = menuItem(id);
             return (
               <li
                 classList={{ "drop-target": target() === id }}
@@ -80,6 +84,21 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
                   <Icon name={item.symbol} />
                   <span>{t(item.label)}</span>
                 </label>
+                <Show when={item.kind === "separator"}>
+                  <button
+                    class="icon-button quiet"
+                    title={t("Supprimer l’espacement")}
+                    aria-label={t("Supprimer l’espacement")}
+                    onClick={() =>
+                      props.menu.update({
+                        order: props.menu.value().order.filter((value) => value !== id),
+                        hidden: props.menu.value().hidden.filter((value) => value !== id),
+                      })
+                    }
+                  >
+                    <Icon name="trash" />
+                  </button>
+                </Show>
                 <button
                   class="icon-button quiet"
                   disabled={index() === 0}
@@ -103,7 +122,20 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
           }}
         </For>
       </ol>
-      <button onClick={() => props.menu.reset()}>{t("Réinitialiser le menu")}</button>
+      <div class="settings-actions">
+        <button
+          disabled={props.menu.value().order.length >= 96}
+          onClick={() =>
+            props.menu.update({
+              ...props.menu.value(),
+              order: [...props.menu.value().order, `separator:${crypto.randomUUID()}`],
+            })
+          }
+        >
+          {t("Ajouter un espacement")}
+        </button>
+        <button onClick={() => props.menu.reset()}>{t("Réinitialiser le menu")}</button>
+      </div>
       <Show when={props.menu.error()}>
         <p role="alert">{props.menu.error()}</p>
       </Show>
