@@ -1,15 +1,21 @@
+import { announceSetting } from "../library/saved-settings";
+import { readTheme, writeTheme } from "../library/themes";
+import { importTheme, exportTheme, isNative } from "../platform/desktop";
 import { t } from "../i18n";
-import { createSignal, For, onMount } from "solid-js";
+import { createSignal, For, onMount, onCleanup, Show } from "solid-js";
 import {
   applyPreferences,
   defaultPreferences,
   readPreferences,
   type Preferences,
 } from "../library/preferences";
-/** Device-local language and colours apply live and survive the next launch. */
+/** Colours apply live; portable theme documents contain no language or credentials. */
 export function SettingsAppearance() {
   const [value, setValue] = createSignal<Preferences>({ ...defaultPreferences }),
     [error, setError] = createSignal("");
+  const [name, setName] = createSignal("Phémios"),
+    [busy, setBusy] = createSignal(false),
+    [notice, setNotice] = createSignal("");
   onMount(() => {
     try {
       setValue(readPreferences(localStorage));
@@ -17,32 +23,42 @@ export function SettingsAppearance() {
       setError(String(e));
     }
   });
+  onMount(() => {
+    const reload = () => {
+      try {
+        setValue(readPreferences(localStorage));
+      } catch (failure) {
+        setError(String(failure));
+      }
+    };
+    window.addEventListener("phemios-settings-loaded", reload);
+    onCleanup(() => window.removeEventListener("phemios-settings-loaded", reload));
+  });
   function update(next: Preferences) {
     try {
       readPreferences(localStorage);
       localStorage.setItem("phemios.appearance", JSON.stringify(next));
+      announceSetting("phemios.appearance", JSON.stringify(next));
       setValue(next);
       applyPreferences(next);
       setError("");
       window.dispatchEvent(new Event("phemios-preferences"));
+      return true;
     } catch {
       setError(t("Préférences non mémorisées."));
+      return false;
     }
   }
   return (
     <div class="settings-card">
-      <h2>{t("Apparence et langue")}</h2>
-      <p class="muted">{t("La langue et les couleurs sont enregistrées à chaque modification.")}</p>
-      <label>
-        {t("Langue")}{" "}
-        <select
-          value={value().language}
-          onChange={(e) => update({ ...value(), language: e.currentTarget.value as "fr" | "en" })}
-        >
-          <option value="fr">{t("Français")}</option>
-          <option value="en">{t("English")}</option>
-        </select>
-      </label>
+      <h2>{t("Couleurs et thèmes")}</h2>
+      <div class="theme-preview">
+        <span>{t("Aperçu")}</span>
+        <strong>
+          Phémios<span style={{ color: value().accent }}> ·</span>
+        </strong>
+        <small>{t("Votre bibliothèque, vos couleurs.")}</small>
+      </div>
       <div class="color-settings">
         <For
           each={
@@ -84,6 +100,63 @@ export function SettingsAppearance() {
       <button onClick={() => update({ ...defaultPreferences, language: value().language })}>
         {t("Réinitialiser les couleurs")}{" "}
       </button>
+      <hr />
+      <label>
+        {t("Nom du thème")}
+        <input
+          value={name()}
+          maxlength="100"
+          onInput={(event) => setName(event.currentTarget.value)}
+        />
+      </label>
+      <div class="settings-actions">
+        <button
+          disabled={busy() || !isNative()}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            setNotice("");
+            try {
+              const path = await exportTheme(writeTheme(name(), value()));
+              if (path) setNotice(t("Thème enregistré : {0}", path));
+            } catch (failure) {
+              setError(String(failure));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {t("Enregistrer le thème")}
+        </button>
+        <button
+          disabled={busy() || !isNative()}
+          onClick={async () => {
+            setBusy(true);
+            setError("");
+            setNotice("");
+            try {
+              const raw = await importTheme();
+              if (raw !== null) {
+                if (update(readTheme(raw, value().language))) {
+                  setName((JSON.parse(raw) as { name: string }).name);
+                  setNotice(t("Thème importé."));
+                }
+              }
+            } catch (failure) {
+              setError(String(failure));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {t("Importer un thème")}
+        </button>
+      </div>
+      <Show when={notice()}>
+        <p class="notice" role="status">
+          {notice()}
+        </p>
+      </Show>
       <p role="alert">{error()}</p>
     </div>
   );

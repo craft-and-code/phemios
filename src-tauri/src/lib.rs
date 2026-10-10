@@ -6,6 +6,7 @@ mod local;
 mod playback;
 mod podcast;
 mod radio;
+mod themes;
 mod volumes;
 use tauri::Manager;
 
@@ -53,6 +54,8 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            themes::theme_import,
+            themes::theme_export,
             volumes::players_discover,
             local::local_status,
             local::local_start,

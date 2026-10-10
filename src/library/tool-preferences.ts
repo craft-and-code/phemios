@@ -1,3 +1,5 @@
+import { announceSetting } from "./saved-settings";
+import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 export const pageSizes = [25, 50, 100, 200] as const;
@@ -64,6 +66,7 @@ export function saveToolPreferences(
 ): ToolPreferences {
   const next = validate({ ...readToolPreferences(storage), ...patch });
   storage.setItem(key, JSON.stringify(next));
+  announceSetting(key, JSON.stringify(next));
   return next;
 }
 /** Reactive settings update only after persistence; callers display the returned error. */
@@ -77,6 +80,18 @@ export function createToolPreferences(storage: Store = localStorage) {
     setValue(readToolPreferences(storage));
   } catch (failure) {
     setError(String(failure));
+  }
+  if (typeof window !== "undefined" && getOwner()) {
+    const reload = () => {
+      try {
+        setValue(readToolPreferences(storage));
+        setError("");
+      } catch (failure) {
+        setError(String(failure));
+      }
+    };
+    window.addEventListener("phemios-settings-loaded", reload);
+    onCleanup(() => window.removeEventListener("phemios-settings-loaded", reload));
   }
   return {
     value,

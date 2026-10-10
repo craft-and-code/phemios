@@ -1,3 +1,4 @@
+import { SettingsLanguage } from "./SettingsLanguage";
 import { SettingsNavigation } from "./SettingsNavigation";
 import type { createMenuPreferences } from "../navigation/menu-preferences";
 import { SettingsTags } from "./SettingsTags";
@@ -18,20 +19,28 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
       <div
         class="settings-tabs"
         role="tablist"
+        aria-orientation="vertical"
         aria-label={t("Paramètres")}
         onKeyDown={(event) => {
-          const ids = ["libraries", "accounts", "services", "tags", "appearance", "navigation"],
+          const ids = [
+              "libraries",
+              "accounts",
+              "services",
+              "tags",
+              "language",
+              "appearance",
+              "navigation",
+            ],
             index = ids.indexOf(tab());
-          const next =
-            event.key === "ArrowRight"
-              ? (index + 1) % ids.length
-              : event.key === "ArrowLeft"
-                ? (index + ids.length - 1) % ids.length
-                : event.key === "Home"
-                  ? 0
-                  : event.key === "End"
-                    ? ids.length - 1
-                    : undefined;
+          const next = ["ArrowRight", "ArrowDown"].includes(event.key)
+            ? (index + 1) % ids.length
+            : ["ArrowLeft", "ArrowUp"].includes(event.key)
+              ? (index + ids.length - 1) % ids.length
+              : event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? ids.length - 1
+                  : undefined;
           if (next === undefined) return;
           event.preventDefault();
           setTab(ids[next]!);
@@ -44,7 +53,8 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
             { icon: "users", id: "accounts", label: t("Comptes") },
             { icon: "globe", id: "services", label: t("Sources externes") },
             { icon: "tags", id: "tags", label: t("Tags") },
-            { icon: "palette", id: "appearance", label: t("Apparence") },
+            { icon: "alphabet", id: "language", label: t("Langue") },
+            { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
             { icon: "menu", id: "navigation", label: t("Navigation") },
           ]}
         >
@@ -64,6 +74,14 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </For>
       </div>
       <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-tab-${tab()}`}>
+        <p class="settings-save-status" role="status">
+          {library.savedSettings.status()}
+        </p>
+        <Show when={library.savedSettings.error()}>
+          <p class="notice" role="alert">
+            {library.savedSettings.error()}
+          </p>
+        </Show>
         <Show when={tab() === "accounts" && library.origins().length > 1}>
           <div class="choices" aria-label={t("Bibliothèque à administrer")}>
             <For each={library.origins()}>
@@ -92,6 +110,9 @@ export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferen
         </Show>
         <Show when={tab() === "navigation"}>
           <SettingsNavigation menu={props.menu} />
+        </Show>
+        <Show when={tab() === "language"}>
+          <SettingsLanguage />
         </Show>
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />

@@ -2,7 +2,7 @@
 
 ## Authorized scope
 
-Settings replaces the connection button, retains a source-status light and offers local folders plus the existing server connection concurrently. The user chose a combined public catalog with visible Local/Server origins. Personal data and installation operations remain scoped to one actual source/account; matching display names never merge server identities. Settings includes roots/exclusions, explicit scans/fetches, supported account operations, external-service configuration, language preference and three presentation colours with reset. French/English translation follows a separate commit.
+Settings replaces the connection button, retains a source-status light and offers local folders plus the existing server connection concurrently. The user chose a combined public catalog with visible Local/Server origins. Personal data and installation operations remain scoped to one actual source/account; matching display names never merge server identities. Settings includes roots/exclusions, explicit scans/fetches, supported account operations, external-service configuration, language preference and eight presentation colours with reset. French/English translation follows a separate commit.
 
 ## Engine ownership
 
@@ -28,7 +28,7 @@ Meaningful tests cover source collisions, reference round trips, unrelated text 
 
 The retained public catalog determines whether origin labels are useful. One origin hides redundant labels and follows its active session automatically; two origins display source badges on cover cards, detail headings and track rows. Track browsing has one bounded concatenated Local/Server window, per-source epoch validation, cached pages and explicit partial failures, rather than a source switch or an unbounded full-track download. Namespaced identities remain distinct. Accounts and personal views keep their owner boundary.
 
-Settings uses compact rectangular keyboard-accessible section tabs. External keys/options are shared; eligible library checkboxes select independent explicit jobs, both enabled initially. Results report each accepted job or failure separately so a partial success is never described as an atomic transaction. Delete icons remove only the app-owned key and preserve the other key and any input draft. Album/track detail Play resumes a matching paused selection without replacing its queue; a different selection or radio starts the requested item explicitly.
+Settings uses a compact vertical category rail, changing to horizontal keyboard-accessible tabs on narrow windows. External keys/options are shared; eligible library checkboxes select independent explicit jobs, both enabled initially. Results report each accepted job or failure separately so a partial success is never described as an atomic transaction. Delete icons remove only the app-owned key and preserve the other key and any input draft. Album/track detail Play resumes a matching paused selection without replacing its queue; a different selection or radio starts the requested item explicitly.
 
 ## Settings persistence
 
@@ -41,3 +41,9 @@ Appearance contains eight independently retained colours and a Reset preserving 
 Podcast removal presents an inline confirmation for the captured feed. Choosing another feed or Cancel abandons the request; only confirmation writes the subscription store, with a failed write leaving it intact.
 
 Discogs label biographies are an optional persisted enrichment category. Enabling the category does not contact Discogs; explicit enrichment requests label identification then the identifier-linked fallback. No Discogs token is collected for ID lookups. Each source must advertise fetch_discogs before receiving the new flag; rejected legacy jobs explain update/restart. The original server installation keys remain independent.
+
+## Account settings and portable themes
+
+Settings separates Language from Colours/themes. Eight colours preview immediately; Save exports a versioned JSON theme through the native file picker, and Import validates the complete bounded document before applying it. Theme files include colours/name only, never language, sources or credentials. Reset affects colours only. The native import has a 4096-byte read bound. Saved Settings show device/account confirmation or a visible synchronization failure.
+
+The account-preferences capability loads and patches only validated non-secret appearance, menu, tool, duration-display and scene choices. Writes serialize per captured identity/source and merge independent keys; replaced identities discard late responses and queued changes. Corrupt device/account stores remain explicit and preserved. Device-only use remains supported; older servers show an update/restart explanation and retain local saving. Installation roots/accounts/keys keep their existing native/server persistence rather than being copied into account preferences.

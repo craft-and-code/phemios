@@ -1,3 +1,5 @@
+import { announceSetting } from "../library/saved-settings";
+import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 import { sections, type Section } from "./routes";
@@ -17,7 +19,13 @@ function validate(raw: unknown): MenuPreferences {
     rows.every((id) => ids().includes(id));
   if (!value || value.version !== 1 || !valid(value.order) || !valid(value.hidden))
     throw new Error(t("Configuration du menu illisible."));
-  const order = value.order;
+  const savedOrder = value.order;
+  const oldDefault = ids().filter((id) => savedOrder.includes(id));
+  const order =
+    value.order.every((id, index) => id === oldDefault[index]) &&
+    value.order.length === oldDefault.length
+      ? ids()
+      : value.order;
   return {
     order: [...order, ...ids().filter((id) => !order.includes(id))],
     hidden: [...value.hidden],
@@ -35,6 +43,7 @@ export function saveMenuPreferences(storage: Store, value: MenuPreferences): Men
   readMenuPreferences(storage);
   const next = validate({ version: 1, ...value });
   storage.setItem(key, JSON.stringify({ version: 1, ...next }));
+  announceSetting(key, JSON.stringify({ version: 1, ...next }));
   return next;
 }
 /** Move one item before a target; invalid or self targets retain the complete original order. */
@@ -52,6 +61,18 @@ export function createMenuPreferences(storage: Store = localStorage) {
     setValue(readMenuPreferences(storage));
   } catch (failure) {
     setError(String(failure));
+  }
+  if (typeof window !== "undefined" && getOwner()) {
+    const reload = () => {
+      try {
+        setValue(readMenuPreferences(storage));
+        setError("");
+      } catch (failure) {
+        setError(String(failure));
+      }
+    };
+    window.addEventListener("phemios-settings-loaded", reload);
+    onCleanup(() => window.removeEventListener("phemios-settings-loaded", reload));
   }
   return {
     value,
@@ -71,7 +92,7 @@ export function createMenuPreferences(storage: Store = localStorage) {
 }
 /** Group headings follow the chosen order, never empty or repeated merely because a leading menu is hidden. */
 export function menuGroup(id: Section): string {
-  if (["favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
+  if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
     return t("VOTRE MUSIQUE");
   if (["radio", "podcasts"].includes(id)) return t("SOURCES MUSICALES");
   if (["doctor", "analysis", "relations", "statistics", "players"].includes(id)) return t("OUTILS");

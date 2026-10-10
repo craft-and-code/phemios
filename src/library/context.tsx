@@ -1,3 +1,4 @@
+import { createSavedSettings } from "./saved-settings";
 import { createTagPreferences } from "./tag-preferences";
 import { createMissingCoverLoader } from "./missing-artwork";
 import { missingCoverAede } from "../platform/desktop";
@@ -36,6 +37,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  savedSettings: ReturnType<typeof createSavedSettings>;
   missing: ReturnType<typeof createMissingCatalog>;
   missingArtwork: {
     image: (row: import("./missing").MissingAlbum) => string | undefined;
@@ -160,6 +162,7 @@ export function LibraryProvider(props: ParentProps) {
     if (account.id !== current.account.id || !account.enabled)
       throw new Error(t("Session invalide."));
   }, setConnected);
+  const savedSettings = createSavedSettings(session, source);
   const player = createPlayback(
     () =>
       [localSession(), serverSession()].some(
@@ -188,6 +191,10 @@ export function LibraryProvider(props: ParentProps) {
     }
   });
 
+  createEffect(() => {
+    const account = session();
+    if (account) player.identify(`${source()}:${account.server}:${account.account.id}`);
+  });
   const tasks = createJobs(() => !!localSession() || !!serverSession());
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
@@ -340,7 +347,6 @@ export function LibraryProvider(props: ParentProps) {
     setError("");
     try {
       setSession(await loginAede(server, username, password));
-      player.identify(`${serverSession()?.server}:${serverSession()?.account.id}`);
       connection.start();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Connexion impossible."));
@@ -421,6 +427,7 @@ export function LibraryProvider(props: ParentProps) {
   onCleanup(missingArtwork.dispose);
 
   const value: Library = {
+    savedSettings,
     missing,
     missingArtwork: {
       image: (row) => {

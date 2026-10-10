@@ -60,7 +60,10 @@ export function requestAede<T>(
   const entity =
     query.ref ??
     query.reference ??
-    (body && typeof body === "object" ? (body as Record<string, unknown>).release : undefined);
+    query.track ??
+    (body && typeof body === "object"
+      ? ((body as Record<string, unknown>).release ?? (body as Record<string, unknown>).track)
+      : undefined);
   const origin = typeof entity === "string" ? referenceSource(entity) : source;
   return nativeCall<T>("aede_request", { path, query, method, body, source: origin });
 }
@@ -128,3 +131,8 @@ export const discoverPlayers = () => nativeCall<unknown>("players_discover");
 
 /** Explicit, bounded public RSS retrieval has no access to Aède credentials. */
 export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed", { url });
+
+/** Native dialogs restrict theme exchange to a bounded user-selected JSON document. */
+export const importTheme = () => nativeCall<string | null>("theme_import");
+export const exportTheme = (document: string) =>
+  nativeCall<string | null>("theme_export", { document });
