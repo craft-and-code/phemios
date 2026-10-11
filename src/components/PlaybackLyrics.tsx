@@ -1,7 +1,7 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 /** Pointer capture keeps the translucent lyric block visible throughout its move. */
-export function PlaybackLyrics(props: { text: string }) {
+export function PlaybackLyrics(props: { text: string; floating?: boolean; playing?: boolean }) {
   const [position, setPosition] = createSignal({ x: 50, y: 76 }),
     [dragging, setDragging] = createSignal(false);
   let offset = { x: 0, y: 0 };
@@ -22,7 +22,7 @@ export function PlaybackLyrics(props: { text: string }) {
   return (
     <p
       class="playback-current-lyrics"
-      classList={{ "lyrics-dragging": dragging() }}
+      classList={{ "lyrics-dragging": dragging(), "floating-lyrics": !!props.floating }}
       style={{ left: `${position().x}%`, top: `${position().y}%` }}
       tabindex="0"
       aria-label={t("Déplacer les paroles")}
@@ -60,7 +60,16 @@ export function PlaybackLyrics(props: { text: string }) {
         }));
       }}
     >
-      {props.text}
+      <Show when={props.floating && props.text} fallback={props.text} keyed>
+        {(text) => (
+          <span
+            class="floating-phrase"
+            style={{ "animation-play-state": props.playing ? "running" : "paused" }}
+          >
+            {text}
+          </span>
+        )}
+      </Show>
     </p>
   );
 }

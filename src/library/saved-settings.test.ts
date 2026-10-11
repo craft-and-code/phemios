@@ -90,3 +90,13 @@ it("serializes independent preference writes and never sends queued changes to a
   expect(patches()).toHaveLength(1);
   dispose();
 });
+
+it("retains disabled and floating scenes and terminal bars through owner preferences", () => {
+  for (const scene of ["off", "floating"])
+    expect(
+      parseAccountSettings({
+        values: { "phemios.visualizer": scene, "phemios.spectrum-style": "terminal" },
+      }),
+    ).toEqual({ "phemios.visualizer": scene, "phemios.spectrum-style": "terminal" });
+  expect(() => parseAccountSettings({ values: { "phemios.spectrum-style": "random" } })).toThrow();
+});

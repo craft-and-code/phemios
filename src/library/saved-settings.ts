@@ -15,6 +15,7 @@ export const accountSettingKeys = [
   "phemios.duration",
   "phemios.visualizer",
   "phemios.spectrum",
+  "phemios.spectrum-style",
   "phemios.shortcuts.v1",
   "phemios.audio.v1",
 ] as const;
@@ -44,7 +45,12 @@ export function parseAccountSettings(raw: unknown): Record<string, unknown> {
       if (key === "phemios.shortcuts.v1") parseShortcuts(JSON.stringify(value));
       if (["phemios.duration", "phemios.spectrum"].includes(key) && typeof value !== "boolean")
         throw new Error(t("Préférences de compte invalides."));
-      if (key === "phemios.visualizer" && !["sphere", "waves", "landscape"].includes(String(value)))
+      if (
+        key === "phemios.visualizer" &&
+        !["off", "sphere", "waves", "landscape", "floating"].includes(String(value))
+      )
+        throw new Error(t("Préférences de compte invalides."));
+      if (key === "phemios.spectrum-style" && !["gradient", "terminal"].includes(String(value)))
         throw new Error(t("Préférences de compte invalides."));
       result[key] = value;
     }

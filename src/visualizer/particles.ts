@@ -1,5 +1,5 @@
 /** Deterministic 3D geometry, deformed only by audible native band levels. */
-export type Scene = "sphere" | "waves" | "landscape";
+export type Scene = "sphere" | "waves" | "landscape" | "floating" | "off";
 export interface Particle {
   x: number;
   y: number;

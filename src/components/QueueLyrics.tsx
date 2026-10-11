@@ -1,3 +1,4 @@
+import { Portal } from "solid-js/web";
 import { createMemo, createResource, createSignal, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -8,7 +9,7 @@ import { acquireQueueLyrics, queueHasLyrics } from "../library/queue-lyrics";
 import { Icon } from "./Icon";
 import { Feedback } from "./Feedback";
 /** Explicit sequential acquisition preserves existing lyrics and source-bound account authority. */
-export function QueueLyrics() {
+export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined }) {
   const library = useLibrary(),
     [busy, setBusy] = createSignal(false),
     [message, setMessage] = createSignal(""),
@@ -189,12 +190,18 @@ export function QueueLyrics() {
           <span class="spinner" />
         </Show>
       </button>
-      <Feedback
-        class="queue-lyrics-result"
-        message={message() || retained()?.error || ""}
-        error={failed() || !!retained()?.error}
-        onClose={() => setMessage("")}
-      />
+      <Show when={props.feedbackHost()}>
+        {(host) => (
+          <Portal mount={host()}>
+            <Feedback
+              class="queue-lyrics-result"
+              message={message() || retained()?.error || ""}
+              error={failed() || !!retained()?.error}
+              onClose={() => setMessage("")}
+            />
+          </Portal>
+        )}
+      </Show>
     </span>
   );
 }

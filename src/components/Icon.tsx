@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  "visualizer-off": "M3 3l18 18M3 8v10h10M8 4h13v10M8 22h8M12 18v4",
+  terminal: "M3 4h18v16H3V4Zm3 4 3 3-3 3m5 1h6",
   crossfade: "M3 5h4c4 0 6 14 10 14h4M3 19h4c4 0 6-14 10-14h4",
   "chevron-right": "m9 6 6 6-6 6",
   book: "M12 5c-3-3-7-3-10-2v16c3-1 7-1 10 2m0-16c3-3 7-3 10-2v16c-3-1-7-1-10 2V5Z",

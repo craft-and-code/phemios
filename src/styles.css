@@ -1445,3 +1445,66 @@ html,
 body {
   overflow: hidden;
 }
+
+.queue-notices:empty {
+  display: none;
+}
+.queue-notices .feedback {
+  width: 100%;
+  margin-block: 4px 12px;
+}
+.terminal-band {
+  display: grid;
+  grid-template-rows: repeat(10, 1fr);
+  gap: 5px;
+  height: 100%;
+  width: 100%;
+}
+.terminal-band i {
+  border-radius: 1px;
+  background: transparent;
+  position: relative;
+}
+.terminal-band i.lit {
+  background: #68cd89;
+}
+.terminal-band i.lit.terminal-yellow {
+  background: #e1c458;
+}
+.terminal-band i.lit.terminal-red {
+  background: #ea7868;
+}
+.terminal-band i.peak::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  border-top: 2px solid var(--text);
+}
+.frequency-backdrop.terminal-backdrop {
+  gap: 12px;
+  opacity: 0.55;
+}
+.floating-lyrics {
+  font-size: clamp(24px, 3vw, 48px);
+  text-shadow: 0 0 30px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.floating-phrase {
+  display: block;
+  animation: floating-phrase-arrive 600ms ease-out both;
+}
+@keyframes floating-phrase-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(32px) rotateX(20deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-phrase {
+    animation: none;
+  }
+}

@@ -1,3 +1,4 @@
+import { floatingObjects, animationRuns } from "../visualizer/floating";
 import { createEffect, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
 import { orbit, orbitDrag } from "../visualizer/orbit";
@@ -33,9 +34,11 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     ctx.clearRect(0, 0, width, height);
     const color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
       scale = Math.min(width, height) * 0.32;
-    const points = particles(props.scene, clock, reduced.matches ? [0, 0, 0, 0] : bands).map((p) =>
-      orbit(p, yaw, pitch),
-    );
+    const points = (
+      props.scene === "floating"
+        ? floatingObjects(clock, reduced.matches ? [0, 0, 0, 0] : bands)
+        : particles(props.scene, clock, reduced.matches ? [0, 0, 0, 0] : bands)
+    ).map((p) => orbit(p, yaw, pitch));
     points.sort((a, b) => b.z - a.z);
     for (const point of points) {
       const perspective = 3.4 / (3.4 + point.z),
@@ -43,6 +46,39 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
         y = height / 2 + point.y * scale * perspective;
       ctx.globalAlpha = Math.max(0.12, Math.min(1, (1.9 - point.z) / 3 + 0.15 * point.energy));
       ctx.fillStyle = color;
+      if (props.scene === "floating") {
+        const radius = (8 + point.energy * 14) * perspective;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(clock * 0.3 + point.z);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        if (point.z > 0.4) {
+          ctx.ellipse(0, 0, radius * 1.5, radius * 0.55, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, radius * 0.22, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (point.z < -0.4) {
+          ctx.moveTo(0, -radius);
+          ctx.lineTo(radius, 0);
+          ctx.lineTo(0, radius);
+          ctx.lineTo(-radius, 0);
+          ctx.closePath();
+          ctx.stroke();
+        } else {
+          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(-radius * 0.3, -radius * 0.3, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(x, y, Math.max(0.6, (1.1 + point.energy) * perspective), 0, Math.PI * 2);
       ctx.fill();
@@ -50,7 +86,7 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     ctx.globalAlpha = 1;
   }
   function tick(timestamp: number) {
-    if (!props.playing || document.hidden || reduced.matches) {
+    if (!animationRuns(props.scene !== "off", props.playing, document.hidden, reduced.matches)) {
       frame = 0;
       last = 0;
       draw();
@@ -69,7 +105,8 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     cancelAnimationFrame(frame);
     frame = 0;
     last = 0;
-    if (props.playing && !document.hidden && !reduced.matches) frame = requestAnimationFrame(tick);
+    if (animationRuns(props.scene !== "off", props.playing, document.hidden, reduced.matches))
+      frame = requestAnimationFrame(tick);
     else draw();
   }
   createEffect(() => {

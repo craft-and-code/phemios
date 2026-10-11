@@ -27,6 +27,7 @@ export function PlaybackPage() {
     player = library.player,
     [queue, setQueue] = createSignal(false),
     [spectrum, setSpectrum] = createSignal(false),
+    [barStyle, setBarStyle] = createSignal<"gradient" | "terminal">("gradient"),
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
   onMount(() => {
@@ -41,10 +42,17 @@ export function PlaybackPage() {
           if (typeof value !== "boolean") throw new Error(t("Préférences invalides."));
           setSpectrum(value);
         }
+        const savedStyle = localStorage.getItem("phemios.spectrum-style");
+        if (savedStyle) {
+          const value = JSON.parse(savedStyle);
+          if (!["gradient", "terminal"].includes(value))
+            throw new Error(t("Préférences invalides."));
+          setBarStyle(value);
+        }
         const raw = localStorage.getItem("phemios.visualizer");
         if (raw) {
           const value = JSON.parse(raw);
-          if (!["sphere", "waves", "landscape"].includes(value))
+          if (!["off", "sphere", "waves", "landscape", "floating"].includes(value))
             throw new Error(t("Préférences invalides."));
           setScene(value);
         }
@@ -136,6 +144,12 @@ export function PlaybackPage() {
           <div class="scene-controls">
             <For
               each={[
+                {
+                  id: "off" as const,
+                  icon: "visualizer-off",
+                  label: t("Désactiver les animations"),
+                },
+                { id: "floating" as const, icon: "sparkles", label: t("Paroles flottantes") },
                 { id: "sphere" as const, icon: "globe", label: t("Sphère") },
                 { id: "waves" as const, icon: "wave", label: t("Vagues") },
                 { id: "landscape" as const, icon: "landscape", label: t("Relief") },
@@ -172,20 +186,50 @@ export function PlaybackPage() {
             >
               <Icon name="spectrum" />
             </button>
+            <Show when={spectrum()}>
+              <button
+                class="icon-button quiet"
+                title={
+                  barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
+                }
+                aria-label={
+                  barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
+                }
+                aria-pressed={barStyle() === "terminal"}
+                onClick={() => {
+                  try {
+                    const next = barStyle() === "gradient" ? "terminal" : "gradient";
+                    localStorage.setItem("phemios.spectrum-style", JSON.stringify(next));
+                    announceSetting("phemios.spectrum-style", JSON.stringify(next));
+                    setBarStyle(next);
+                  } catch (failure) {
+                    setError(String(failure));
+                  }
+                }}
+              >
+                <Icon name="terminal" />
+              </button>
+            </Show>
           </div>
           <div class="playback-visuals">
-            <Show when={spectrum() && player.state().spectrum_hz}>
+            <Show when={scene() !== "off" && spectrum() && player.state().spectrum_hz}>
               <FrequencyBars
                 levels={player.state().spectrum ?? []}
                 frequencies={player.state().spectrum_hz ?? []}
                 rate={player.state().sample_rate}
+                style={barStyle()}
+                position={player.seekPosition()}
+                reference={player.current()?.reference ?? ""}
+                playing={player.state().status === "playing"}
               />
             </Show>
-            <AudioScene
-              scene={scene()}
-              playing={player.state().status === "playing"}
-              levels={player.state().levels}
-            />
+            <Show when={scene() !== "off"}>
+              <AudioScene
+                scene={scene()}
+                playing={player.state().status === "playing"}
+                levels={player.state().levels}
+              />
+            </Show>
             <Show when={plain().length}>
               <div class="untimed-lyrics-controls">
                 <button
@@ -210,6 +254,8 @@ export function PlaybackPage() {
               </div>
             </Show>
             <PlaybackLyrics
+              floating={scene() === "floating"}
+              playing={player.state().status === "playing"}
               text={
                 lyrics()?.synced === false
                   ? (plain()[phrase()] ?? "")

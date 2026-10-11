@@ -10,6 +10,7 @@ import { Icon } from "./Icon";
 /** Occurrence edits share the native queue generation and leave the current audio untouched. */
 export function PlaybackQueue(props: { onClose: () => void }) {
   const player = useLibrary().player,
+    [feedbackHost, setFeedbackHost] = createSignal<HTMLElement>(),
     [visible, setVisible] = createSignal(100),
     [dragged, setDragged] = createSignal<{ index: number; id: number }>(),
     [dropTarget, setDropTarget] = createSignal<number>();
@@ -72,9 +73,10 @@ export function PlaybackQueue(props: { onClose: () => void }) {
         >
           <Icon name="reverse" />
         </button>
-        <QueueLyrics />
+        <QueueLyrics feedbackHost={feedbackHost} />
         <QueueSave />
       </div>
+      <div class="queue-notices" ref={setFeedbackHost} />
       <Show when={player.error()}>
         <Feedback error message={player.error()} />
       </Show>
