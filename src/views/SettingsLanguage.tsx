@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { createSignal, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
@@ -54,7 +55,7 @@ export function SettingsLanguage() {
           ]}
         />
       </label>
-      <p role="alert">{error()}</p>
+      <Feedback error message={error()} />
     </section>
   );
 }

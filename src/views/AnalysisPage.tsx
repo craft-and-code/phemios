@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { IntegrityStatus } from "../components/IntegrityStatus";
 import { Feedback } from "../components/Feedback";
 import {
@@ -111,7 +112,7 @@ export function AnalysisPage(props: { query: string }) {
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
       <Show when={report.loading}>
-        <p role="status">{t("Chargement…")}</p>
+        <PageLoader />
       </Show>
       <Show when={report.error}>
         <p class="notice missing-notice" role="alert">

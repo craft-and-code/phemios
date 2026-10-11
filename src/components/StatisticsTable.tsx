@@ -1,3 +1,4 @@
+import { PageLoader } from "./PageLoader";
 import { t } from "../i18n";
 import { createResource, createSignal, For, Show } from "solid-js";
 import { numberLabel, type Page, type Statistics } from "../library/statistics";
@@ -26,7 +27,7 @@ export function StatisticsTable(props: {
       <h2>{props.title}</h2>
       <small>{props.unit}</small>
       <Show when={report.loading}>
-        <p role="status">{t("Chargement…")}</p>
+        <PageLoader inline />
       </Show>
       <Show when={report.error}>
         <p role="alert">{String(report.error)}</p>

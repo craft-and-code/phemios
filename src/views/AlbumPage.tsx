@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { AlbumMetadata } from "../components/AlbumMetadata";
 import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
@@ -117,7 +118,7 @@ export function AlbumPage(props: {
           </p>
         </Show>
         <Show when={tracks.loading}>
-          <p class="muted">{t("Chargement des pistes…")}</p>
+          <PageLoader inline label={t("Chargement des pistes…")} />
         </Show>
         <Show when={!library.sessionFor(props.album.reference)}>
           <p class="muted">{t("Connectez Aède pour consulter les pistes.")}</p>

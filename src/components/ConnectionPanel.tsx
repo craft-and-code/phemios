@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { Icon } from "./Icon";
 import { t } from "../i18n";
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
@@ -176,12 +177,8 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
             </button>
           </div>
         </Show>
-        <Show when={preferenceError()}>
-          <p role="status">{preferenceError()}</p>
-        </Show>
-        <Show when={library.error()}>
-          <p role="alert">{library.error()}</p>
-        </Show>
+        <Feedback error message={preferenceError()} />
+        <Feedback error message={library.error()} />
       </section>
     </div>
   );

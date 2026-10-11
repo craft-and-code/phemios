@@ -116,17 +116,8 @@ export function SettingsPage(props: {
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />
         </Show>
-        <Show
-          when={library.savedSettings.status() === t("Enregistrement…")}
-          fallback={<Feedback message={library.savedSettings.status()} />}
-        >
-          <p role="status">{library.savedSettings.status()}</p>
-        </Show>
-        <Show when={library.savedSettings.error()}>
-          <p class="notice" role="alert">
-            {library.savedSettings.error()}
-          </p>
-        </Show>
+        <Feedback message={library.savedSettings.status()} />
+        <Feedback error message={library.savedSettings.error()} />
       </div>
     </section>
   );

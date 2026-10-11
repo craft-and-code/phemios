@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -180,7 +181,7 @@ export function MoodsPage() {
         </div>
       </Show>
       <Show when={response.loading}>
-        <p role="status">{t("Chargement…")}</p>
+        <PageLoader />
       </Show>
       <Show when={response.error || error()}>
         <p class="notice" role="alert">

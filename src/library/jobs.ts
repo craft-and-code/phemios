@@ -1,3 +1,4 @@
+import { startEnrichment, startSourceEnrichment, hasActiveEnrichment } from "./enrichment";
 import type { AccountSession } from "./server";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "./sources";
@@ -33,7 +34,8 @@ export function createJobs(
   },
 ) {
   const [jobs, setJobs] = createSignal<Job[]>([]),
-    [error, setError] = createSignal("");
+    [error, setError] = createSignal(""),
+    [enrichmentPending, setEnrichmentPending] = createSignal(false);
   let timer: number | undefined,
     disposed = false;
   async function poll() {
@@ -145,6 +147,16 @@ export function createJobs(
         new Set(rows.map((row) => row.task_id)).size !== rows.length
       )
         throw new Error(t("Suivi de tâche Aède invalide."));
+      const finished = rows.some((row) => {
+        const previous = jobs().find(
+          (held) => held.source === source && held.task_id === row.task_id,
+        );
+        return (
+          previous?.kind === "fetch" &&
+          ["queued", "running"].includes(previous.status) &&
+          ["completed", "failed", "cancelled"].includes(row.status)
+        );
+      });
       setJobs((held) => [
         ...held.filter((row) => row.source !== source),
         ...rows.map((row) => {
@@ -152,7 +164,9 @@ export function createJobs(
           const kind =
             local?.kind ??
             (row.task_kind === "identification" ? "fetch" : (row.kind ?? row.task_kind));
-          return { ...local, ...row, source, ...(kind === undefined ? {} : { kind }) };
+          const restored = { ...local, ...row, source, ...(kind === undefined ? {} : { kind }) };
+          delete restored.tracking_error;
+          return restored;
         }),
         ...held.filter(
           (row) =>
@@ -161,6 +175,8 @@ export function createJobs(
             !rows.some((remote) => remote.task_id === row.task_id),
         ),
       ]);
+      if (finished) await options?.changed(source);
+      if (disposed || (options && identity !== options.session(source))) return;
       if (timer === undefined && rows.some((row) => ["queued", "running"].includes(row.status)))
         timer = window.setTimeout(() => void poll(), 300);
     } catch (failure) {
@@ -197,6 +213,27 @@ export function createJobs(
     track(result, kind, source, release);
     return result.task_id;
   }
+  /** Submission remains owned by the library when the initiating settings view is closed. */
+  async function enrich(sources: readonly SourceId[], input: Record<string, boolean>) {
+    if (enrichmentPending() || hasActiveEnrichment(jobs())) return undefined;
+    setEnrichmentPending(true);
+    const owners = new Map(sources.map((source) => [source, options?.session(source)]));
+    const current = (source: SourceId) =>
+      !disposed && (!options || owners.get(source) === options.session(source));
+    try {
+      const results = await startEnrichment(sources, (source) =>
+        startSourceEnrichment(source, input, () => current(source)),
+      );
+      return results.map((result) => {
+        if (!current(result.source))
+          return { source: result.source, error: t("Session invalide.") };
+        if ("task" in result) track({ task_id: result.task }, "fetch", result.source);
+        return result;
+      });
+    } finally {
+      setEnrichmentPending(false);
+    }
+  }
   async function cancel(id: number, source: SourceId = "server") {
     await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", {}, source);
   }
@@ -204,5 +241,5 @@ export function createJobs(
     disposed = true;
     if (timer !== undefined) window.clearTimeout(timer);
   });
-  return { jobs, error, start, cancel, track, restore };
+  return { jobs, error, start, cancel, track, restore, enrich, enrichmentPending };
 }

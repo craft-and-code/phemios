@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
 import { createSignal, For, Show, onCleanup } from "solid-js";
 import { t, locale } from "../i18n";
@@ -71,10 +72,7 @@ export function PodcastsPage(props: { query: string }) {
           {t("S’abonner")}
         </button>
         <Show when={busy() === "subscribe"}>
-          <span class="job-activity" role="status">
-            <span class="spinner" aria-hidden="true" />
-            {t("Chargement du podcast…")}
-          </span>
+          <PageLoader inline label={t("Chargement du podcast…")} />
         </Show>
       </form>
       <Show when={error() || subscriptions.error() || library.podcastListened.error()}>

@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { EmptyState } from "../components/EmptyState";
 import { createSignal, createResource, createEffect, on, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -128,7 +129,7 @@ export function LabelsPage(props: { query: string }) {
         <p class="notice">{t("Connectez-vous pour parcourir les labels de votre bibliothèque.")}</p>
       </Show>
       <Show when={pages.loading}>
-        <p role="status">{t("Chargement…")}</p>
+        <PageLoader />
       </Show>
       <div class="label-grid">
         <For each={current()}>

@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { TrackMetadataValue } from "../components/TrackMetadataValue";
 import type { MetadataBrowse } from "../library/track-metadata-links";
 import { Icon } from "../components/Icon";
@@ -37,7 +38,7 @@ export function TrackPage(props: {
         <p class="notice">{t("Connectez Aède pour consulter ce titre.")}</p>
       </Show>
       <Show when={detail.loading}>
-        <p role="status">{t("Chargement du titre…")}</p>
+        <PageLoader label={t("Chargement du titre…")} />
       </Show>
       <Show when={detail.error}>
         <p role="alert">

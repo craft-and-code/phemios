@@ -161,7 +161,7 @@ export function LibraryPage(props: {
                               {artist.genre} · {countryName(artist.countryCode, artist.country)}
                             </p>
                             <small>
-                              {releases.length} {t("albums · ouvrir la page")}
+                              {releases.length} {t("albums")}
                             </small>
                           </div>
                         </a>

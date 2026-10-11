@@ -5,8 +5,10 @@ import { t } from "../i18n";
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { localStatus, saveLocalKeys } from "../platform/desktop";
 import { useLibrary } from "../library/context";
+import type { SourceId } from "../library/sources";
 import { sourceLabel } from "../library/sources";
-import { startSourceEnrichment, startEnrichment } from "../library/enrichment";
+import { hasActiveEnrichment, visibleEnrichmentJobs } from "../library/enrichment";
+import { ActionButton } from "../components/ActionButton";
 import { Icon } from "../components/Icon";
 /** One private native key store serves explicit jobs on either library; no automatic enrichment. */
 export function SettingsServices() {
@@ -27,7 +29,12 @@ export function SettingsServices() {
     [fanart, setFanart] = createSignal(""),
     [acoustid, setAcoustid] = createSignal(""),
     [message, setMessage] = createSignal(""),
-    [busy, setBusy] = createSignal(false);
+    [busy, setBusy] = createSignal(false),
+    [failure, setFailure] = createSignal(false),
+    [retrying, setRetrying] = createSignal<SourceId>();
+  const launching = library.tasks.enrichmentPending;
+  const enrichmentActive = () => hasActiveEnrichment(library.tasks.jobs());
+  const recentJobs = createMemo(() => visibleEnrichmentJobs(library.tasks.jobs()));
   const [status, { refetch }] = createResource(() => !library.demo, localStatus);
   const targets = createMemo(() =>
     (["local", "server"] as const).filter((source) => {
@@ -39,6 +46,7 @@ export function SettingsServices() {
     const activateFanart = !remove && !!fanart().trim();
     setBusy(true);
     setMessage("");
+    setFailure(false);
     try {
       await saveLocalKeys(
         remove ? "" : fanart(),
@@ -55,6 +63,7 @@ export function SettingsServices() {
         t("Clés communes enregistrées. Elles s’appliquent aux prochains enrichissements."),
       );
     } catch (error) {
+      setFailure(true);
       setMessage(String(error));
     } finally {
       setBusy(false);
@@ -205,15 +214,20 @@ export function SettingsServices() {
           {t("Discogs · biographies des labels")}
         </label>
       </div>
-      <button
+      <ActionButton
+        icon="refresh"
+        busy={launching() || enrichmentActive()}
         disabled={
           busy() ||
+          launching() ||
+          enrichmentActive() ||
           !targets().some((s) => !excluded().includes(s)) ||
           ![summaries(), covers(), fanartPass(), lyrics(), discogs()].some(Boolean)
         }
         onClick={async () => {
-          setBusy(true);
+          if (busy() || launching() || enrichmentActive()) return;
           setMessage("");
+          setFailure(false);
           const options = {
             musicbrainz: true,
             summaries: summaries(),
@@ -226,37 +240,29 @@ export function SettingsServices() {
             yes: true,
           };
           try {
-            const results = await startEnrichment(
+            const results = await library.tasks.enrich(
               targets().filter((s) => !excluded().includes(s)),
-              async (source) => {
-                const account =
-                  source === "local" ? library.localSession() : library.serverSession();
-                return startSourceEnrichment(
-                  source,
-                  options,
-                  () =>
-                    account ===
-                    (source === "local" ? library.localSession() : library.serverSession()),
-                );
-              },
+              options,
             );
+            if (!results) return;
+            setFailure(results.some((result) => "error" in result));
             setMessage(
               results
                 .map((result) =>
                   "error" in result
                     ? `${sourceLabel(result.source)} · ${result.error}`
-                    : (library.tasks.track({ task_id: result.task }, "fetch", result.source),
-                      t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source))),
+                    : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
                 )
                 .join("\n"),
             );
-          } finally {
-            setBusy(false);
+          } catch (error) {
+            setFailure(true);
+            setMessage(String(error));
           }
         }}
       >
         {t("Lancer l’enrichissement")}
-      </button>
+      </ActionButton>
       <p class="muted">
         {t(
           "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.",
@@ -278,20 +284,41 @@ export function SettingsServices() {
           )}
         </p>
       </Show>
-      <Show when={library.tasks.error()}>
-        <p class="notice" role="alert">
-          {library.tasks.error()}
-        </p>
-      </Show>
-      <Show when={library.tasks.jobs().some((job) => job.kind === "fetch")}>
+      <Feedback error message={library.tasks.error()} />
+      <Show when={recentJobs().length}>
         <div class="enrichment-jobs">
-          <For each={library.tasks.jobs().filter((job) => job.kind === "fetch")}>
+          <For each={recentJobs()}>
             {(job) => (
               <section class="enrichment-job">
                 <div class="page-heading">
                   <strong>
                     {t("Tâche #{0}", job.task_id)} · {sourceLabel(job.source ?? "server")}
                   </strong>
+                  <Show when={job.tracking_error}>
+                    <button
+                      class="icon-button quiet"
+                      title={t("Réessayer")}
+                      aria-label={t("Réessayer")}
+                      disabled={!!retrying()}
+                      onClick={async () => {
+                        if (retrying()) return;
+                        const source = job.source ?? "server";
+                        setRetrying(source);
+                        try {
+                          await library.tasks.restore(source);
+                        } finally {
+                          setRetrying(undefined);
+                        }
+                      }}
+                    >
+                      <Show
+                        when={retrying() === (job.source ?? "server")}
+                        fallback={<Icon name="refresh" />}
+                      >
+                        <span class="spinner" aria-hidden="true" />
+                      </Show>
+                    </button>
+                  </Show>
                   <Show when={!job.tracking_error && ["queued", "running"].includes(job.status)}>
                     <span
                       class="spinner"
@@ -339,7 +366,7 @@ export function SettingsServices() {
           </For>
         </div>
       </Show>
-      <Feedback message={message()} />
+      <Feedback error={failure()} message={message()} />
     </div>
   );
 }

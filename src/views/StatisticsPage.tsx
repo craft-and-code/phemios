@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { exportStatistics, isNative } from "../platform/desktop";
@@ -173,7 +174,7 @@ export function StatisticsPage() {
         </p>
       </Show>
       <Show when={report.loading}>
-        <p role="status">{t("Chargement des statistiques Aède…")}</p>
+        <PageLoader label={t("Chargement des statistiques Aède…")} />
       </Show>
       <Show when={report.error}>
         <p role="alert">
@@ -200,7 +201,7 @@ export function StatisticsPage() {
             </p>
           </Show>
           <Show when={doctor.loading}>
-            <p>{t("Chargement du diagnostic…")}</p>
+            <PageLoader inline label={t("Chargement du diagnostic…")} />
           </Show>
           <Show when={doctor()}>
             {(result) => (

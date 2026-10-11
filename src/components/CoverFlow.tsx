@@ -1,5 +1,6 @@
+import { createCoverMotion, coverWindow } from "../visualizer/cover-motion";
 import { coverLetterStops, type CoverPosition } from "../visualizer/cover-position";
-import { createCoverScrub, animateCoverMove } from "../visualizer/cover-scrub";
+import { createCoverScrub } from "../visualizer/cover-scrub";
 import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 import type { Album } from "../library/types";
@@ -7,13 +8,15 @@ import { Artwork } from "./Artwork";
 import { CoverPlay } from "./CoverPlay";
 import { coverOpacity, coverDragTarget } from "../visualizer/cover-flow-policy";
 import { EmptyState } from "./EmptyState";
-/** A bounded nine-cover perspective window reuses cached artwork, independent of catalog size. */
+/** A bounded perspective window follows an interruptible fractional viewport, independent of catalog size. */
 export function CoverFlow(props: {
   albums: readonly Album[];
   position: CoverPosition;
   reverse: boolean;
 }) {
-  const [selected, setSelected] = createSignal("");
+  const [selected, setSelected] = createSignal(""),
+    [visualIndex, setVisualIndex] = createSignal(0);
+  const motion = createCoverMotion(setVisualIndex);
   const index = createMemo(() =>
     Math.max(
       0,
@@ -21,7 +24,9 @@ export function CoverFlow(props: {
     ),
   );
   const album = () => props.albums[index()];
-  const window = createMemo(() => props.albums.slice(Math.max(0, index() - 4), index() + 5));
+  const window = createMemo(() =>
+    coverWindow(visualIndex(), props.albums.length).map((at) => props.albums[at]!),
+  );
   const positions = createMemo(
     () => new Map(props.albums.map((row, index) => [row.reference, index])),
   );
@@ -30,13 +35,12 @@ export function CoverFlow(props: {
       () => `${props.reverse}:${props.albums.map((row) => row.reference).join("\0")}`,
       () => {
         scrub.cancel();
-        setAnimated(false);
         setSelected(props.position.restore(props.albums, props.reverse));
+        motion.reset(index());
       },
     ),
   );
-  const [dragging, setDragging] = createSignal(false),
-    [animated, setAnimated] = createSignal(true);
+  const [dragging, setDragging] = createSignal(false);
   let drag: { id: number; x: number; start: number } | undefined,
     dragged = false;
   const choose = (value: number) => {
@@ -44,8 +48,9 @@ export function CoverFlow(props: {
     if (next) {
       const target = props.albums.indexOf(next);
       if (target === index()) return;
-      setAnimated(animateCoverMove(index(), target));
       setSelected(next.reference);
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) motion.reset(target);
+      else motion.move(target);
       props.position.select(next.reference);
     }
   };
@@ -53,7 +58,10 @@ export function CoverFlow(props: {
   const finishScrub = () => {
     scrub.finish();
   };
-  onCleanup(scrub.dispose);
+  onCleanup(() => {
+    scrub.dispose();
+    motion.dispose();
+  });
   let movement = 0;
   return (
     <Show
@@ -62,7 +70,6 @@ export function CoverFlow(props: {
     >
       <div
         class="cover-flow"
-        classList={{ "flow-jump": !animated() }}
         role="region"
         aria-label={t("Cover Flow")}
         tabindex="0"
@@ -134,28 +141,28 @@ export function CoverFlow(props: {
           <For each={window()}>
             {(row) => {
               const at = () => positions().get(row.reference) ?? 0;
-              const distance = () => at() - index();
+              const distance = () => at() - visualIndex();
               return (
                 <article
                   class="cover-flow-card"
-                  classList={{ central: distance() === 0 }}
+                  classList={{ central: at() === index() }}
                   style={{
                     "--offset": distance(),
                     "--depth": Math.abs(distance()),
-                    "z-index": 10 - Math.abs(distance()),
+                    "z-index": 10 - Math.round(Math.abs(distance())),
                     opacity: coverOpacity(distance()),
                   }}
                 >
                   <a
                     href={`#/album/${encodeURIComponent(row.reference)}`}
-                    tabindex={distance() === 0 ? 0 : -1}
+                    tabindex={at() === index() ? 0 : -1}
                     aria-label={row.title}
                     onClick={(event) => {
                       if (dragged) {
                         event.preventDefault();
                         return;
                       }
-                      if (distance()) {
+                      if (at() !== index()) {
                         event.preventDefault();
                         choose(at());
                       }
@@ -163,7 +170,7 @@ export function CoverFlow(props: {
                   >
                     <Artwork album={row} />
                   </a>
-                  <Show when={distance() === 0}>
+                  <Show when={at() === index()}>
                     <CoverPlay reference={row.reference} title={row.title} />
                   </Show>
                 </article>

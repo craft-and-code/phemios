@@ -150,3 +150,67 @@ it("keeps a newly accepted task when an older restore response arrives", async (
   await restore;
   expect(jobs.jobs()[0]?.task_id).toBe(12);
 });
+
+it("keeps enrichment submission shared across view changes and blocks duplicates through server completion", async () => {
+  let accept!: (value: unknown) => void;
+  request.mockImplementation(async (path) => {
+    if (path === "/api/v1/status") return { capabilities: ["fetch_musicbrainz_first"] };
+    if (path === "/api/admin/v1/fetch")
+      return new Promise((resolve) => {
+        accept = resolve;
+      });
+    return { task_id: 11, status: "completed" };
+  });
+  const tasks = controller();
+  const started = tasks.enrich(["server"], { musicbrainz: true });
+  expect(tasks.enrichmentPending()).toBe(true);
+  expect(await tasks.enrich(["server"], { musicbrainz: true })).toBeUndefined();
+  for (let i = 0; i < 6; i++) await Promise.resolve();
+  accept({ task_id: 11 });
+  await started;
+  expect(tasks.enrichmentPending()).toBe(false);
+  expect(tasks.jobs()[0]).toMatchObject({ task_id: 11, kind: "fetch", status: "queued" });
+  expect(await tasks.enrich(["server"], { musicbrainz: true })).toBeUndefined();
+  expect(request.mock.calls.filter(([path]) => path === "/api/admin/v1/fetch")).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.jobs()[0]?.status).toBe("completed");
+});
+
+it("resumes a failed task tracker from the confirmed server list without launching work again", async () => {
+  const changed = vi.fn(async () => {});
+  const tasks = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true, { session: () => undefined, changed });
+  });
+  request.mockRejectedValueOnce(new Error("Offline"));
+  tasks.track({ task_id: 11 }, "fetch", "server");
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.jobs()[0]?.tracking_error).toBe("Offline");
+  request
+    .mockResolvedValueOnce({ capabilities: ["administrative_tasks_list"] })
+    .mockResolvedValueOnce([{ task_id: 11, task_kind: "identification", status: "running" }])
+    .mockResolvedValueOnce({ task_id: 11, status: "completed" });
+  await tasks.restore("server");
+  expect(tasks.jobs()[0]?.tracking_error).toBeUndefined();
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.jobs()[0]?.status).toBe("completed");
+  expect(changed).toHaveBeenCalledTimes(1);
+  expect(request.mock.calls.every(([, , method]) => method === "GET")).toBe(true);
+});
+it("refreshes retained catalog data if retry discovers that enrichment already completed", async () => {
+  const changed = vi.fn(async () => {});
+  const tasks = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true, { session: () => undefined, changed });
+  });
+  request.mockRejectedValueOnce(new Error("Offline"));
+  tasks.track({ task_id: 11 }, "fetch", "server");
+  await vi.advanceTimersByTimeAsync(300);
+  request
+    .mockResolvedValueOnce({ capabilities: ["administrative_tasks_list"] })
+    .mockResolvedValueOnce([{ task_id: 11, task_kind: "identification", status: "completed" }]);
+  await tasks.restore("server");
+  expect(changed).toHaveBeenCalledTimes(1);
+  expect(tasks.jobs()[0]?.status).toBe("completed");
+  expect(tasks.jobs()[0]?.tracking_error).toBeUndefined();
+});

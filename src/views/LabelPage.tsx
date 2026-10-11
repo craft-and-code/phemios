@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { BiographyText } from "../components/BiographyText";
 import { createResource, createSignal, createEffect, onCleanup, Show } from "solid-js";
@@ -77,9 +78,7 @@ export function LabelPage(props: {
   return (
     <article class="label-page">
       <Show when={result.loading}>
-        <p class="page" role="status">
-          {t("Chargement…")}
-        </p>
+        <PageLoader />
       </Show>
       <Show when={current()?.error}>
         <p class="page notice" role="alert">

@@ -1,3 +1,4 @@
+import type { Job } from "./jobs";
 import { requestAede } from "../platform/desktop";
 import { t } from "../i18n";
 import type { SourceId } from "./sources";
@@ -58,4 +59,17 @@ export async function startSourceEnrichment(
   );
   if (!isCurrent()) throw new Error(t("Session invalide."));
   return result;
+}
+
+/** Unknown tracking outcomes remain active until Aède confirms completion or the session changes. */
+export function hasActiveEnrichment(jobs: readonly Job[]): boolean {
+  return jobs.some((job) => job.kind === "fetch" && ["queued", "running"].includes(job.status));
+}
+/** Keep active work visible and limit completed diagnostics without deleting Aède task records. */
+export function visibleEnrichmentJobs(jobs: readonly Job[]): Job[] {
+  const rows = jobs.filter((job) => job.kind === "fetch").reverse();
+  return [
+    ...rows.filter((job) => ["queued", "running"].includes(job.status)),
+    ...rows.filter((job) => !["queued", "running"].includes(job.status)).slice(0, 3),
+  ];
 }

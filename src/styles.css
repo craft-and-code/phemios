@@ -1309,10 +1309,6 @@ main:has(> .playback-page) > :not(.playback-page) {
   }
 }
 
-/* Catalogue replacement resets the window; subsequent navigation stays animated. */
-.cover-flow.flow-jump .cover-flow-card {
-  transition: none;
-}
 .encyclopedia-grid > .settings-card:hover,
 .wikipedia-reader:hover,
 .wikipedia-result:hover:not(:disabled) {
@@ -2046,4 +2042,75 @@ textarea,
   width: 30px;
   height: 30px;
   border-width: 3px;
+}
+
+/* Native controls retain their hit targets without selecting surrounding interface text. */
+.settings-page,
+.settings-page *,
+.playback-queue,
+.playback-queue * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.action-button > .spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+/* Size Cover Flow from its actual remaining viewport, with a bounded artwork window. */
+main:has(> .library-page .cover-flow) {
+  display: flex;
+  flex-direction: column;
+}
+main:has(> .library-page .cover-flow) > :not(.library-page) {
+  flex-shrink: 0;
+}
+.library-page:has(.cover-flow) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+}
+.library-page:has(.cover-flow) > div,
+.library-results:has(> .cover-flow) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.cover-flow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+}
+.cover-flow-stage {
+  flex: 1;
+  min-height: 230px;
+  container-type: size;
+  perspective: 1200px;
+}
+.cover-flow-card {
+  --cover-size: clamp(180px, min(36cqw, calc(100cqh - 48px)), 560px);
+  top: 50%;
+  transform: translateX(calc(-50% + var(--offset) * var(--cover-size) * 0.6)) translateY(-50%)
+    translateZ(calc(var(--depth) * -110px)) rotateY(calc(clamp(-1, var(--offset), 1) * -48deg));
+  transition: none;
+}
+.cover-flow-controls,
+.cover-flow-alphabet,
+.cover-flow > input {
+  flex-shrink: 0;
+}
+.page-loader-inline {
+  position: relative;
+  inset: auto;
+  min-height: 120px;
+}
+
+.icon-button > .spinner {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
 }

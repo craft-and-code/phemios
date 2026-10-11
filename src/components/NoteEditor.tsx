@@ -1,3 +1,4 @@
+import { PageLoader } from "./PageLoader";
 import { t, locale } from "../i18n";
 import { createEffect, createSignal, For, onMount, onCleanup, Show } from "solid-js";
 import type { mountNoteEditor, NoteCommand } from "../editor/milkdown";
@@ -88,7 +89,7 @@ export function NoteEditor(props: {
         class="note-document"
       />
       <Show when={!ready() && !error()}>
-        <small>{t("Chargement de l’éditeur…")}</small>
+        <PageLoader inline label={t("Chargement de l’éditeur…")} />
       </Show>
       <Show when={error()}>
         <p role="alert">

@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
@@ -113,7 +114,7 @@ export function TagsPage(props: {
         <EmptyState icon="tags">{t("Aucun élément tagué dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={details.loading}>
-        <p role="status">{t("Chargement…")}</p>
+        <PageLoader />
       </Show>
       <Show when={details.error}>
         <p role="alert">{String(details.error)}</p>

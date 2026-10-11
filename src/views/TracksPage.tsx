@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
@@ -84,7 +85,7 @@ export function TracksPage(props: {
         </p>
       </Show>
       <Show when={page.loading}>
-        <p role="status">{t("Chargement des pistes…")}</p>
+        <PageLoader label={t("Chargement des pistes…")} />
       </Show>
       <Show when={!page.loading && !page.error && page()}>
         {(value) => (

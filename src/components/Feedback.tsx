@@ -20,6 +20,7 @@ export function Feedback(props: {
     <Show when={state.visible()}>
       <span
         class={`feedback ${props.class ?? ""}`}
+        classList={{ "feedback-error": props.error }}
         role={props.error ? "alert" : "status"}
         onPointerEnter={() => {
           hovered = true;

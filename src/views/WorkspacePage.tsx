@@ -32,7 +32,7 @@ export function WorkspacePage(props: { section: Section; query: string }) {
         props.section === "players" ? (
           <PageLoader label={t("Détection des lecteurs…")} />
         ) : (
-          <p role="status">{t("Chargement…")}</p>
+          <PageLoader />
         )
       }
     >

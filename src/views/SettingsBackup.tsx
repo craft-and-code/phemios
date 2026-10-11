@@ -1,3 +1,4 @@
+import { createPendingAction } from "../library/pending-action";
 import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { ActionButton } from "../components/ActionButton";
@@ -13,27 +14,28 @@ import { announceSetting } from "../library/saved-settings";
 import { applyPreferences, readPreferences } from "../library/preferences";
 /** A native chosen file is reviewed before an explicit all-settings restore. */
 export function SettingsBackup() {
-  const [busy, setBusy] = createSignal(false),
-    [pending, setPending] = createSignal<PreferenceBackup>(),
+  const action = createPendingAction<"export" | "import">(),
+    busy = () => action.pending() !== undefined;
+  const [pending, setPending] = createSignal<PreferenceBackup>(),
     [error, setError] = createSignal(""),
     [message, setMessage] = createSignal("");
   async function run(exporting: boolean) {
-    setBusy(true);
+    if (busy()) return;
     setError("");
     setMessage("");
     setPending(undefined);
     try {
-      if (exporting) {
-        const path = await exportPreferences(exportPreferenceBackup(localStorage));
-        if (path) setMessage(t("Préférences enregistrées : {0}", path));
-      } else {
-        const raw = await importPreferences();
-        if (raw !== null) setPending(parsePreferenceBackup(raw));
-      }
+      await action.run(exporting ? "export" : "import", async () => {
+        if (exporting) {
+          const path = await exportPreferences(exportPreferenceBackup(localStorage));
+          if (path) setMessage(t("Préférences enregistrées : {0}", path));
+        } else {
+          const raw = await importPreferences();
+          if (raw !== null) setPending(parsePreferenceBackup(raw));
+        }
+      });
     } catch (failure) {
       setError(String(failure));
-    } finally {
-      setBusy(false);
     }
   }
   function restore() {
@@ -64,7 +66,7 @@ export function SettingsBackup() {
       <div class="settings-actions">
         <ActionButton
           icon="download"
-          busy={busy()}
+          busy={action.pending() === "export"}
           disabled={!isNative() || busy()}
           onClick={() => void run(true)}
         >
@@ -72,6 +74,7 @@ export function SettingsBackup() {
         </ActionButton>
         <ActionButton
           icon="upload"
+          busy={action.pending() === "import"}
           disabled={!isNative() || busy()}
           onClick={() => void run(false)}
         >

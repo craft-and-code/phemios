@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -85,15 +86,16 @@ export function M3UPage(props: { query: string }) {
       </p>
       <Feedback message={message()} onClose={() => setMessage("")} />
       <Show when={reads.loading()}>
-        <p class="job-activity" role="status">
-          <span class="spinner" />
-          {t("Chargement…")}
-        </p>
+        <PageLoader />
       </Show>
       <Feedback error message={reads.page()?.error ?? ""} />
       <Show
         when={rows().length}
-        fallback={<EmptyState icon="playlist">{t("Aucun export M3U enregistré.")}</EmptyState>}
+        fallback={
+          <Show when={!reads.loading() && !reads.page()?.error}>
+            <EmptyState icon="playlist">{t("Aucun export M3U enregistré.")}</EmptyState>
+          </Show>
+        }
       >
         <div class="m3u-workspace">
           <ul class="m3u-library">
@@ -111,10 +113,7 @@ export function M3UPage(props: { query: string }) {
           </ul>
           <section class="m3u-preview">
             <Show when={detail.loading}>
-              <p class="job-activity" role="status">
-                <span class="spinner" />
-                {t("Chargement…")}
-              </p>
+              <PageLoader inline />
             </Show>
             <Feedback error message={detail.error ? String(detail.error) : ""} />
             <Show

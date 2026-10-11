@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { CoverPlay } from "../components/CoverPlay";
 import { historyTrackAction } from "../library/history-actions";
 import { currentHistoryListen } from "../library/history-current";
@@ -369,8 +370,8 @@ export function PersonalPage(props: { section: Section; query: string }) {
           </For>
         </ul>
       </Show>
-      <Show when={reads.loading()}>
-        <p role="status">{t("Chargement…")}</p>
+      <Show when={reads.loading() && !reads.page()}>
+        <PageLoader />
       </Show>
       <Show when={reads.page()?.error}>
         <p role="alert">{reads.page()?.error}</p>

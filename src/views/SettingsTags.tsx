@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createMemo, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -41,9 +42,7 @@ export function SettingsTags() {
           "Supprimer un tag le retire du vocabulaire et de l’autocomplétion. Les annotations existantes sont conservées. Une nouvelle saisie du tag le réintroduit.",
         )}
       </p>
-      <Show when={preferences.error()}>
-        <p role="alert">{preferences.error()}</p>
-      </Show>
+      <Feedback error message={preferences.error()} />
       <Show when={!library.session()}>
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>

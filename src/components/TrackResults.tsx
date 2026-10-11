@@ -1,3 +1,4 @@
+import { PageLoader } from "./PageLoader";
 import { LyricsText } from "./LyricsText";
 import { createTrackLyrics } from "../library/track-lyrics";
 import { LyricsDownload } from "./LyricsDownload";
@@ -146,7 +147,7 @@ export function TrackResults(props: {
             />
           </div>
           <Show when={detail.loading}>
-            <p role="status">{t("Chargement de l’analyse…")}</p>
+            <PageLoader inline label={t("Chargement de l’analyse…")} />
           </Show>
           <Show when={detail.error}>
             <p role="alert">
@@ -169,9 +170,7 @@ export function TrackResults(props: {
             when={library.image(props.track.reference, "spectrum")}
             fallback={
               <Show when={!library.imageError(props.track.reference, "spectrum")}>
-                <p class="muted" role="status">
-                  {t("Chargement du spectre…")}{" "}
-                </p>
+                <PageLoader inline label={t("Chargement du spectre…")} />
               </Show>
             }
           >
@@ -201,7 +200,7 @@ export function TrackResults(props: {
             </button>
           </div>
           <Show when={words.loading()}>
-            <p role="status">{t("Chargement des paroles…")}</p>
+            <PageLoader inline label={t("Chargement des paroles…")} />
           </Show>
           <Show when={words.error()}>
             <p role="alert">{words.error()}</p>
