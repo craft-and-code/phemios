@@ -1412,3 +1412,36 @@ main:has(> .playback-page) > :not(.playback-page) {
 .wikipedia-reader-tools button[aria-pressed="true"] svg {
   fill: currentColor;
 }
+
+/* The artwork border is the Cover Flow keyboard indicator; never add a second frame. */
+.cover-flow-card > a:focus-visible {
+  outline: none;
+}
+.cover-flow-alphabet {
+  position: relative;
+  width: min(460px, 80%);
+  height: 18px;
+  margin: 0 auto 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.cover-flow-alphabet span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.cover-flow-alphabet .current {
+  color: var(--accent);
+}
+/* Contain elastic trackpad gestures while preserving each panel's normal scrolling. */
+html,
+body,
+.app {
+  overscroll-behavior: none;
+}
+.app * {
+  overscroll-behavior: none;
+}
+html,
+body {
+  overflow: hidden;
+}

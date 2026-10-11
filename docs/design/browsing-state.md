@@ -85,3 +85,9 @@ Commas remain in the annotation draft. Enter commits all comma-separated fragmen
 ### Labels
 
 Labels use full-height name/count rows with an independent final Play square. Aède owns the chronological label queue; the shell's target also follows a label detail. Detail lists expose scoped year and title-alphabet histogram rails (years initially visible), inverse order, compact density and a final collection action. Intervals never inherit an unrelated catalogue section's hidden criteria. Histogram bins count editions even without a principal artist. Collections freeze the original stable label key and originating library/account at opening; source changes cannot redirect the write. Future albums matching the retained label and criteria join on evaluation. Discogs prose retains a linked provider notice; opening the detail performs no external enrichment.
+
+## Retained Cover Flow and live history
+
+Cover Flow position is session-owned by the shell rather than its temporary renderer. A stable visible reference survives leaving and returning to Albums, including appended catalog entries. A reference outside the current filtered result falls back to its first row; explicit reversing starts at its new first row. Alphabet landmarks reflect the displayed titles and order. The artwork accent border supplies the card focus indication without an additional link outline.
+
+Elastic scroll chaining is disabled at the document and panel boundaries. Actual overflow panels and Cover Flow wheel navigation remain scrollable. History polls the authenticated personal endpoint at a two-second interval only in its active view, never overlaps pending reads and retains unchanged track resolutions. No client-declared playback event is added.

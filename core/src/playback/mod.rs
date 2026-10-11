@@ -271,7 +271,7 @@ impl Player {
                     .commands
                     .try_send(Command::Crossfade(ms))
                     .map_err(|_| "Lecteur occupé, réessayez.".to_owned())?;
-                self.signals.paused.store(true, Ordering::Relaxed);
+                // This hot policy command neither resets nor suspends consumed output.
                 return Ok(());
             }
             return update(&self.state, |state| state.crossfade_ms = ms);

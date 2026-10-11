@@ -1,3 +1,4 @@
+import { createCoverPosition } from "./visualizer/cover-position";
 import { contextualReference } from "./navigation/contextual-play";
 import { Feedback } from "./components/Feedback";
 import { activateExternalLink } from "./navigation/external-links";
@@ -96,6 +97,7 @@ export function App() {
   const [tagOffset, setTagOffset] = createSignal(0);
   const [reverse, setReverse] = createSignal(false);
   const [coverFlow, setCoverFlow] = createSignal(false);
+  const coverPosition = createCoverPosition();
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
     section = navigation.section;
@@ -564,6 +566,7 @@ export function App() {
                     setFilters={setFilters}
                     reverse={reverse()}
                     coverFlow={coverFlow()}
+                    coverPosition={coverPosition}
                   />
                 </Show>
               </Show>

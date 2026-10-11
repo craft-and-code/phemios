@@ -93,3 +93,43 @@ it("retains an unavailable history track as a diagnostic and fetches no data aft
     dispose();
   }
 });
+
+it("refreshes confirmed history while visible, preserves rows, and stops after logout", async () => {
+  vi.useFakeTimers();
+  let dispose!: () => void;
+  let items: unknown[] = [];
+  const request = vi.fn(async (path: string) =>
+    path.endsWith("/history") ? { items, total: items.length } : { title: "First", release: null },
+  );
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    const [session, setSession] = createSignal<AccountSession | undefined>(account);
+    return {
+      ...createPersonalReads(
+        () => "history",
+        session,
+        () => 0,
+        request,
+      ),
+      setSession,
+    };
+  });
+  try {
+    await settle();
+    items = [{ track: "track:first", at: 1, ms_played: 4000, completed: true }];
+    await vi.advanceTimersByTimeAsync(2100);
+    await settle();
+    expect(view.history()[0]?.title).toBe("First");
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(request.mock.calls.filter(([path]) => path.endsWith("/track"))).toHaveLength(1);
+    view.setSession(undefined);
+    await settle();
+    const count = request.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(request).toHaveBeenCalledTimes(count);
+    expect(view.history()).toEqual([]);
+  } finally {
+    dispose();
+    vi.useRealTimers();
+  }
+});

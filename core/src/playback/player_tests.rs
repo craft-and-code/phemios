@@ -159,3 +159,47 @@ fn crossfade_and_repeat_are_bounded_idle_controls_without_network_or_audio() {
     assert!(player.control("repeat", json!("random")).is_err());
     assert_eq!(player.snapshot().unwrap()["status"], "idle");
 }
+
+#[test]
+fn changing_crossfade_including_zero_preserves_active_and_paused_output() {
+    let player = Player::default();
+    let (commands, receiver) = mpsc::sync_channel(32);
+    let (release, wait) = mpsc::channel();
+    *player.worker.lock().unwrap() = Some(Worker {
+        commands,
+        handle: std::thread::spawn(move || {
+            let _ = wait.recv();
+        }),
+    });
+    let mut observations = Vec::new();
+    for paused in [false, true] {
+        player.signals.paused.store(paused, Ordering::Relaxed);
+        {
+            let mut state = player.state.lock().unwrap();
+            state.status = if paused { "paused" } else { "playing" };
+            state.reference = "track:current".into();
+            state.position = 1234;
+        }
+        for ms in [5000, 0, 1000] {
+            let result = player.control("crossfade", json!(ms));
+            observations.push((
+                paused,
+                result,
+                player.signals.paused.load(Ordering::Relaxed),
+                player.snapshot().unwrap(),
+                receiver.try_recv(),
+                ms,
+            ));
+        }
+    }
+    release.send(()).unwrap();
+    player.halt().unwrap();
+    for (paused, result, actual, state, command, ms) in observations {
+        assert!(result.is_ok());
+        assert_eq!(actual, paused, "crossfade must never suspend the output");
+        assert_eq!(state["status"], if paused { "paused" } else { "playing" });
+        assert_eq!(state["position_ms"], 1234);
+        assert_eq!(state["reference"], "track:current");
+        assert!(matches!(command, Ok(Command::Crossfade(value)) if value == ms));
+    }
+}

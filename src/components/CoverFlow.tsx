@@ -1,3 +1,4 @@
+import { coverLetterStops, type CoverPosition } from "../visualizer/cover-position";
 import { createCoverScrub, animateCoverMove } from "../visualizer/cover-scrub";
 import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -7,7 +8,11 @@ import { CoverPlay } from "./CoverPlay";
 import { coverOpacity, coverDragTarget } from "../visualizer/cover-flow-policy";
 import { EmptyState } from "./EmptyState";
 /** A bounded nine-cover perspective window reuses cached artwork, independent of catalog size. */
-export function CoverFlow(props: { albums: readonly Album[] }) {
+export function CoverFlow(props: {
+  albums: readonly Album[];
+  position: CoverPosition;
+  reverse: boolean;
+}) {
   const [selected, setSelected] = createSignal("");
   const index = createMemo(() =>
     Math.max(
@@ -22,11 +27,11 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
   );
   createEffect(
     on(
-      () => props.albums.map((row) => row.reference).join("\0"),
+      () => `${props.reverse}:${props.albums.map((row) => row.reference).join("\0")}`,
       () => {
         scrub.cancel();
         setAnimated(false);
-        setSelected(props.albums[0]?.reference ?? "");
+        setSelected(props.position.restore(props.albums, props.reverse));
       },
     ),
   );
@@ -41,6 +46,7 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
       if (target === index()) return;
       setAnimated(animateCoverMove(index(), target));
       setSelected(next.reference);
+      props.position.select(next.reference);
     }
   };
   const scrub = createCoverScrub(choose);
@@ -172,6 +178,20 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
               {album()!.year ?? t("Année inconnue")} · {index() + 1}/{props.albums.length}
             </small>
           </div>
+        </div>
+        <div class="cover-flow-alphabet" aria-hidden="true">
+          <For each={coverLetterStops(props.albums)}>
+            {(stop) => (
+              <span
+                classList={{ current: stop.letter === coverLetterStops([album()!])[0]?.letter }}
+                style={{
+                  left: `${props.albums.length > 1 ? (stop.index / (props.albums.length - 1)) * 100 : 50}%`,
+                }}
+              >
+                {stop.letter}
+              </span>
+            )}
+          </For>
         </div>
         <input
           type="range"

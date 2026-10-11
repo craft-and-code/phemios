@@ -1,3 +1,4 @@
+import type { CoverPosition } from "../visualizer/cover-position";
 import { CoverFlow } from "../components/CoverFlow";
 import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
@@ -22,6 +23,7 @@ export function LibraryPage(props: {
   setFilters: (filters: Filters) => void;
   reverse: boolean;
   coverFlow?: boolean;
+  coverPosition: CoverPosition;
 }) {
   const library = useLibrary();
   const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
@@ -98,7 +100,11 @@ export function LibraryPage(props: {
                   />
                 }
               >
-                <CoverFlow albums={albums()} />
+                <CoverFlow
+                  albums={albums()}
+                  position={props.coverPosition}
+                  reverse={props.reverse}
+                />
               </Show>
             }
           >

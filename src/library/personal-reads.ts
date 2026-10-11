@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import { createMemo, createResource, type Accessor } from "solid-js";
+import { createEffect, createMemo, createResource, onCleanup, type Accessor } from "solid-js";
 import type { Section } from "../navigation/routes";
 import type { AccountSession } from "./server";
 interface Page {
@@ -36,7 +36,7 @@ export function createPersonalReads(
   });
   const [page, { refetch }] = createResource(
     scope,
-    async (input): Promise<{ data?: Page; error?: string }> => {
+    async (input, info): Promise<{ data?: Page; error?: string }> => {
       try {
         const value = (await request(input.path, {
           offset: String(input.offset),
@@ -66,6 +66,7 @@ export function createPersonalReads(
             )
               throw new Error(t("Historique Aède invalide."));
           }
+        if (JSON.stringify(info.value?.data) === JSON.stringify(value)) return info.value!;
         return { data: value };
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) };
@@ -73,8 +74,7 @@ export function createPersonalReads(
     },
   );
   const [history] = createResource(
-    () =>
-      section() === "history" && scope() && !page.loading && !page.error ? page()?.data : undefined,
+    () => (section() === "history" && scope() && !page.error ? page()?.data : undefined),
     async (value): Promise<HistoryRow[]> => {
       const result: HistoryRow[] = [];
       for (const row of value.items as HistoryRow[]) {
@@ -102,6 +102,15 @@ export function createPersonalReads(
       return result;
     },
   );
+  createEffect(() => {
+    const active = scope();
+    if (!active || section() !== "history") return;
+    // Serialize bounded account reads; unchanged pages retain their resolved track names.
+    const timer = setInterval(() => {
+      if (!page.loading && !history.loading) void refetch();
+    }, 2000);
+    onCleanup(() => clearInterval(timer));
+  });
   return {
     page: () => (scope() ? page() : undefined),
     history: () => (section() === "history" && scope() ? (history() ?? []) : []),
