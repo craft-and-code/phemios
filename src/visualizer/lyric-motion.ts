@@ -1,5 +1,5 @@
 import { createMemo, type Accessor } from "solid-js";
-import { phraseOrientation } from "./floating";
+import { lyricTreatment } from "./lyric-treatment";
 /** Clock polls retain one phrase node; a distinct supplied cue (even repeated words) restarts its arrival. */
 export function createLyricPhrase(
   text: Accessor<string>,
@@ -7,10 +7,11 @@ export function createLyricPhrase(
   floating: Accessor<boolean>,
 ) {
   return createMemo(
-    () =>
-      text()
-        ? { text: text(), cue: cue(), angle: floating() ? phraseOrientation(text()) : 0 }
-        : undefined,
+    () => {
+      if (!text()) return;
+      const treatment = floating() ? lyricTreatment(text(), cue()) : undefined;
+      return { text: text(), cue: cue(), angle: treatment?.angle ?? 0, treatment };
+    },
     undefined,
     { equals: (a, b) => a?.text === b?.text && a?.cue === b?.cue && a?.angle === b?.angle },
   );

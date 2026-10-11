@@ -13,6 +13,7 @@ import { useLibrary } from "../library/context";
 import { createTrackLyrics } from "../library/track-lyrics";
 import { announceSetting } from "../library/saved-settings";
 import { currentLyricText, activeLyricTime } from "../library/lyrics";
+import { playbackLayers } from "../visualizer/layers";
 import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
@@ -207,7 +208,12 @@ export function PlaybackPage() {
             </Show>
           </div>
           <div class="playback-visuals">
-            <Show when={scene() !== "off" && spectrum() && player.state().spectrum_hz}>
+            <Show
+              when={
+                playbackLayers(scene(), spectrum(), !!player.state().spectrum_hz?.length)
+                  .frequencies
+              }
+            >
               <FrequencyBars
                 levels={player.state().spectrum ?? []}
                 frequencies={player.state().spectrum_hz ?? []}

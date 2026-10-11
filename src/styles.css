@@ -1685,6 +1685,51 @@ textarea,
   --catalog-header-height: 0px;
 }
 
+/* Cue typography uses resident system families and compositor-only autonomous drift. */
+.lyric-drift {
+  display: block;
+  font-size: var(--phrase-size, 1em);
+}
+.floating-lyrics .lyric-drift {
+  animation: lyric-drift var(--drift-duration, 12s) ease-in-out infinite alternate;
+}
+.floating-lyrics .lyric-font-1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+}
+.floating-lyrics .lyric-font-2 {
+  font-family: Menlo, Consolas, monospace;
+  font-weight: 500;
+}
+.floating-lyrics .lyric-font-3 {
+  font-family: "Trebuchet MS", ui-rounded, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.lyric-chunk {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: var(--chunk-size, 1em);
+  transform: rotateZ(var(--chunk-tilt, 0deg));
+}
+@keyframes lyric-drift {
+  from {
+    transform: translate3d(-7px, 5px, 0) rotateY(var(--phrase-yaw, 0deg)) rotateX(-5deg);
+  }
+  to {
+    transform: translate3d(7px, -5px, 18px) rotateY(calc(-1 * var(--phrase-yaw, 0deg)))
+      rotateX(5deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-lyrics .lyric-drift {
+    animation: none;
+  }
+  .lyric-chunk {
+    transform: none;
+  }
+}
 .menu-name-editor {
   display: flex;
   align-items: center;

@@ -1,12 +1,13 @@
 import { createLyricPhrase } from "../visualizer/lyric-motion";
 import { lyricFit } from "../visualizer/lyric-fit";
-import { createEffect, createSignal, onMount, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, onMount, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 /** Pointer capture keeps the translucent lyric block visible throughout its move. */
 export function PlaybackLyrics(props: { text: string; cue?: string | number; floating?: boolean }) {
   const [position, setPosition] = createSignal({ x: 50, y: 50 }),
     [dragging, setDragging] = createSignal(false),
-    [scale, setScale] = createSignal(1);
+    [scale, setScale] = createSignal(1),
+    [hidden, setHidden] = createSignal(document.hidden);
   const phrase = createLyricPhrase(
     () => props.text,
     () => props.cue ?? props.text,
@@ -23,8 +24,8 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
     if (!span || !stage || disposed) return;
     setScale(
       lyricFit({
-        width: span.offsetWidth,
-        height: span.offsetHeight,
+        width: span.offsetWidth + (props.floating ? span.offsetHeight * 0.08 : 0),
+        height: span.offsetHeight + (props.floating ? span.offsetWidth * 0.08 : 0),
         angle: phrase()?.angle ?? 0,
         stageWidth: stage.clientWidth,
         stageHeight: stage.clientHeight,
@@ -43,6 +44,9 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
     schedule();
   });
   onMount(() => {
+    const visibility = () => setHidden(document.hidden);
+    document.addEventListener("visibilitychange", visibility);
+    onCleanup(() => document.removeEventListener("visibilitychange", visibility));
     const observer = new ResizeObserver(schedule);
     if (element) observer.observe(element);
     if (element?.parentElement) observer.observe(element.parentElement);
@@ -117,7 +121,37 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
             class="lyric-phrase"
             style={{ "--lyric-angle": `${value.angle}deg`, "--lyric-scale": scale() }}
           >
-            {value.text}
+            <span
+              class={`lyric-drift lyric-font-${value.treatment?.font ?? 0}`}
+              style={{
+                "--phrase-size": `${value.treatment?.size ?? 1}em`,
+                "--drift-duration": `${value.treatment?.duration ?? 12}s`,
+                "--phrase-yaw": `${value.treatment?.yaw ?? 0}deg`,
+                "animation-play-state": hidden() || dragging() ? "paused" : "running",
+              }}
+            >
+              <Show when={value.treatment} fallback={value.text}>
+                {(treatment) => (
+                  <For each={treatment().chunks}>
+                    {(chunk, index) => (
+                      <>
+                        <Show when={index()}> </Show>
+                        <span
+                          class="lyric-chunk"
+                          style={{
+                            "--chunk-size": `${chunk.size}em`,
+                            "--chunk-tilt": `${chunk.tilt}deg`,
+                            "--chunk-delay": `${chunk.delay}s`,
+                          }}
+                        >
+                          {chunk.text}
+                        </span>
+                      </>
+                    )}
+                  </For>
+                )}
+              </Show>
+            </span>
           </span>
         )}
       </Show>
