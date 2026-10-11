@@ -1,3 +1,4 @@
+import { wikipediaDocument } from "../encyclopedia/document";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -173,3 +174,13 @@ export const translateEncyclopedia = (
   pageId: number,
   target: import("../i18n").Language,
 ) => nativeCall<unknown>("encyclopedia_translate", { language, pageId, target });
+
+/** Export the already-read edition under native Downloads; no arbitrary destination or network request. */
+export const downloadEncyclopedia = (
+  article: import("../encyclopedia/wikipedia").WikipediaArticle,
+) =>
+  nativeCall<string>("encyclopedia_export", {
+    language: article.language,
+    pageId: article.pageId,
+    document: wikipediaDocument(article),
+  });

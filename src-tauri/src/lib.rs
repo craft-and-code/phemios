@@ -68,6 +68,7 @@ pub fn run() -> Result<(), tauri::Error> {
             encyclopedia::encyclopedia_search,
             encyclopedia::encyclopedia_article,
             encyclopedia::encyclopedia_translate,
+            encyclopedia::encyclopedia_export,
             hqplayer::hqplayer_connect,
             hqplayer::hqplayer_disconnect,
             exports::statistics_export,

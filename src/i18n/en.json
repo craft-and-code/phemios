@@ -1438,5 +1438,9 @@
   "Affichage de la bibliothèque": "Library display",
   "Afficher les albums manquants dans les discographies": "Show missing albums in discographies",
   "Cet article n’a pas de version dans la langue demandée.": "This article has no version in the requested language.",
-  "Cette version linguistique n’est pas disponible.": "This language version is unavailable."
+  "Cette version linguistique n’est pas disponible.": "This language version is unavailable.",
+  "Rubriques de l’encyclopédie": "Encyclopedia categories",
+  "Télécharger l’article sur cet ordinateur": "Download the article to this computer",
+  "Article téléchargé : {0}": "Article downloaded: {0}",
+  "Le téléchargement nécessite l’application desktop.": "Downloading requires the desktop application."
 }

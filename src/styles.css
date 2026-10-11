@@ -1161,6 +1161,12 @@ main:has(> .playback-page) > :not(.playback-page) {
   gap: 10px;
   margin-bottom: 22px;
 }
+.encyclopedia-tabs > button:not(.edition-switch) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+}
 .wikipedia-panel {
   margin-top: 22px;
 }
@@ -1313,4 +1319,92 @@ main:has(> .playback-page) > :not(.playback-page) {
   .edition-switch::before {
     transition: none;
   }
+}
+
+.wikipedia-saved-row > .wikipedia-result {
+  height: 36px;
+  min-height: 36px;
+  min-width: 0;
+  padding: 6px 12px;
+}
+.wikipedia-saved-row > .wikipedia-result span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wikipedia-saved-row > .icon-button {
+  flex: 0 0 36px;
+}
+.reference-workspace {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 24px;
+}
+.reference-categories {
+  display: grid;
+  gap: 4px;
+  align-self: start;
+  position: sticky;
+  top: 24px;
+}
+.reference-category {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--muted);
+}
+.reference-category span {
+  flex: 1;
+}
+.reference-category svg {
+  flex-shrink: 0;
+}
+.reference-category small {
+  font-variant-numeric: tabular-nums;
+}
+.reference-category[aria-pressed="true"] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: transparent;
+}
+.reference-category:hover {
+  color: var(--accent);
+  background: transparent;
+  border-color: transparent;
+}
+.reference-category[aria-pressed="true"]:hover {
+  border-left-color: var(--accent);
+}
+.reference-content {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .reference-workspace {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .reference-categories {
+    display: flex;
+    flex-wrap: wrap;
+    position: static;
+  }
+  .reference-category {
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    padding: 8px;
+  }
+  .reference-category[aria-pressed="true"],
+  .reference-category[aria-pressed="true"]:hover {
+    border-bottom-color: var(--accent);
+  }
+}
+
+.wikipedia-reader-tools button[aria-pressed="true"] svg {
+  fill: currentColor;
 }

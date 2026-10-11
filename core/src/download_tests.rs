@@ -73,3 +73,32 @@ fn spectrum_download_preserves_image_bytes_and_uses_confined_unique_names() {
     assert!(publish_spectrum(&root, "track:one", b"not an image").is_err());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn wikipedia_text_exports_are_identity_scoped_and_repeated_downloads_preserve_previous_files() {
+    let folder =
+        std::env::temp_dir().join(format!("phemios_wikipedia_download_{}", std::process::id()));
+    let document =
+        "\u{feff}Wikipédia · FR · 42\nFictional article\nSource and licence\nTexte français.";
+    let first = publish_wikipedia(&folder, "fr", 42, document).unwrap();
+    let second = publish_wikipedia(&folder, "fr", 42, document).unwrap();
+    assert_ne!(first, second);
+    assert_eq!(first.extension().unwrap(), "txt");
+    assert_eq!(std::fs::read_to_string(first).unwrap(), document);
+    assert!(publish_wikipedia(&folder, "en", 42, document).is_err());
+    assert!(publish_wikipedia(&folder, "fr", 43, document).is_err());
+    assert!(publish_wikipedia(&folder, "../../path", 42, document).is_err());
+    assert!(publish_wikipedia(&folder, "fr", 0, document).is_err());
+    assert!(publish_wikipedia(&folder, "fr", 42, &format!("{document}\0")).is_err());
+    assert!(
+        publish_wikipedia(
+            &folder,
+            "fr",
+            42,
+            &format!("{document}{}", "x".repeat(1024 * 1024))
+        )
+        .is_err()
+    );
+    assert_eq!(std::fs::read_dir(&folder).unwrap().count(), 2);
+    std::fs::remove_dir_all(folder).unwrap();
+}

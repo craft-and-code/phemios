@@ -1,3 +1,5 @@
+import { Icon } from "../components/Icon";
+import { ReferenceCategories } from "../encyclopedia/ReferenceCategories";
 import { createMemo, createSignal, createEffect, on, For, Show } from "solid-js";
 import { t, locale, type Language } from "../i18n";
 import { encyclopediaRows } from "../encyclopedia/catalog";
@@ -21,6 +23,7 @@ export function EncyclopediaPage(props: { query: string }) {
           {t("Wikipédia")}
         </button>
         <button aria-pressed={mode() === "saved"} onClick={() => setMode("saved")}>
+          <Icon name="heart" />
           {t("Articles enregistrés")}
         </button>
         <Show when={mode() !== "reference"}>
@@ -57,41 +60,31 @@ export function EncyclopediaPage(props: { query: string }) {
           />
         }
       >
-        <div class="choices">
-          <For
-            each={[
-              ["", "Tous"],
-              ["history", "Histoire"],
-              ["glossary", "Lexique"],
-              ["analysis", "Comprendre les analyses"],
-              ["sources", "Sources et API"],
-            ]}
-          >
-            {([id, title]) => (
-              <button aria-pressed={category() === id} onClick={() => setCategory(id!)}>
-                {t(title!)}
-              </button>
-            )}
-          </For>
-        </div>
-        <Show
-          when={rows().length}
-          fallback={<EmptyState icon="book">{t("Aucun article dans cette sélection.")}</EmptyState>}
-        >
-          <div class="encyclopedia-grid">
-            <For each={rows()}>
-              {(row) => (
-                <article class="settings-card">
-                  <h2>{row.title[locale()]}</h2>
-                  <p>{row.body[locale()]}</p>
-                  <a href={row.source.url} target="_blank" rel="noreferrer">
-                    {row.source.title}
-                  </a>
-                </article>
-              )}
-            </For>
+        <div class="reference-workspace">
+          <ReferenceCategories query={props.query} selected={category()} onSelect={setCategory} />
+          <div class="reference-content">
+            <Show
+              when={rows().length}
+              fallback={
+                <EmptyState icon="book">{t("Aucun article dans cette sélection.")}</EmptyState>
+              }
+            >
+              <div class="encyclopedia-grid">
+                <For each={rows()}>
+                  {(row) => (
+                    <article class="settings-card">
+                      <h2>{row.title[locale()]}</h2>
+                      <p>{row.body[locale()]}</p>
+                      <a href={row.source.url} target="_blank" rel="noreferrer">
+                        {row.source.title}
+                      </a>
+                    </article>
+                  )}
+                </For>
+              </div>
+            </Show>
           </div>
-        </Show>
+        </div>
       </Show>
     </section>
   );

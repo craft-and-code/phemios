@@ -194,3 +194,49 @@ it("reruns an existing query in the selected edition, but does not search from a
   expect(api.search).toHaveBeenLastCalledWith("fr", "Music");
   expect(state.hits()[0]?.pageId).toBe(42);
 });
+
+it("downloads the selected edition without fetching it again or saving an in-app copy", async () => {
+  const api = {
+    search: vi.fn(),
+    read: vi.fn(async () => article),
+    download: vi.fn(async () => "/downloads/article.txt"),
+  };
+  const storage = storageFixture(),
+    state = createWikipediaExplorer(api, () => "fr", storage);
+  await state.open(article);
+  await state.download();
+  expect(api.download).toHaveBeenCalledExactlyOnceWith(article);
+  expect(api.read).toHaveBeenCalledOnce();
+  expect(storage.getItem()).toBeNull();
+  expect(state.notice()).toContain("article.txt");
+  expect(state.retained()).toBe(false);
+});
+it("rejects duplicate downloads, exposes failures and ignores late export notices after leaving the article", async () => {
+  let finish!: (path: string) => void;
+  const api = {
+    search: vi.fn(),
+    read: vi.fn(async () => article),
+    download: vi.fn<() => Promise<string>>(),
+  };
+  const state = createWikipediaExplorer(api, () => "fr", storageFixture());
+  await state.open(article);
+  api.download.mockRejectedValueOnce(Error("Disk full"));
+  await state.download();
+  expect(state.error()).toContain("Disk full");
+  expect(state.article()).toEqual(article);
+  api.download.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const pending = state.download();
+  await state.download();
+  expect(api.download).toHaveBeenCalledTimes(2);
+  expect(state.busy()).toBe("download");
+  state.back();
+  finish("/downloads/old.txt");
+  await pending;
+  expect(state.notice()).toBe("");
+  expect(state.busy()).toBe("");
+});

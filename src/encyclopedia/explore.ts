@@ -10,6 +10,7 @@ import {
 interface WikipediaApi {
   search(language: Language, query: string): Promise<unknown>;
   read(language: Language, pageId: number): Promise<unknown>;
+  download?(article: WikipediaArticle): Promise<string>;
   translate?(language: Language, pageId: number, target: Language): Promise<unknown>;
 }
 /** Requests happen only on explicit actions; generation guards prevent late views/languages replacing results. */
@@ -21,7 +22,7 @@ export function createWikipediaExplorer(
   const saved = createSavedArticles(storage);
   const [hits, setHits] = createSignal<WikipediaHit[]>([]),
     [article, setArticle] = createSignal<WikipediaArticle | null>(null),
-    [busy, setBusy] = createSignal<"" | "search" | "article">(""),
+    [busy, setBusy] = createSignal<"" | "search" | "article" | "download">(""),
     [error, setError] = createSignal(""),
     [searched, setSearched] = createSignal(false),
     [notice, setNotice] = createSignal("");
@@ -128,6 +129,24 @@ export function createWikipediaExplorer(
       if (!disposed && ticket === generation) setBusy("");
     }
   }
+  /** File export is independent from the explicitly retained reading copy. */
+  async function download() {
+    const row = article();
+    if (disposed || busy() || !row) return;
+    invalidate();
+    const ticket = generation;
+    setBusy("download");
+    try {
+      if (!api.download) throw Error(t("Le téléchargement nécessite l’application desktop."));
+      const path = await api.download(row);
+      if (!disposed && ticket === generation && article() === row)
+        setNotice(t("Article téléchargé : {0}", path));
+    } catch (failure) {
+      if (!disposed && ticket === generation && article() === row) setError(String(failure));
+    } finally {
+      if (!disposed && ticket === generation) setBusy("");
+    }
+  }
   return {
     saved,
     hits,
@@ -139,6 +158,7 @@ export function createWikipediaExplorer(
     search,
     open,
     changeEdition,
+    download,
     back() {
       invalidate();
       editions.clear();

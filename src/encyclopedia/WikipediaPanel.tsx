@@ -4,6 +4,7 @@ import {
   searchEncyclopedia,
   readEncyclopedia,
   translateEncyclopedia,
+  downloadEncyclopedia,
   isNative,
 } from "../platform/desktop";
 import { ActionButton } from "../components/ActionButton";
@@ -23,7 +24,12 @@ export function WikipediaPanel(props: {
   const [term, setTerm] = createSignal(props.query);
   const language = () => props.language;
   const state = createWikipediaExplorer(
-    { search: searchEncyclopedia, read: readEncyclopedia, translate: translateEncyclopedia },
+    {
+      search: searchEncyclopedia,
+      read: readEncyclopedia,
+      translate: translateEncyclopedia,
+      download: downloadEncyclopedia,
+    },
     language,
   );
   let alive = true;
@@ -135,7 +141,7 @@ export function WikipediaPanel(props: {
               <Show
                 when={savedRows().length}
                 fallback={
-                  <EmptyState icon="book">
+                  <EmptyState icon="heart">
                     {t("Aucun article enregistré dans cette sélection.")}
                   </EmptyState>
                 }
@@ -145,7 +151,7 @@ export function WikipediaPanel(props: {
                     {(row) => (
                       <div class="wikipedia-saved-row">
                         <button class="wikipedia-result" onClick={() => void state.open(row)}>
-                          <Icon name="book" />
+                          <Icon name="heart" />
                           <span>{row.title}</span>
                           <Icon name="chevron-right" />
                         </button>
@@ -177,9 +183,12 @@ export function WikipediaPanel(props: {
             article={article()}
             retained={state.retained()}
             busy={!!state.busy()}
+            loading={state.busy() === "article"}
+            downloading={state.busy() === "download"}
             native={isNative()}
             onBack={state.back}
             onSave={state.save}
+            onDownload={() => void state.download()}
             onRefresh={() => void state.open(article(), true)}
             onRemove={() => state.saved.remove(article())}
           />

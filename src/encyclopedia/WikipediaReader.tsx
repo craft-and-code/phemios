@@ -8,9 +8,12 @@ export function WikipediaReader(props: {
   article: WikipediaArticle;
   retained: boolean;
   busy: boolean;
+  loading: boolean;
+  downloading: boolean;
   native: boolean;
   onBack: () => void;
   onSave: () => void;
+  onDownload: () => void;
   onRefresh: () => void;
   onRemove: () => void;
 }) {
@@ -33,29 +36,39 @@ export function WikipediaReader(props: {
             title={t("Actualiser l’article depuis Wikipédia")}
             onClick={props.onRefresh}
           >
-            <Show when={props.busy} fallback={<Icon name="refresh" />}>
+            <Show when={props.loading} fallback={<Icon name="refresh" />}>
               <span class="spinner" />
             </Show>
           </button>
           <button
             class="icon-button quiet"
-            disabled={props.retained || props.busy}
-            aria-label={t("Enregistrer pour lire hors connexion")}
-            title={t("Enregistrer pour lire hors connexion")}
-            onClick={props.onSave}
+            disabled={props.busy}
+            aria-pressed={props.retained}
+            aria-label={
+              props.retained
+                ? t("Retirer la copie locale")
+                : t("Enregistrer pour lire hors connexion")
+            }
+            title={
+              props.retained
+                ? t("Retirer la copie locale")
+                : t("Enregistrer pour lire hors connexion")
+            }
+            onClick={() => (props.retained ? props.onRemove() : props.onSave())}
           >
-            <Icon name="download" />
+            <Icon name="heart" />
           </button>
-          <Show when={props.retained}>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Retirer la copie locale")}
-              title={t("Retirer la copie locale")}
-              onClick={props.onRemove}
-            >
-              <Icon name="trash" />
-            </button>
-          </Show>
+          <button
+            class="icon-button quiet"
+            disabled={props.busy || !props.native}
+            aria-label={t("Télécharger l’article sur cet ordinateur")}
+            title={t("Télécharger l’article sur cet ordinateur")}
+            onClick={props.onDownload}
+          >
+            <Show when={props.downloading} fallback={<Icon name="download" />}>
+              <span class="spinner" />
+            </Show>
+          </button>
         </div>
       </div>
       <h2>{props.article.title}</h2>

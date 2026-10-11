@@ -219,7 +219,7 @@ Explicit settings enrichment sends `musicbrainz:true` only after confirming the 
 
 ## Precise waveform selection and lyric placement
 
-Waveform pointer seeking maps the complete rendered width to source milliseconds, bypassing browser range-thumb travel; keyboard seeking retains the range control. Missing artwork has an explicit retry which addresses its artist/release-group pair only. Absent covers are retried on request without navigation to an owned edition. Playback lyrics overlay the scene above the fixed transport; pointer capture shows a translucent moving block, with arrow-key movement available. Settings reserve scrollbar room inside the folder tabs so their backgrounds still meet the content panel.
+Waveform pointer seeking maps the complete rendered width to source milliseconds, bypassing browser range-thumb travel; keyboard seeking retains the range control. Envelope geometry is memoized by track/result identity rather than playback clock updates. Its SVG paths remain mounted during seek buffering and pause, using the latest matching response; only the played region and cursor change. Changing tracks or stopping clears the old envelope, preventing previous-track drawings. Missing artwork has an explicit retry which addresses its artist/release-group pair only. Absent covers are retried on request without navigation to an owned edition. Playback lyrics overlay the scene above the fixed transport; pointer capture shows a translucent moving block, with arrow-key movement available. Settings reserve scrollbar room inside the folder tabs so their backgrounds still meet the content panel.
 
 ## Advanced search, queue tools and bounded Cover Flow
 

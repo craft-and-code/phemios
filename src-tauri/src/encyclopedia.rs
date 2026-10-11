@@ -56,3 +56,27 @@ pub(crate) async fn encyclopedia_translate(
     })
     .await
 }
+
+#[tauri::command]
+pub(crate) async fn encyclopedia_export(
+    version: u32,
+    app: tauri::AppHandle,
+    language: String,
+    page_id: u64,
+    document: String,
+) -> Result<String, String> {
+    use tauri::Manager;
+    crate::aede::bridge(version)?;
+    let folder = app
+        .path()
+        .download_dir()
+        .map_err(|_| "Dossier de téléchargement inaccessible.")?
+        .join("Phémios")
+        .join("Encyclopédie");
+    crate::aede::blocking(move || {
+        let path =
+            phemios_core::download::publish_wikipedia(&folder, &language, page_id, &document)?;
+        Ok(path.to_string_lossy().into_owned())
+    })
+    .await
+}

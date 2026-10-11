@@ -137,3 +137,33 @@ pub fn publish_spectrum(folder: &Path, reference: &str, bytes: &[u8]) -> Result<
 #[cfg(test)]
 #[path = "download_tests.rs"]
 mod tests;
+
+/// Publish one attributed Wikipedia text document under a fixed language/page identity.
+/// No executable format, caller-selected path or filename, or overwrite is admitted.
+pub fn publish_wikipedia(
+    folder: &Path,
+    language: &str,
+    page_id: u64,
+    document: &str,
+) -> Result<PathBuf, String> {
+    if !matches!(language, "fr" | "en")
+        || page_id == 0
+        || page_id > 9_007_199_254_740_991
+        || document.len() > 1024 * 1024
+        || !document.starts_with(&format!(
+            "\u{feff}Wikipédia · {} · {page_id}\n",
+            language.to_uppercase()
+        ))
+        || document
+            .chars()
+            .any(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t'))
+    {
+        return Err("Document Wikipédia invalide ou trop volumineux.".into());
+    }
+    publish_named(
+        folder,
+        &format!("wikipedia-{language}-{page_id}"),
+        "txt",
+        document.as_bytes(),
+    )
+}

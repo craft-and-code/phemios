@@ -1,8 +1,9 @@
-import { createResource, createUniqueId, Show } from "solid-js";
+import { createMemo, createResource, createUniqueId, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { parseWaveform, waveformPath, waveformPosition } from "../library/waveform";
+import { createWaveformPresentation } from "../library/waveform-presentation";
+import { parseWaveform, waveformPosition } from "../library/waveform";
 /** Retains the full envelope on pause; an ordinary keyboard range supplies accessible seeking. */
 export function WaveformSeek() {
   const player = useLibrary().player,
@@ -31,11 +32,8 @@ export function WaveformSeek() {
     const rect = event.currentTarget.getBoundingClientRect();
     return waveformPosition(event.clientX, rect.left, rect.width, player.state().duration_ms ?? 0);
   }
-  const current = () =>
-    ["playing", "paused", "connecting"].includes(player.state().status) &&
-    result()?.reference === player.state().reference
-      ? result()
-      : undefined;
+  const display = createWaveformPresentation(player.state, () => result.latest);
+  const path = createMemo(() => display().path);
   const disabled = () =>
     !["playing", "paused"].includes(player.state().status) ||
     player.busy() ||
@@ -43,7 +41,7 @@ export function WaveformSeek() {
   const progress = () =>
     Math.max(0, Math.min(100, (player.seekPosition() / (player.state().duration_ms ?? 1)) * 100));
   return (
-    <div class="waveform-seek" aria-busy={result.loading} title={current()?.error ?? ""}>
+    <div class="waveform-seek" aria-busy={result.loading} title={display().error}>
       <svg viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <clipPath id={id}>
@@ -51,21 +49,16 @@ export function WaveformSeek() {
           </clipPath>
         </defs>
         <line x1="0" x2="1000" y1="20" y2="20" class="waveform-baseline" />
-        <Show when={current()?.waveform}>
-          {(waveform) => (
-            <>
-              <path class="waveform-envelope" d={waveformPath(waveform())} />
-              <path
-                class="waveform-played"
-                clip-path={`url(#${id})`}
-                d={waveformPath(waveform())}
-              />
-            </>
-          )}
-        </Show>
-        <Show when={current()?.waveform}>
-          <line class="waveform-cursor" x1={progress() * 10} x2={progress() * 10} y1="2" y2="38" />
-        </Show>
+        <path class="waveform-envelope" d={path()} />
+        <path class="waveform-played" clip-path={`url(#${id})`} d={path()} />
+        <line
+          class="waveform-cursor"
+          visibility={path() ? "visible" : "hidden"}
+          x1={progress() * 10}
+          x2={progress() * 10}
+          y1="2"
+          y2="38"
+        />
       </svg>
       <input
         type="range"
@@ -103,7 +96,7 @@ export function WaveformSeek() {
       <Show when={result.loading}>
         <span class="spinner waveform-loader" aria-label={t("Calcul de la forme d’onde…")} />
       </Show>
-      <Show when={current()?.error}>
+      <Show when={display().error}>
         <span class="waveform-warning" role="status">
           {t("Forme d’onde indisponible")}
         </span>
