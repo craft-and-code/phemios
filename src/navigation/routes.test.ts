@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseRoute } from "./routes";
+import { parseRoute, artistCatalog } from "./routes";
 
 it("opens stable references and refuses unknown or malformed URLs", () => {
   expect(parseRoute("#/artist/artist%3Astable")).toEqual({
@@ -23,4 +23,11 @@ it("opens provider configuration in the external-services settings tab", () => {
     tab: "services",
   });
   expect(parseRoute("#/settings/not-a-tab").kind).toBe("not-found");
+});
+
+it("uses album names and album counts for Genres while retaining artist-based Countries", () => {
+  expect(artistCatalog("genres")).toBe(false);
+  expect(artistCatalog("albums")).toBe(false);
+  expect(artistCatalog("artists")).toBe(true);
+  expect(artistCatalog("countries")).toBe(true);
 });

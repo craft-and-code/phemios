@@ -1,5 +1,5 @@
 import { createLyricReadiness } from "../visualizer/lyric-readiness";
-import type { LyricTypography } from "../visualizer/lyric-treatment";
+import type { LyricTypography, lyricTreatment } from "../visualizer/lyric-treatment";
 import { createLyricPhrase } from "../visualizer/lyric-motion";
 import { lyricFit } from "../visualizer/lyric-fit";
 import { createEffect, createSignal, onMount, onCleanup, For, Show } from "solid-js";
@@ -149,26 +149,14 @@ export function PlaybackLyrics(props: {
             >
               <Show when={value.treatment} fallback={value.text}>
                 {(treatment) => (
-                  <For each={treatment().chunks}>
-                    {(chunk, index) => (
-                      <>
-                        <Show when={index()}> </Show>
-                        <span
-                          class="lyric-chunk"
-                          classList={{ "lyric-emphasis": chunk.emphasis }}
-                          style={{
-                            "--chunk-size": `${chunk.size}em`,
-                            "--chunk-tilt": `${chunk.tilt}deg`,
-                            "--chunk-offset": `${chunk.offset}em`,
-                            "--chunk-depth": `${chunk.depth}px`,
-                            "--chunk-yaw": `${chunk.yaw}deg`,
-                          }}
-                        >
-                          {chunk.text}
-                        </span>
-                      </>
-                    )}
-                  </For>
+                  <>
+                    <span class="lyric-shadow" aria-hidden="true">
+                      <LyricWords treatment={treatment()} />
+                    </span>
+                    <span class="lyric-foreground">
+                      <LyricWords treatment={treatment()} />
+                    </span>
+                  </>
                 )}
               </Show>
             </span>
@@ -176,5 +164,33 @@ export function PlaybackLyrics(props: {
         )}
       </Show>
     </p>
+  );
+}
+
+/** Foreground and decorative shadow share exact grouping and typography, without duplicate spoken words. */
+function LyricWords(props: { treatment: ReturnType<typeof lyricTreatment> }) {
+  return (
+    <span class="lyric-words">
+      <For each={props.treatment.chunks}>
+        {(chunk, index) => (
+          <>
+            <Show when={index()}> </Show>
+            <span
+              class="lyric-chunk"
+              classList={{ "lyric-emphasis": chunk.emphasis }}
+              style={{
+                "--chunk-size": `${chunk.size}em`,
+                "--chunk-tilt": `${chunk.tilt}deg`,
+                "--chunk-offset": `${chunk.offset}em`,
+                "--chunk-depth": `${chunk.depth}px`,
+                "--chunk-yaw": `${chunk.yaw}deg`,
+              }}
+            >
+              {chunk.text}
+            </span>
+          </>
+        )}
+      </For>
+    </span>
   );
 }

@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { EncyclopediaPage } from "./EncyclopediaPage";
 import { AchievementsPage } from "./AchievementsPage";
 import { AdvancedSearchPage } from "./AdvancedSearchPage";
@@ -26,7 +27,15 @@ import { AnalysisPage } from "./AnalysisPage";
 /** Section services stay reactive while navigation keeps the same workspace owner. */
 export function WorkspacePage(props: { section: Section; query: string }) {
   return (
-    <Suspense fallback={<p role="status">{t("Chargement…")}</p>}>
+    <Suspense
+      fallback={
+        props.section === "players" ? (
+          <PageLoader label={t("Détection des lecteurs…")} />
+        ) : (
+          <p role="status">{t("Chargement…")}</p>
+        )
+      }
+    >
       <Switch>
         <Match when={props.section === "encyclopedia"}>
           <EncyclopediaPage query={props.query} />

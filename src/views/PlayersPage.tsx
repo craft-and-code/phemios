@@ -1,3 +1,4 @@
+import { PageLoader } from "../components/PageLoader";
 import { createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { discoverPlayers, isNative } from "../platform/desktop";
@@ -25,7 +26,7 @@ export function PlayersPage() {
         )}
       </p>
       <Show when={volumes.loading}>
-        <p role="status">{t("Détection des lecteurs…")}</p>
+        <PageLoader label={t("Détection des lecteurs…")} />
       </Show>
       <Show when={volumes.error}>
         <p role="alert">{String(volumes.error)}</p>

@@ -42,7 +42,7 @@ import { useLibrary } from "./library/context";
 import { SettingsPage } from "./views/SettingsPage";
 import { sourceLabel } from "./library/sources";
 import { createScopedFilters } from "./navigation/scoped-filters";
-import { parseRoute, sections } from "./navigation/routes";
+import { parseRoute, sections, artistCatalog } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
 import { ArtistPage } from "./views/ArtistPage";
@@ -214,7 +214,7 @@ export function App() {
   };
   const backLink = navigation.backLink;
   const context = () =>
-    ["artists", "countries", "genres"].includes(section()) && current().kind === "section"
+    artistCatalog(section()) && current().kind === "section"
       ? t("Initiale de l’artiste · année de ses albums")
       : t("Initiale du titre · année de l’album");
   const hasFilters = () => catalogRails(current());
@@ -392,7 +392,7 @@ export function App() {
           <Show when={hasFilters() && library.artists().length}>
             <FilterBar
               resultCount={
-                ["artists", "countries", "genres"].includes(section())
+                artistCatalog(section())
                   ? filterArtists(principalArtists(), library.albums(), filters()).length
                   : filterAlbums(library.albums(), library.artists(), filters()).filter(
                       (album) => section() !== "compilations" || album.compilation,
@@ -404,20 +404,15 @@ export function App() {
               yearDomain={yearDomain()}
               hasUnknownYear={library.albums().some((album) => album.year === null)}
               histogram={distributions(
-                current().kind === "section" &&
-                  ["artists", "countries", "genres"].includes(section())
+                current().kind === "section" && artistCatalog(section())
                   ? principalArtists()
                   : library.artists(),
                 library.albums(),
                 filters(),
-                current().kind === "section" &&
-                  ["artists", "countries", "genres"].includes(section()),
+                current().kind === "section" && artistCatalog(section()),
               )}
               countLabel={
-                current().kind === "section" &&
-                ["artists", "countries", "genres"].includes(section())
-                  ? t("artistes")
-                  : "albums"
+                current().kind === "section" && artistCatalog(section()) ? t("artistes") : "albums"
               }
             />
           </Show>
@@ -468,7 +463,10 @@ export function App() {
                     <Icon name="cover-flow" />
                   </button>
                 </Show>
-                <SelectionCollection section={section()} filters={filters()} />
+                <SelectionCollection
+                  section={section() === "genres" ? "albums" : section()}
+                  filters={filters()}
+                />
               </Show>
             </div>
           </Show>

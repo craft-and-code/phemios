@@ -11,7 +11,7 @@ export function depthProjection(point: Particle, width: number, height: number) 
     alpha: Math.max(0.025, Math.min(0.16, 0.1 - point.z * 0.025)),
   };
 }
-/** A fixed 14-line floor and three orbit guides establish depth without a new renderer or particle workload. */
+/** A fixed 14-line floor establish depth without a new renderer or particle workload. */
 export function drawFloatingDepth(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -40,18 +40,6 @@ export function drawFloatingDepth(
   for (let i = -3; i <= 3; i++) {
     line(project(i * 0.72, 1.25, -2.2), project(i * 0.72, 1.25, 2.2));
     line(project(-2.2, 1.25, i * 0.72), project(2.2, 1.25, i * 0.72));
-  }
-  ctx.setLineDash([2, 10]);
-  for (let ring = 0; ring < 3; ring++) {
-    const radius = 1 + ring * 0.36;
-    for (let i = 0; i < 48; i++) {
-      const angle = (i * Math.PI) / 24,
-        next = ((i + 1) * Math.PI) / 24;
-      line(
-        project(Math.cos(angle) * radius, Math.sin(angle) * 0.25 - 0.2, Math.sin(angle) * radius),
-        project(Math.cos(next) * radius, Math.sin(next) * 0.25 - 0.2, Math.sin(next) * radius),
-      );
-    }
   }
   ctx.restore();
 }

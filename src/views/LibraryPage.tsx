@@ -14,7 +14,7 @@ import { browseArtists, selectCountries } from "../library/selection";
 import { catalogIndex, artistCardSelection } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Filters } from "../library/types";
-import { sectionIcon, type Section } from "../navigation/routes";
+import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
 
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
@@ -57,7 +57,7 @@ export function LibraryPage(props: {
       .filter((item) => props.section !== "compilations" || item.compilation)
       .sort((a, b) => compare(a.title, b.title)),
   );
-  const artistView = () => ["artists", "countries", "genres"].includes(props.section);
+  const artistView = () => artistCatalog(props.section);
   return (
     <section
       class="page library-page"

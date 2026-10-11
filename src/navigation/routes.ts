@@ -90,3 +90,8 @@ export function parseRoute(hash: string): Route {
 export function sectionIcon(section: Section): string {
   return sections.find((item) => item.id === section)?.symbol ?? "disc";
 }
+
+/** Country browsing groups artists; Genres browses their album editions and title initials. */
+export function artistCatalog(section: Section): boolean {
+  return section === "artists" || section === "countries";
+}

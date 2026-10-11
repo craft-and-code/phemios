@@ -1701,7 +1701,9 @@ textarea,
   font-size: var(--phrase-size, 1em);
 }
 .floating-lyrics .lyric-drift {
-  animation: lyric-drift var(--drift-duration, 12s) ease-in-out infinite alternate;
+  animation:
+    lyric-drift var(--drift-duration, 12s) ease-in-out infinite alternate,
+    lyric-rise 700ms ease-out both;
 }
 .floating-lyrics .lyric-font-1 {
   font-family: Georgia, "Times New Roman", serif;
@@ -1845,7 +1847,7 @@ textarea,
   height: 12px;
   vertical-align: middle;
 }
-.floating-lyrics .lyric-drift {
+.floating-lyrics .lyric-words {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1955,4 +1957,93 @@ textarea,
 .player-bar * {
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Floating ink is already oriented and elevated while it appears; only the shared drift changes its pose. */
+.floating-lyrics .lyric-phrase {
+  animation: none;
+}
+.floating-lyrics .lyric-drift {
+  position: relative;
+}
+.floating-lyrics .lyric-foreground {
+  display: block;
+  transform: translateZ(64px);
+  transform-style: preserve-3d;
+}
+.floating-lyrics .lyric-chunk {
+  animation: lyric-ink-arrive 700ms ease-out both;
+  animation-play-state: inherit;
+  text-shadow:
+    10px 18px 10px rgb(0 0 0 / 75%),
+    1px 1px 0 color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.floating-lyrics .lyric-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #000;
+  opacity: 0.68;
+  filter: blur(3px);
+  transform-origin: 50% 70%;
+  transform: translate3d(26px, 74px, -140px) rotateX(65deg) skewX(-12deg) scaleY(0.8);
+}
+.floating-lyrics .lyric-shadow .lyric-chunk {
+  text-shadow: 0 0 12px rgb(0 0 0 / 85%);
+  transform: translateX(var(--chunk-offset, 0em)) rotateZ(var(--chunk-tilt, 0deg));
+}
+@keyframes lyric-ink-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes lyric-rise {
+  from {
+    translate: 0 32px;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+/* Keep each intermediary opaque: opacity below one would flatten the entire 3D group during entry. */
+.floating-lyrics .lyric-words {
+  transform-style: preserve-3d;
+}
+.floating-lyrics .lyric-foreground,
+.floating-lyrics .lyric-shadow,
+.floating-lyrics .lyric-words {
+  animation-play-state: inherit;
+}
+.playback-current-lyrics:not(.lyrics-ready) .lyric-chunk {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-lyrics .lyric-drift,
+  .floating-lyrics .lyric-chunk {
+    animation: none;
+  }
+}
+.topbar,
+.topbar * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+#content {
+  position: relative;
+}
+.page-loader {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+.page-loader > .spinner {
+  width: 30px;
+  height: 30px;
+  border-width: 3px;
 }
