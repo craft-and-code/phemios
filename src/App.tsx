@@ -42,7 +42,7 @@ import { useLibrary } from "./library/context";
 import { SettingsPage } from "./views/SettingsPage";
 import { sourceLabel } from "./library/sources";
 import { createScopedFilters } from "./navigation/scoped-filters";
-import { parseRoute, sections, artistCatalog } from "./navigation/routes";
+import { parseRoute, artistCatalog, navigationLabel } from "./navigation/routes";
 import { getRuntimeInfo } from "./platform/desktop";
 import { LibraryPage } from "./views/LibraryPage";
 import { ArtistPage } from "./views/ArtistPage";
@@ -66,10 +66,6 @@ export function App() {
       label: menuLabel(id, menu.value()),
     })),
   );
-  const connectionPanel = () => false;
-  const setConnectionPanel = (_value: boolean) => {
-    navigation.navigate("#/settings");
-  };
   const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
   const yearDomain = createMemo(() => {
     const values = [...(library.snapshot()?.albums ?? (library.demo ? library.albums() : []))];
@@ -84,19 +80,22 @@ export function App() {
   });
   const [labelTitle, setLabelTitle] = createSignal("");
   const [runtime] = createResource(getRuntimeInfo);
-  const navigation = createNavigation(browserNavigationHost(), (hash) => {
-    const source = parseRoute(hash);
-    if (source.kind === "section")
-      return sections.some((s) => s.id === source.section)
-        ? menuLabel(source.section, menu.value())
-        : t("Catalogue");
-    if (source.kind === "artist")
-      return library.artists().find((a) => a.reference === source.reference)?.name ?? t("Artiste");
-    if (source.kind === "album")
-      return library.albums().find((a) => a.reference === source.reference)?.title ?? "Album";
-    if (source.kind === "label") return labelTitle() || t("Label");
-    return t("Catalogue");
-  });
+  const navigation = createNavigation(browserNavigationHost(), (hash) =>
+    navigationLabel(
+      parseRoute(hash),
+      (section) => menuLabel(section, menu.value()),
+      (source) => {
+        if (source.kind === "artist")
+          return library.artists().find((a) => a.reference === source.reference)?.name;
+        if (source.kind === "album")
+          return library.albums().find((a) => a.reference === source.reference)?.title;
+        if (source.kind === "label") return labelTitle() || undefined;
+        return library.player.current()?.reference === source.reference
+          ? library.player.current()?.title
+          : undefined;
+      },
+    ),
+  );
   const [sidebar, setSidebar] = createSignal(true);
   const scopedFilters = createScopedFilters(navigation.section, yearDomain);
   const filters = scopedFilters.value,
@@ -368,7 +367,7 @@ export function App() {
       </Show>
       <main id="content">
         <Feedback message={externalError()} error onClose={() => setExternalError("")} />
-        <Show when={library.error() && !connectionPanel()}>
+        <Show when={library.error()}>
           <p class="notice" role="alert">
             {library.error()}
           </p>
@@ -383,7 +382,7 @@ export function App() {
         >
           <div class="empty">
             <p>{t("Connectez votre serveur Aède pour synchroniser la bibliothèque.")}</p>
-            <button class="primary" onClick={() => setConnectionPanel(true)}>
+            <button class="primary" onClick={() => navigation.navigate("#/settings")}>
               {t("Configurer la connexion")}{" "}
             </button>
           </div>
@@ -420,7 +419,15 @@ export function App() {
             <div class="catalog-tools">
               <Show when={backLink()}>
                 {(link) => (
-                  <a class="back" href={link().href} data-navigation-back>
+                  <a
+                    class="back"
+                    href={link().href}
+                    data-navigation-back
+                    aria-label={t(
+                      "Retour à {0}",
+                      parseRoute(link().href).kind === "section" ? t(link().label) : link().label,
+                    )}
+                  >
                     <Icon name="back" />{" "}
                     {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
                   </a>

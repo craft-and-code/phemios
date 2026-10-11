@@ -4,21 +4,12 @@ import { suggestionVocabulary } from "../library/tag-preferences";
 import { referenceSource } from "../library/sources";
 import { StarRating } from "./StarRating";
 import { t } from "../i18n";
-import {
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  For,
-  Show,
-  on,
-  onCleanup,
-} from "solid-js";
+import { createEffect, createMemo, createSignal, For, Show, on, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
-import { annotationScope } from "../library/annotation-scope";
+import { createAnnotationRead } from "../library/annotation-read";
+import { parseAnnotation } from "../library/annotation-loading";
 import { annotationWriter, type AnnotationPatch } from "../library/annotation-writes";
 import { requestAede } from "../platform/desktop";
-import type { Annotation } from "../library/server";
 import { TagInput } from "./TagInput";
 import { tagVocabulary } from "../library/tags";
 import { NoteEditor } from "./NoteEditor";
@@ -47,24 +38,26 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   onCleanup(() => {
     disposed = true;
   });
-  const scope = annotationScope(
+  const read = createAnnotationRead(
     () => props.reference,
     () => library.sessionFor(props.reference),
+    (reference) => requestAede("/api/me/v1/annotation", { ref: reference }),
   );
+  const scope = read.scope;
   const writer = createMemo(() => {
     const { session, reference } = scope();
     const current = () => !disposed && writer() === controller;
     const controller = annotationWriter({
       active: () => !!session && session === library.sessionFor(props.reference),
-      request: async (patch) =>
-        (
-          await requestAede<{ annotation: Annotation | null }>(
-            "/api/me/v1/annotation",
-            { ref: reference },
-            "PUT",
-            patch,
-          )
-        ).annotation,
+      request: async (patch) => {
+        const answer = await requestAede<{ annotation: unknown }>(
+          "/api/me/v1/annotation",
+          { ref: reference },
+          "PUT",
+          patch,
+        );
+        return answer.annotation === null ? null : parseAnnotation(answer.annotation, reference);
+      },
       publish: (saved) => library.updateAnnotation(reference, saved),
       pending: (count) => {
         if (current()) setPending(count);
@@ -72,17 +65,29 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     });
     return controller;
   });
-  const [annotation, { refetch }] = createResource(
-    () => (scope().session ? scope() : false),
-    (scope) =>
-      requestAede<{ annotation: Annotation | null }>("/api/me/v1/annotation", {
-        ref: scope.reference,
-      }),
+  createEffect(
+    on(scope, () => {
+      setRating(null);
+      setFavourite(false);
+      setTags([]);
+      setNote("");
+      setSavedNote("");
+      setSavedTags([]);
+      setMessage("");
+      setFailure("");
+      setPending(0);
+      setSavingNotes(false);
+      setPendingTag(false);
+      setEditing(false);
+      setEditorUnavailable(true);
+      enteredTags = [];
+      readTags = () => tags();
+      readNote = () => note();
+    }),
   );
   createEffect(
-    on(annotation, (answer) => {
-      if (annotation.loading || annotation.error) return;
-      const saved = answer?.annotation;
+    on(read.current, (saved) => {
+      if (saved === undefined || read.loading() || read.error()) return;
       setRating(saved?.rating ?? null);
       setFavourite(saved?.loved ?? false);
       setTags(saved?.tags.slice() ?? []);
@@ -94,7 +99,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       setPending(0);
       setSavingNotes(false);
       setEditing(false);
-      if (saved) library.updateAnnotation(props.reference, saved);
+      library.updateAnnotation(props.reference, saved);
     }),
   );
   createEffect(() => {
@@ -167,8 +172,8 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
   const blocked = () =>
     !library.sessionFor(props.reference) ||
     library.sessionFor(props.reference)?.account.role === "auditor" ||
-    annotation.loading ||
-    !!annotation.error;
+    read.loading() ||
+    !!read.error();
   const dirty = () =>
     note() !== savedNote() ||
     pendingTag() ||
@@ -186,11 +191,11 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       <Show when={!library.sessionFor(props.reference)}>
         <p class="notice">{t("Connectez-vous pour enregistrer vos annotations.")}</p>
       </Show>
-      <Show when={annotation.error}>
+      <Show when={read.error()}>
         <p role="alert">
-          {t("Annotations illisibles :")} {String(annotation.error)}
+          {t("Annotations illisibles :")} {String(read.error())}
         </p>
-        <button onClick={() => refetch()}>{t("Réessayer les annotations")}</button>
+        <button onClick={() => read.refetch()}>{t("Réessayer les annotations")}</button>
       </Show>
       <div class="annotation-controls">
         <fieldset aria-label={t("Note personnelle")} disabled={blocked()}>

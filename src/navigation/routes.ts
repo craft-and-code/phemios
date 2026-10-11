@@ -95,3 +95,27 @@ export function sectionIcon(section: Section): string {
 export function artistCatalog(section: Section): boolean {
   return section === "artists" || section === "countries";
 }
+
+/** Name an actual origin page; utilities have no sidebar item, and entity names stay untranslated. */
+export function navigationLabel(
+  route: Route,
+  sectionName: (section: Section) => string,
+  detailName: (detail: Extract<Route, { reference: string }>) => string | undefined,
+): string {
+  if (route.kind === "section") {
+    if (route.section === "playback") return t("Lecture");
+    if (route.section === "advanced-search") return t("Recherche avancée");
+    if (route.section === "settings") return t("Paramètres");
+    return sectionName(route.section);
+  }
+  if (route.kind === "not-found") return t("Page introuvable");
+  return (
+    detailName(route) ??
+    {
+      artist: t("Artiste"),
+      album: t("Album"),
+      track: t("Piste"),
+      label: t("Label"),
+    }[route.kind]
+  );
+}

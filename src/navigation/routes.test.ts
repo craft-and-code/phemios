@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseRoute, artistCatalog } from "./routes";
+import { parseRoute, artistCatalog, navigationLabel } from "./routes";
 
 it("opens stable references and refuses unknown or malformed URLs", () => {
   expect(parseRoute("#/artist/artist%3Astable")).toEqual({
@@ -30,4 +30,34 @@ it("uses album names and album counts for Genres while retaining artist-based Co
   expect(artistCatalog("albums")).toBe(false);
   expect(artistCatalog("artists")).toBe(true);
   expect(artistCatalog("countries")).toBe(true);
+});
+
+it("names playback and utility origins without sending detail returns to a catalog fallback", () => {
+  const menu = (section: string) => `Custom ${section}`;
+  expect(navigationLabel(parseRoute("#/playback"), menu, () => undefined)).toBe("Lecture");
+  expect(navigationLabel(parseRoute("#/settings/services"), menu, () => undefined)).toBe(
+    "Paramètres",
+  );
+  expect(navigationLabel(parseRoute("#/advanced-search"), menu, () => undefined)).toBe(
+    "Recherche avancée",
+  );
+  expect(navigationLabel(parseRoute("#/genres"), menu, () => undefined)).toBe("Custom genres");
+});
+
+it("keeps resolved detail names literal and supplies an honest unknown-detail label", () => {
+  const route = parseRoute("#/track/track%3Anacre");
+  expect(
+    navigationLabel(
+      route,
+      () => "Catalogue",
+      () => "Untranslated title",
+    ),
+  ).toBe("Untranslated title");
+  expect(
+    navigationLabel(
+      route,
+      () => "Catalogue",
+      () => undefined,
+    ),
+  ).toBe("Piste");
 });

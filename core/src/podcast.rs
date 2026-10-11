@@ -8,7 +8,7 @@ use ureq::unversioned::transport::{DefaultConnector, NextTimeout};
 fn public_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(ip) => {
-            let [a, b, _, _] = ip.octets();
+            let [a, b, c, d] = ip.octets();
             !ip.is_private()
                 && !ip.is_loopback()
                 && !ip.is_link_local()
@@ -18,6 +18,9 @@ fn public_ip(ip: IpAddr) -> bool {
                 && a < 224
                 && !(a == 100 && (64..=127).contains(&b))
                 && !(a == 198 && (18..=19).contains(&b))
+                // IANA protocol space has only the .9/.10 globally reachable exceptions.
+                && !(a == 192 && b == 0 && c == 0 && !matches!(d, 9 | 10))
+                && !(a == 192 && b == 88 && c == 99)
         }
         IpAddr::V6(ip) => {
             if let Some(ip) = ip.to_ipv4_mapped() {

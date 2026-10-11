@@ -1,4 +1,5 @@
 import { parseAudioPreferences } from "./audio-preferences";
+import { writePreferenceEntries } from "./preference-storage";
 import { parseShortcuts } from "../navigation/shortcuts-policy";
 import { readPreferences, applyPreferences } from "./preferences";
 import { readMenuPreferences } from "../navigation/menu-preferences";
@@ -65,12 +66,16 @@ export function createSavedSettings(
     [status, setStatus] = createSignal("");
   let generation = 0,
     loaded = false,
+    loading = false,
+    edited = new Map<string, unknown>(),
     queue: Promise<void> = Promise.resolve();
   createEffect(() => {
     const identity = session(),
       origin = source(),
       epoch = ++generation;
     loaded = false;
+    loading = !!identity;
+    edited = new Map();
     setError("");
     setStatus("");
     if (!identity) return;
@@ -87,27 +92,39 @@ export function createSavedSettings(
           throw new Error(
             t("Mettez à jour puis redémarrez Aède pour synchroniser vos préférences."),
           );
+        if (epoch !== generation || session() !== identity) return;
         const values = parseAccountSettings(
           await requestAede("/api/me/v1/preferences", {}, "GET", null, origin),
         );
         if (epoch !== generation || session() !== identity) return;
-        // Preserve malformed device stores rather than replacing them on login.
-        readPreferences(localStorage);
-        readMenuPreferences(localStorage);
-        readToolPreferences(localStorage);
-        localStorage.setItem(
-          "phemios.duration",
-          JSON.stringify(values["phemios.duration"] ?? false),
+        // Preserve every unreadable device setting, including transport and shortcuts.
+        const retained = Object.fromEntries(
+          accountSettingKeys.flatMap((key) => {
+            const raw = localStorage.getItem(key);
+            return raw === null ? [] : [[key, JSON.parse(raw)]];
+          }),
         );
-        for (const [key, value] of Object.entries(values))
-          localStorage.setItem(key, JSON.stringify(value));
+        parseAccountSettings({ values: retained });
+        const next: Record<string, unknown> = {
+          "phemios.duration": values["phemios.duration"] ?? false,
+          ...values,
+        };
+        for (const key of edited.keys()) delete next[key];
+        writePreferenceEntries(localStorage, next);
         applyPreferences(readPreferences(localStorage));
         loaded = true;
+        loading = false;
         window.dispatchEvent(new Event("phemios-settings-loaded"));
         window.dispatchEvent(new Event("phemios-preferences"));
         setStatus("");
+        for (const [key, value] of edited) enqueue(key, value, identity, origin, epoch);
+        edited.clear();
       } catch (failure) {
-        if (epoch === generation) setError(String(failure));
+        if (epoch === generation) {
+          loading = false;
+          setStatus("");
+          setError(String(failure));
+        }
       }
     })();
   });
@@ -119,13 +136,28 @@ export function createSavedSettings(
       setStatus(t("Préférences enregistrées sur cet appareil."));
       return;
     }
+    const { key, value } = (event as CustomEvent<{ key: string; value: unknown }>).detail;
+    if (!accountSettingKeys.some((known) => known === key)) return;
+    if (loading) {
+      edited.set(key, value);
+      setStatus(t("Enregistrement…"));
+      return;
+    }
     if (!loaded) {
       setError(
         t("Préférences enregistrées sur cet appareil ; synchronisation du compte indisponible."),
       );
       return;
     }
-    const { key, value } = (event as CustomEvent<{ key: string; value: unknown }>).detail;
+    enqueue(key, value, identity, origin, epoch);
+  }
+  function enqueue(
+    key: string,
+    value: unknown,
+    identity: AccountSession,
+    origin: SourceId,
+    epoch: number,
+  ) {
     queue = queue.then(async () => {
       if (epoch !== generation || identity !== session()) return;
       setStatus(t("Enregistrement…"));

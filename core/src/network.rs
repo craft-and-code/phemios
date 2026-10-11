@@ -3,6 +3,8 @@ use serde_json::{Value, json};
 use std::time::Duration;
 #[path = "network_errors.rs"]
 mod errors;
+#[path = "network_snapshot.rs"]
+mod snapshot;
 
 const JSON_LIMIT: u64 = 16 * 1024 * 1024;
 /// Trusted native session; never serialize or log this value.
@@ -210,57 +212,6 @@ impl Client {
             ));
         }
         decode(&bytes(response, JSON_LIMIT)?)
-    }
-    /// Synchronize complete pages with a bounded retry when a scan changes their epoch.
-    pub fn snapshot(&self) -> Result<Value, String> {
-        for _ in 0..3 {
-            let artists = self.pages("/api/v1/presentation/artists")?;
-            let albums = self.pages("/api/v1/presentation/albums")?;
-            if artists.1 == albums.1 {
-                return Ok(
-                    json!({"artists":artists.0,"albums":albums.0,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]}),
-                );
-            }
-        }
-        Err("Le catalogue change pendant la synchronisation. Réessayez.".into())
-    }
-    fn pages(&self, path: &str) -> Result<(Vec<Value>, u64), String> {
-        let mut items = Vec::new();
-        let mut stamp = None;
-        let mut total = None;
-        loop {
-            let offset = items.len().to_string();
-            let page = self.request("GET", path, &[("offset", &offset), ("limit", "200")], None)?;
-            let count = page["total"]
-                .as_u64()
-                .and_then(|count| usize::try_from(count).ok())
-                .filter(|count| *count <= 1_000_000)
-                .ok_or("Pagination Aède invalide.")?;
-            let at = page["scanned_at"]
-                .as_u64()
-                .ok_or("Pagination Aède invalide.")?;
-            if stamp.is_some_and(|previous| previous != at)
-                || total.is_some_and(|previous| previous != count)
-            {
-                return Err("Le catalogue a changé. Relancez la synchronisation.".into());
-            }
-            stamp = Some(at);
-            total = Some(count);
-            let rows = page["items"]
-                .as_array()
-                .ok_or("Pagination Aède invalide.")?;
-            if rows.len() > 200
-                || page["offset"].as_u64() != Some(items.len() as u64)
-                || items.len() + rows.len() > count
-                || rows.is_empty() && items.len() < count
-            {
-                return Err("Pagination Aède incohérente.".into());
-            }
-            items.extend(rows.iter().cloned());
-            if items.len() == count {
-                return Ok((items, at));
-            }
-        }
     }
     /// Fetch only catalog-selected local artwork, never an external image URL.
     pub fn artwork(&self, reference: &str, kind: &str) -> Result<Vec<u8>, String> {

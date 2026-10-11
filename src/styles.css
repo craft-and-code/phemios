@@ -1689,6 +1689,7 @@ textarea,
 
 #content {
   --catalog-header-height: 0px;
+  --content-height: calc(100dvh - 150px);
 }
 
 /* Cue typography uses resident system families and compositor-only autonomous drift. */

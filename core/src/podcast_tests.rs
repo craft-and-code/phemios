@@ -35,3 +35,28 @@ fn feeds_reject_credentials_files_and_non_public_addresses() {
         assert!(public_ip(ip.parse().unwrap()), "{ip}");
     }
 }
+
+#[test]
+fn feeds_refuse_special_protocol_ranges_and_keep_globally_reachable_anycast_exceptions() {
+    for ip in [
+        "192.0.0.0",
+        "192.0.0.1",
+        "192.0.0.8",
+        "192.0.0.170",
+        "192.0.0.171",
+        "192.0.0.255",
+        "192.88.99.1",
+        "192.88.99.2",
+    ] {
+        assert!(!public_ip(ip.parse().unwrap()), "{ip}");
+        assert!(feed_address(&format!("https://{ip}/feed")).is_err(), "{ip}");
+        assert!(
+            feed_address(&format!("https://[::ffff:{ip}]/feed")).is_err(),
+            "{ip}"
+        );
+    }
+    for ip in ["192.0.0.9", "192.0.0.10"] {
+        assert!(public_ip(ip.parse().unwrap()), "{ip}");
+        assert!(feed_address(&format!("https://{ip}/feed")).is_ok(), "{ip}");
+    }
+}

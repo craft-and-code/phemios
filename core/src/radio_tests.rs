@@ -73,3 +73,63 @@ fn transient_or_empty_country_mirrors_do_not_require_an_aede_login_to_recover() 
     assert_eq!(calls, 1);
     assert_eq!(value, json!([]));
 }
+
+#[path = "radio_test_support.rs"]
+mod support;
+
+#[test]
+fn malformed_station_mirror_is_skipped_before_the_result_is_exposed() {
+    let fixture = support::Fixture::new(json!({"stations":[]}), json!([]), 200);
+    let mut directory = fixture.directory();
+    assert_eq!(
+        directory.search("jazz", "US", "", 0, true).unwrap(),
+        json!([])
+    );
+    assert_eq!(fixture.paths().len(), 2);
+}
+
+#[test]
+fn malformed_statistics_mirror_is_skipped_before_count_is_exposed() {
+    let fixture = support::Fixture::new(json!({"stations":"many"}), json!({"stations":42}), 200);
+    let mut directory = fixture.directory();
+    assert_eq!(directory.statistics().unwrap()["stations"], 42);
+    assert_eq!(fixture.paths().len(), 2);
+}
+
+#[test]
+fn a_mismatched_station_resolution_retries_without_exposing_the_other_station() {
+    let uuid = "12345678-1234-1234-1234-123456789012";
+    let fixture = support::Fixture::new(
+        json!({"ok":true,"stationuuid":"87654321-1234-1234-1234-123456789012","url":"https://wrong.test/live"}),
+        json!({"ok":true,"stationuuid":uuid,"url":"https://station.test/live"}),
+        200,
+    );
+    let mut directory = fixture.directory();
+    assert_eq!(
+        directory.resolve(uuid).unwrap()["url"],
+        "https://station.test/live"
+    );
+    assert_eq!(fixture.paths().len(), 2);
+}
+
+#[test]
+fn provider_outages_report_the_http_category_without_server_controlled_text() {
+    let fixture = support::Fixture::new(json!("untrusted detail"), json!("untrusted detail"), 503);
+    let mut directory = fixture.directory();
+    let failure = directory.search("", "US", "", 0, true).unwrap_err();
+    assert!(failure.contains("HTTP 503"), "{failure}");
+    assert!(!failure.contains("untrusted detail"));
+    assert_eq!(fixture.paths().len(), 2);
+}
+
+#[test]
+fn production_directory_cannot_contact_a_private_mirror_address() {
+    let fixture = support::Fixture::new(json!([]), json!([]), 200);
+    let directory = Directory::default();
+    assert!(
+        directory
+            .read(Instant::now(), &fixture.host(), "/json/servers", &[])
+            .is_err()
+    );
+    assert!(fixture.paths().is_empty());
+}

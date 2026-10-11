@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { writePreferenceEntries } from "./preference-storage";
 import { accountSettingKeys, parseAccountSettings } from "./saved-settings";
 import { readMenuPreferences } from "../navigation/menu-preferences";
 import { parseShortcuts } from "../navigation/shortcuts-policy";
@@ -65,19 +66,6 @@ export function applyPreferenceBackup(storage: Store, values: PreferenceBackup) 
   const checked = parsePreferenceBackup(
     JSON.stringify({ format: "phemios-preferences", version: 1, values }),
   );
-  const previous = accountSettingKeys.map((key) => [key, storage.getItem(key)] as const);
-  try {
-    for (const [key, value] of Object.entries(checked)) storage.setItem(key, JSON.stringify(value));
-  } catch (failure) {
-    try {
-      for (const [key, raw] of previous) {
-        if (raw === null) storage.removeItem(key);
-        else storage.setItem(key, raw);
-      }
-    } catch {
-      throw new Error(t("Import interrompu ; la restauration des réglages précédents a échoué."));
-    }
-    throw failure;
-  }
+  writePreferenceEntries(storage, checked);
   return checked;
 }

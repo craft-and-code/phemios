@@ -1,4 +1,6 @@
 import { createQueueLyrics } from "./queue-lyrics-controller";
+import { annotateAlbum } from "./album-annotation";
+import { createAnnotationLoader, parseAnnotation } from "./annotation-loading";
 import { createSavedSettings } from "./saved-settings";
 import { createTagPreferences } from "./tag-preferences";
 import { createMissingCoverLoader } from "./missing-artwork";
@@ -9,6 +11,8 @@ import { catalogOrigins, effectiveSource, referenceSource, type SourceId } from 
 import { startLocal, stopLocal, localStatus, setRequestSource } from "../platform/desktop";
 import {
   createContext,
+  batch,
+  untrack,
   createEffect,
   useContext,
   createSignal,
@@ -238,18 +242,9 @@ export function LibraryProvider(props: ParentProps) {
     }),
   );
   const albums = createMemo(() =>
-    (snapshot()?.albums ?? (demo ? demoAlbums : [])).map((album) => {
-      const personal = annotations[album.reference];
-      return personal
-        ? {
-            ...album,
-            tags: [...album.tags, ...personal.tags],
-            note: personal.note ?? "",
-            ...(personal.rating ? { rating: personal.rating } : {}),
-            favourite: personal.loved,
-          }
-        : album;
-    }),
+    (snapshot()?.albums ?? (demo ? demoAlbums : [])).map((album) =>
+      annotateAlbum(album, annotations[album.reference]),
+    ),
   );
   const key = (ref: string, kind: string) => `${kind}:${ref}`;
   async function warmImage(reference: string, kind: string) {
@@ -275,7 +270,7 @@ export function LibraryProvider(props: ParentProps) {
         if (epoch === generation)
           setImageErrors(id, failure instanceof Error ? failure.message : t("Image indisponible."));
       } finally {
-        pending.delete(id);
+        if (epoch === generation) pending.delete(id);
       }
     })();
     pending.set(id, work);
@@ -307,14 +302,15 @@ export function LibraryProvider(props: ParentProps) {
         .filter((a) => a.media?.background)
         .map((a) => ({ ref: a.reference, kind: "background" })),
     ];
-    let done = 0;
+    let done = 0,
+      cursor = 0;
     const total = queue.length,
       epoch = generation;
     setMediaProgress([0, total]);
     await Promise.all(
       Array.from({ length: 1 }, async () => {
-        while (queue.length && epoch === generation) {
-          const row = queue.shift();
+        while (cursor < queue.length && epoch === generation) {
+          const row = queue[cursor++];
           if (!row) return;
           await warmImage(row.ref, row.kind);
           if (epoch === generation) setMediaProgress([++done, total]);
@@ -322,29 +318,40 @@ export function LibraryProvider(props: ParentProps) {
       }),
     );
   }
-  async function loadAnnotations(owner: SourceId) {
-    const current = () => (owner === "local" ? localSession() : serverSession());
-    const account = current()?.account.id;
-    let offset = 0;
-    try {
-      while (account && account === current()?.account.id) {
-        const page = await requestAede<{ items: Annotation[]; total: number }>(
-          "/api/me/v1/annotations",
-          { offset: String(offset), limit: "200" },
-          "GET",
-          null,
-          owner,
-        );
-        if (account !== current()?.account.id) return;
-        for (const row of page.items) setAnnotations(row.reference, row);
-        offset += page.items.length;
-        if (offset >= page.total) return;
-        if (!page.items.length) throw new Error(t("Pagination des annotations incohérente."));
+  const annotationsLoader = createAnnotationLoader({
+    session: (owner) => (owner === "local" ? localSession() : serverSession()),
+    request: (owner, offset) =>
+      requestAede(
+        "/api/me/v1/annotations",
+        { offset: String(offset), limit: "200" },
+        "GET",
+        null,
+        owner,
+      ),
+    clear: (owner) =>
+      batch(() => {
+        for (const ref of Object.keys(annotations))
+          if (referenceSource(ref) === owner) setAnnotations(ref, undefined);
+      }),
+    publish: (_owner, rows) =>
+      batch(() => {
+        for (const row of rows) setAnnotations(row.reference, row);
+      }),
+    error: setError,
+  });
+  const annotationOwners: Record<SourceId, AccountSession | undefined> = {
+    local: undefined,
+    server: undefined,
+  };
+  createEffect(() => {
+    const next = { local: localSession(), server: serverSession() };
+    for (const owner of ["local", "server"] as const)
+      if (annotationOwners[owner] !== next[owner]) {
+        annotationOwners[owner] = next[owner];
+        untrack(() => annotationsLoader.reset(owner));
       }
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Annotations indisponibles."));
-    }
-  }
+  });
+  onCleanup(annotationsLoader.dispose);
   async function sync(owner: SourceId = source()) {
     if (busy()) return;
     setBusy(true);
@@ -354,7 +361,7 @@ export function LibraryProvider(props: ParentProps) {
       clearMedia();
       if (owner === "local") setLocalSnapshot(value);
       else setServerSnapshot(value);
-      await loadAnnotations(owner);
+      await annotationsLoader.load(owner);
       void warmCovers();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
@@ -378,6 +385,9 @@ export function LibraryProvider(props: ParentProps) {
   }
   async function disconnect() {
     setError("");
+    setSession(undefined);
+    connection.stop();
+    annotationsLoader.reset("server");
     try {
       await logoutAede();
     } catch (failure) {
@@ -386,8 +396,6 @@ export function LibraryProvider(props: ParentProps) {
       connection.stop();
       if (referenceSource(player.state().reference) === "server") player.reset();
       setSession(undefined);
-      for (const ref of Object.keys(annotations))
-        if (referenceSource(ref) === "server") setAnnotations(ref, undefined);
     }
   }
   async function enableLocal() {
@@ -401,12 +409,12 @@ export function LibraryProvider(props: ParentProps) {
     }
   }
   async function disableLocal() {
+    setLocalSession(undefined);
+    annotationsLoader.reset("local");
     try {
       await stopLocal();
       setLocalSession(undefined);
       if (referenceSource(player.state().reference) === "local") player.reset();
-      for (const ref of Object.keys(annotations))
-        if (referenceSource(ref) === "local") setAnnotations(ref, undefined);
       if (source() === "local") chooseSource("server");
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Arrêt local impossible."));
@@ -498,7 +506,12 @@ export function LibraryProvider(props: ParentProps) {
     mediaErrors: () => Object.values(imageErrors).filter(Boolean).length,
     annotations,
     tagPreferences,
-    updateAnnotation: (ref, value) => setAnnotations(ref, value ?? undefined),
+    updateAnnotation: (ref, value) => {
+      if (!sessionFor(ref)) return;
+      const checked = value === null ? null : parseAnnotation(value, ref);
+      annotationsLoader.updated(ref, checked);
+      setAnnotations(ref, checked ?? undefined);
+    },
   };
   return <Context.Provider value={value}>{props.children}</Context.Provider>;
 }

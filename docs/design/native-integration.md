@@ -37,9 +37,9 @@ The discovery graph displays at most 16 local collaboration neighbours, ordered 
 
 ## Module boundaries and limits
 
-`core/src/network.rs` retains one cohesive bounded authenticated client (~327 lines); transport, authority validation and allowlist belong to that boundary. `src/library/context.tsx` keeps the shared session/catalog/annotation/media lifecycle (~276 lines). `App.tsx` holds route/filter composition (~327 lines). `PersonalPage.tsx` keeps current-owner paged views and explicit mutations (~274 lines). `StatisticsPage.tsx` keeps one coherent composition of server totals, metadata coverage, local media and owner summaries (~336 lines); parsing and independently paged tables have separate modules. These are modest exceptions to the usual 250-line guideline, with separate policy/test modules; split them when independently evolving services justify it.
+`core/src/network.rs` keeps authenticated transport and authority admission; `network_snapshot.rs` owns the complete bounded projection read. `src/library/context.tsx` composes shared session/catalog/media lifetimes, while annotation paging, admission and account preference hydration have independent policy modules. `App.tsx` composes routes and section-owned filters; detail return names live in navigation policy. `AnnotationPanel.tsx` composes draft/read/write lifetimes and the visual editor without owning server semantics. Personal/statistics pages compose independently parsed and paged results. These composition roots exceed the usual 250-line guideline; extracted policies have separate behavioral tests, and further splitting should follow actual independently evolving lifetimes rather than line counts.
 
-Synchronized lyrics, consumed-signal visualization, repeat/shuffle and mounted-device conversion/verification/copy are not connected by this milestone. Their disabled controls are intentional. Catalog event synchronization, minimum Rust/other-platform builds, cache quotas, virtualization and sustained fast-scroll measurements remain pending. Native visual acceptance now includes authenticated real-library synchronization and binary-image IPC. Final cache, album and download checks are recorded in the acceptance log.
+Synchronized lyrics, consumed-signal visualization, repeat/shuffle and optional DSP crossfade are now connected. Mounted-device discovery is read-only; destination conversion/verification/copy remains separate work. Catalog event synchronization, minimum Rust/other-platform execution, cache quotas, virtualization and sustained fast-scroll measurements remain pending. Native observations and their physical-audio limits are recorded in current state and the acceptance log.
 
 ## Connection indicator
 
@@ -314,3 +314,9 @@ The library job controller owns enrichment submission independently of the initi
 A tracking failure exposes a retry icon for the existing server task list. Confirmed status clears the failed tracker and resumes polling, without another fetch request. If the retry discovers terminal enrichment, the catalog refreshes once from retained server data before the launch control becomes available again.
 
 The perspective stage uses `overflow: clip`, which clips side artwork without creating a scroll container. Focus or accessibility activation of a distant cover cannot offset the stage independently of the retained selection/animation.
+
+## Client hardening checkpoint
+
+The [hardening review](../coding/hardening.md) records validated bounds and failure/ownership contracts for preference hydration, annotations, catalog synchronization, protected configuration and Radio Browser. Private annotation pages and mounted drafts bind to the complete captured session; a source reset immediately hides that source's private content. Confirmed writes during a retained read remain authoritative, while another origin's private state remains independent. Read/transport errors never justify inventing a personal value or changing an unreadable store.
+
+Radio directory operations are unauthenticated public reads, independent of Aède connectivity. Mirror discovery and response validation share one 24-second deadline with eight seconds per attempt. The public-only connector confines directory DNS; WebView media playback is a separate boundary and does not inherit that protection.

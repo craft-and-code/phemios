@@ -64,7 +64,7 @@ The connection form remembers only the last successful server/username in a vers
 
 ## Detail backdrops, relations and analysis reading
 
-Artist backgrounds start after the banner and use a sticky layer within the artist body: they scroll to the content viewport top, then remain there until the artist body's bottom. The banner stays sharp; only the no-banner header uses backdrop blur.
+Artist backgrounds start after the banner and use a sticky layer within the artist body: they scroll to the measured lower edge of the fixed catalogue toolbar, then remain there until the artist body's bottom. Their height follows the available content viewport below that toolbar, including window resizing. The banner stays sharp; only the no-banner header uses backdrop blur.
 
 Relations use bounded Fibonacci-sphere geometry with yaw/pitch/perspective/depth ordering, pointer rotation, wheel/button zoom and keyboard alternatives. SVG rendering remains local and idle without an animation loop or new dependency. Depth/orbits are decorative placement, not a musical-proximity metric; edge weights and provenance retain Aède's collaboration meaning and the link list remains accessible.
 
@@ -83,3 +83,5 @@ Album years are explicit metadata actions: a known year opens Albums with the ye
 The top search magnifier links to the advanced-search workspace, with a permanent small Advanced label for discovery; ordinary typing retains the catalogue search. Settings tabs reserve space below their labels for the horizontal scrollbar. The footer dedicates a wider responsive centre column to the complete-track waveform without changing its height or centring of transport. Playback queue rows show a six-dot drag grip; up/down arrow keys on the grip preserve accessible manual ordering without visible arrow buttons.
 
 Cover Flow side-cover taps retain their original anchor target and animate that cover to the front; the front cover still opens its album. Pointer capture begins only after a six-pixel drag threshold, so a simple click is not retargeted to the stage. Repetition is unavailable whenever music playback is inactive, including connected-but-idle libraries.
+
+Playback-footer album/track links use the same origin history as catalogue links. Returning restores the exact preceding page and its scroll, including the Playback workspace; utility pages have their own translated names rather than a generic catalogue label. Track detail keeps its independent title Play action beside the metadata and no playback overlay on its album cover.

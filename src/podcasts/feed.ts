@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { publicMediaAddress } from "../platform/public-media-address";
 export interface Episode {
   id: string;
   title: string;
@@ -15,19 +16,8 @@ export interface Podcast {
 }
 /** Public media addresses only: no local files, embedded credentials or private literal hosts. */
 export function podcastUrl(value: string, base?: string): string {
-  const url = new URL(value, base),
-    host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.hash ||
-    url.href.length > 2048 ||
-    host === "localhost" ||
-    host.endsWith(".local") ||
-    host.includes(":") ||
-    /^(0|10|127|169\.254|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(host)
-  )
+  const url = publicMediaAddress(value, 2048, base);
+  if (!url || !["", "80", "443"].includes(url.port))
     throw new Error(t("Adresse podcast invalide."));
   return url.href;
 }

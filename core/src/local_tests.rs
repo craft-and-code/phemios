@@ -104,3 +104,24 @@ fn concert_key_is_protected_separate_from_engine_fetch_keys_and_survives_restart
     assert!(engine.set_concert_key("abcdefghijklmnop", false).is_err());
     assert_eq!(fs::read(engine.file()).unwrap(), b"broken");
 }
+
+#[cfg(unix)]
+#[test]
+fn dangling_private_config_link_is_refused_and_retained_on_key_update() {
+    use std::os::unix::fs::symlink;
+    let data = Sandbox::new("dangling-config");
+    let mut engine = Engine::new(data.0.clone(), PathBuf::from("missing-engine"));
+    let missing = data.0.join("unavailable-private-config");
+    symlink(&missing, engine.file()).unwrap();
+    let status = engine.status();
+    let write = engine.keys("replacement", "", false, false);
+    assert!(
+        status.is_err(),
+        "An existing unreadable config must not become empty defaults"
+    );
+    assert!(
+        write.is_err(),
+        "A key update must preserve the unreadable config"
+    );
+    assert_eq!(fs::read_link(engine.file()).unwrap(), missing);
+}

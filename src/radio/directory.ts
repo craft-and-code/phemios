@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { publicMediaAddress } from "../platform/public-media-address";
 export interface Station {
   uuid: string;
   name: string;
@@ -54,27 +55,8 @@ export function parseStations(value: unknown) {
 export function streamUrl(value: unknown): string {
   if (typeof value !== "string" || value.length > 8192)
     throw new Error(t("Adresse du flux invalide."));
-  const url = new URL(value);
-  const host = url.hostname.toLowerCase();
-  const ipv4 = /^\d+\.\d+\.\d+\.\d+$/.test(host);
-  const octets = host.split(".").map(Number);
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    !host.includes(".") ||
-    host.endsWith(".local") ||
-    host.endsWith(".localhost") ||
-    host.startsWith("[") ||
-    (ipv4 &&
-      (octets[0] === 0 ||
-        octets[0] === 10 ||
-        octets[0] === 127 ||
-        octets[0]! >= 224 ||
-        (octets[0] === 192 && octets[1] === 168) ||
-        (octets[0] === 172 && octets[1]! >= 16 && octets[1]! <= 31) ||
-        (octets[0] === 169 && octets[1] === 254)))
-  )
+  const url = publicMediaAddress(value, 8192);
+  if (!url)
     throw new Error(t("Cette station ne fournit pas de flux Internet HTTP/HTTPS utilisable."));
   return url.href;
 }

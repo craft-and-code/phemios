@@ -21,3 +21,9 @@ The current development host uses Node 26 and Rust 1.99. Node 22.12 within major
 Sources: [SolidJS](https://docs.solidjs.com/quick-start), [Vite](https://vite.dev/guide/), [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/), [Tauri frontend](https://v2.tauri.app/start/frontend/), [Milkdown kit](https://milkdown.dev/docs/guide/using-milkdown-kit), and each named package's npm registry metadata. The official Tauri scaffolder supports SolidJS.
 
 The approved network dependencies are recorded in Cargo.lock. ureq uses its standard certificate validation; redirects are disabled. The note editor adds the approved Milkdown frontend dependency; no broad filesystem, shell, audio or HTTP plugin is added.
+
+## Additional accepted runtime dependencies
+
+The current lockfiles also include the explicitly approved `d3-geo` for bounded local globe projection, CPAL/rtrb for the native consumed-frame output, tungstenite for authenticated Aède PCM, getrandom for the owned engine's secret, quick-xml for bounded RSS parsing and tauri-plugin-dialog for selected native folder/file dialogs. No general shell, filesystem or HTTP plugin is granted to the WebView. These dependencies serve existing features; this hardening lot introduces no product dependency.
+
+The security review and platform-specific residuals are recorded in [the hardening checkpoint](hardening.md). A clean advisory check is a statement about the checked lockfile and database at that time, not a proof that the application has no vulnerabilities.

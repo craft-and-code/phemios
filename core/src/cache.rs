@@ -5,7 +5,7 @@ use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-const MAX_CATALOG: u64 = 100 * 1024 * 1024;
+pub(crate) const MAX_CATALOG: u64 = 100 * 1024 * 1024;
 const MAX_IMAGE: u64 = 32 * 1024 * 1024;
 /// Application-owned paths. No path supplied by the webview is accepted.
 #[derive(Clone)]

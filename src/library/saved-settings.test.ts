@@ -12,6 +12,7 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
   });
   vi.stubGlobal("document", { documentElement: { style: { setProperty: vi.fn() }, lang: "fr" } });
 });
@@ -99,4 +100,105 @@ it("retains disabled and floating scenes and terminal bars through owner prefere
       }),
     ).toEqual({ "phemios.visualizer": scene, "phemios.spectrum-style": "terminal" });
   expect(() => parseAccountSettings({ values: { "phemios.spectrum-style": "random" } })).toThrow();
+});
+
+it("rolls back every account preference when a device write fails during hydration", async () => {
+  values.set("phemios.duration", "true");
+  values.set("phemios.visualizer", '"floating"');
+  values.set("private-data", "untouched");
+  const previous = [...values];
+  let fail = true;
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      if (key === "phemios.visualizer" && fail) {
+        fail = false;
+        throw new Error("No space");
+      }
+      values.set(key, value);
+    },
+    removeItem: (key: string) => values.delete(key),
+  });
+  vi.mocked(requestAede).mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["account_preferences"] }
+      : { values: { "phemios.duration": false, "phemios.visualizer": "waves" } },
+  );
+  let dispose!: () => void;
+  let settings!: ReturnType<typeof createSavedSettings>;
+  const owner = account("one");
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    settings = createSavedSettings(
+      () => owner,
+      () => "server",
+    );
+  });
+  await settle();
+  expect([...values]).toEqual(previous);
+  expect(settings.error()).toContain("No space");
+  dispose();
+});
+it("refuses to overwrite an unreadable audio preference store on login", async () => {
+  values.set("phemios.audio.v1", "broken json");
+  vi.mocked(requestAede).mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["account_preferences"] }
+      : {
+          values: {
+            "phemios.audio.v1": { crossfadeMs: 0, repeat: "off", policy: "without-effects" },
+          },
+        },
+  );
+  let dispose!: () => void;
+  let settings!: ReturnType<typeof createSavedSettings>;
+  const owner = account("one");
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    settings = createSavedSettings(
+      () => owner,
+      () => "server",
+    );
+  });
+  await settle();
+  expect(values.get("phemios.audio.v1")).toBe("broken json");
+  expect(values.has("phemios.duration")).toBe(false);
+  expect(settings.error()).not.toBe("");
+  dispose();
+});
+
+it("preserves edits made during account loading and then synchronizes their final value", async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(requestAede).mockImplementation(async (path, _query, method) => {
+    if (path === "/api/v1/status") return { capabilities: ["account_preferences"] };
+    if (method === "GET")
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    return undefined;
+  });
+  const owner = account("one");
+  let dispose!: () => void;
+  let settings!: ReturnType<typeof createSavedSettings>;
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    settings = createSavedSettings(
+      () => owner,
+      () => "server",
+    );
+  });
+  await settle();
+  values.set("phemios.visualizer", '"waves"');
+  announceSetting("phemios.visualizer", '"waves"');
+  values.set("phemios.visualizer", '"floating"');
+  announceSetting("phemios.visualizer", '"floating"');
+  finish({ values: { "phemios.visualizer": "sphere", "phemios.duration": true } });
+  await settle();
+  expect(values.get("phemios.visualizer")).toBe('"floating"');
+  expect(values.get("phemios.duration")).toBe("true");
+  const patches = vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
+  expect(patches).toHaveLength(1);
+  expect(patches[0]?.[3]).toEqual({ values: { "phemios.visualizer": "floating" } });
+  expect(settings.error()).toBe("");
+  dispose();
 });

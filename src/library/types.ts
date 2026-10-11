@@ -28,6 +28,7 @@ export interface Album {
   title: string;
   year: number | null;
   compilation: boolean;
+  /** Sourced genre labels in Aède’s presentation; owner tags belong to annotations/search fields. */
   tags: readonly string[];
   contributors?: readonly string[];
   searchFields?: readonly string[];

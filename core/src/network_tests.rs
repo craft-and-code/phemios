@@ -442,3 +442,109 @@ fn achievements_bridge_admits_only_owner_read_and_action_routes() {
     assert!(!allowed("PUT", "/api/me/v1/achievements"));
     assert!(!allowed("DELETE", "/api/me/v1/achievements"));
 }
+
+#[test]
+fn snapshot_rejects_cumulative_artist_and_album_pages_before_caching() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let server = format!("http://{}", listener.local_addr().unwrap());
+    let worker = std::thread::spawn(move || {
+        let payload = "x".repeat(15 * 1024 * 1024);
+        for request_index in 0..7 {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut header = Vec::new();
+            while !header.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                stream.read_exact(&mut byte).unwrap();
+                header.push(byte[0]);
+                assert!(header.len() < 8192);
+            }
+            let (kind, offset, total) = if request_index < 3 {
+                ("artists", request_index, 3)
+            } else {
+                ("albums", request_index - 3, 4)
+            };
+            let request = String::from_utf8(header).unwrap();
+            assert!(request.starts_with(&format!("GET /api/v1/presentation/{kind}?")));
+            assert!(request.contains(&format!("offset={offset}")));
+            let body = json!({"total":total,"scanned_at":1,"offset":offset,
+                "items":[{"ref":format!("{kind}:{offset}"),"metadata":payload}]})
+            .to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .unwrap();
+            stream.write_all(body.as_bytes()).unwrap();
+        }
+    });
+    let client = Client {
+        agent: agent(),
+        server,
+        token: "fictional".into(),
+        account: json!({"id":"fixture"}),
+    };
+    let answer = client.snapshot();
+    worker.join().unwrap();
+    assert_eq!(
+        answer.map(|_| ()).unwrap_err(),
+        "Catalogue trop grand pour ce cache."
+    );
+}
+
+#[test]
+fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let server = format!("http://{}", listener.local_addr().unwrap());
+    let artist = json!({"ref":"artist:fixture","name":"Échos","tags":{"COMMENT":["quoted \"word\"", "line\nline"]}});
+    let album = json!({"ref":"release:fixture","artist":"artist:fixture","year":null});
+    let expected_artist = artist.clone();
+    let expected_album = album.clone();
+    let worker = std::thread::spawn(move || {
+        for (kind, row) in [("artists", artist), ("albums", album)] {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(3)))
+                .unwrap();
+            let mut header = Vec::new();
+            while !header.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                stream.read_exact(&mut byte).unwrap();
+                header.push(byte[0]);
+                assert!(header.len() < 8192);
+            }
+            assert!(
+                String::from_utf8(header)
+                    .unwrap()
+                    .starts_with(&format!("GET /api/v1/presentation/{kind}?"))
+            );
+            let body = json!({"total":1,"scanned_at":42,"offset":0,"items":[row]}).to_string();
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .unwrap();
+        }
+    });
+    let client = Client {
+        agent: agent(),
+        server: server.clone(),
+        token: "fictional".into(),
+        account: json!({"id":"fixture"}),
+    };
+    let snapshot = client.snapshot().unwrap();
+    worker.join().unwrap();
+    assert_eq!(
+        snapshot,
+        json!({"artists":[expected_artist],"albums":[expected_album],"scannedAt":42,"server":server,"accountId":"fixture"})
+    );
+}

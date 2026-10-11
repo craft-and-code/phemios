@@ -2,7 +2,7 @@
 use serde_json::{Value, json};
 use std::{
     fs,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
     path::{Path, PathBuf},
     process::{Child, ChildStdin, Command, Stdio},
     time::Duration,
@@ -33,10 +33,13 @@ impl Engine {
     }
     fn config(&self) -> Result<Value, String> {
         let path = self.file();
-        if !path.exists() {
-            return Ok(json!({"version":1,"enabled":false,"roots":[],"keys":{}}));
-        }
-        let meta = fs::symlink_metadata(&path).map_err(|_| "Configuration locale illisible.")?;
+        let meta = match fs::symlink_metadata(&path) {
+            Ok(meta) => meta,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(json!({"version":1,"enabled":false,"roots":[],"keys":{}}));
+            }
+            Err(_) => return Err("Configuration locale illisible.".into()),
+        };
         if !meta.is_file() || meta.len() > 128 * 1024 {
             return Err("Configuration locale invalide.".into());
         }
@@ -50,9 +53,18 @@ impl Engine {
                 );
             }
         }
+        // Bound the actual read too: the file can grow after metadata inspection.
+        let mut bytes = Vec::new();
+        fs::File::open(path)
+            .map_err(|_| "Configuration locale illisible.")?
+            .take(128 * 1024 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|_| "Configuration locale illisible.")?;
+        if bytes.len() > 128 * 1024 {
+            return Err("Configuration locale invalide.".into());
+        }
         let value: Value =
-            serde_json::from_slice(&fs::read(path).map_err(|_| "Configuration locale illisible.")?)
-                .map_err(|_| "Configuration locale corrompue.")?;
+            serde_json::from_slice(&bytes).map_err(|_| "Configuration locale corrompue.")?;
         if value["version"] != 1 || !value["roots"].is_array() || !value["keys"].is_object() {
             return Err("Configuration locale incompatible.".into());
         }
