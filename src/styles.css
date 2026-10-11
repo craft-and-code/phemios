@@ -1595,3 +1595,9 @@ body {
 .audio-settings-panel input[type="range"] {
   width: 100%;
 }
+
+.ticketmaster-settings {
+  border-block: 1px solid var(--border);
+  padding-block: 16px;
+  margin-block: 20px;
+}

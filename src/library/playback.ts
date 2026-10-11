@@ -38,10 +38,12 @@ export function createPlayback(
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
   const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
+  const [crossfade, setCrossfade] = createSignal(defaultAudioPreferences.crossfadeMs);
   function restoreAudio() {
     try {
       const next = parseAudioPreferences(localStorage.getItem(audioPreferenceKey));
       setAudio(next);
+      setCrossfade(next.crossfadeMs);
       setPolicy(next.policy);
     } catch (failure) {
       setError(message(failure));
@@ -71,6 +73,7 @@ export function createPlayback(
       setError(message(failure));
       return;
     }
+    setCrossfade(ms);
     pendingCrossfade = { ms, lifetime };
     if (crossfadeRunning) return;
     crossfadeRunning = true;
@@ -87,7 +90,10 @@ export function createPlayback(
             setError("");
           }
         } catch (failure) {
-          if (chosen.lifetime === lifetime) setError(message(failure));
+          if (chosen.lifetime === lifetime) {
+            if (!pendingCrossfade) setCrossfade(audio().crossfadeMs);
+            setError(message(failure));
+          }
         }
       }
     } finally {
@@ -356,6 +362,7 @@ export function createPlayback(
     setBusy(false);
     pendingVolume = undefined;
     pendingCrossfade = undefined;
+    setCrossfade(audio().crossfadeMs);
     setState({ ...idlePlayback, volume: state().volume });
     setSelection([]);
     setOutputs([]);
@@ -418,7 +425,7 @@ export function createPlayback(
     policy,
     choosePolicy,
     chooseCrossfade,
-    crossfade: () => audio().crossfadeMs,
+    crossfade,
     toggleMute,
     state,
     outputs,

@@ -15,3 +15,12 @@ it("opens stable references and refuses unknown or malformed URLs", () => {
 it("reserves an empty advanced-search workspace outside sidebar menus", () => {
   expect(parseRoute("#/advanced-search")).toEqual({ kind: "section", section: "advanced-search" });
 });
+
+it("opens provider configuration in the external-services settings tab", () => {
+  expect(parseRoute("#/settings/services")).toEqual({
+    kind: "section",
+    section: "settings",
+    tab: "services",
+  });
+  expect(parseRoute("#/settings/not-a-tab").kind).toBe("not-found");
+});

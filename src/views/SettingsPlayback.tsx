@@ -77,7 +77,7 @@ export function SettingsPlayback() {
             step="500"
             value={library.player.crossfade()}
             disabled={library.player.busy()}
-            onChange={(event) =>
+            onInput={(event) =>
               void library.player.chooseCrossfade(Number(event.currentTarget.value))
             }
           />

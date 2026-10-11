@@ -542,7 +542,14 @@ export function App() {
                                 </Show>
                               }
                             >
-                              <SettingsPage menu={menu} />
+                              <SettingsPage
+                                menu={menu}
+                                tab={
+                                  route.kind === "section"
+                                    ? (route.tab ?? "libraries")
+                                    : "libraries"
+                                }
+                              />
                             </Show>
                           }
                         >

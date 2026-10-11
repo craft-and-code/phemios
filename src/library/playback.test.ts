@@ -440,8 +440,9 @@ it("keeps playback controls responsive while a crossfade write is pending", asyn
           finish = resolve;
         });
     });
-    const write = player.chooseCrossfade(0);
+    const write = player.chooseCrossfade(3000);
     try {
+      expect(player.crossfade()).toBe(3000);
       expect(player.busy()).toBe(false);
       expect(player.state().status).toBe("playing");
       expect(player.state().position_ms).toBe(1234);

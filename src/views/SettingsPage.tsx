@@ -13,8 +13,11 @@ import { SettingsServices } from "./SettingsServices";
 import { SettingsAppearance } from "./SettingsAppearance";
 import { useLibrary } from "../library/context";
 import { Icon } from "../components/Icon";
-export function SettingsPage(props: { menu: ReturnType<typeof createMenuPreferences> }) {
-  const [tab, setTab] = createSignal("libraries"),
+export function SettingsPage(props: {
+  menu: ReturnType<typeof createMenuPreferences>;
+  tab?: string;
+}) {
+  const [tab, setTab] = createSignal(props.tab ?? "libraries"),
     library = useLibrary();
   return (
     <section class="page settings-page">

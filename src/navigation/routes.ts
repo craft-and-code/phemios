@@ -29,7 +29,7 @@ export type Section =
   | "settings"
   | "advanced-search";
 export type Route =
-  | { kind: "section"; section: Section }
+  | { kind: "section"; section: Section; tab?: "services" }
   | { kind: "artist" | "album" | "track" | "label"; reference: string }
   | { kind: "not-found" };
 
@@ -67,6 +67,8 @@ export function parseRoute(hash: string): Route {
   if (!path) return { kind: "section", section: "artists" };
   if (path === "playback") return { kind: "section", section: "playback" };
   if (path === "advanced-search") return { kind: "section", section: "advanced-search" };
+  if (path === "settings/services")
+    return { kind: "section", section: "settings", tab: "services" };
   if (path === "settings") return { kind: "section", section: "settings" };
   const section = sections.find((candidate) => candidate.id === path);
   if (section) return { kind: "section", section: section.id };

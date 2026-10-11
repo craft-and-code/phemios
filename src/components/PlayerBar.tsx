@@ -319,7 +319,7 @@ export function PlayerBar() {
                 value={player.crossfade()}
                 disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
                 aria-label={t("Durée du fondu")}
-                onChange={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
+                onInput={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />
             </label>
             <small>

@@ -4,7 +4,7 @@ The optional Concerts source view uses Ticketmaster Discovery v2, independently 
 
 ## Explicit provider access
 
-No lookup happens on navigation. The user first supplies a Ticketmaster developer key and explicitly starts a search. The private key stays in the existing native protected `desktop.json` configuration, outside browser preferences, account synchronization and Aède fetch overrides. IPC returns only key presence; diagnostics never interpolate the key or request URL. A missing key leaves configuration available and search disabled.
+No lookup happens on navigation. The user first supplies a Ticketmaster developer key in Settings → External sources and explicitly starts a search. The private key stays in the existing native protected `desktop.json` configuration, outside browser preferences, account synchronization and Aède fetch overrides. IPC returns only key presence; diagnostics never interpolate the key or request URL. A missing key leaves a settings link available and search disabled. The Concerts view never contains a secret-entry form.
 
 The native client permits only the fixed HTTPS Discovery endpoint, no redirects/proxy/Aède sessions, a 15-second request timeout and two-MiB response ceiling. Serialized requests are spaced by at least 500 ms. Authentication errors and provider throttling stop a batch; other per-artist failures remain visible while later artists can proceed. The provider covers its participating ticketing inventory, not every live event worldwide.
 
