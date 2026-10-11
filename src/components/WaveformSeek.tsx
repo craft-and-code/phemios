@@ -45,7 +45,11 @@ export function WaveformSeek() {
         <path class="waveform-envelope" d={path()} />
         <line
           class="waveform-cursor"
-          visibility={path() ? "visible" : "hidden"}
+          visibility={
+            duration() > 0 && ["playing", "paused", "connecting"].includes(player.state().status)
+              ? "visible"
+              : "hidden"
+          }
           x1={progress() * 10}
           x2={progress() * 10}
           y1="2"
