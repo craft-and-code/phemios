@@ -9,6 +9,9 @@ use std::sync::{
 pub(super) struct Signals {
     pub volume: AtomicU32,
     pub paused: AtomicBool,
+    pub finished: AtomicBool,
+    // Intended output frames held by starvation/recovery; exclude startup, seek, pause and EOF.
+    pub underrun_frames: AtomicU64,
     pub level: AtomicU32,
     pub levels: [AtomicU32; 4],
     pub spectrum: [AtomicU32; 24],
@@ -18,6 +21,8 @@ impl Default for Signals {
         Self {
             volume: AtomicU32::new(0.5_f32.to_bits()),
             paused: AtomicBool::new(true),
+            finished: AtomicBool::new(false),
+            underrun_frames: AtomicU64::new(0),
             level: AtomicU32::new(0_f32.to_bits()),
             levels: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
             spectrum: std::array::from_fn(|_| AtomicU32::new(0_f32.to_bits())),
@@ -31,6 +36,13 @@ pub(super) struct Output {
     pub failed: Arc<AtomicBool>,
     reset: Arc<super::transport::Reset>,
     _stream: cpal::Stream,
+}
+fn record_error(failed: &AtomicBool, kind: cpal::ErrorKind) {
+    // CPAL has already rerouted this live stream; continue supplying its PCM.
+    // https://github.com/RustAudio/cpal/blob/v0.18.1/src/error.rs#L15-L17
+    if kind != cpal::ErrorKind::DeviceChanged {
+        failed.store(true, Ordering::Relaxed);
+    }
 }
 fn select(id: &str) -> Result<(Device, SupportedStreamConfig), String> {
     let host = cpal::default_host();
@@ -83,12 +95,19 @@ fn render<T: SizedSample + FromSample<f32>>(
 ) {
     let gain = f32::from_bits(signals.volume.load(Ordering::Relaxed));
     let mut frames = 0;
+    let mut missing = 0;
+    let finished = signals.finished.load(Ordering::Acquire);
+    let ready = transport.ready(ring.slots(), finished);
+    let rebuffering = transport.rebuffering();
     let mut squares = [0_f64; 2];
     let mut peaks = [0_f32; 2];
     let mut output_squares = 0_f64;
     for target in output.chunks_exact_mut(channels) {
         let paused = signals.paused.load(Ordering::Relaxed);
-        let input = if paused {
+        let input = if paused || !ready {
+            if !paused && !finished && rebuffering && !signals.finished.load(Ordering::Acquire) {
+                missing += 1;
+            }
             None
         } else {
             match ring.pop() {
@@ -97,15 +116,17 @@ fn render<T: SizedSample + FromSample<f32>>(
                     spectrum.push(frame);
                     Some(frame)
                 }
-                Err(_) => None,
+                Err(_) => {
+                    if !finished && !signals.finished.load(Ordering::Acquire) {
+                        transport.starved();
+                        missing += 1;
+                    }
+                    None
+                }
             }
         };
         let sample = input.unwrap_or([0.; 2]);
         let audible = transport.sample(input, paused);
-        if transport.flush(ring, consumed) {
-            let _ = spectrum.finish();
-            let _ = spectrum.finish();
-        }
         // Measure only PCM actually taken from the ring, before the local volume gain.
         // Stereo RMS/peak pairs do not pretend to be frequency-spectrum bands.
         for channel in 0..2 {
@@ -123,6 +144,16 @@ fn render<T: SizedSample + FromSample<f32>>(
             target[0] = T::from_sample(audible[0] * gain);
             target[1] = T::from_sample(audible[1] * gain);
         }
+    }
+    // Publish this block before acknowledging a reset: no old-epoch frame may
+    // be added after the worker sees the reset's release acknowledgement.
+    consumed.fetch_add(frames, Ordering::Relaxed);
+    signals
+        .underrun_frames
+        .fetch_add(missing, Ordering::Relaxed);
+    if transport.flush(ring, consumed) {
+        let _ = spectrum.finish();
+        let _ = spectrum.finish();
     }
     for (target, value) in signals.spectrum.iter().zip(spectrum.finish()) {
         target.store(value.to_bits(), Ordering::Relaxed);
@@ -151,7 +182,6 @@ fn render<T: SizedSample + FromSample<f32>>(
     signals
         .level
         .store((rms * 4.).min(1.).to_bits(), Ordering::Relaxed);
-    consumed.fetch_add(frames, Ordering::Relaxed);
 }
 impl Output {
     /// Request a callback-owned flush after a 5 ms stop ramp; return only previously consumed PCM.
@@ -172,6 +202,8 @@ impl Output {
             .map_err(|_| "Impossible de suspendre la sortie audio.".into())
     }
     pub fn open(id: &str, signals: Arc<Signals>) -> Result<Self, String> {
+        signals.finished.store(false, Ordering::Release);
+        signals.underrun_frames.store(0, Ordering::Relaxed);
         signals.level.store(0_f32.to_bits(), Ordering::Relaxed);
         for level in &signals.levels {
             level.store(0_f32.to_bits(), Ordering::Relaxed);
@@ -207,9 +239,7 @@ impl Output {
                             &mut transport,
                         )
                     },
-                    move |_| {
-                        failure.store(true, Ordering::Relaxed);
-                    },
+                    move |error| record_error(&failure, error.kind()),
                     None,
                 )
             };

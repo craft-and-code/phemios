@@ -233,6 +233,8 @@ Keyboard shortcuts use portable Mod (Command/Control), configurable unique bindi
 
 The native system output can mix two independently authenticated one-track PCM streams on one continuous CPAL output. The overlap is a linear convex mix, with no added peak gain; the output callback still applies the user's volume. DSP mode is required. Without-effects and HQPlayer never apply this local mix. Durations from the validated stream format schedule the overlap, bounded to ten seconds and half of each track; unknown durations retain sequential playback. Two bounded source channels and a half-second output ring avoid decoding entire tracks in memory. Source workers acknowledge only each voice's contribution consumed by the output callback, including both voices during an overlap; prebuffering is never listening history. Pause/seek/output changes stop and confirm both visits, discard buffered samples, and restart at the currently audible source position. Future queue edits replace an inaudible preload; an already audible transition is retained.
 
+Scheduling reserves, callback reset accounting and the bounded nonblocking history-retirement contract are documented in [native PCM continuity](audio-continuity.md).
+
 Repeat off/one/all, DSP policy and crossfade duration are validated local preferences and owner-private account preferences. Restore never starts playback. Physical audition, digital-output capture and other platforms remain distinct from unit tests and host consumed-clock checks. `crossfade.rs` is a coherent continuous mixer exception to the usual module-length guideline; network workers and numerical policies stay in separate modules.
 
 ### Frequency observation, private discoveries and queue lyrics

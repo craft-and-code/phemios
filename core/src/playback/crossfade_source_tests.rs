@@ -57,11 +57,17 @@ fn prebuffering_is_not_acknowledged_and_pause_confirms_only_each_rendered_voice(
     let values: std::collections::BTreeMap<_, _> = [first, second].into_iter().collect();
     assert_eq!(values["track:outgoing"], 80);
     assert_eq!(values["track:incoming"], 20);
+    // The final stop must include PCM consumed since the preceding timed ACK.
+    outgoing.clock.consumed.store(95, Ordering::Relaxed);
+    incoming.clock.consumed.store(35, Ordering::Relaxed);
     outgoing.finish().unwrap();
     incoming.finish().unwrap();
     assert!(outgoing.clock.confirmed.load(Ordering::Relaxed));
     assert!(incoming.clock.confirmed.load(Ordering::Relaxed));
     server.join().unwrap();
+    let final_values: std::collections::BTreeMap<_, _> = received.into_iter().collect();
+    assert_eq!(final_values["track:outgoing"], 95);
+    assert_eq!(final_values["track:incoming"], 35);
 }
 
 #[test]
@@ -134,4 +140,100 @@ fn next_packet(source: &Source) -> Result<Packet, String> {
             Err(error) => panic!("Missing source packet: {error}"),
         }
     }
+}
+
+#[test]
+fn delayed_retired_confirmation_does_not_block_the_active_producer() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let (stopping, stopped) = mpsc::channel();
+    let (release, saving) = mpsc::channel();
+    let server = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let _: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        ws.send(Message::Binary(vec![0; 100 * 8])).unwrap();
+        loop {
+            let command: Value =
+                serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+            if command["type"] == "stop" {
+                assert_eq!(command["frames"], 100);
+                stopping.send(()).unwrap();
+                saving.recv_timeout(Duration::from_secs(5)).unwrap();
+                ws.send(Message::Text(json!({"type":"saved"}).to_string()))
+                    .unwrap();
+                ws.close(None).unwrap();
+                return;
+            }
+            assert_eq!(command["type"], "ack");
+        }
+    });
+    let mut source = Source::open(&client, "track:retired".into(), 48000, 0);
+    assert!(matches!(next_packet(&source).unwrap(), Packet::Format(_)));
+    assert!(matches!(next_packet(&source).unwrap(), Packet::Samples(_)));
+    source.clock.consumed.store(100, Ordering::Relaxed);
+    let (advanced, advance) = mpsc::channel();
+    let producer = std::thread::spawn(move || {
+        let worker = source.handle.as_ref().unwrap().thread().id();
+        for _ in 0..100 {
+            assert!(!source.retire().unwrap());
+            assert_eq!(source.handle.as_ref().unwrap().thread().id(), worker);
+        }
+        let (mut tx, mut rx) = rtrb::RingBuffer::new(256);
+        for _ in 0..256 {
+            tx.push([0.25_f32, -0.25]).unwrap();
+        }
+        let frames = std::iter::from_fn(|| rx.pop().ok()).count();
+        advanced.send(frames).unwrap();
+        source
+    });
+    stopped.recv_timeout(Duration::from_secs(5)).unwrap();
+    let before_save = advance.recv_timeout(Duration::from_millis(100));
+    release.send(()).unwrap();
+    let mut source = producer.join().unwrap();
+    source.finish().unwrap();
+    server.join().unwrap();
+    assert_eq!(
+        before_save.unwrap(),
+        256,
+        "the active ring must keep progressing before retired history is confirmed"
+    );
+    assert!(source.clock.confirmed.load(Ordering::Relaxed));
+}
+
+#[test]
+fn retired_history_failures_remain_errors_without_claiming_confirmation() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let server = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let _: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(stop["type"], "stop");
+        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
+    });
+    let mut source = Source::open(&client, "track:retired".into(), 48000, 0);
+    assert!(matches!(next_packet(&source).unwrap(), Packet::Format(_)));
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let error = loop {
+        match source.retire() {
+            Ok(false) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(2)),
+            Err(error) => break error,
+            value => panic!("retirement must preserve the worker failure: {value:?}"),
+        }
+    };
+    assert!(error.contains("L’historique est occupé"));
+    assert!(!source.clock.confirmed.load(Ordering::Relaxed));
+    assert!(source.handle.is_none());
+    server.join().unwrap();
+    assert_eq!(source.retire(), Err(error.clone()));
+    assert_eq!(source.finish(), Err(error));
+    assert!(!source.clock.confirmed.load(Ordering::Relaxed));
 }

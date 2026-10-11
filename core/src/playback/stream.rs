@@ -102,6 +102,7 @@ pub(super) fn stream(
             Ok(Command::Crossfade(value)) => update(state, |s| s.crossfade_ms = value)?,
             Ok(Command::Seek(target, ticket)) if !seeking && channels.is_some() => {
                 signals.paused.store(true, Ordering::Relaxed);
+                signals.finished.store(false, Ordering::Release);
                 let frames = output.reset()?;
                 send(
                     &mut socket,
@@ -206,6 +207,7 @@ pub(super) fn stream(
                         if eof != Some(sent_frames) {
                             return Err("Fin PCM Aède incohérente.".into());
                         }
+                        signals.finished.store(true, Ordering::Release);
                     }
                     Some("recorded") => {
                         update(state, |s| s.confirmed = true)?;

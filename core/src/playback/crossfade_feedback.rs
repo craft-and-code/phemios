@@ -41,8 +41,11 @@ impl Feedback {
                 self.deadline = Some(Instant::now() + Duration::from_secs(12));
             }
         }
+        // Stop publishes the mixer's final contribution. Acquire it before the
+        // count so a worker cannot stop with an earlier callback's local value.
+        let stopping = clock.stop.load(Ordering::Acquire);
         let frames = clock.consumed.load(Ordering::Relaxed);
-        if !self.seeking && clock.stop.load(Ordering::Relaxed) && !self.stopped {
+        if !self.seeking && stopping && !self.stopped {
             send(
                 socket,
                 json!({"type":"stop","epoch":self.epoch,"frames":frames}),
@@ -85,7 +88,7 @@ impl Feedback {
             match tx.try_send(envelope) {
                 Ok(()) => return Ok(true),
                 Err(TrySendError::Disconnected(_)) => {
-                    clock.stop.store(true, Ordering::Relaxed);
+                    clock.stop.store(true, Ordering::Release);
                     return Ok(false);
                 }
                 Err(TrySendError::Full(value)) => envelope = value,

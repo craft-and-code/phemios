@@ -130,7 +130,7 @@ impl Player {
             [0.; 24]
         };
         Ok(
-            json!({"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.

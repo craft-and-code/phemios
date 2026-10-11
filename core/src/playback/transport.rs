@@ -18,6 +18,9 @@ pub(super) struct Transport {
     last: [f32; 2],
     quiet: bool,
     played: bool,
+    reserve: usize,
+    buffering: bool,
+    rebuffering: bool,
 }
 impl Transport {
     pub fn new(rate: u32, reset: Arc<Reset>) -> Self {
@@ -29,7 +32,27 @@ impl Transport {
             last: [0.; 2],
             quiet: false,
             played: false,
+            reserve: (rate / 10).max(1) as usize,
+            buffering: true,
+            rebuffering: false,
         }
+    }
+    /// Keep 100 ms of scheduling reserve in the existing half-second ring.
+    /// A completed short source drains immediately; held PCM is never acknowledged.
+    pub fn ready(&mut self, available: usize, finished: bool) -> bool {
+        if self.buffering && available < self.reserve && !finished {
+            return false;
+        }
+        self.buffering = false;
+        self.rebuffering = false;
+        true
+    }
+    pub fn rebuffering(&self) -> bool {
+        self.rebuffering
+    }
+    pub fn starved(&mut self) {
+        self.buffering = true;
+        self.rebuffering = true;
     }
     pub fn sample(&mut self, sample: Option<[f32; 2]>, paused: bool) -> [f32; 2] {
         if let Some(sample) = sample {
@@ -72,6 +95,8 @@ impl Transport {
             .consumed
             .store(consumed.swap(0, Ordering::Relaxed), Ordering::Relaxed);
         self.last = [0.; 2];
+        self.buffering = true;
+        self.rebuffering = false;
         self.reset.applied.store(requested, Ordering::Release);
         true
     }

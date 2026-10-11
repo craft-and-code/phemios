@@ -1,6 +1,7 @@
 import { createCoverMotion, coverWindow } from "../visualizer/cover-motion";
 import { coverLetterStops, type CoverPosition } from "../visualizer/cover-position";
 import { createCoverScrub } from "../visualizer/cover-scrub";
+import { createCoverCatalog } from "../visualizer/cover-catalog";
 import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 import type { Album } from "../library/types";
@@ -17,36 +18,30 @@ export function CoverFlow(props: {
   const [selected, setSelected] = createSignal(""),
     [visualIndex, setVisualIndex] = createSignal(0);
   const motion = createCoverMotion(setVisualIndex);
-  const index = createMemo(() =>
-    Math.max(
-      0,
-      props.albums.findIndex((album) => album.reference === selected()),
-    ),
+  const catalog = createCoverCatalog(
+    () => props.albums,
+    () => props.reverse,
+    selected,
   );
+  const { index, positions } = catalog;
   const album = () => props.albums[index()];
   const window = createMemo(() =>
     coverWindow(visualIndex(), props.albums.length).map((at) => props.albums[at]!),
   );
-  const positions = createMemo(
-    () => new Map(props.albums.map((row, index) => [row.reference, index])),
-  );
   createEffect(
-    on(
-      () => `${props.reverse}:${props.albums.map((row) => row.reference).join("\0")}`,
-      () => {
-        scrub.cancel();
-        setSelected(props.position.restore(props.albums, props.reverse));
-        motion.reset(index());
-      },
-    ),
+    on(catalog.order, () => {
+      scrub.cancel();
+      setSelected(props.position.restore(props.albums, props.reverse));
+      motion.reset(index());
+    }),
   );
   const [dragging, setDragging] = createSignal(false);
   let drag: { id: number; x: number; start: number } | undefined,
     dragged = false;
   const choose = (value: number) => {
-    const next = props.albums[Math.max(0, Math.min(props.albums.length - 1, value))];
+    const target = Math.max(0, Math.min(props.albums.length - 1, value));
+    const next = props.albums[target];
     if (next) {
-      const target = props.albums.indexOf(next);
       if (target === index()) return;
       setSelected(next.reference);
       if (matchMedia("(prefers-reduced-motion: reduce)").matches) motion.reset(target);

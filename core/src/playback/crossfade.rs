@@ -86,7 +86,9 @@ impl Mixer<'_> {
             consumed,
             self.current.start,
             self.next.as_ref().and_then(|voice| voice.start),
-            self.retired.is_some(),
+            self.retired
+                .as_ref()
+                .is_some_and(|voice| voice.start.is_some()),
         )
     }
     fn tick(&mut self) -> Result<(), String> {
@@ -130,13 +132,11 @@ impl Mixer<'_> {
         if self.progress.elapsed() > Duration::from_secs(12) {
             return Err("Le flux de fondu ne progresse plus.".into());
         }
-        if self
-            .retired
-            .as_ref()
-            .is_some_and(|old| played(consumed, old.start, old.supplied) == old.supplied)
-            && let Some(mut old) = self.retired.take()
+        if let Some(old) = &mut self.retired
+            && played(consumed, old.start, old.supplied) == old.supplied
+            && old.source.retire()?
         {
-            old.source.finish()?;
+            self.retired = None;
         }
         Ok(())
     }
@@ -169,7 +169,11 @@ impl Mixer<'_> {
             .is_some_and(|voice| Some(voice.index) != successor)
             && let Some(mut voice) = self.next.take()
         {
-            voice.source.finish()?;
+            // A removed preload has no audible identity, but its confirmation
+            // uses the same bounded retirement slot as a completed voice.
+            let _ = voice.source.retire()?;
+            self.retired = Some(voice);
+            return Ok(());
         }
         let remaining = self.current.format.as_ref().and_then(|format| {
             format.duration.map(|duration| {
@@ -213,6 +217,7 @@ impl Mixer<'_> {
     }
     fn seek(&mut self, position: u64, ticket: u64) -> Result<(), String> {
         self.signals.paused.store(true, Ordering::Relaxed);
+        self.signals.finished.store(false, Ordering::Release);
         let consumed = self.output.reset()?;
         for voice in [&self.current]
             .into_iter()
@@ -308,6 +313,7 @@ impl Mixer<'_> {
                     std::thread::sleep(Duration::from_millis(2));
                     continue;
                 }
+                self.signals.finished.store(true, Ordering::Release);
                 if self.output.consumed.load(Ordering::Relaxed) == self.sent {
                     return Ok(None);
                 }

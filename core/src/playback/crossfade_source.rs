@@ -37,6 +37,7 @@ pub(super) struct Source {
     generation: u64,
     pub clock: Arc<Clock>,
     handle: Option<std::thread::JoinHandle<Result<(), String>>>,
+    failure: Option<String>,
 }
 impl Source {
     pub fn open(client: &Client, reference: String, rate: u32, initial: u64) -> Self {
@@ -65,6 +66,7 @@ impl Source {
             generation: 0,
             clock,
             handle: Some(handle),
+            failure: None,
         }
     }
     /// Retain this visit and discard old prefetched packets without closing its socket.
@@ -103,12 +105,34 @@ impl Source {
             }
         }
     }
+    /// Ask the existing worker to confirm its visit without waiting on the producer.
+    /// A mixer keeps at most one retiring source; a pending result retains its handle.
+    pub fn retire(&mut self) -> Result<bool, String> {
+        self.clock.stop.store(true, Ordering::Release);
+        if self
+            .handle
+            .as_ref()
+            .is_some_and(|handle| !handle.is_finished())
+        {
+            return Ok(false);
+        }
+        self.finish()?;
+        Ok(true)
+    }
     pub fn finish(&mut self) -> Result<(), String> {
-        self.clock.stop.store(true, Ordering::Relaxed);
+        self.clock.stop.store(true, Ordering::Release);
+        if let Some(failure) = &self.failure {
+            return Err(failure.clone());
+        }
         if let Some(handle) = self.handle.take() {
-            handle
+            let result = handle
                 .join()
-                .map_err(|_| "Arrêt du flux de fondu interrompu.".to_owned())??;
+                .map_err(|_| "Arrêt du flux de fondu interrompu.".to_owned())
+                .and_then(|result| result);
+            if let Err(error) = &result {
+                self.failure = Some(error.clone());
+            }
+            result?;
         }
         Ok(())
     }
