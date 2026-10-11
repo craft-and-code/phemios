@@ -1478,5 +1478,22 @@
   "Arrêter": "Stop",
   "Écoute en cours": "Currently listening",
   "Albums crédités": "Credited albums",
-  "Collaborations": "Collaborations"
+  "Collaborations": "Collaborations",
+  "Diagnostic": "Diagnostics",
+  "Actualiser le diagnostic": "Refresh diagnostics",
+  "Nom du menu": "Menu name",
+  "Sauvegarde": "Backup",
+  "Sauvegarde des préférences": "Preference backup",
+  "Sauvegarde des préférences invalide.": "Invalid preference backup.",
+  "Sauvegarde des préférences illisible.": "Could not read the preference backup.",
+  "Destination des préférences invalide.": "Invalid preference destination.",
+  "Import interrompu ; la restauration des réglages précédents a échoué.": "Import interrupted; the previous settings could not be restored.",
+  "Préférences enregistrées : {0}": "Preferences saved: {0}",
+  "Préférences importées.": "Preferences imported.",
+  "Conservez vos menus, raccourcis, couleurs, langue et options de lecture dans un fichier, puis retrouvez-les sur une autre installation de Phémios.": "Save your menus, shortcuts, colours, language and playback options in a file and restore them on another Phémios installation.",
+  "Exporter les préférences": "Export preferences",
+  "Importer les préférences": "Import preferences",
+  "Appliquer les préférences": "Apply preferences",
+  "Cette sauvegarde remplacera vos réglages d’interface actuels : menus et noms, raccourcis, couleurs, langue et lecture.": "This backup will replace your current interface settings: menus and names, shortcuts, colours, language and playback.",
+  "Fichier non enregistré.": "File was not saved."
 }

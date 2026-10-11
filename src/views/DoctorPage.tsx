@@ -55,8 +55,8 @@ export function DoctorPage() {
         </div>
         <button
           class="icon-button quiet"
-          aria-label={t("Actualiser Doctor")}
-          title={t("Actualiser Doctor")}
+          aria-label={t("Actualiser le diagnostic")}
+          title={t("Actualiser le diagnostic")}
           aria-busy={report.loading}
           disabled={!library.session() || report.loading}
           onClick={() => refetch()}
@@ -76,7 +76,7 @@ export function DoctorPage() {
       </Show>
       <Show when={report.error}>
         <p role="alert">
-          {t("Doctor indisponible :")} {String(report.error)}
+          {t("Diagnostic indisponible :")} {String(report.error)}
         </p>
       </Show>
       <Show when={library.session() && report() && !report.error}>

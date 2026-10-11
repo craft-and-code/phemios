@@ -136,3 +136,32 @@ it("migrates the preceding default tools order while retaining customised positi
     }).order,
   ).toEqual(custom);
 });
+
+it("retains custom names without changing identities, order or hidden menus", () => {
+  let raw: string | null = null;
+  const store = {
+    getItem: () => raw,
+    setItem: (_key: string, value: string) => {
+      raw = value;
+    },
+  };
+  const initial = readMenuPreferences(store);
+  saveMenuPreferences(store, {
+    ...initial,
+    hidden: ["radio"],
+    labels: { doctor: "Santé musicale", "heading:tools": "Mon atelier" },
+  });
+  const restored = readMenuPreferences(store);
+  expect(restored.labels).toEqual({ doctor: "Santé musicale", "heading:tools": "Mon atelier" });
+  expect(restored.order).toEqual(initial.order);
+  expect(restored.hidden).toEqual(["radio"]);
+});
+it("refuses labels on unknown identities, empty names or oversized text before writing", () => {
+  const setItem = () => {
+    throw new Error("Must not write");
+  };
+  for (const labels of [{ invalid: "Name" }, { albums: " " }, { albums: "x".repeat(81) }])
+    expect(() =>
+      saveMenuPreferences({ getItem: () => null, setItem }, { order: ids, hidden: [], labels }),
+    ).toThrow("Configuration");
+});

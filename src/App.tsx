@@ -6,7 +6,12 @@ import { activateExternalLink } from "./navigation/external-links";
 import { isNative, openExternalLink } from "./platform/desktop";
 import { needsCatalogPrompt } from "./navigation/catalog-prompt";
 import { createShortcuts, shortcutAction } from "./navigation/shortcuts";
-import { createMenuPreferences, visibleMenu, menuItem } from "./navigation/menu-preferences";
+import {
+  createMenuPreferences,
+  visibleMenu,
+  menuItem,
+  menuLabel,
+} from "./navigation/menu-preferences";
 import { LabelsPage } from "./views/LabelsPage";
 import { LabelPage } from "./views/LabelPage";
 import { createToolPreferences } from "./library/tool-preferences";
@@ -55,7 +60,12 @@ export function App() {
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
   const shortcuts = createShortcuts();
-  const visibleMenus = createMemo(() => visibleMenu(menu.value()).map(menuItem));
+  const visibleMenus = createMemo(() =>
+    visibleMenu(menu.value()).map((id) => ({
+      ...menuItem(id),
+      label: menuLabel(id, menu.value()),
+    })),
+  );
   const connectionPanel = () => false;
   const setConnectionPanel = (_value: boolean) => {
     navigation.navigate("#/settings");
@@ -77,7 +87,9 @@ export function App() {
   const navigation = createNavigation(browserNavigationHost(), (hash) => {
     const source = parseRoute(hash);
     if (source.kind === "section")
-      return sections.find((s) => s.id === source.section)?.label ?? t("Catalogue");
+      return sections.some((s) => s.id === source.section)
+        ? menuLabel(source.section, menu.value())
+        : t("Catalogue");
     if (source.kind === "artist")
       return library.artists().find((a) => a.reference === source.reference)?.name ?? t("Artiste");
     if (source.kind === "album")
@@ -302,7 +314,7 @@ export function App() {
               {(item) => (
                 <>
                   <Show when={item.kind === "heading"}>
-                    <p class="nav-label">{t(item.label)}</p>
+                    <p class="nav-label">{item.label}</p>
                   </Show>
                   <Show when={item.kind === "separator"}>
                     <div class="nav-spacer" aria-hidden="true" />
@@ -313,7 +325,7 @@ export function App() {
                       aria-current={section() === item.id ? "page" : undefined}
                     >
                       <Icon name={item.symbol} />
-                      <span>{t(item.label)}</span>
+                      <span>{item.label}</span>
                     </a>
                   </Show>
                 </>

@@ -55,7 +55,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "relations", label: t("Relations"), symbol: "graph" },
   { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },
   { id: "achievements", label: t("Trophées"), symbol: "trophy" },
-  { id: "doctor", label: "Doctor", symbol: "doctor" },
+  { id: "doctor", label: "Diagnostic", symbol: "doctor" },
   { id: "analysis", label: t("Analyses"), symbol: "wave" },
   { id: "statistics", label: t("Statistiques"), symbol: "stats" },
   { id: "players", label: t("Lecteurs externes"), symbol: "drive" },

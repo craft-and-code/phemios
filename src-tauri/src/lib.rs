@@ -76,6 +76,8 @@ pub fn run() -> Result<(), tauri::Error> {
             hqplayer::hqplayer_connect,
             hqplayer::hqplayer_disconnect,
             exports::statistics_export,
+            exports::preferences_import,
+            exports::preferences_export,
             themes::theme_import,
             themes::theme_export,
             volumes::players_discover,

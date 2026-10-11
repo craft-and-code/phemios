@@ -1,3 +1,4 @@
+import { SettingsBackup } from "./SettingsBackup";
 import { SettingsShortcuts } from "./SettingsShortcuts";
 import { Feedback } from "../components/Feedback";
 import { SettingsPlayback } from "./SettingsPlayback";
@@ -37,6 +38,7 @@ export function SettingsPage(props: {
               "appearance",
               "navigation",
               "shortcuts",
+              "backup",
             ],
             index = ids.indexOf(tab());
           const next = ["ArrowRight", "ArrowDown"].includes(event.key)
@@ -65,6 +67,7 @@ export function SettingsPage(props: {
             { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
             { icon: "menu", id: "navigation", label: t("Navigation") },
             { icon: "keyboard", id: "shortcuts", label: t("Raccourcis") },
+            { icon: "download", id: "backup", label: t("Sauvegarde") },
           ]}
         >
           {(item) => (
@@ -97,6 +100,9 @@ export function SettingsPage(props: {
         </Show>
         <Show when={tab() === "tags"}>
           <SettingsTags />
+        </Show>
+        <Show when={tab() === "backup"}>
+          <SettingsBackup />
         </Show>
         <Show when={tab() === "shortcuts"}>
           <SettingsShortcuts />

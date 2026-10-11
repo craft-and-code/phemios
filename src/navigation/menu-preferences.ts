@@ -14,6 +14,7 @@ export type MenuItem =
 export interface MenuPreferences {
   order: MenuItem[];
   hidden: MenuItem[];
+  labels?: Partial<Record<MenuItem, string>>;
 }
 const key = "phemios.navigation.v1";
 const ids = () => sections.map((section) => section.id);
@@ -71,7 +72,7 @@ function addHeadings(order: readonly MenuItem[]): MenuItem[] {
 }
 export const defaultMenuOrder = () => addHeadings(ids());
 function validate(raw: unknown): MenuPreferences {
-  const value = raw as { version?: unknown; order?: unknown; hidden?: unknown };
+  const value = raw as { version?: unknown; order?: unknown; hidden?: unknown; labels?: unknown };
   const validId = (id: unknown): id is MenuItem =>
     typeof id === "string" &&
     (ids().includes(id as Section) ||
@@ -84,7 +85,11 @@ function validate(raw: unknown): MenuPreferences {
     rows.every(validId);
   if (
     !value ||
-    (value.version !== 1 && value.version !== 2 && value.version !== 3 && value.version !== 4) ||
+    (value.version !== 1 &&
+      value.version !== 2 &&
+      value.version !== 3 &&
+      value.version !== 4 &&
+      value.version !== 5) ||
     !valid(value.order) ||
     !valid(value.hidden)
   )
@@ -98,7 +103,7 @@ function validate(raw: unknown): MenuPreferences {
   const tools = saved.filter((id) =>
     ["doctor", "analysis", "relations", "statistics", "players"].includes(id),
   );
-  if (tools.join(",") === "doctor,analysis,relations,statistics,players") {
+  if (value.version !== 5 && tools.join(",") === "doctor,analysis,relations,statistics,players") {
     saved.splice(saved.indexOf("relations"), 1);
     saved.splice(saved.indexOf("doctor"), 0, "relations");
   }
@@ -114,7 +119,12 @@ function validate(raw: unknown): MenuPreferences {
   );
   legacyDefault.splice(legacyDefault.indexOf("history"), 0, "achievements");
   legacyDefault.splice(legacyDefault.indexOf("podcasts") + 1, 0, "encyclopedia");
-  if (value.version !== 3 && value.version !== 4 && saved.join(",") === legacyDefault.join(",")) {
+  if (
+    value.version !== 3 &&
+    value.version !== 4 &&
+    value.version !== 5 &&
+    saved.join(",") === legacyDefault.join(",")
+  ) {
     for (const id of ["achievements", "encyclopedia"] as const) saved.splice(saved.indexOf(id), 1);
     saved.splice(saved.indexOf("players"), 0, "achievements", "encyclopedia");
   }
@@ -123,6 +133,7 @@ function validate(raw: unknown): MenuPreferences {
   );
   if (
     value.version !== 4 &&
+    value.version !== 5 &&
     priorTools.join(",") ===
       "relations,doctor,analysis,statistics,achievements,encyclopedia,players"
   ) {
@@ -145,7 +156,24 @@ function validate(raw: unknown): MenuPreferences {
   );
   if (order.length > 96 || value.hidden.some((id) => !order.includes(id)))
     throw new Error(t("Configuration du menu illisible."));
-  return { order, hidden: [...value.hidden] };
+  const labels: Partial<Record<MenuItem, string>> = {};
+  if (value.labels !== undefined) {
+    if (!value.labels || typeof value.labels !== "object" || Array.isArray(value.labels))
+      throw new Error(t("Configuration du menu illisible."));
+    for (const [id, name] of Object.entries(value.labels)) {
+      if (
+        !order.includes(id as MenuItem) ||
+        id.startsWith("separator:") ||
+        typeof name !== "string" ||
+        !name.trim() ||
+        name.trim().length > 80 ||
+        [...name].some((letter) => letter.charCodeAt(0) < 32 || letter.charCodeAt(0) === 127)
+      )
+        throw new Error(t("Configuration du menu illisible."));
+      labels[id as MenuItem] = name.trim();
+    }
+  }
+  return { order, hidden: [...value.hidden], ...(Object.keys(labels).length ? { labels } : {}) };
 }
 /** New sections remain visible by default; corrupt preferences are never replaced implicitly. */
 export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPreferences {
@@ -157,9 +185,11 @@ export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPref
 /** Check the retained store before publishing a validated device-local menu configuration. */
 export function saveMenuPreferences(storage: Store, value: MenuPreferences): MenuPreferences {
   readMenuPreferences(storage);
-  const next = validate({ version: 4, ...value });
-  storage.setItem(key, JSON.stringify({ version: 4, ...next }));
-  announceSetting(key, JSON.stringify({ version: 4, ...next }));
+  const next = validate({ version: 5, ...value });
+  const raw = JSON.stringify({ version: 5, ...next });
+  if (raw.length > 8192) throw new Error(t("Configuration du menu illisible."));
+  storage.setItem(key, raw);
+  announceSetting(key, raw);
   return next;
 }
 /** Move one item before a target; invalid or self targets retain the complete original order. */
@@ -219,4 +249,9 @@ export function visibleMenu(value: MenuPreferences): MenuItem[] {
       .slice(index + 1, end < 0 ? undefined : end)
       .some((next) => menuItem(next).kind === "section");
   });
+}
+
+/** Custom names are literal in both languages; absent overrides use the translated default. */
+export function menuLabel(id: MenuItem, preferences: MenuPreferences): string {
+  return preferences.labels?.[id] ?? t(menuItem(id).label);
 }

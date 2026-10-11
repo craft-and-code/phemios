@@ -191,3 +191,8 @@ export const configureConcerts = (key: string | null = null, remove = false) =>
 /** Explicit fixed-provider page lookup independent of library login. */
 export const searchConcerts = (artist: string, page: number) =>
   nativeCall<unknown>("concerts_events", { artist, page });
+
+/** Explicit native file dialogs exchange only the bounded interface-preference snapshot. */
+export const importPreferences = () => nativeCall<string | null>("preferences_import");
+export const exportPreferences = (document: string) =>
+  nativeCall<string | null>("preferences_export", { document });

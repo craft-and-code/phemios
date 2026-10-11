@@ -1684,3 +1684,28 @@ textarea,
 #content {
   --catalog-header-height: 0px;
 }
+
+.menu-name-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.menu-name-editor input {
+  min-width: 0;
+  width: 100%;
+}
+.menu-settings label.check {
+  min-width: 0;
+}
+.menu-settings label.check span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preference-import-review {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
