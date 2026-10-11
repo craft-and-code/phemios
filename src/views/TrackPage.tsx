@@ -1,3 +1,5 @@
+import { TrackMetadataValue } from "../components/TrackMetadataValue";
+import type { MetadataBrowse } from "../library/track-metadata-links";
 import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
@@ -13,7 +15,10 @@ import { fileSize, trackDuration } from "../library/detail-format";
 import { TrackResults } from "../components/TrackResults";
 import { albumTracks, hasMultipleDiscs } from "../library/album-tracks";
 /** Track facts, credits, annotations and retained results share the catalog detail conventions. */
-export function TrackPage(props: { reference: string }) {
+export function TrackPage(props: {
+  reference: string;
+  onBrowse: (target: MetadataBrowse) => void;
+}) {
   const library = useLibrary();
   const [detail] = createResource(
     () => (library.sessionFor(props.reference) ? props.reference : false),
@@ -153,7 +158,21 @@ export function TrackPage(props: { reference: string }) {
                   {([key, values]) => (
                     <div>
                       <dt>{key}</dt>
-                      <dd>{values.join(" · ")}</dd>
+                      <dd>
+                        <For each={values}>
+                          {(value, index) => (
+                            <>
+                              <Show when={index()}> · </Show>
+                              <TrackMetadataValue
+                                field={key}
+                                value={value}
+                                detail={row()}
+                                onBrowse={props.onBrowse}
+                              />
+                            </>
+                          )}
+                        </For>
+                      </dd>
                     </div>
                   )}
                 </For>

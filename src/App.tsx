@@ -652,7 +652,23 @@ export function App() {
                 />
               </Show>
               <Show when={route.kind === "track"}>
-                <TrackPage reference={(route as { reference: string }).reference} />
+                <TrackPage
+                  reference={(route as { reference: string }).reference}
+                  onBrowse={(target) => {
+                    scopedFilters.select(target.section, {
+                      mode: target.year === undefined ? "none" : "years",
+                      ...(target.year === undefined
+                        ? {}
+                        : { years: [target.year, target.year] as const }),
+                      query: target.section === "genres" ? "" : target.query,
+                      countries: [],
+                      genre: undefined,
+                      genres: target.section === "genres" ? [target.query] : [],
+                      includeUnknownYear: target.year === undefined,
+                    });
+                    navigation.navigate(`#/${target.section}`);
+                  }}
+                />
               </Show>
               <Show when={route.kind === "not-found"}>
                 <div class="empty">
