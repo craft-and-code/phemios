@@ -1871,11 +1871,12 @@ textarea,
 }
 @keyframes lyric-fragment-arrive {
   from {
-    transform: translate3d(var(--chunk-offset, 0em), 12px, 0) rotateZ(var(--chunk-tilt, 0deg))
-      scale(0.94);
+    transform: translate3d(var(--chunk-offset, 0em), 12px, var(--chunk-depth, 0px))
+      rotateY(var(--chunk-yaw, 0deg)) rotateZ(var(--chunk-tilt, 0deg)) scale(0.94);
   }
   to {
-    transform: translate3d(var(--chunk-offset, 0em), 0, 0) rotateZ(var(--chunk-tilt, 0deg)) scale(1);
+    transform: translate3d(var(--chunk-offset, 0em), 0, var(--chunk-depth, 0px))
+      rotateY(var(--chunk-yaw, 0deg)) rotateZ(var(--chunk-tilt, 0deg)) scale(1);
   }
 }
 @media (max-width: 700px) {
@@ -1939,4 +1940,14 @@ textarea,
   display: inline-block;
   width: 12px;
   height: 12px;
+}
+.floating-lyrics .lyric-phrase,
+.floating-lyrics .lyric-drift {
+  transform-style: preserve-3d;
+}
+.floating-lyrics .lyric-emphasis {
+  text-shadow:
+    1px 1px 0 color-mix(in srgb, var(--accent) 55%, transparent),
+    2px 2px 0 color-mix(in srgb, var(--accent) 25%, transparent),
+    0 0 24px color-mix(in srgb, var(--accent) 25%, transparent);
 }

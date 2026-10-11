@@ -5,6 +5,10 @@ it("retains words in order with bounded visual chunks and deterministic cue typo
   const value = lyricTreatment(text, 1000);
   expect(value.chunks.map((chunk) => chunk.text).join(" ")).toBe(text);
   expect(value.chunks.length).toBeLessThanOrEqual(4);
+  const hero = value.chunks.find((chunk) => chunk.emphasis)!;
+  expect(
+    value.chunks.filter((chunk) => !chunk.emphasis).every((chunk) => chunk.depth < hero.depth),
+  ).toBe(true);
   expect(lyricTreatment(text, 1000)).toEqual(value);
   expect(lyricTreatment(text, 2000)).not.toEqual(value);
   expect(lyricTreatment("word ".repeat(200), 0).chunks.length).toBeLessThanOrEqual(4);

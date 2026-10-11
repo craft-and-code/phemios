@@ -81,6 +81,8 @@ export function lyricTreatment(
         ? [1.22, 1.35, 1.3][composition]!
         : [0.68, 0.82, 0.74][(hash + index) % 3]!,
     tilt: index === emphasis ? 0 : index % 2 ? -8 : 8,
+    depth: index === emphasis ? 42 : -28 - index * 8,
+    yaw: index === emphasis ? -10 : index % 2 ? 18 : -18,
     offset: composition === 1 ? (index % 2 ? 0.12 : -0.12) : 0,
     delay: index * 0.06,
   }));

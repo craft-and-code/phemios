@@ -153,6 +153,8 @@ export function PlaybackLyrics(props: {
                             "--chunk-tilt": `${chunk.tilt}deg`,
                             "--chunk-delay": `${chunk.delay}s`,
                             "--chunk-offset": `${chunk.offset}em`,
+                            "--chunk-depth": `${chunk.depth}px`,
+                            "--chunk-yaw": `${chunk.yaw}deg`,
                           }}
                         >
                           {chunk.text}

@@ -1,3 +1,4 @@
+import { drawFloatingDepth } from "../visualizer/floating-depth";
 import { floatingObjects, animationRuns } from "../visualizer/floating";
 import { createEffect, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
@@ -34,6 +35,7 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     ctx.clearRect(0, 0, width, height);
     const color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
       scale = Math.min(width, height) * 0.32;
+    if (props.scene === "floating") drawFloatingDepth(ctx, width, height, clock, yaw, pitch, color);
     const points = (
       props.scene === "floating"
         ? floatingObjects(clock, reduced.matches ? [0, 0, 0, 0] : bands)
@@ -51,6 +53,8 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(clock * 0.3 + point.z);
+        // Foreshortening changes with the object's orbit, while projected size/opacity expose its depth.
+        ctx.scale(0.55 + 0.45 * Math.abs(Math.cos(clock * 0.4 + point.z)), 1);
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.shadowColor = color;
