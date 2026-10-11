@@ -1,3 +1,4 @@
+import { lyricAct } from "../visualizer/lyric-treatment";
 import {
   createEffect,
   createMemo,
@@ -74,6 +75,13 @@ export function PlaybackPage() {
   });
   const lyrics = words.lyrics;
   const [phrase, setPhrase] = createSignal(0);
+  const cueTimes = createMemo(() =>
+    [
+      ...new Set(
+        lyrics()?.lines.flatMap((line) => (line.at_ms === null ? [] : [line.at_ms])) ?? [],
+      ),
+    ].sort((a, b) => a - b),
+  );
   createEffect(
     on(
       () => player.current()?.reference,
@@ -256,6 +264,15 @@ export function PlaybackPage() {
             </Show>
             <PlaybackLyrics
               floating={scene() === "floating"}
+              typography={{
+                track: player.current()?.reference ?? "",
+                phase: lyricAct(
+                  lyrics()?.synced === false
+                    ? phrase()
+                    : cueTimes().indexOf(activeLyricTime(lyrics(), player.seekPosition()) ?? -1),
+                  lyrics()?.synced === false ? plain().length : cueTimes().length,
+                ),
+              }}
               cue={`${player.current()?.reference}:${lyrics()?.synced === false ? phrase() : activeLyricTime(lyrics(), player.seekPosition())}`}
               text={
                 lyrics()?.synced === false

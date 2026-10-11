@@ -1,9 +1,15 @@
+import type { LyricTypography } from "../visualizer/lyric-treatment";
 import { createLyricPhrase } from "../visualizer/lyric-motion";
 import { lyricFit } from "../visualizer/lyric-fit";
 import { createEffect, createSignal, onMount, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 /** Pointer capture keeps the translucent lyric block visible throughout its move. */
-export function PlaybackLyrics(props: { text: string; cue?: string | number; floating?: boolean }) {
+export function PlaybackLyrics(props: {
+  text: string;
+  cue?: string | number;
+  floating?: boolean;
+  typography?: LyricTypography;
+}) {
   const [position, setPosition] = createSignal({ x: 50, y: 50 }),
     [dragging, setDragging] = createSignal(false),
     [scale, setScale] = createSignal(1),
@@ -12,20 +18,20 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
     () => props.text,
     () => props.cue ?? props.text,
     () => !!props.floating,
+    () => props.typography ?? { track: "", phase: 0 },
   );
   let offset = { x: 0, y: 0 },
     element: HTMLParagraphElement | undefined,
-    frame: number | undefined,
+    scheduled = false,
     disposed = false;
   function measure() {
-    frame = undefined;
     const span = element?.firstElementChild as HTMLElement | null,
       stage = element?.parentElement;
     if (!span || !stage || disposed) return;
     setScale(
       lyricFit({
-        width: span.offsetWidth + (props.floating ? span.offsetHeight * 0.08 : 0),
-        height: span.offsetHeight + (props.floating ? span.offsetWidth * 0.08 : 0),
+        width: span.offsetWidth + (props.floating ? span.offsetHeight * 0.18 : 0),
+        height: span.offsetHeight + (props.floating ? span.offsetWidth * 0.18 : 0),
         angle: phrase()?.angle ?? 0,
         stageWidth: stage.clientWidth,
         stageHeight: stage.clientHeight,
@@ -34,9 +40,13 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
     );
   }
   function schedule() {
-    if (disposed) return;
-    if (frame !== undefined) cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(measure);
+    if (disposed || scheduled) return;
+    scheduled = true;
+    // A background WebView may defer animation frames; actual cue/layout changes still need their fit.
+    queueMicrotask(() => {
+      scheduled = false;
+      measure();
+    });
   }
   createEffect(() => {
     void phrase();
@@ -55,7 +65,6 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
   });
   onCleanup(() => {
     disposed = true;
-    if (frame !== undefined) cancelAnimationFrame(frame);
   });
   function move(event: PointerEvent & { currentTarget: HTMLParagraphElement }) {
     const bounds = event.currentTarget.parentElement?.getBoundingClientRect();
@@ -122,7 +131,7 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
             style={{ "--lyric-angle": `${value.angle}deg`, "--lyric-scale": scale() }}
           >
             <span
-              class={`lyric-drift lyric-font-${value.treatment?.font ?? 0}`}
+              class={`lyric-drift lyric-font-${value.treatment?.font ?? 0} lyric-composition-${value.treatment?.composition ?? 0}`}
               style={{
                 "--phrase-size": `${value.treatment?.size ?? 1}em`,
                 "--drift-duration": `${value.treatment?.duration ?? 12}s`,
@@ -138,10 +147,12 @@ export function PlaybackLyrics(props: { text: string; cue?: string | number; flo
                         <Show when={index()}> </Show>
                         <span
                           class="lyric-chunk"
+                          classList={{ "lyric-emphasis": chunk.emphasis }}
                           style={{
                             "--chunk-size": `${chunk.size}em`,
                             "--chunk-tilt": `${chunk.tilt}deg`,
                             "--chunk-delay": `${chunk.delay}s`,
+                            "--chunk-offset": `${chunk.offset}em`,
                           }}
                         >
                           {chunk.text}
