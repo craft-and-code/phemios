@@ -821,7 +821,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   position: relative;
   height: calc(var(--cover-size) + 36px);
   perspective: 950px;
-  overflow: hidden;
+  overflow: clip;
   mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
 }
 .cover-flow-card {
