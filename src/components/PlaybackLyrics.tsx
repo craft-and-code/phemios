@@ -1,3 +1,4 @@
+import { createLyricReadiness } from "../visualizer/lyric-readiness";
 import type { LyricTypography } from "../visualizer/lyric-treatment";
 import { createLyricPhrase } from "../visualizer/lyric-motion";
 import { lyricFit } from "../visualizer/lyric-fit";
@@ -20,6 +21,7 @@ export function PlaybackLyrics(props: {
     () => !!props.floating,
     () => props.typography ?? { track: "", phase: 0 },
   );
+  const readiness = createLyricReadiness(phrase);
   let offset = { x: 0, y: 0 },
     element: HTMLParagraphElement | undefined,
     scheduled = false,
@@ -28,16 +30,18 @@ export function PlaybackLyrics(props: {
     const span = element?.firstElementChild as HTMLElement | null,
       stage = element?.parentElement;
     if (!span || !stage || disposed) return;
+    const fittedPhrase = phrase();
     setScale(
       lyricFit({
         width: span.offsetWidth + (props.floating ? span.offsetHeight * 0.18 : 0),
         height: span.offsetHeight + (props.floating ? span.offsetWidth * 0.18 : 0),
-        angle: phrase()?.angle ?? 0,
+        angle: fittedPhrase?.angle ?? 0,
         stageWidth: stage.clientWidth,
         stageHeight: stage.clientHeight,
         ...position(),
       }),
     );
+    readiness.measured(fittedPhrase);
   }
   function schedule() {
     if (disposed || scheduled) return;
@@ -86,7 +90,11 @@ export function PlaybackLyrics(props: {
         element = node;
       }}
       class="playback-current-lyrics"
-      classList={{ "lyrics-dragging": dragging(), "floating-lyrics": !!props.floating }}
+      classList={{
+        "lyrics-dragging": dragging(),
+        "floating-lyrics": !!props.floating,
+        "lyrics-ready": readiness.ready(),
+      }}
       style={{ left: `${position().x}%`, top: `${position().y}%` }}
       tabindex="0"
       aria-label={t("Déplacer les paroles")}
@@ -151,7 +159,6 @@ export function PlaybackLyrics(props: {
                           style={{
                             "--chunk-size": `${chunk.size}em`,
                             "--chunk-tilt": `${chunk.tilt}deg`,
-                            "--chunk-delay": `${chunk.delay}s`,
                             "--chunk-offset": `${chunk.offset}em`,
                             "--chunk-depth": `${chunk.depth}px`,
                             "--chunk-yaw": `${chunk.yaw}deg`,

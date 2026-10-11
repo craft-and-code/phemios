@@ -339,3 +339,9 @@ Cover Flow letter landmarks are clickable/focusable animated destinations using 
 Floating scenes gain a subtle perspective floor, three orbital guides, foreshortened silhouettes and separate lyric depth planes with a raised emphasis group. The existing bounded canvas, resident typography, real cue timings and accessibility/lifetime guards remain in use, without a new dependency.
 
 Verification: the complete gate passes with 363 TypeScript tests, 14 Node tests, 101 core Rust tests and three bridge tests. Isolated native macOS acceptance verifies B/F Cover Flow letter destinations, canonical album label display and direct label navigation, and visible perspective geometry/text. The synthetic track is muted and the owned test transport/engine are stopped afterwards. Aède source and user data are unchanged; other-platform and acoustic/performance benchmarking remain separate.
+
+### Simultaneous floating-lyric entry and footer selection
+
+The playback footer disables selection for all text, including track/artist links and duration controls. Floating cues reveal their complete measured composition at once: whole-phrase entry and autonomous drift start together, with static fragment depth/yaw/tilt and no stagger. A cue-identity guard prevents delayed measurements from exposing replacement words; audio-clock polls retain ready cues.
+
+Verification: the complete gate passes with 364 TypeScript tests, 14 Node tests, 101 core Rust tests and three bridge tests. Browser computed styles confirm zero-delay entry/drift, complete chunk transforms and non-selectable footer descendants. Isolated native macOS acceptance confirms visible fitted lyrics, pause controls and no artist-text highlight after double-click. Synthetic output is muted, and the owned transport and local engine are stopped afterwards. No dependencies, Aède source or user data changes; other-platform and physical audio acceptance remain separate.

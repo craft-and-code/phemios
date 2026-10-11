@@ -1853,8 +1853,8 @@ textarea,
 }
 .floating-lyrics .lyric-chunk {
   line-height: 1.05;
-  transform: translateX(var(--chunk-offset, 0em)) rotateZ(var(--chunk-tilt, 0deg));
-  animation: lyric-fragment-arrive 550ms cubic-bezier(0.2, 0.8, 0.2, 1) var(--chunk-delay, 0s) both;
+  transform: translate3d(var(--chunk-offset, 0em), 0, var(--chunk-depth, 0px))
+    rotateY(var(--chunk-yaw, 0deg)) rotateZ(var(--chunk-tilt, 0deg));
 }
 .floating-lyrics .lyric-emphasis {
   font-weight: 800;
@@ -1868,16 +1868,6 @@ textarea,
 }
 .floating-lyrics .lyric-composition-2 .lyric-emphasis {
   text-transform: uppercase;
-}
-@keyframes lyric-fragment-arrive {
-  from {
-    transform: translate3d(var(--chunk-offset, 0em), 12px, var(--chunk-depth, 0px))
-      rotateY(var(--chunk-yaw, 0deg)) rotateZ(var(--chunk-tilt, 0deg)) scale(0.94);
-  }
-  to {
-    transform: translate3d(var(--chunk-offset, 0em), 0, var(--chunk-depth, 0px))
-      rotateY(var(--chunk-yaw, 0deg)) rotateZ(var(--chunk-tilt, 0deg)) scale(1);
-  }
 }
 @media (max-width: 700px) {
   .personal-list .history-row {
@@ -1950,4 +1940,19 @@ textarea,
     1px 1px 0 color-mix(in srgb, var(--accent) 55%, transparent),
     2px 2px 0 color-mix(in srgb, var(--accent) 25%, transparent),
     0 0 24px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* First visible paint already has its measured composition; entry and drift start together. */
+.playback-current-lyrics:not(.lyrics-ready) .lyric-phrase {
+  visibility: hidden;
+  animation: none;
+}
+.playback-current-lyrics:not(.lyrics-ready) .lyric-drift {
+  animation: none;
+}
+/* Footer chrome stays clickable and keyboard-operable without selecting its text. */
+.player-bar,
+.player-bar * {
+  -webkit-user-select: none;
+  user-select: none;
 }

@@ -84,7 +84,6 @@ export function lyricTreatment(
     depth: index === emphasis ? 42 : -28 - index * 8,
     yaw: index === emphasis ? -10 : index % 2 ? 18 : -18,
     offset: composition === 1 ? (index % 2 ? 0.12 : -0.12) : 0,
-    delay: index * 0.06,
   }));
   const base = phraseOrientation(seed),
     angle = Math.sign(base) * (Math.abs(base) + (hash % 3) * 12);
