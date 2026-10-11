@@ -419,3 +419,37 @@ it("allows offline preemptive mute and volume, then applies the retained value b
     dispose();
   });
 });
+
+it("keeps playback controls responsive while a crossfade write is pending", async () => {
+  await createRoot(async (dispose) => {
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn() });
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      index: 0,
+      position_ms: 1234,
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist");
+    let finish!: () => void;
+    vi.mocked(playbackControl).mockImplementation(async (command) => {
+      if (command === "crossfade")
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+    });
+    const write = player.chooseCrossfade(0);
+    try {
+      expect(player.busy()).toBe(false);
+      expect(player.state().status).toBe("playing");
+      expect(player.state().position_ms).toBe(1234);
+    } finally {
+      finish();
+      await write;
+      dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+});

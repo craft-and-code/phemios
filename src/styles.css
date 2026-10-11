@@ -814,7 +814,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 }
 
 .cover-flow {
-  --cover-size: clamp(180px, min(28vw, calc(100dvh - 530px)), 340px);
+  --cover-size: clamp(180px, min(28vw, calc(100dvh - 570px)), 340px);
   outline: none;
 }
 .cover-flow-stage {
@@ -1482,6 +1482,7 @@ body {
   border-top: 2px solid var(--text);
 }
 .frequency-backdrop.terminal-backdrop {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 12px;
   opacity: 0.55;
 }
@@ -1495,7 +1496,7 @@ body {
 }
 @keyframes floating-phrase-arrive {
   from {
-    opacity: 0;
+    opacity: 0.7;
     transform: translateY(32px) rotateX(20deg);
   }
   to {
@@ -1589,4 +1590,8 @@ body {
   .concerts-list time {
     grid-column: 1/-1;
   }
+}
+
+.audio-settings-panel input[type="range"] {
+  width: 100%;
 }

@@ -36,7 +36,7 @@ export function createPersonalReads(
   });
   const [page, { refetch }] = createResource(
     scope,
-    async (input, info): Promise<{ data?: Page; error?: string }> => {
+    async (input, info): Promise<{ scope: typeof input; data?: Page; error?: string }> => {
       try {
         const value = (await request(input.path, {
           offset: String(input.offset),
@@ -66,18 +66,34 @@ export function createPersonalReads(
             )
               throw new Error(t("Historique Aède invalide."));
           }
-        if (JSON.stringify(info.value?.data) === JSON.stringify(value)) return info.value!;
-        return { data: value };
+        if (
+          info.value?.scope.account === input.account &&
+          info.value.scope.path === input.path &&
+          info.value.scope.offset === input.offset &&
+          JSON.stringify(info.value.data) === JSON.stringify(value)
+        )
+          return info.value;
+        return { scope: input, data: value };
       } catch (error) {
-        return { error: error instanceof Error ? error.message : String(error) };
+        return { scope: input, error: error instanceof Error ? error.message : String(error) };
       }
     },
   );
+  const currentPage = () => {
+    const active = scope(),
+      result = page();
+    return active &&
+      result?.scope.account === active.account &&
+      result.scope.path === active.path &&
+      result.scope.offset === active.offset
+      ? result
+      : undefined;
+  };
   const [history] = createResource(
-    () => (section() === "history" && scope() && !page.error ? page()?.data : undefined),
-    async (value): Promise<HistoryRow[]> => {
+    () => (section() === "history" && currentPage()?.data ? currentPage() : undefined),
+    async (value) => {
       const result: HistoryRow[] = [];
-      for (const row of value.items as HistoryRow[]) {
+      for (const row of value.data!.items as HistoryRow[]) {
         try {
           const track = (await request("/api/v1/track", { ref: row.track })) as {
             title: string;
@@ -99,7 +115,7 @@ export function createPersonalReads(
           });
         }
       }
-      return result;
+      return { scope: value.scope, rows: result };
     },
   );
   createEffect(() => {
@@ -112,8 +128,17 @@ export function createPersonalReads(
     onCleanup(() => clearInterval(timer));
   });
   return {
-    page: () => (scope() ? page() : undefined),
-    history: () => (section() === "history" && scope() ? (history() ?? []) : []),
+    page: currentPage,
+    history: () => {
+      const result = history(),
+        active = scope();
+      return section() === "history" &&
+        active &&
+        result?.scope.account === active.account &&
+        result.scope.offset === active.offset
+        ? result.rows
+        : [];
+    },
     loading: () => !!scope() && (page.loading || (section() === "history" && history.loading)),
     refetch,
   };

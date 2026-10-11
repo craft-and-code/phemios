@@ -295,3 +295,9 @@ The first Playback scene action disables rendering entirely without changing aud
 ### Explicit concerts from the principal catalogue
 
 Concerts is a configurable source menu with principal-artist grouping across connected origins, chronological dates, country facets, venue/status/notices/prices and explicit ticket links. Ticketmaster Discovery reads require a developer key stored only in the protected native device configuration. Searches are explicit, serialized and bounded; exact performer matches refuse ambiguous IDs, and each completed artist answer is immediately cached with attribution/time and partial-result indication. Missing-key and cached navigation perform no provider lookups. See `docs/design/concerts.md`; live provider acceptance remains pending a key.
+
+Live personal reads additionally bind resolved pages and history titles to their exact account/path/offset, so retained results cannot flash during replacement-account requests.
+
+Verification of this follow-up: the complete gate passes with 324 TypeScript tests, 14 Node tests, 100 core Rust tests and two bridge tests. Native isolated macOS acceptance confirms the remembered second Cover Flow position across Artists/Albums navigation, one artwork frame after Space, current synthetic LRC cues in the floating scene, the disabled-animation state leaving audio active, and a new confirmed history row appearing without leaving History after Stop. Concerts shows its missing-key configuration and unavailable search action. Synthetic audio uses application volume zero; no user library/account data is changed. Live Ticketmaster, physical trackpad elasticity and physical gapless audition remain separate acceptance tasks.
+
+Crossfade writes also use a dedicated serialized/coalesced preference path without entering the transport-busy state or cancelling its poll. This keeps the range keyboard focus and the playback clock available while native policy acknowledgement is pending.

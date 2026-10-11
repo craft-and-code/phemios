@@ -61,15 +61,37 @@ export function createPlayback(
     await playbackControl("repeat", audio().repeat);
     await playbackControl("volume", state().volume);
   }
+  let pendingCrossfade: { ms: number; lifetime: number } | undefined,
+    crossfadeRunning = false;
   async function chooseCrossfade(ms: number) {
     if (busy()) return;
     try {
-      const next = { ...audio(), crossfadeMs: ms };
-      parseAudioPreferences(JSON.stringify(next));
-      if (ready() && device() !== "@hqplayer") await action("crossfade", ms);
-      saveAudio(next);
+      parseAudioPreferences(JSON.stringify({ ...audio(), crossfadeMs: ms }));
     } catch (failure) {
       setError(message(failure));
+      return;
+    }
+    pendingCrossfade = { ms, lifetime };
+    if (crossfadeRunning) return;
+    crossfadeRunning = true;
+    // Hot policy writes retain polling/focus and coalesce only not-yet-sent choices.
+    try {
+      while (pendingCrossfade) {
+        const chosen = pendingCrossfade;
+        pendingCrossfade = undefined;
+        if (chosen.lifetime !== lifetime) continue;
+        try {
+          if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", chosen.ms);
+          if (chosen.lifetime === lifetime) {
+            saveAudio({ ...audio(), crossfadeMs: chosen.ms });
+            setError("");
+          }
+        } catch (failure) {
+          if (chosen.lifetime === lifetime) setError(message(failure));
+        }
+      }
+    } finally {
+      crossfadeRunning = false;
     }
   }
   const progress = createSeekProgress(
@@ -333,6 +355,7 @@ export function createPlayback(
     cancel();
     setBusy(false);
     pendingVolume = undefined;
+    pendingCrossfade = undefined;
     setState({ ...idlePlayback, volume: state().volume });
     setSelection([]);
     setOutputs([]);
@@ -363,6 +386,7 @@ export function createPlayback(
       window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
+    pendingCrossfade = undefined;
     cancelDiscovery();
     cancel();
   });

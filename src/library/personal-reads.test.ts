@@ -133,3 +133,43 @@ it("refreshes confirmed history while visible, preserves rows, and stops after l
     vi.useRealTimers();
   }
 });
+
+it("hides the previous owner's retained history while a replacement account read is pending", async () => {
+  let dispose!: () => void, complete!: (value: unknown) => void;
+  let pending = false;
+  const request = vi.fn(async (path: string) =>
+    path.endsWith("/track")
+      ? { title: "Private history", release: null }
+      : pending
+        ? new Promise((resolve) => {
+            complete = resolve;
+          })
+        : { items: [{ track: "track:first", at: 1, ms_played: 1000, completed: false }], total: 1 },
+  );
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    const [session, setSession] = createSignal<AccountSession | undefined>(account);
+    return {
+      ...createPersonalReads(
+        () => "history",
+        session,
+        () => 0,
+        request,
+      ),
+      setSession,
+    };
+  });
+  try {
+    await settle();
+    expect(view.history()[0]?.title).toBe("Private history");
+    pending = true;
+    view.setSession({ ...account, account: { id: "other", username: "other", role: "user" } });
+    await settle();
+    expect(view.history()).toEqual([]);
+    complete({ items: [], total: 0 });
+    await settle();
+    expect(view.history()).toEqual([]);
+  } finally {
+    dispose();
+  }
+});
