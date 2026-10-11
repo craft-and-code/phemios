@@ -10,6 +10,7 @@ import {
 interface WikipediaApi {
   search(language: Language, query: string): Promise<unknown>;
   read(language: Language, pageId: number): Promise<unknown>;
+  translate?(language: Language, pageId: number, target: Language): Promise<unknown>;
 }
 /** Requests happen only on explicit actions; generation guards prevent late views/languages replacing results. */
 export function createWikipediaExplorer(
@@ -24,6 +25,7 @@ export function createWikipediaExplorer(
     [error, setError] = createSignal(""),
     [searched, setSearched] = createSignal(false),
     [notice, setNotice] = createSignal("");
+  const editions = new Map<Language, WikipediaArticle>();
   let generation = 0,
     disposed = false;
   const invalidate = () => {
@@ -42,6 +44,7 @@ export function createWikipediaExplorer(
     invalidate();
     const ticket = generation,
       lang = language();
+    editions.clear();
     setArticle(null);
     setHits([]);
     setSearched(false);
@@ -63,7 +66,9 @@ export function createWikipediaExplorer(
     const lang = language(),
       held = saved.rows().find((row) => row.language === lang && row.pageId === hit.pageId);
     invalidate();
+    editions.clear();
     if (held && !refresh) {
+      editions.set(lang, held);
       setArticle(held);
       return;
     }
@@ -73,9 +78,52 @@ export function createWikipediaExplorer(
       const row = wikipediaArticle(await api.read(lang, hit.pageId));
       if (row.language !== lang || row.pageId !== hit.pageId)
         throw new Error(t("Réponse Wikipédia invalide."));
-      if (!disposed && ticket === generation && language() === lang) setArticle(row);
+      if (!disposed && ticket === generation && language() === lang) {
+        editions.set(lang, row);
+        setArticle(row);
+      }
     } catch (failure) {
       if (!disposed && ticket === generation) setError(String(failure));
+    } finally {
+      if (!disposed && ticket === generation) setBusy("");
+    }
+  }
+  /** An edition change follows the current article's actual language link; failure leaves its text intact. */
+  async function changeEdition(query: string): Promise<boolean> {
+    if (disposed || busy()) return false;
+    const held = article(),
+      target = language();
+    if (held?.language === target) return true;
+    if (!held) {
+      const repeatSearch = searched();
+      invalidate();
+      setHits([]);
+      setSearched(false);
+      if (repeatSearch) await search(query);
+      return !error();
+    }
+    invalidate();
+    setHits([]);
+    setSearched(false);
+    const cached = editions.get(target);
+    if (cached) {
+      setArticle(cached);
+      return true;
+    }
+    const ticket = generation;
+    setBusy("article");
+    try {
+      if (!api.translate) throw Error(t("Cette version linguistique n’est pas disponible."));
+      const row = wikipediaArticle(await api.translate(held.language, held.pageId, target));
+      if (row.language !== target) throw Error(t("Réponse Wikipédia invalide."));
+      if (disposed || ticket !== generation || language() !== target) return false;
+      editions.set(held.language, held);
+      editions.set(target, row);
+      setArticle(row);
+      return true;
+    } catch (failure) {
+      if (!disposed && ticket === generation) setError(String(failure));
+      return false;
     } finally {
       if (!disposed && ticket === generation) setBusy("");
     }
@@ -90,12 +138,15 @@ export function createWikipediaExplorer(
     searched,
     search,
     open,
+    changeEdition,
     back() {
       invalidate();
+      editions.clear();
       setArticle(null);
     },
     reset() {
       invalidate();
+      editions.clear();
       setArticle(null);
       setHits([]);
       setSearched(false);

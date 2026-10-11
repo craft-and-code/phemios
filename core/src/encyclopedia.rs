@@ -3,6 +3,8 @@ use serde_json::{Value, json};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ureq::unversioned::transport::DefaultConnector;
 
+mod translation;
+
 const MAX_ID: u64 = 9_007_199_254_740_991;
 const RESPONSE_LIMIT: u64 = 1024 * 1024;
 fn language(value: &str) -> Result<&str, String> {

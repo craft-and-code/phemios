@@ -1150,27 +1150,9 @@ main:has(> .playback-page) > :not(.playback-page) {
   white-space: nowrap;
 }
 
-.transport-buttons .crossfade-control {
-  border: 0;
-  background: transparent;
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-}
-
 .transport-buttons {
   position: relative;
 }
-.transport-buttons .crossfade-control {
-  position: absolute;
-  left: calc(50% + 110px);
-}
-@media (max-width: 780px) {
-  .transport-buttons .crossfade-control {
-    display: none;
-  }
-}
-
 /* Reference cards and public article reading share existing theme controls. */
 .encyclopedia-tabs {
   display: flex;

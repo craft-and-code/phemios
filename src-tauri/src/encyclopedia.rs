@@ -37,3 +37,22 @@ pub(crate) async fn encyclopedia_article(
     })
     .await
 }
+
+#[tauri::command]
+pub(crate) async fn encyclopedia_translate(
+    version: u32,
+    language: String,
+    page_id: u64,
+    target: String,
+    state: State<'_, Encyclopedia>,
+) -> Result<serde_json::Value, String> {
+    crate::aede::bridge(version)?;
+    let client = state.0.clone();
+    crate::aede::blocking(move || {
+        let client = client
+            .try_lock()
+            .map_err(|_| "Une demande Wikipédia est déjà en cours. Réessayez.")?;
+        client.translated_article(&language, page_id, &target)
+    })
+    .await
+}

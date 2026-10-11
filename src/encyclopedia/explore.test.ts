@@ -120,3 +120,77 @@ it("prevents duplicate requests and rejects empty or oversized searches before n
   await pending;
   expect(state.searched()).toBe(true);
 });
+
+it("switches the selected article via its language link, keeps reading and reuses both editions on return", async () => {
+  let language: "fr" | "en" = "fr";
+  const english = { ...article, language: "en", pageId: 71, title: "English counterpart" };
+  const api = {
+    search: vi.fn(),
+    read: vi.fn(async () => article),
+    translate: vi.fn(async () => english),
+  };
+  const state = createWikipediaExplorer(api, () => language, storageFixture());
+  await state.open(article);
+  language = "en";
+  await state.changeEdition("unrelated search");
+  expect(api.translate).toHaveBeenCalledExactlyOnceWith("fr", 42, "en");
+  expect(api.search).not.toHaveBeenCalled();
+  expect(state.article()).toEqual(english);
+  language = "fr";
+  await state.changeEdition("");
+  expect(state.article()).toEqual(article);
+  expect(api.translate).toHaveBeenCalledOnce();
+});
+it("keeps the original readable when its counterpart is absent, invalid or arrives after returning", async () => {
+  let language: "fr" | "en" = "fr";
+  let complete!: (value: unknown) => void;
+  const api = {
+    search: vi.fn(),
+    read: vi.fn(async () => article),
+    translate: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  };
+  const state = createWikipediaExplorer(api, () => language, storageFixture());
+  await state.open(article);
+  language = "en";
+  api.translate.mockRejectedValueOnce(Error("No counterpart"));
+  expect(await state.changeEdition("")).toBe(false);
+  expect(state.article()).toEqual(article);
+  expect(state.error()).toContain("No counterpart");
+  api.translate.mockResolvedValueOnce(article);
+  expect(await state.changeEdition("")).toBe(false);
+  expect(state.article()).toEqual(article);
+  api.translate.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  const pending = state.changeEdition("");
+  expect(state.busy()).toBe("article");
+  expect(state.article()).toEqual(article);
+  state.back();
+  complete({ ...article, language: "en", pageId: 71 });
+  await pending;
+  expect(state.article()).toBeNull();
+  expect(state.busy()).toBe("");
+});
+it("reruns an existing query in the selected edition, but does not search from an untouched form", async () => {
+  let language: "fr" | "en" = "fr";
+  const api = {
+    search: vi.fn(async () => ({
+      language,
+      rows: [{ pageId: language === "fr" ? 42 : 71, title: "Title" }],
+    })),
+    read: vi.fn(),
+    translate: vi.fn(),
+  };
+  const state = createWikipediaExplorer(api, () => language, storageFixture());
+  language = "en";
+  await state.changeEdition("Music");
+  expect(api.search).not.toHaveBeenCalled();
+  await state.search("Music");
+  language = "fr";
+  await state.changeEdition("Music");
+  expect(api.search).toHaveBeenLastCalledWith("fr", "Music");
+  expect(state.hits()[0]?.pageId).toBe(42);
+});

@@ -1,6 +1,11 @@
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from "solid-js";
 import { t, locale, type Language } from "../i18n";
-import { searchEncyclopedia, readEncyclopedia, isNative } from "../platform/desktop";
+import {
+  searchEncyclopedia,
+  readEncyclopedia,
+  translateEncyclopedia,
+  isNative,
+} from "../platform/desktop";
 import { ActionButton } from "../components/ActionButton";
 import { EmptyState } from "../components/EmptyState";
 import { Feedback } from "../components/Feedback";
@@ -12,16 +17,35 @@ export function WikipediaPanel(props: {
   query: string;
   mode: "search" | "saved";
   language: Language;
+  onLanguageUnavailable: (language: Language) => void;
+  onBusy: (busy: boolean) => void;
 }) {
   const [term, setTerm] = createSignal(props.query);
   const language = () => props.language;
   const state = createWikipediaExplorer(
-    { search: searchEncyclopedia, read: readEncyclopedia },
+    { search: searchEncyclopedia, read: readEncyclopedia, translate: translateEncyclopedia },
     language,
   );
-  createEffect(on(language, state.reset));
+  let alive = true;
+  createEffect(
+    on(
+      language,
+      () => {
+        void state.changeEdition(term()).then((changed) => {
+          const article = state.article();
+          if (alive && !changed && article) props.onLanguageUnavailable(article.language);
+        });
+      },
+      { defer: true },
+    ),
+  );
+  createEffect(() => props.onBusy(!!state.busy()));
   createEffect(on(() => props.mode, state.back));
-  onCleanup(state.dispose);
+  onCleanup(() => {
+    alive = false;
+    state.dispose();
+    props.onBusy(false);
+  });
   const savedRows = createMemo(() => {
     const needle = props.query.trim().toLocaleLowerCase(locale());
     return state.saved

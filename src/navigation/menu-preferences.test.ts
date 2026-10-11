@@ -96,10 +96,14 @@ it("moves the legacy default tools order but preserves explicitly customised too
   ).toEqual(custom);
 });
 
-it("groups discoveries under Tools with Encyclopedia immediately before external players", () => {
+it("groups Encyclopedia and discoveries directly after Relations", () => {
   const order = defaultMenuOrder();
   expect(order.indexOf("achievements")).toBeGreaterThan(order.indexOf("heading:tools"));
-  expect(order[order.indexOf("players") - 1]).toBe("encyclopedia");
+  expect(order.slice(order.indexOf("relations"), order.indexOf("relations") + 3)).toEqual([
+    "relations",
+    "encyclopedia",
+    "achievements",
+  ]);
   const legacy = order.filter((id) => !["encyclopedia", "achievements"].includes(id));
   legacy.splice(legacy.indexOf("history"), 0, "achievements");
   legacy.splice(legacy.indexOf("podcasts") + 1, 0, "encyclopedia");
@@ -112,6 +116,23 @@ it("groups discoveries under Tools with Encyclopedia immediately before external
   expect(
     readMenuPreferences({
       getItem: () => JSON.stringify({ version: 2, order: custom, hidden: [] }),
+    }).order,
+  ).toEqual(custom);
+});
+
+it("migrates the preceding default tools order while retaining customised positions and visibility", () => {
+  const order = defaultMenuOrder();
+  const previous = order.filter((id) => !["encyclopedia", "achievements"].includes(id));
+  previous.splice(previous.indexOf("players"), 0, "achievements", "encyclopedia");
+  expect(
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 3, order: previous, hidden: ["encyclopedia"] }),
+    }),
+  ).toEqual({ order, hidden: ["encyclopedia"] });
+  const custom = moveMenu(previous, "encyclopedia", "artists");
+  expect(
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 3, order: custom, hidden: [] }),
     }).order,
   ).toEqual(custom);
 });

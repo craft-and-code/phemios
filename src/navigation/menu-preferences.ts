@@ -84,7 +84,7 @@ function validate(raw: unknown): MenuPreferences {
     rows.every(validId);
   if (
     !value ||
-    (value.version !== 1 && value.version !== 2 && value.version !== 3) ||
+    (value.version !== 1 && value.version !== 2 && value.version !== 3 && value.version !== 4) ||
     !valid(value.order) ||
     !valid(value.hidden)
   )
@@ -107,14 +107,25 @@ function validate(raw: unknown): MenuPreferences {
   );
   legacyDefault.splice(legacyDefault.indexOf("history"), 0, "achievements");
   legacyDefault.splice(legacyDefault.indexOf("podcasts") + 1, 0, "encyclopedia");
-  if (value.version !== 3 && saved.join(",") === legacyDefault.join(",")) {
+  if (value.version !== 3 && value.version !== 4 && saved.join(",") === legacyDefault.join(",")) {
     for (const id of ["achievements", "encyclopedia"] as const) saved.splice(saved.indexOf(id), 1);
     saved.splice(saved.indexOf("players"), 0, "achievements", "encyclopedia");
   }
-  for (const id of ["achievements", "encyclopedia"] as const) {
+  const priorTools = saved.filter(
+    (id) => ids().includes(id as Section) && menuHeading(id as Section) === "heading:tools",
+  );
+  if (
+    value.version !== 4 &&
+    priorTools.join(",") ===
+      "relations,doctor,analysis,statistics,achievements,encyclopedia,players"
+  ) {
+    for (const id of ["encyclopedia", "achievements"] as const) saved.splice(saved.indexOf(id), 1);
+    saved.splice(saved.indexOf("relations") + 1, 0, "encyclopedia", "achievements");
+  }
+  for (const id of ["encyclopedia", "achievements"] as const) {
     if (!saved.includes(id) && value.version !== 1) {
-      const at = saved.indexOf("players");
-      if (at >= 0) saved.splice(at, 0, id);
+      const at = saved.indexOf(id === "encyclopedia" ? "relations" : "encyclopedia");
+      if (at >= 0) saved.splice(at + 1, 0, id);
     }
   }
   const oldDefault = ids().filter((id) => saved.includes(id));
@@ -139,9 +150,9 @@ export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPref
 /** Check the retained store before publishing a validated device-local menu configuration. */
 export function saveMenuPreferences(storage: Store, value: MenuPreferences): MenuPreferences {
   readMenuPreferences(storage);
-  const next = validate({ version: 3, ...value });
-  storage.setItem(key, JSON.stringify({ version: 3, ...next }));
-  announceSetting(key, JSON.stringify({ version: 3, ...next }));
+  const next = validate({ version: 4, ...value });
+  storage.setItem(key, JSON.stringify({ version: 4, ...next }));
+  announceSetting(key, JSON.stringify({ version: 4, ...next }));
   return next;
 }
 /** Move one item before a target; invalid or self targets retain the complete original order. */

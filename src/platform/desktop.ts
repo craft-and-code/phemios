@@ -166,3 +166,10 @@ export const readEncyclopedia = (language: import("../i18n").Language, pageId: n
 
 /** Explicit source-link activation uses a bounded HTTPS-only native browser handoff. */
 export const openExternalLink = (url: string) => nativeCall<void>("external_open", { url });
+
+/** Follow a verified interlanguage link rather than searching by the displayed article title. */
+export const translateEncyclopedia = (
+  language: import("../i18n").Language,
+  pageId: number,
+  target: import("../i18n").Language,
+) => nativeCall<unknown>("encyclopedia_translate", { language, pageId, target });

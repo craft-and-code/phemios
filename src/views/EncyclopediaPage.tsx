@@ -6,6 +6,7 @@ import { EmptyState } from "../components/EmptyState";
 /** Curated bilingual reference material stays available without an Aède account. */
 export function EncyclopediaPage(props: { query: string }) {
   const [mode, setMode] = createSignal<"reference" | "search" | "saved">("reference");
+  const [editionBusy, setEditionBusy] = createSignal(false);
   const [language, setLanguage] = createSignal<Language>(locale());
   createEffect(on(locale, setLanguage));
   const [category, setCategory] = createSignal("");
@@ -27,6 +28,7 @@ export function EncyclopediaPage(props: { query: string }) {
             class="edition-switch"
             type="button"
             role="switch"
+            disabled={editionBusy()}
             aria-checked={language() === "en"}
             aria-label={t("Articles en anglais")}
             title={t("Langue des articles")}
@@ -49,6 +51,8 @@ export function EncyclopediaPage(props: { query: string }) {
           <WikipediaPanel
             query={props.query}
             language={language()}
+            onLanguageUnavailable={setLanguage}
+            onBusy={setEditionBusy}
             mode={mode() === "saved" ? "saved" : "search"}
           />
         }

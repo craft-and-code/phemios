@@ -51,11 +51,11 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
   { id: "relations", label: t("Relations"), symbol: "graph" },
+  { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },
+  { id: "achievements", label: t("Trophées"), symbol: "trophy" },
   { id: "doctor", label: "Doctor", symbol: "doctor" },
   { id: "analysis", label: t("Analyses"), symbol: "wave" },
   { id: "statistics", label: t("Statistiques"), symbol: "stats" },
-  { id: "achievements", label: t("Trophées"), symbol: "trophy" },
-  { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },
   { id: "players", label: t("Lecteurs externes"), symbol: "drive" },
 ];
 
