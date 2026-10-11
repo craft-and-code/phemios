@@ -71,9 +71,10 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
                 >
                   ⋮⋮
                 </span>
-                <label class="check">
+                <label class="check menu-visibility">
                   <input
                     type="checkbox"
+                    aria-label={menuLabel(id, props.menu.value())}
                     checked={!props.menu.value().hidden.includes(id)}
                     onChange={(event) =>
                       props.menu.update({
@@ -85,79 +86,87 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
                     }
                   />
                   <Icon name={item.symbol} />
-                  <Show when={editing() !== id}>
-                    <span>{menuLabel(id, props.menu.value())}</span>
-                  </Show>
                 </label>
-                <Show when={item.kind !== "separator"}>
-                  <Show
-                    when={editing() === id}
-                    fallback={
-                      <button
-                        class="icon-button quiet"
-                        aria-label={t("Renommer {0}", menuLabel(id, props.menu.value()))}
-                        title={t("Renommer {0}", menuLabel(id, props.menu.value()))}
-                        onClick={() => {
-                          setName(menuLabel(id, props.menu.value()));
-                          setEditing(id);
+                <div class="menu-name-slot">
+                  <Show when={editing() !== id}>
+                    <span class="menu-name" title={menuLabel(id, props.menu.value())}>
+                      {menuLabel(id, props.menu.value())}
+                    </span>
+                  </Show>
+                  <Show when={item.kind !== "separator"}>
+                    <Show
+                      when={editing() === id}
+                      fallback={
+                        <button
+                          class="icon-button quiet"
+                          aria-label={t("Renommer {0}", menuLabel(id, props.menu.value()))}
+                          title={t("Renommer {0}", menuLabel(id, props.menu.value()))}
+                          onClick={() => {
+                            setName(menuLabel(id, props.menu.value()));
+                            setEditing(id);
+                          }}
+                        >
+                          <Icon name="edit" />
+                        </button>
+                      }
+                    >
+                      <form
+                        class="menu-name-editor"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          props.menu.update({
+                            ...props.menu.value(),
+                            labels: { ...props.menu.value().labels, [id]: name().trim() },
+                          });
+                          if (!props.menu.error()) setEditing(undefined);
                         }}
                       >
-                        <Icon name="edit" />
-                      </button>
-                    }
-                  >
-                    <form
-                      class="menu-name-editor"
-                      onSubmit={(event) => {
-                        event.preventDefault();
+                        <input
+                          autofocus
+                          aria-label={t("Nom du menu")}
+                          value={name()}
+                          maxlength="80"
+                          required
+                          onInput={(event) => setName(event.currentTarget.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") setEditing(undefined);
+                          }}
+                        />
+                        <button
+                          class="icon-button quiet"
+                          type="submit"
+                          aria-label={t("Enregistrer")}
+                        >
+                          <Icon name="check" />
+                        </button>
+                        <button
+                          class="icon-button quiet"
+                          type="button"
+                          aria-label={t("Annuler")}
+                          onClick={() => setEditing(undefined)}
+                        >
+                          <Icon name="close" />
+                        </button>
+                      </form>
+                    </Show>
+                  </Show>
+                  <Show when={item.kind === "separator"}>
+                    <button
+                      class="icon-button quiet"
+                      title={t("Supprimer l’espacement")}
+                      aria-label={t("Supprimer l’espacement")}
+                      onClick={() =>
                         props.menu.update({
                           ...props.menu.value(),
-                          labels: { ...props.menu.value().labels, [id]: name().trim() },
-                        });
-                        if (!props.menu.error()) setEditing(undefined);
-                      }}
+                          order: props.menu.value().order.filter((value) => value !== id),
+                          hidden: props.menu.value().hidden.filter((value) => value !== id),
+                        })
+                      }
                     >
-                      <input
-                        autofocus
-                        aria-label={t("Nom du menu")}
-                        value={name()}
-                        maxlength="80"
-                        required
-                        onInput={(event) => setName(event.currentTarget.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Escape") setEditing(undefined);
-                        }}
-                      />
-                      <button class="icon-button quiet" type="submit" aria-label={t("Enregistrer")}>
-                        <Icon name="check" />
-                      </button>
-                      <button
-                        class="icon-button quiet"
-                        type="button"
-                        aria-label={t("Annuler")}
-                        onClick={() => setEditing(undefined)}
-                      >
-                        <Icon name="close" />
-                      </button>
-                    </form>
+                      <Icon name="trash" />
+                    </button>
                   </Show>
-                </Show>
-                <Show when={item.kind === "separator"}>
-                  <button
-                    class="icon-button quiet"
-                    title={t("Supprimer l’espacement")}
-                    aria-label={t("Supprimer l’espacement")}
-                    onClick={() =>
-                      props.menu.update({
-                        ...props.menu.value(),
-                        order: props.menu.value().order.filter((value) => value !== id),
-                        hidden: props.menu.value().hidden.filter((value) => value !== id),
-                      })
-                    }
-                  >
-                    <Icon name="trash" />
-                  </button>
-                </Show>
+                </div>
                 <button
                   class="icon-button quiet"
                   disabled={index() === 0}

@@ -1754,3 +1754,116 @@ textarea,
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+
+/* Keep menu identity controls stationary while its name is edited in the same column. */
+.menu-settings li {
+  display: grid;
+  grid-template-columns: 32px 50px minmax(0, 1fr) 36px 36px;
+  min-height: 54px;
+}
+.menu-name-slot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.menu-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.menu-settings .menu-visibility {
+  flex: none;
+  width: 50px;
+}
+.settings-card .menu-name-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px 36px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  width: 100%;
+}
+.menu-name-editor input {
+  height: 36px;
+  margin: 0;
+  padding: 0 10px;
+}
+.menu-name-editor .icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+}
+.personal-list .history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content 36px;
+  gap: 16px;
+}
+.history-row > a {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.history-visit {
+  display: grid;
+  gap: 4px;
+}
+.history-current > div {
+  flex: 1;
+  min-width: 0;
+}
+.history-play.cover-play.icon-button {
+  position: static;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  opacity: 1;
+}
+.metadata-error {
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.metadata-link .spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
+}
+@media (max-width: 700px) {
+  .personal-list .history-row {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 6px 12px;
+  }
+  .history-row > a {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .history-visit {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .history-row > .history-play {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .menu-settings li {
+    grid-template-columns: 24px 44px minmax(0, 1fr) 30px 30px;
+    gap: 4px;
+    padding: 8px 0;
+  }
+  .settings-card .menu-name-editor {
+    grid-template-columns: minmax(0, 1fr) 30px 30px;
+    gap: 4px;
+  }
+  .menu-name-editor .icon-button {
+    width: 30px;
+    height: 30px;
+    padding: 6px;
+  }
+}

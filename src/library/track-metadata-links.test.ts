@@ -53,9 +53,9 @@ it("prefers the current album edition and opens genres, labels and years with th
     query: "Metal",
   });
   expect(trackMetadataTarget("label", "Example label", detail, [], [])).toEqual({
-    kind: "browse",
-    section: "labels",
-    query: "Example label",
+    kind: "label",
+    source: "server",
+    name: "Example label",
   });
   expect(trackMetadataTarget("DATE", "2001-05-12", detail, [], [])?.kind).toBe("browse");
   expect(trackMetadataTarget("DATE", "unknown", detail, [], [])).toBeUndefined();

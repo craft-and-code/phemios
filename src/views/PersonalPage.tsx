@@ -1,3 +1,5 @@
+import { CoverPlay } from "../components/CoverPlay";
+import { historyTrackAction } from "../library/history-actions";
 import { currentHistoryListen } from "../library/history-current";
 import { StickyHeader } from "../components/StickyHeader";
 import { Feedback } from "../components/Feedback";
@@ -320,6 +322,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   {row().artist} · {row().album?.title}
                 </small>
               </div>
+              <CoverPlay reference={row().reference} title={row().title} class="history-play" />
             </div>
           )}
         </Show>
@@ -340,19 +343,27 @@ export function PersonalPage(props: { section: Section; query: string }) {
             )}
           >
             {(row) => (
-              <li>
-                <Show when={row.release} fallback={<strong>{row.title}</strong>}>
-                  {(ref) => <a href={`#/album/${encodeURIComponent(ref())}`}>{row.title}</a>}
-                </Show>
-                <small>
-                  {new Date(row.at * 1000).toLocaleString(locale())} ·{" "}
-                  {row.ms_played === null
-                    ? t("Durée inconnue")
-                    : t("{0} s écoutées", Math.round(row.ms_played / 1000))}
-                </small>
-                <Show when={"error" in row}>
-                  <small>{row.error}</small>
-                </Show>
+              <li class="history-row">
+                <a href={historyTrackAction(row).href} title={row.title}>
+                  {row.title}
+                </a>
+                <div class="history-visit">
+                  <small>
+                    {new Date(row.at * 1000).toLocaleString(locale())} ·{" "}
+                    {row.ms_played === null
+                      ? t("Durée inconnue")
+                      : t("{0} s écoutées", Math.round(row.ms_played / 1000))}
+                  </small>
+                  <Show when={row.error}>
+                    <small>{row.error}</small>
+                  </Show>
+                </div>
+                <CoverPlay
+                  reference={historyTrackAction(row).reference}
+                  title={row.title}
+                  disabled={historyTrackAction(row).disabled}
+                  class="history-play"
+                />
               </li>
             )}
           </For>

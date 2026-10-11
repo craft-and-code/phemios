@@ -1,14 +1,17 @@
 import type { Artist, Album } from "./types";
 import type { TrackDetail } from "./track-detail";
 import { normalizeName } from "./filtering";
-import { referenceSource } from "./sources";
+import { referenceSource, type SourceId } from "./sources";
 export type MetadataBrowse = {
   kind: "browse";
   section: "artists" | "albums" | "genres" | "labels";
   query: string;
   year?: number;
 };
-export type MetadataTarget = { kind: "route"; href: string } | MetadataBrowse;
+export type MetadataTarget =
+  | { kind: "route"; href: string }
+  | { kind: "label"; name: string; source: SourceId }
+  | MetadataBrowse;
 /** Match exact source-owned identities; raw names without a unique entity open an explicit catalogue search. */
 export function trackMetadataTarget(
   key: string,
@@ -32,7 +35,7 @@ export function trackMetadataTarget(
   });
   if (["genre", "genres"].includes(field)) return browse("genres");
   if (["label", "recordlabel", "publisher", "organization"].includes(field))
-    return browse("labels");
+    return { kind: "label", name: value, source };
   if (["album", "albumtitle"].includes(field)) {
     const matches = albums.filter(
       (album) => referenceSource(album.reference) === source && normalizeName(album.title) === name,

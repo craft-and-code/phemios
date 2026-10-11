@@ -3,7 +3,12 @@ import { useLibrary } from "../library/context";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
 /** Independent playback action: cover/detail links retain their original navigation. */
-export function CoverPlay(props: { reference: string; title: string; class?: string }) {
+export function CoverPlay(props: {
+  reference: string;
+  title: string;
+  class?: string;
+  disabled?: boolean;
+}) {
   const library = useLibrary(),
     [pending, setPending] = createSignal(false);
   async function play(event: MouseEvent) {
@@ -24,6 +29,7 @@ export function CoverPlay(props: { reference: string; title: string; class?: str
       data-play-reference={props.reference}
       aria-busy={pending()}
       disabled={
+        props.disabled ||
         !library.sessionFor(props.reference) ||
         library.sessionFor(props.reference)?.account.role === "auditor" ||
         library.player.busy()
