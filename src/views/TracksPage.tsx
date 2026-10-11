@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
 import { t } from "../i18n";
@@ -40,15 +41,37 @@ export function TracksPage(props: {
   );
   return (
     <section class="page tracks-page">
-      <label class="track-page-size">
-        {t("Pistes par page")}{" "}
-        <select
-          value={props.size}
-          onChange={(event) => props.setSize(Number(event.currentTarget.value))}
-        >
-          <For each={pageSizes}>{(size) => <option value={size}>{size}</option>}</For>
-        </select>
-      </label>
+      <StickyHeader>
+        <label class="track-page-size">
+          {t("Pistes par page")}{" "}
+          <select
+            value={props.size}
+            onChange={(event) => props.setSize(Number(event.currentTarget.value))}
+          >
+            <For each={pageSizes}>{(size) => <option value={size}>{size}</option>}</For>
+          </select>
+        </label>
+        <div class="section-heading">
+          <p class="muted">
+            {page()?.total ?? 0} {t("piste")} · {(page()?.total ?? 0) ? offset() + 1 : 0}–
+            {Math.min(offset() + props.size, page()?.total ?? 0)}
+          </p>
+          <div class="page-controls">
+            <button
+              disabled={!offset() || page.loading}
+              onClick={() => setOffset(Math.max(0, offset() - props.size))}
+            >
+              {t("Précédentes")}
+            </button>
+            <button
+              disabled={page.loading || offset() + props.size >= (page()?.total ?? 0)}
+              onClick={() => setOffset(offset() + props.size)}
+            >
+              {t("Suivantes")}
+            </button>
+          </div>
+        </div>
+      </StickyHeader>
       <Show when={props.preferenceError}>
         <p role="alert">{props.preferenceError}</p>
       </Show>
@@ -85,27 +108,6 @@ export function TracksPage(props: {
                 )}
               </p>
             </Show>
-            <div class="section-heading">
-              <p class="muted">
-                {value().total} {t("piste")}
-                {value().total > 1 ? "s" : ""} · {value().total ? offset() + 1 : 0}–
-                {Math.min(offset() + props.size, value().total)}
-              </p>
-              <div class="page-controls">
-                <button
-                  disabled={!offset()}
-                  onClick={() => setOffset(Math.max(0, offset() - props.size))}
-                >
-                  {t("Précédentes")}{" "}
-                </button>
-                <button
-                  disabled={offset() + props.size >= value().total}
-                  onClick={() => setOffset(offset() + props.size)}
-                >
-                  {t("Suivantes")}{" "}
-                </button>
-              </div>
-            </div>
             <Show when={!value().items.length}>
               <EmptyState icon="list">{t("Aucune piste dans cette recherche.")}</EmptyState>
             </Show>

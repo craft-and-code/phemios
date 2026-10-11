@@ -1,3 +1,5 @@
+import { currentHistoryListen } from "../library/history-current";
+import { StickyHeader } from "../components/StickyHeader";
 import { Feedback } from "../components/Feedback";
 import { ResultCount } from "../components/ResultCount";
 import { ChoiceSelect } from "../components/ChoiceSelect";
@@ -59,6 +61,14 @@ export function PersonalPage(props: { section: Section; query: string }) {
   );
   const page = () => reads.page()?.data;
   const history = reads.history;
+  const listening = () =>
+    currentHistoryListen({
+      item: library.player.current(),
+      owner: library.sessionFor(library.player.current()?.reference ?? ""),
+      session: library.session(),
+      status: library.player.state().status,
+      offset: offset(),
+    });
   const refetch = reads.refetch;
   const [openedCollection, setOpenedCollection] = createSignal("");
   const album = () => library.albums().find((item) => item.reference === selected());
@@ -121,13 +131,15 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
       </Show>
       <Show when={props.section === "favourites"}>
-        <div class="personal-selection-actions">
-          <ResultCount value={favourites().length} />
-          <SelectionCollection
-            disabled={!favourites().length}
-            expression={personalCollectionExpression("favourites", props.query)}
-          />
-        </div>
+        <StickyHeader>
+          <div class="personal-selection-actions">
+            <ResultCount value={favourites().length} />
+            <SelectionCollection
+              disabled={!favourites().length}
+              expression={personalCollectionExpression("favourites", props.query)}
+            />
+          </div>
+        </StickyHeader>
         <Show
           when={favourites().length}
           fallback={
@@ -297,6 +309,20 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
+        <Show when={listening()}>
+          {(row) => (
+            <div class="history-current">
+              <Icon name={library.player.state().status === "playing" ? "volume" : "pause"} />
+              <div>
+                <small>{t("Écoute en cours")}</small>
+                <a href={`#/track/${encodeURIComponent(row().reference)}`}>{row().title}</a>
+                <small>
+                  {row().artist} · {row().album?.title}
+                </small>
+              </div>
+            </div>
+          )}
+        </Show>
         <Show when={(page()?.total ?? 0) > 0}>
           <div class="history-reset">
             <HistoryReset
@@ -338,7 +364,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
       <Show when={reads.page()?.error}>
         <p role="alert">{reads.page()?.error}</p>
       </Show>
-      <Show when={page() && !page()?.items.length}>
+      <Show when={page() && !page()?.items.length && (props.section !== "history" || !listening())}>
         <EmptyState icon={sectionIcon(props.section)}>
           {t("Aucun élément enregistré dans cette rubrique.")}
         </EmptyState>

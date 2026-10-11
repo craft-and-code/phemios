@@ -1,3 +1,4 @@
+import { StickyHeader } from "./StickyHeader";
 import { ResultCount } from "./ResultCount";
 import { t } from "../i18n";
 import { createResource, Show } from "solid-js";
@@ -31,10 +32,12 @@ export function CollectionAlbums(props: { name: string }) {
   );
   return (
     <section>
-      <div class="section-heading">
-        <h2>{props.name}</h2>
-        <Show when={result()?.albums}>{(albums) => <ResultCount value={albums().length} />}</Show>
-      </div>
+      <StickyHeader>
+        <div class="section-heading">
+          <h2>{props.name}</h2>
+          <Show when={result()?.albums}>{(albums) => <ResultCount value={albums().length} />}</Show>
+        </div>
+      </StickyHeader>
       <Show when={result.loading}>
         <p role="status">{t("Évaluation…")}</p>
       </Show>

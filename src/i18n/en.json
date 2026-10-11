@@ -1475,5 +1475,8 @@
   "Clé Ticketmaster refusée.": "Ticketmaster key rejected.",
   "Ticketmaster indisponible. Réessayez plus tard.": "Ticketmaster unavailable. Try again later.",
   "Limite Ticketmaster atteinte. Réessayez plus tard.": "Ticketmaster limit reached. Try again later.",
-  "Arrêter": "Stop"
+  "Arrêter": "Stop",
+  "Écoute en cours": "Currently listening",
+  "Albums crédités": "Credited albums",
+  "Collaborations": "Collaborations"
 }

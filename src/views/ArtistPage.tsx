@@ -1,3 +1,4 @@
+import { artistCatalogue } from "../library/artist-catalogue";
 import { createToolPreferences } from "../library/tool-preferences";
 import { BiographyText } from "../components/BiographyText";
 import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
@@ -8,7 +9,6 @@ import { createMemo, For, Show } from "solid-js";
 import { PlayingBars } from "../components/PlayingBars";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { useLibrary } from "../library/context";
-import { belongsToArtist } from "../library/filtering";
 import { sourceLink } from "../library/server";
 import type { Artist } from "../library/types";
 /** Present local editions and contributions without inventing a principal credit. */
@@ -19,19 +19,9 @@ export function ArtistPage(props: {
 }) {
   const library = useLibrary();
   const preferences = createToolPreferences();
-  const albums = createMemo(() =>
-    library.albums().filter((album) => album.artist === props.artist.reference),
-  );
-  const appearances = createMemo(() =>
-    library
-      .albums()
-      .filter(
-        (album) =>
-          album.artist !== props.artist.reference &&
-          (belongsToArtist(album, props.artist) ||
-            (library.demo && props.artist.reference === "oree" && album.reference === "meetings")),
-      ),
-  );
+  const catalogue = createMemo(() => artistCatalogue(props.artist, library.albums()));
+  const albums = () => catalogue().featured;
+  const appearances = () => (catalogue().credited ? [] : catalogue().appearances);
   const banner = () =>
     library.demo && props.artist.artwork
       ? "/demo/landscape.svg"
@@ -143,7 +133,7 @@ export function ArtistPage(props: {
             </div>
           </Show>
           <div class="section-heading">
-            <h2>{t("Discographie")}</h2>
+            <h2>{catalogue().credited ? t("Albums crédités") : t("Discographie")}</h2>
             <span role="status">
               {albums().length} {t("albums dans la sélection")}
             </span>
@@ -151,7 +141,7 @@ export function ArtistPage(props: {
           <AlbumGrid
             albums={albums()}
             missing={
-              preferences.value().showMissingAlbums
+              preferences.value().showMissingAlbums && !catalogue().credited
                 ? library.missing
                     .rows()
                     .filter((row) => !row.set_aside && row.artist === props.artist.reference)
@@ -159,12 +149,27 @@ export function ArtistPage(props: {
             }
             chronological
           />
-          <Show when={preferences.value().showMissingAlbums}>
+          <Show when={preferences.value().showMissingAlbums && !catalogue().credited}>
             <MissingAlbumsStatus artist={props.artist.reference} />
           </Show>
           <Show when={appearances().length}>
             <h2>{t("Participations")}</h2>
             <AlbumGrid albums={appearances()} chronological />
+          </Show>
+          <Show when={props.artist.relations?.length}>
+            <section class="artist-collaborations">
+              <h2>{t("Collaborations")}</h2>
+              <For each={props.artist.relations}>
+                {(relation) => (
+                  <a
+                    class="collaboration-link"
+                    href={`#/artist/${encodeURIComponent(relation.reference)}`}
+                  >
+                    {relation.name}
+                  </a>
+                )}
+              </For>
+            </section>
           </Show>
           <AnnotationPanel reference={props.artist.reference} kind="artist" />
         </div>

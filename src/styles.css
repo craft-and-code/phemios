@@ -1601,3 +1601,83 @@ body {
   padding-block: 16px;
   margin-block: 20px;
 }
+
+/* Chrome is interactive, while input and editorial/library content remain selectable. */
+button,
+[role="button"],
+[role="tab"],
+summary,
+label,
+.sidebar,
+.catalog-tools,
+.filter-options,
+.rail-heading,
+.rail-ticks,
+.page-controls,
+.scene-controls {
+  -webkit-user-select: none;
+  user-select: none;
+}
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.sticky-header {
+  position: sticky;
+  top: var(--catalog-header-height, 0px);
+  z-index: 4;
+  background: var(--background);
+}
+.catalog-header {
+  top: 0;
+  z-index: 5;
+}
+.catalog-header:empty {
+  display: none;
+}
+.page-sticky-header {
+  margin-inline: -12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.page-sticky-header .personal-selection-actions,
+.page-sticky-header .rating-filter,
+.page-sticky-header .page-heading {
+  margin-block: 0;
+}
+.history-current {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.history-current > svg {
+  color: var(--accent);
+}
+.history-current > div {
+  display: grid;
+  gap: 6px;
+}
+.history-current small {
+  color: var(--muted);
+}
+.collaboration-link {
+  display: inline-block;
+  padding: 8px 12px;
+  margin: 0 8px 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.collaboration-link:hover {
+  border-color: var(--accent);
+}
+
+#content {
+  --catalog-header-height: 0px;
+}

@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
@@ -69,43 +70,45 @@ export function TagsPage(props: {
   };
   return (
     <section class="page tags-page">
-      <div class="personal-selection-actions">
-        <ResultCount value={entries().length} />
-        <SelectionCollection
-          disabled={!entries().some((row) => referenceSource(row.reference) === library.source())}
-          expression={tagCollectionExpression(props.selected, props.query)}
-        />
-      </div>
-      <Show when={!library.localSession() && !library.serverSession()}>
-        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-      </Show>
-      <Show when={vocabulary().length}>
-        <div class="tag-choices" aria-label={t("Choisir un tag")}>
-          <button aria-pressed={!props.selected.length} onClick={() => props.onSelect([])}>
-            {t("Tous les tags")}
-          </button>
-          <For
-            each={vocabulary().filter((tag) =>
-              normalizeName(tag.label).includes(normalizeName(props.query)),
-            )}
-          >
-            {(tag) => (
-              <button
-                aria-pressed={props.selected.includes(tag.key)}
-                onClick={(event) =>
-                  props.onSelect(
-                    selectTags(props.selected, tag.key, additiveCountrySelection(event, isMac())),
-                  )
-                }
-                title={t("{0} élément(s) tagué(s)", tag.count)}
-              >
-                {tag.label}
-                <span class="tag-count">{tag.count}</span>
-              </button>
-            )}
-          </For>
+      <StickyHeader>
+        <div class="personal-selection-actions">
+          <ResultCount value={entries().length} />
+          <SelectionCollection
+            disabled={!entries().some((row) => referenceSource(row.reference) === library.source())}
+            expression={tagCollectionExpression(props.selected, props.query)}
+          />
         </div>
-      </Show>
+        <Show when={!library.localSession() && !library.serverSession()}>
+          <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
+        </Show>
+        <Show when={vocabulary().length}>
+          <div class="tag-choices" aria-label={t("Choisir un tag")}>
+            <button aria-pressed={!props.selected.length} onClick={() => props.onSelect([])}>
+              {t("Tous les tags")}
+            </button>
+            <For
+              each={vocabulary().filter((tag) =>
+                normalizeName(tag.label).includes(normalizeName(props.query)),
+              )}
+            >
+              {(tag) => (
+                <button
+                  aria-pressed={props.selected.includes(tag.key)}
+                  onClick={(event) =>
+                    props.onSelect(
+                      selectTags(props.selected, tag.key, additiveCountrySelection(event, isMac())),
+                    )
+                  }
+                  title={t("{0} élément(s) tagué(s)", tag.count)}
+                >
+                  {tag.label}
+                  <span class="tag-count">{tag.count}</span>
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
+      </StickyHeader>
       <Show when={!entries().length}>
         <EmptyState icon="tags">{t("Aucun élément tagué dans cette sélection.")}</EmptyState>
       </Show>

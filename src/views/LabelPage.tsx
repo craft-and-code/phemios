@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { BiographyText } from "../components/BiographyText";
 import { createResource, createSignal, createEffect, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
@@ -124,41 +125,43 @@ export function LabelPage(props: {
                 </Show>
               </section>
               <h2>{t("Albums")}</h2>
-              <FilterBar
-                yearDomain={labelYearDomain(albums())}
-                value={filters()}
-                setValue={setFilters}
-                context={t("Initiale du titre · année de l’album")}
-                histogram={labelHistogram(albums(), library.artists(), filters())}
-                countLabel={t("albums")}
-                resultCount={selected().length}
-                hasUnknownYear={albums().some((album) => album.year === null)}
-              />
-              <div class="label-toolbar">
-                <button
-                  class="icon-button"
-                  aria-label={t("Inverser le tri")}
-                  title={t("Inverser le tri")}
-                  aria-pressed={reverse()}
-                  onClick={() => setReverse(!reverse())}
-                >
-                  <Icon name="sort" />
-                </button>
-                <button
-                  class="icon-button"
-                  aria-label={t("Vue compacte")}
-                  title={t("Vue compacte")}
-                  aria-pressed={props.compact}
-                  onClick={props.onCompact}
-                >
-                  <Icon name="layers" />
-                </button>
-                <SelectionCollection
-                  expression={labelExpression(props.reference, filters())}
-                  source={referenceSource(props.reference)}
-                  disabled={!selected().length}
+              <StickyHeader>
+                <FilterBar
+                  yearDomain={labelYearDomain(albums())}
+                  value={filters()}
+                  setValue={setFilters}
+                  context={t("Initiale du titre · année de l’album")}
+                  histogram={labelHistogram(albums(), library.artists(), filters())}
+                  countLabel={t("albums")}
+                  resultCount={selected().length}
+                  hasUnknownYear={albums().some((album) => album.year === null)}
                 />
-              </div>
+                <div class="label-toolbar">
+                  <button
+                    class="icon-button"
+                    aria-label={t("Inverser le tri")}
+                    title={t("Inverser le tri")}
+                    aria-pressed={reverse()}
+                    onClick={() => setReverse(!reverse())}
+                  >
+                    <Icon name="sort" />
+                  </button>
+                  <button
+                    class="icon-button"
+                    aria-label={t("Vue compacte")}
+                    title={t("Vue compacte")}
+                    aria-pressed={props.compact}
+                    onClick={props.onCompact}
+                  >
+                    <Icon name="layers" />
+                  </button>
+                  <SelectionCollection
+                    expression={labelExpression(props.reference, filters())}
+                    source={referenceSource(props.reference)}
+                    disabled={!selected().length}
+                  />
+                </div>
+              </StickyHeader>
               <AlbumGrid albums={selected()} reverse={reverse()} chronological emptyIcon="label" />
               <Show when={row().releases.length > albums().length}>
                 <p class="notice">

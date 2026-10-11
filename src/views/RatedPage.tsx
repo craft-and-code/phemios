@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { SelectionCollection } from "../components/SelectionCollection";
 import { personalCollectionExpression } from "../library/personal-collection";
@@ -36,37 +37,39 @@ export function RatedPage(props: { query: string }) {
       );
   return (
     <section class="page rated-page">
-      <div class="rating-filter">
-        <ResultCount value={albums().length} />
-        <span>{t("Note minimale")}</span>
-        <StarRating
-          value={minimum()}
-          floor={1}
-          label={t("Note minimale")}
-          onChange={(value) => {
-            const next = value ?? 1;
-            setMinimum(next);
-            if (next > maximum()) setMaximum(next);
-          }}
-        />
-        <span>{t("Note maximale")}</span>
-        <StarRating
-          value={maximum()}
-          floor={5}
-          label={t("Note maximale")}
-          onChange={(value) => {
-            const next = value ?? 5;
-            setMaximum(next);
-            if (next < minimum()) setMinimum(next);
-          }}
-        />
-        <div class="selection-create-action">
-          <SelectionCollection
-            disabled={!albums().length}
-            expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
+      <StickyHeader>
+        <div class="rating-filter">
+          <ResultCount value={albums().length} />
+          <span>{t("Note minimale")}</span>
+          <StarRating
+            value={minimum()}
+            floor={1}
+            label={t("Note minimale")}
+            onChange={(value) => {
+              const next = value ?? 1;
+              setMinimum(next);
+              if (next > maximum()) setMaximum(next);
+            }}
           />
+          <span>{t("Note maximale")}</span>
+          <StarRating
+            value={maximum()}
+            floor={5}
+            label={t("Note maximale")}
+            onChange={(value) => {
+              const next = value ?? 5;
+              setMaximum(next);
+              if (next < minimum()) setMinimum(next);
+            }}
+          />
+          <div class="selection-create-action">
+            <SelectionCollection
+              disabled={!albums().length}
+              expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
+            />
+          </div>
         </div>
-      </div>
+      </StickyHeader>
       <Show
         when={library.session()}
         fallback={

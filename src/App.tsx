@@ -1,3 +1,4 @@
+import { StickyHeader } from "./components/StickyHeader";
 import { createCoverPosition } from "./visualizer/cover-position";
 import { contextualReference } from "./navigation/contextual-play";
 import { Feedback } from "./components/Feedback";
@@ -375,87 +376,91 @@ export function App() {
             </button>
           </div>
         </Show>
-        <Show when={hasFilters() && library.artists().length}>
-          <FilterBar
-            resultCount={
-              ["artists", "countries", "genres"].includes(section())
-                ? filterArtists(principalArtists(), library.albums(), filters()).length
-                : filterAlbums(library.albums(), library.artists(), filters()).filter(
-                    (album) => section() !== "compilations" || album.compilation,
-                  ).length
-            }
-            value={filters()}
-            setValue={setFilters}
-            context={context()}
-            yearDomain={yearDomain()}
-            hasUnknownYear={library.albums().some((album) => album.year === null)}
-            histogram={distributions(
-              current().kind === "section" && ["artists", "countries", "genres"].includes(section())
-                ? principalArtists()
-                : library.artists(),
-              library.albums(),
-              filters(),
-              current().kind === "section" &&
-                ["artists", "countries", "genres"].includes(section()),
-            )}
-            countLabel={
-              current().kind === "section" && ["artists", "countries", "genres"].includes(section())
-                ? t("artistes")
-                : "albums"
-            }
-          />
-        </Show>
-        <Show when={(hasFilters() || backLink()) && library.artists().length}>
-          <div class="catalog-tools">
-            <Show when={backLink()}>
-              {(link) => (
-                <a class="back" href={link().href} data-navigation-back>
-                  <Icon name="back" />{" "}
-                  {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
-                </a>
+        <StickyHeader shell>
+          <Show when={hasFilters() && library.artists().length}>
+            <FilterBar
+              resultCount={
+                ["artists", "countries", "genres"].includes(section())
+                  ? filterArtists(principalArtists(), library.albums(), filters()).length
+                  : filterAlbums(library.albums(), library.artists(), filters()).filter(
+                      (album) => section() !== "compilations" || album.compilation,
+                    ).length
+              }
+              value={filters()}
+              setValue={setFilters}
+              context={context()}
+              yearDomain={yearDomain()}
+              hasUnknownYear={library.albums().some((album) => album.year === null)}
+              histogram={distributions(
+                current().kind === "section" &&
+                  ["artists", "countries", "genres"].includes(section())
+                  ? principalArtists()
+                  : library.artists(),
+                library.albums(),
+                filters(),
+                current().kind === "section" &&
+                  ["artists", "countries", "genres"].includes(section()),
               )}
-            </Show>
-            <span>{library.busy() ? t("Synchronisation…") : ""}</span>
-            <Show when={hasFilters()}>
-              <button
-                class="icon-button"
-                title={t("Inverser l’ordre alphabétique")}
-                aria-label={t("Inverser l’ordre alphabétique")}
-                aria-pressed={reverse()}
-                onClick={() => setReverse(!reverse())}
-              >
-                <Icon name="sort" />
-              </button>
-              <button
-                class="icon-button"
-                title={t("Vue compacte")}
-                aria-label={t("Vue compacte")}
-                aria-pressed={compact()}
-                onClick={() => {
-                  setCoverFlow(false);
-                  setCompact(!compact());
-                }}
-              >
-                <Icon name="layers" />
-              </button>
-              <Show when={current().kind === "section" && section() === "albums"}>
+              countLabel={
+                current().kind === "section" &&
+                ["artists", "countries", "genres"].includes(section())
+                  ? t("artistes")
+                  : "albums"
+              }
+            />
+          </Show>
+          <Show when={(hasFilters() || backLink()) && library.artists().length}>
+            <div class="catalog-tools">
+              <Show when={backLink()}>
+                {(link) => (
+                  <a class="back" href={link().href} data-navigation-back>
+                    <Icon name="back" />{" "}
+                    {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
+                  </a>
+                )}
+              </Show>
+              <span>{library.busy() ? t("Synchronisation…") : ""}</span>
+              <Show when={hasFilters()}>
                 <button
                   class="icon-button"
-                  title={t("Cover Flow")}
-                  aria-label={t("Cover Flow")}
-                  aria-pressed={coverFlow()}
+                  title={t("Inverser l’ordre alphabétique")}
+                  aria-label={t("Inverser l’ordre alphabétique")}
+                  aria-pressed={reverse()}
+                  onClick={() => setReverse(!reverse())}
+                >
+                  <Icon name="sort" />
+                </button>
+                <button
+                  class="icon-button"
+                  title={t("Vue compacte")}
+                  aria-label={t("Vue compacte")}
+                  aria-pressed={compact()}
                   onClick={() => {
-                    setCompact(false);
-                    setCoverFlow(!coverFlow());
+                    setCoverFlow(false);
+                    setCompact(!compact());
                   }}
                 >
-                  <Icon name="cover-flow" />
+                  <Icon name="layers" />
                 </button>
+                <Show when={current().kind === "section" && section() === "albums"}>
+                  <button
+                    class="icon-button"
+                    title={t("Cover Flow")}
+                    aria-label={t("Cover Flow")}
+                    aria-pressed={coverFlow()}
+                    onClick={() => {
+                      setCompact(false);
+                      setCoverFlow(!coverFlow());
+                    }}
+                  >
+                    <Icon name="cover-flow" />
+                  </button>
+                </Show>
+                <SelectionCollection section={section()} filters={filters()} />
               </Show>
-              <SelectionCollection section={section()} filters={filters()} />
-            </Show>
-          </div>
-        </Show>
+            </div>
+          </Show>
+        </StickyHeader>
         <Show
           when={
             current().kind === "section" &&

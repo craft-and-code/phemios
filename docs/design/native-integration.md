@@ -274,3 +274,13 @@ Playback scene `off` unmounts its canvas and frequency observer, cancelling thei
 The alternate terminal spectrum retains Aède's presentation rules: twelve neighbouring maxima across all 24 consumed bands, ten segments, green/yellow/red zones, 350 ms peak hold and .45/s fall measured against consumed source time. Pause retains levels and peaks, and track changes or backward seeks reset peak history. These decorative bands remain distinct from calibrated FlacCompagnon analyses. The choices are supported non-secret account preferences. Lyric-download feedback uses a dedicated normal-flow region below queue actions.
 
 Crossfade preference edits now use a dedicated serialized hot-write path. Not-yet-sent choices coalesce, while source-lifetime guards discard replaced-account completions. The transport poll and global transport-busy state are untouched, so the range retains keyboard focus and the clock continues through each acknowledgement.
+
+## Quiet history and stable selection headers
+
+Visible history performs bounded serialized two-second GETs with no resource-loading/Suspense transition after the initial answer. Confirmed rows retain object identity and resolved names while unchanged; inserted visits reuse existing rows. A failed refresh retains the last confirmed data with an explicit error. Account/path/offset replacement hides the preceding owner's data and discards late answers. A separate owner-scoped “Currently listening” row shows actual active/paused native output immediately, without adding a personal event or inventing completion/duration; the confirmed list still follows Aède's publication contract.
+
+The shared StickyHeader contains shell rails/toolbars and measures their height for subordinate selection headers. Tracks keeps page size/count/paging together; rated/favourite/tag selections, label filters and opened collection headings retain their place while results scroll. Input and editorial content remain selectable, while button/tab/navigation chrome does not.
+
+Crossfade ranges share a single immediate draft and update on input, with serialized native acknowledgement and confirmed preference publication. Failed writes restore the last confirmed duration when no later draft is pending; transport polling and pause status remain independent.
+
+Credited-only musicians feature their locally associated albums first instead of an empty principal discography. Principal artists retain separate appearances; available cached collaborative graph neighbours remain linked. No principal credit, biography or external discography is invented, and no provider lookup is triggered by opening the page.

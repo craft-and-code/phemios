@@ -173,3 +173,93 @@ it("hides the previous owner's retained history while a replacement account read
     dispose();
   }
 });
+
+it("keeps settled history resident and silent throughout a pending background read", async () => {
+  vi.useFakeTimers();
+  let dispose!: () => void, complete!: (value: unknown) => void;
+  let pending = false;
+  const data = {
+    items: [{ track: "track:first", at: 1, ms_played: 1000, completed: false }],
+    total: 1,
+  };
+  const request = vi.fn(async (path: string) =>
+    path.endsWith("/track")
+      ? { title: "Resident", release: null }
+      : pending
+        ? new Promise((resolve) => {
+            complete = resolve;
+          })
+        : data,
+  );
+  const reads = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createPersonalReads(
+      () => "history",
+      () => account,
+      () => 0,
+      request,
+    );
+  });
+  try {
+    await settle();
+    const row = reads.history()[0];
+    pending = true;
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(reads.loading()).toBe(false);
+    expect(reads.history()[0]).toBe(row);
+    complete({
+      ...data,
+      items: [{ track: "track:next", at: 2, ms_played: 2000, completed: true }, ...data.items],
+      total: 2,
+    });
+    await settle();
+    expect(reads.history()).toHaveLength(2);
+    expect(reads.history()[1]).toBe(row);
+  } finally {
+    dispose();
+    vi.useRealTimers();
+  }
+});
+
+it("stops track resolution after logout even when the outstanding read rejects", async () => {
+  let dispose!: () => void, reject!: (error: Error) => void;
+  const request = vi.fn(async (path: string) =>
+    path.endsWith("/history")
+      ? {
+          items: ["one", "two"].map((name) => ({
+            track: `track:${name}`,
+            at: 1,
+            ms_played: null,
+            completed: null,
+          })),
+          total: 2,
+        }
+      : new Promise((_resolve, fail) => {
+          reject = fail;
+        }),
+  );
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    const [session, setSession] = createSignal<AccountSession | undefined>(account);
+    return {
+      ...createPersonalReads(
+        () => "history",
+        session,
+        () => 0,
+        request,
+      ),
+      setSession,
+    };
+  });
+  try {
+    await settle();
+    expect(request).toHaveBeenCalledTimes(2);
+    view.setSession(undefined);
+    reject(new Error("Track read interrupted"));
+    await settle();
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(view.history()).toEqual([]);
+  } finally {
+    dispose();
+  }
+});
