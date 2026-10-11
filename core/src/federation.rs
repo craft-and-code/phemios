@@ -64,6 +64,7 @@ fn identity_key(key: &str) -> bool {
             | "recording"
             | "work"
             | "label"
+            | "labels"
             | "release_refs"
             | "contributors"
             | "tracks"

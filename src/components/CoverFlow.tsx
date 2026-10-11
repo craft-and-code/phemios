@@ -179,17 +179,24 @@ export function CoverFlow(props: {
             </small>
           </div>
         </div>
-        <div class="cover-flow-alphabet" aria-hidden="true">
+        <div class="cover-flow-alphabet" role="group" aria-label={t("Parcourir les pochettes")}>
           <For each={coverLetterStops(props.albums)}>
             {(stop) => (
-              <span
+              <button
+                type="button"
                 classList={{ current: stop.letter === coverLetterStops([album()!])[0]?.letter }}
+                aria-label={`${stop.letter} · ${props.albums[stop.index]?.title ?? ""}`}
+                aria-pressed={stop.letter === coverLetterStops([album()!])[0]?.letter}
+                onClick={() => {
+                  scrub.cancel();
+                  choose(stop.index);
+                }}
                 style={{
                   left: `${props.albums.length > 1 ? (stop.index / (props.albums.length - 1)) * 100 : 50}%`,
                 }}
               >
                 {stop.letter}
-              </span>
+              </button>
             )}
           </For>
         </div>

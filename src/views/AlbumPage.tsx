@@ -1,3 +1,4 @@
+import { AlbumMetadata } from "../components/AlbumMetadata";
 import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
@@ -13,7 +14,12 @@ import { useLibrary } from "../library/context";
 import { albumTracks, discGroups } from "../library/album-tracks";
 import type { Album } from "../library/types";
 /** Read/edit current-account annotations; save failure never discards the draft. */
-export function AlbumPage(props: { album: Album; onYear: (year: number) => void }) {
+export function AlbumPage(props: {
+  album: Album;
+  onYear: (year: number) => void;
+  onGenres: (genres: readonly string[]) => void;
+  onCountry: (country: string) => void;
+}) {
   const library = useLibrary();
   const [enlarged, setEnlarged] = createSignal(false);
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
@@ -78,6 +84,12 @@ export function AlbumPage(props: { album: Album; onYear: (year: number) => void 
               </button>
             </Show>
           </p>
+          <AlbumMetadata
+            album={props.album}
+            artist={artist()}
+            onGenres={props.onGenres}
+            onCountry={props.onCountry}
+          />
           <button
             class="icon-button detail-play"
             aria-label={t("Lire l’album")}

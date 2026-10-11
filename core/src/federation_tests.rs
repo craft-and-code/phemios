@@ -57,3 +57,13 @@ fn track_lyrics_selectors_route_to_their_actual_library_and_unwrap_engine_refere
     ]);
     assert!(request_origin(&mut mixed, &mut None, Source::Server).is_err());
 }
+
+#[test]
+fn album_label_lists_retain_their_source_without_changing_display_names() {
+    let mut value = json!({"reference":"release:fixture", "labels":["label:studio"], "name":"Studio", "tags":["label:personal"]});
+    map(&mut value, Source::Local, true).unwrap();
+    assert_eq!(value["labels"][0], qualify("label:studio", Source::Local));
+    assert_eq!(value["tags"][0], "label:personal");
+    map(&mut value, Source::Local, false).unwrap();
+    assert_eq!(value["labels"][0], "label:studio");
+}

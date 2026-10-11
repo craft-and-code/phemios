@@ -306,7 +306,7 @@
   "Nom d’utilisateur": "Username",
   "Nombre de clics/coupures inconnu.": "Unknown click/dropout count.",
   "Nombre de stations indisponible.": "Station count unavailable.",
-  "Non renseigné": "Unspecified",
+  "Non renseigné": "Not specified",
   "Note moyenne :": "Average rating:",
   "Notes et tags enregistrés dans votre compte Aède.": "Notes and tags saved to your Aède account.",
   "Notes et tags non enregistrés.": "Notes and tags not saved.",
@@ -1495,5 +1495,6 @@
   "Importer les préférences": "Import preferences",
   "Appliquer les préférences": "Apply preferences",
   "Cette sauvegarde remplacera vos réglages d’interface actuels : menus et noms, raccourcis, couleurs, langue et lecture.": "This backup will replace your current interface settings: menus and names, shortcuts, colours, language and playback.",
-  "Fichier non enregistré.": "File was not saved."
+  "Fichier non enregistré.": "File was not saved.",
+  "Connectez Aède pour consulter les labels.": "Connect to Aède to view labels."
 }

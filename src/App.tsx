@@ -635,6 +635,26 @@ export function App() {
                   {(album) => (
                     <AlbumPage
                       album={album()}
+                      onGenres={(genres) => {
+                        scopedFilters.select("genres", {
+                          mode: "none",
+                          query: "",
+                          countries: [],
+                          genre: undefined,
+                          genres,
+                        });
+                        navigation.navigate("#/genres");
+                      }}
+                      onCountry={(country) => {
+                        scopedFilters.select("countries", {
+                          mode: "none",
+                          query: "",
+                          genre: undefined,
+                          genres: [],
+                          countries: [country],
+                        });
+                        navigation.navigate("#/countries");
+                      }}
                       onYear={(year) => {
                         scopedFilters.select("albums", selectAlbumYear(filters(), year));
                         navigation.navigate("#/albums");
