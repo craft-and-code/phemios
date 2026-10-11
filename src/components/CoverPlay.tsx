@@ -21,6 +21,7 @@ export function CoverPlay(props: { reference: string; title: string; class?: str
       class={`icon-button cover-play ${props.class ?? ""}`}
       aria-label={t("Lire {0}", props.title)}
       title={t("Lire {0}", props.title)}
+      data-play-reference={props.reference}
       aria-busy={pending()}
       disabled={
         !library.sessionFor(props.reference) ||

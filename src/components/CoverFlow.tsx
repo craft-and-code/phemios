@@ -4,7 +4,7 @@ import { t } from "../i18n";
 import type { Album } from "../library/types";
 import { Artwork } from "./Artwork";
 import { CoverPlay } from "./CoverPlay";
-import { coverOpacity, draggedCover } from "../visualizer/cover-flow-policy";
+import { coverOpacity, coverDragTarget } from "../visualizer/cover-flow-policy";
 import { EmptyState } from "./EmptyState";
 /** A bounded nine-cover perspective window reuses cached artwork, independent of catalog size. */
 export function CoverFlow(props: { albums: readonly Album[] }) {
@@ -93,15 +93,16 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
             event.currentTarget.closest<HTMLElement>(".cover-flow")?.focus();
             drag = { id: event.pointerId, x: event.clientX, start: index() };
             dragged = false;
-            event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
             if (!drag || drag.id !== event.pointerId) return;
             const dx = event.clientX - drag.x;
-            if (Math.abs(dx) > 6) {
+            const target = coverDragTarget(drag.start, dx, props.albums.length);
+            if (target !== undefined) {
+              event.currentTarget.setPointerCapture(event.pointerId);
               dragged = true;
               setDragging(true);
-              choose(draggedCover(drag.start, dx, props.albums.length));
+              choose(target);
             }
           }}
           onPointerUp={(event) => {

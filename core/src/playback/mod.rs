@@ -1,6 +1,7 @@
 //! Native consumed-frame PCM client for Aède's authenticated playback contract.
 mod actor;
 mod crossfade;
+mod crossfade_feedback;
 mod crossfade_mix;
 mod crossfade_source;
 mod output;

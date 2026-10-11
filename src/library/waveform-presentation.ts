@@ -22,6 +22,10 @@ export function createWaveformPresentation(
   });
   return createMemo(() => {
     const row = current();
-    return { path: row?.waveform ? draw(row.waveform) : "", error: row?.error ?? "" };
+    return {
+      path: row?.waveform ? draw(row.waveform) : "",
+      error: row?.error ?? "",
+      duration_ms: row?.waveform?.duration_ms ?? 0,
+    };
   });
 }

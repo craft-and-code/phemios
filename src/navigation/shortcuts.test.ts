@@ -14,6 +14,9 @@ it("supports Command and Control while preserving editing, repeated key and modi
   expect(shortcutAction(event("KeyF", "ctrlKey"), defaultShortcuts, false)).toBe("search");
   expect(shortcutAction(event("KeyF"), defaultShortcuts, true)).toBeUndefined();
   expect(
+    shortcutAction({ ...event("KeyF"), defaultPrevented: true }, defaultShortcuts, false),
+  ).toBeUndefined();
+  expect(
     shortcutAction({ ...event("KeyF"), repeat: true }, defaultShortcuts, false),
   ).toBeUndefined();
   expect(

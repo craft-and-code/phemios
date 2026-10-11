@@ -23,7 +23,14 @@ it("keeps the resident drawing through seek buffering, pause and clock updates, 
     const draw = vi.fn(waveformPath),
       view = createWaveformPresentation(state, latest, draw);
     const resident = view();
-    setState((s) => ({ ...s, status: "connecting", position_ms: 700, seek_id: 1 }));
+    expect(view().duration_ms).toBe(1000);
+    setState((s) => ({
+      ...s,
+      status: "connecting",
+      position_ms: 700,
+      duration_ms: null,
+      seek_id: 1,
+    }));
     expect(view()).toBe(resident);
     for (let position = 700; position < 720; position++)
       setState((s) => ({ ...s, status: "playing", position_ms: position }));

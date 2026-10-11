@@ -1,4 +1,4 @@
-import { createMemo, createResource, createUniqueId, Show } from "solid-js";
+import { createMemo, createResource, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -6,8 +6,7 @@ import { createWaveformPresentation } from "../library/waveform-presentation";
 import { parseWaveform, waveformPosition } from "../library/waveform";
 /** Retains the full envelope on pause; an ordinary keyboard range supplies accessible seeking. */
 export function WaveformSeek() {
-  const player = useLibrary().player,
-    id = createUniqueId();
+  const player = useLibrary().player;
   const [result] = createResource(
     () =>
       (["playing", "paused", "connecting"].includes(player.state().status) &&
@@ -27,30 +26,23 @@ export function WaveformSeek() {
       }
     },
   );
+  const duration = () => display().duration_ms || player.state().duration_ms || 0;
   let pointer: number | undefined;
   function position(event: PointerEvent & { currentTarget: HTMLInputElement }) {
     const rect = event.currentTarget.getBoundingClientRect();
-    return waveformPosition(event.clientX, rect.left, rect.width, player.state().duration_ms ?? 0);
+    return waveformPosition(event.clientX, rect.left, rect.width, duration());
   }
   const display = createWaveformPresentation(player.state, () => result.latest);
   const path = createMemo(() => display().path);
   const disabled = () =>
-    !["playing", "paused"].includes(player.state().status) ||
-    player.busy() ||
-    !player.state().duration_ms;
+    !["playing", "paused"].includes(player.state().status) || player.busy() || !duration();
   const progress = () =>
-    Math.max(0, Math.min(100, (player.seekPosition() / (player.state().duration_ms ?? 1)) * 100));
+    Math.max(0, Math.min(100, (player.seekPosition() / (duration() || 1)) * 100));
   return (
     <div class="waveform-seek" aria-busy={result.loading} title={display().error}>
       <svg viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <clipPath id={id}>
-            <rect x="0" y="0" width={progress() * 10} height="40" />
-          </clipPath>
-        </defs>
         <line x1="0" x2="1000" y1="20" y2="20" class="waveform-baseline" />
         <path class="waveform-envelope" d={path()} />
-        <path class="waveform-played" clip-path={`url(#${id})`} d={path()} />
         <line
           class="waveform-cursor"
           visibility={path() ? "visible" : "hidden"}
@@ -60,10 +52,19 @@ export function WaveformSeek() {
           y2="38"
         />
       </svg>
+      <svg
+        class="waveform-played-layer"
+        viewBox="0 0 1000 40"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        style={{ "clip-path": `inset(0 ${100 - progress()}% 0 0)` }}
+      >
+        <path class="waveform-played" d={path()} />
+      </svg>
       <input
         type="range"
         min="0"
-        max={player.state().duration_ms ?? 1}
+        max={duration() || 1}
         step="1"
         value={player.seekPosition()}
         disabled={disabled()}

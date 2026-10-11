@@ -1,3 +1,4 @@
+import { repeatDisabled } from "../navigation/contextual-play";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { WaveformSeek } from "./WaveformSeek";
 import { PlayingFavourite } from "./PlayingFavourite";
@@ -163,7 +164,12 @@ export function PlayerBar() {
           </button>
           <button
             class="icon-button"
-            disabled={!player.ready() || player.busy() || state().device === "@hqplayer"}
+            disabled={repeatDisabled(
+              state().status,
+              player.busy(),
+              player.ready(),
+              state().device === "@hqplayer",
+            )}
             aria-label={t("Répétition")}
             aria-pressed={state().repeat !== "off"}
             title={t(

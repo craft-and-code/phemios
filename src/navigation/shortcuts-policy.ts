@@ -17,7 +17,7 @@ export type Shortcuts = Record<ShortcutAction, string>;
 type KeyEvent = Pick<
   KeyboardEvent,
   "code" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey" | "repeat"
->;
+> & { defaultPrevented?: boolean };
 const validCode =
   /^(Space|Key[A-Z]|Digit[0-9]|Arrow(Left|Right|Up|Down)|Enter|Escape|Home|End|Tab|Backspace|Delete|Comma|Period|Slash|Semicolon|Quote|BracketLeft|BracketRight|Backquote|Minus|Equal|Backslash|F([1-9]|1[0-2]))$/;
 /** Mod is portable: Command on macOS, Control elsewhere; typing contexts never trigger actions. */
@@ -54,7 +54,7 @@ export function shortcutAction(
   bindings: Shortcuts,
   editing: boolean,
 ): ShortcutAction | undefined {
-  if (editing || event.repeat) return;
+  if (editing || event.repeat || event.defaultPrevented) return;
   const key = keyBinding(event);
   return (Object.keys(bindings) as ShortcutAction[]).find(
     (action) => !!key && bindings[action] === key,

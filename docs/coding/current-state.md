@@ -271,3 +271,11 @@ Live native client probes verify language-link identity round trips for public a
 The footer retains memoized waveform geometry and mounted SVG paths through seek buffering, pause and clock updates. Changing tracks or stopping clears the old drawing. Encyclopedia saved copies use a heart, separate from an actual attributed UTF-8 text export to Downloads/Phémios/Encyclopédie; existing files are preserved with collision suffixes. Saved rows match their 36 px removal action. Reference categories use a flat responsive navigation with entry counts.
 
 An isolated macOS native app verifies public article retention, reopening, download publication and reference navigation. A generated three-minute FLAC signal in an isolated local engine, with application volume zero, verifies pointer seeks to distinct positions with a retained waveform. This does not claim physical audio or Windows/Linux acceptance. No source library or account data is changed.
+
+### Contextual controls and resident seek visits
+
+Cover Flow taps now centre side covers before any detail navigation; stage capture starts only after a drag threshold. Space starts a detail selection, front Cover Flow album or first enabled visible result, and toggles an already active music/radio/podcast transport. Typing/dialog contexts retain their normal keys. Repetition is disabled without active music.
+
+Waveform duration stays resident while reset metadata is pending, CSS clipping replaces fragment-linked played colouring, and pointer focus adds no frame. DSP mixer seeks retain the audible source connection and its listening visit, with generation-filtered prefetched packets and coalesced pending seeks. See native-integration contracts for consumption and output limits.
+
+Native macOS acceptance uses a separate three-album synthetic FLAC catalogue with volume zero. Side-cover activation centres the expected album, Space starts that front album, subsequent Space pauses/resumes, and list-mode Space starts its first result. Three DSP seeks and two without-effects seeks preserve the drawing, have no pointer focus frame and add one history entry per actual playback session, confirmed after Stop. Pausing/resuming was tested separately from the seek-history assertions. No user library, account or source audio was modified. Physical audio and Windows/Linux execution remain separate.

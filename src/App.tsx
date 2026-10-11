@@ -1,3 +1,4 @@
+import { contextualReference } from "./navigation/contextual-play";
 import { Feedback } from "./components/Feedback";
 import { activateExternalLink } from "./navigation/external-links";
 import { isNative, openExternalLink } from "./platform/desktop";
@@ -123,8 +124,12 @@ export function App() {
     function key(event: KeyboardEvent) {
       const editing =
         event.target instanceof Element &&
-        (!!event.target.closest("input, textarea, select, [contenteditable], dialog[open]") ||
+        (!!event.target.closest(
+          "input:not([type=range]), textarea, select, [contenteditable], dialog[open]",
+        ) ||
+          (event.code !== "Space" && !!event.target.closest("input[type=range]")) ||
           (!(event.metaKey || event.ctrlKey) &&
+            event.code !== "Space" &&
             !!event.target.closest("button, a, summary, [role=button]")));
       const action = shortcutAction(event, shortcuts.value(), editing);
       if (!action) return;
@@ -137,15 +142,39 @@ export function App() {
       else if (action === "queue") {
         if (section() === "playback") window.dispatchEvent(new Event("phemios-queue-toggle"));
       } else if (!player.busy()) {
-        if (action === "toggle")
+        if (action === "toggle") {
+          const reference = contextualReference(
+            player.target(),
+            Array.from(
+              document.querySelectorAll<HTMLButtonElement>("main [data-play-reference]"),
+            ).map((button) => ({
+              reference: button.dataset.playReference ?? "",
+              disabled: button.disabled,
+              central: !!button.closest(".cover-flow-card.central"),
+              visible: button.getClientRects().length > 0,
+            })),
+          );
+          const media = library.podcast.episode()
+            ? library.podcast
+            : library.radio.station()
+              ? library.radio
+              : undefined;
+          if (media?.status() === "playing") {
+            media.pause();
+            return;
+          }
+          if (media?.status() === "paused") {
+            void media.resume();
+            return;
+          }
           void (player.state().status === "playing"
             ? player.action("pause")
             : player.state().status === "paused"
               ? player.action("resume")
-              : player.target()
-                ? player.startReference()
+              : reference
+                ? player.startReference(reference)
                 : Promise.resolve());
-        else if (action === "mute") void player.toggleMute();
+        } else if (action === "mute") void player.toggleMute();
         else if (["playing", "paused", "ended"].includes(player.state().status))
           void player.action(action);
       }

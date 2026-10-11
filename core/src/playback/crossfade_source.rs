@@ -1,13 +1,14 @@
 //! Two independently authenticated visits; ACKs count each voice actually rendered.
+use super::crossfade_feedback::Feedback;
 use super::{Policy, protocol, socket};
 use crate::network::Client;
 use serde_json::{Value, json};
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicU64, Ordering},
-    mpsc::{self, Receiver, SyncSender, TrySendError},
+    mpsc::{self, Receiver, SyncSender},
 };
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tungstenite::Message;
 
 pub(super) enum Packet {
@@ -15,13 +16,25 @@ pub(super) enum Packet {
     Samples(Vec<[f32; 2]>),
     End,
 }
+pub(super) struct Envelope {
+    pub generation: u64,
+    pub packet: Result<Packet, String>,
+}
+pub(super) struct SeekRequest {
+    pub position: u64,
+    pub frames: u64,
+    pub generation: u64,
+}
 pub(super) struct Clock {
     pub consumed: AtomicU64,
+    pub generation: AtomicU64,
+    pub seek: Mutex<Option<SeekRequest>>,
     pub stop: AtomicBool,
     pub confirmed: AtomicBool,
 }
 pub(super) struct Source {
-    pub packets: Receiver<Result<Packet, String>>,
+    packets: Receiver<Envelope>,
+    generation: u64,
     pub clock: Arc<Clock>,
     handle: Option<std::thread::JoinHandle<Result<(), String>>>,
 }
@@ -31,6 +44,8 @@ impl Source {
         let (tx, packets) = mpsc::sync_channel(4);
         let clock = Arc::new(Clock {
             consumed: AtomicU64::new(0),
+            generation: AtomicU64::new(0),
+            seek: Mutex::new(None),
             stop: AtomicBool::new(false),
             confirmed: AtomicBool::new(false),
         });
@@ -38,14 +53,54 @@ impl Source {
         let handle = std::thread::spawn(move || {
             let result = pump(&client, &reference, rate, initial, &tx, &held);
             if let Err(error) = &result {
-                let _ = tx.try_send(Err(error.clone()));
+                let _ = tx.try_send(Envelope {
+                    generation: held.generation.load(Ordering::Acquire),
+                    packet: Err(error.clone()),
+                });
             }
             result
         });
         Self {
             packets,
+            generation: 0,
             clock,
             handle: Some(handle),
+        }
+    }
+    /// Retain this visit and discard old prefetched packets without closing its socket.
+    pub fn seek(&mut self, position: u64, frames: u64) -> Result<(), String> {
+        if position > 86_400_000 || self.clock.stop.load(Ordering::Relaxed) {
+            return Err("Déplacement du fondu invalide.".into());
+        }
+        let mut request = self
+            .clock
+            .seek
+            .lock()
+            .map_err(|_| "Commande de fondu indisponible.")?;
+        if request.is_some() {
+            return Err("Déplacement du fondu déjà en cours.".into());
+        }
+        self.generation = self
+            .generation
+            .checked_add(1)
+            .ok_or("Génération du fondu épuisée.")?;
+        self.clock.consumed.store(0, Ordering::Relaxed);
+        self.clock
+            .generation
+            .store(self.generation, Ordering::Release);
+        *request = Some(SeekRequest {
+            position,
+            frames,
+            generation: self.generation,
+        });
+        Ok(())
+    }
+    pub fn try_recv(&self) -> Result<Result<Packet, String>, mpsc::TryRecvError> {
+        loop {
+            let value = self.packets.try_recv()?;
+            if value.generation == self.generation {
+                return Ok(value.packet);
+            }
         }
     }
     pub fn finish(&mut self) -> Result<(), String> {
@@ -68,70 +123,12 @@ fn send(socket: &mut socket::Socket, value: Value) -> Result<(), String> {
         .send(Message::Text(value.to_string()))
         .map_err(|_| "Flux de fondu interrompu.".into())
 }
-struct Feedback {
-    epoch: u64,
-    acknowledged: u64,
-    last: Instant,
-    eof: Option<u64>,
-    stopped: bool,
-    deadline: Option<Instant>,
-}
-impl Feedback {
-    fn tick(&mut self, socket: &mut socket::Socket, clock: &Clock) -> Result<(), String> {
-        let frames = clock.consumed.load(Ordering::Relaxed);
-        if clock.stop.load(Ordering::Relaxed) && !self.stopped {
-            send(
-                socket,
-                json!({"type":"stop","epoch":self.epoch,"frames":frames}),
-            )?;
-            self.stopped = true;
-            self.deadline = Some(Instant::now() + Duration::from_secs(12));
-        } else if !self.stopped
-            && frames > self.acknowledged
-            && (self.last.elapsed() >= Duration::from_millis(40) || self.eof == Some(frames))
-        {
-            send(
-                socket,
-                json!({"type":"ack","epoch":self.epoch,"frames":frames}),
-            )?;
-            self.acknowledged = frames;
-            self.last = Instant::now();
-        }
-        if self.deadline.is_some_and(|time| Instant::now() > time) {
-            return Err("Confirmation de l’écoute absente.".into());
-        }
-        Ok(())
-    }
-    fn publish(
-        &mut self,
-        socket: &mut socket::Socket,
-        clock: &Clock,
-        tx: &SyncSender<Result<Packet, String>>,
-        mut packet: Result<Packet, String>,
-    ) -> Result<bool, String> {
-        loop {
-            self.tick(socket, clock)?;
-            if self.stopped {
-                return Ok(false);
-            }
-            match tx.try_send(packet) {
-                Ok(()) => return Ok(true),
-                Err(TrySendError::Disconnected(_)) => {
-                    clock.stop.store(true, Ordering::Relaxed);
-                    return Ok(false);
-                }
-                Err(TrySendError::Full(value)) => packet = value,
-            }
-            std::thread::sleep(Duration::from_millis(2));
-        }
-    }
-}
 fn pump(
     client: &Client,
     reference: &str,
     rate: u32,
     initial: u64,
-    tx: &SyncSender<Result<Packet, String>>,
+    tx: &SyncSender<Envelope>,
     clock: &Clock,
 ) -> Result<(), String> {
     let mut socket = socket::connect(client)?;
@@ -142,6 +139,8 @@ fn pump(
     )?;
     let mut feedback = Feedback {
         epoch: 0,
+        generation: 0,
+        seeking: false,
         acknowledged: 0,
         last: Instant::now(),
         eof: None,
@@ -154,6 +153,10 @@ fn pump(
     let mut sent = 0_u64;
     loop {
         feedback.tick(&mut socket, clock)?;
+        if feedback.seeking && channels.is_some() {
+            seeking = true;
+            seek_sent = true;
+        }
         match socket.read() {
             Ok(Message::Text(text)) => {
                 if text.len() > 4096 {
@@ -171,7 +174,10 @@ fn pump(
                                 json!({"type":"seek","epoch":feedback.epoch,"frames":0,"position_ms":initial}),
                             )?;
                             seek_sent = true;
+                            feedback.seeking = true;
                         } else if !seeking {
+                            feedback.seeking = false;
+                            feedback.deadline = None;
                             channels = Some(format.channels);
                             feedback.publish(&mut socket, clock, tx, Ok(Packet::Format(format)))?;
                         }
@@ -180,6 +186,8 @@ fn pump(
                         feedback.epoch = protocol::unsigned(&value, "epoch")?;
                         channels = None;
                         sent = 0;
+                        feedback.acknowledged = 0;
+                        feedback.eof = None;
                         seeking = false;
                         send(
                             &mut socket,

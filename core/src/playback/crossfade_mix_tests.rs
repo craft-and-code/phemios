@@ -22,3 +22,12 @@ fn fade_is_bounded_by_both_track_lengths_and_remaining_source() {
     assert_eq!(overlap(5000, 48000, Some(2000), Some(1000), 1800), 9600);
     assert_eq!(overlap(5000, 48000, None, Some(1000), 0), 0);
 }
+
+#[test]
+fn seek_follows_consumed_audio_not_prebuffered_or_repeated_track_identity() {
+    assert_eq!(audible(50, Some(0), Some(100), false), VoiceSlot::Current);
+    assert_eq!(audible(100, Some(0), Some(100), false), VoiceSlot::Next);
+    assert_eq!(audible(50, Some(100), None, true), VoiceSlot::Retired);
+    assert_eq!(audible(100, Some(100), None, true), VoiceSlot::Current);
+    assert_eq!(audible(0, None, None, false), VoiceSlot::Current);
+}

@@ -125,6 +125,7 @@ export function TrackResults(props: {
                 library.player.busy()
               }
               aria-label={t("Lire {0}", props.track.title)}
+              data-play-reference={props.track.reference}
               onClick={props.onPlay}
             >
               <Icon name="play" />

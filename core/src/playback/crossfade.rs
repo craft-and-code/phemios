@@ -1,5 +1,5 @@
 //! Continuous native output; prebuffered voices never become listening history before rendering.
-use super::crossfade_mix::{blend, overlap, played};
+use super::crossfade_mix::{VoiceSlot, audible, blend, overlap, played};
 use super::crossfade_source::{Packet, Source};
 use super::output::{Output, Signals};
 use super::{Command, State, protocol, update};
@@ -34,7 +34,7 @@ impl Voice {
     }
     fn poll(&mut self) -> Result<(), String> {
         while self.frames.len() < 16384 {
-            match self.source.packets.try_recv() {
+            match self.source.try_recv() {
                 Ok(Ok(Packet::Format(format))) if self.format.is_none() => {
                     self.format = Some(format)
                 }
@@ -78,8 +78,17 @@ struct Mixer<'a> {
     progress: Instant,
     last_consumed: u64,
     seek_ticket: Option<u64>,
+    pending_seek: Option<(u64, u64)>,
 }
 impl Mixer<'_> {
+    fn audible_slot(&self, consumed: u64) -> VoiceSlot {
+        audible(
+            consumed,
+            self.current.start,
+            self.next.as_ref().and_then(|voice| voice.start),
+            self.retired.is_some(),
+        )
+    }
     fn tick(&mut self) -> Result<(), String> {
         let consumed = self.output.consumed.load(Ordering::Relaxed);
         if consumed != self.last_consumed {
@@ -93,22 +102,18 @@ impl Mixer<'_> {
         {
             voice.acknowledge(consumed);
         }
-        let mut audible = &self.current;
-        if audible.start.is_none_or(|start| start > consumed)
-            && let Some(old) = &self.retired
-        {
-            audible = old;
-        }
-        if let Some(next) = &self.next
-            && next.start.is_some_and(|start| start <= consumed)
-        {
-            audible = next;
-        }
+        let audible = match self.audible_slot(consumed) {
+            VoiceSlot::Next => self.next.as_ref().ok_or("Voix du fondu indisponible.")?,
+            VoiceSlot::Retired => self.retired.as_ref().ok_or("Voix du fondu indisponible.")?,
+            VoiceSlot::Current => &self.current,
+        };
         update(self.state, |s| {
             s.index = audible.index;
             s.reference = self.tracks[audible.index].clone();
-            s.position = audible.position(consumed, self.output.rate);
-            s.duration = audible.format.as_ref().and_then(|format| format.duration);
+            if let Some(format) = &audible.format {
+                s.position = audible.position(consumed, self.output.rate);
+                s.duration = format.duration;
+            }
             s.rate = self.output.rate;
             if audible.start.is_some_and(|start| start <= consumed)
                 && !self.signals.paused.load(Ordering::Relaxed)
@@ -209,21 +214,36 @@ impl Mixer<'_> {
     fn seek(&mut self, position: u64, ticket: u64) -> Result<(), String> {
         self.signals.paused.store(true, Ordering::Relaxed);
         let consumed = self.output.reset()?;
-        for voice in [&mut self.current]
+        for voice in [&self.current]
             .into_iter()
-            .chain(self.next.iter_mut())
-            .chain(self.retired.iter_mut())
+            .chain(self.next.iter())
+            .chain(self.retired.iter())
         {
             voice.acknowledge(consumed);
+        }
+        match self.audible_slot(consumed) {
+            VoiceSlot::Next => {
+                let next = self.next.take().ok_or("Voix du fondu indisponible.")?;
+                self.next = Some(std::mem::replace(&mut self.current, next));
+            }
+            VoiceSlot::Retired => {
+                let old = self.retired.take().ok_or("Voix du fondu indisponible.")?;
+                self.retired = Some(std::mem::replace(&mut self.current, old));
+            }
+            VoiceSlot::Current => {}
+        }
+        for voice in self.next.iter_mut().chain(self.retired.iter_mut()) {
             voice.source.finish()?;
         }
-        self.current = Voice::open(
-            self.client,
-            self.tracks,
-            self.current.index,
-            self.output.rate,
+        self.current.source.seek(
             position,
-        );
+            played(consumed, self.current.start, self.current.supplied),
+        )?;
+        self.current.format = None;
+        self.current.frames.clear();
+        self.current.ended = false;
+        self.current.start = None;
+        self.current.supplied = 0;
         self.next = None;
         self.retired = None;
         self.mixing = None;
@@ -254,7 +274,11 @@ impl Mixer<'_> {
                         update(self.state, |s| s.crossfade_ms = value)?;
                     }
                     Ok(Command::Seek(position, ticket)) => {
-                        self.seek(position, ticket)?;
+                        if self.current.format.is_some() {
+                            self.seek(position, ticket)?;
+                        } else {
+                            self.pending_seek = Some((position, ticket));
+                        }
                         continue;
                     }
                     Ok(command) => return Ok(Some(command)),
@@ -262,6 +286,12 @@ impl Mixer<'_> {
                     Err(TryRecvError::Empty) => {}
                 }
                 self.current.poll()?;
+                if self.current.format.is_some()
+                    && let Some((position, ticket)) = self.pending_seek.take()
+                {
+                    self.seek(position, ticket)?;
+                    continue;
+                }
                 self.prepare(ms)?;
                 if let Some(next) = &mut self.next {
                     next.poll()?;
@@ -386,6 +416,7 @@ pub(super) fn stream(
         progress: Instant::now(),
         last_consumed: 0,
         seek_ticket: None,
+        pending_seek: None,
     };
     let result = mixer.run(ms, commands);
     let stopped = mixer.finish();
