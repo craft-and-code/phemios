@@ -81,6 +81,17 @@ export function SettingsLibraries() {
         <p role="alert">{prefs.error()}</p>
       </Show>
       <div class="settings-card">
+        <h2>{t("Affichage de la bibliothèque")}</h2>
+        <label class="check">
+          <input
+            type="checkbox"
+            checked={prefs.value().showMissingAlbums}
+            onChange={(event) => prefs.update({ showMissingAlbums: event.currentTarget.checked })}
+          />
+          {t("Afficher les albums manquants dans les discographies")}
+        </label>
+      </div>
+      <div class="settings-card">
         <h2>{t("Bibliothèque locale")}</h2>
         <p>
           {t(

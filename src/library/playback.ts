@@ -59,6 +59,7 @@ export function createPlayback(
     if (device() === "@hqplayer") return;
     await playbackControl("crossfade", audio().crossfadeMs);
     await playbackControl("repeat", audio().repeat);
+    await playbackControl("volume", state().volume);
   }
   async function chooseCrossfade(ms: number) {
     if (busy()) return;
@@ -286,6 +287,12 @@ export function createPlayback(
   let pendingVolume: number | undefined,
     volumeRunning = false;
   async function volume(value: number) {
+    if (!Number.isFinite(value) || value < 0 || value > 1) return;
+    if (!ready()) {
+      if (value > 0) audibleVolume = value;
+      setState((s) => ({ ...s, volume: value }));
+      return;
+    }
     if (value > 0) audibleVolume = value;
     pendingVolume = value;
     if (volumeRunning) return;

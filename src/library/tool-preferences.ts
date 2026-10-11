@@ -13,6 +13,7 @@ export interface ToolPreferences {
   discogs: boolean;
   excluded: ("local" | "server")[];
   trackPageSize: number;
+  showMissingAlbums: boolean;
 }
 export const defaultToolPreferences: ToolPreferences = {
   full: false,
@@ -24,6 +25,7 @@ export const defaultToolPreferences: ToolPreferences = {
   discogs: false,
   excluded: [],
   trackPageSize: 50,
+  showMissingAlbums: true,
 };
 const key = "phemios.tools.v1";
 type Store = Pick<Storage, "getItem" | "setItem">;
@@ -34,6 +36,7 @@ function validate(raw: unknown): ToolPreferences {
     typeof row !== "object" ||
     Array.isArray(row) ||
     ![
+      row.showMissingAlbums === undefined ? true : row.showMissingAlbums,
       row.full,
       row.summaries,
       row.covers,
@@ -50,7 +53,11 @@ function validate(raw: unknown): ToolPreferences {
     Object.keys(row).some((field) => !Object.hasOwn(defaultToolPreferences, field))
   )
     throw new Error(t("Options enregistrées illisibles."));
-  return { ...row, discogs: row.discogs === undefined ? false : row.discogs };
+  return {
+    ...row,
+    discogs: row.discogs === undefined ? false : row.discogs,
+    showMissingAlbums: row.showMissingAlbums === undefined ? true : row.showMissingAlbums,
+  };
 }
 /** Read non-secret scan, enrichment and browsing choices; preserve invalid stores. */
 export function readToolPreferences(storage: Store): ToolPreferences {

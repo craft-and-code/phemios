@@ -63,6 +63,7 @@ export function createPodcastPlayback(
   beforePlay: () => Promise<void>,
   createMedia = browserPodcastMedia,
   completed: (feed: string, id: string) => void = () => {},
+  initialVolume?: () => number,
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -104,6 +105,8 @@ export function createPodcastPlayback(
     }, 20000);
   }
   async function start(feed: Podcast, row: Episode) {
+    if (["idle", "ended", "error"].includes(status()) && initialVolume)
+      changeVolume(initialVolume());
     release();
     const held = epoch;
     setPodcast(feed);

@@ -1182,11 +1182,43 @@ main:has(> .playback-page) > :not(.playback-page) {
 .wikipedia-panel {
   margin-top: 22px;
 }
-.encyclopedia-tabs .wikipedia-language {
-  display: flex;
-  gap: 8px;
+.edition-switch {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  width: 88px;
+  height: 36px;
   margin-left: auto;
+  padding: 3px;
+  border-radius: 18px;
+  isolation: isolate;
 }
+.edition-switch::before {
+  content: "";
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: calc(50% - 3px);
+  border-radius: 15px;
+  background: var(--accent);
+  z-index: -1;
+  transition: transform 180ms ease;
+}
+.edition-switch[aria-checked="true"]::before {
+  transform: translateX(100%);
+}
+.edition-switch span {
+  display: grid;
+  place-items: center;
+}
+.edition-switch[aria-checked="false"] span:first-child,
+.edition-switch[aria-checked="true"] span:last-child {
+  color: var(--accent-text);
+}
+.player-options .playback-view-action {
+  border: 0;
+  background: transparent;
+}
+
 .wikipedia-search {
   display: flex;
   align-items: end;
@@ -1285,8 +1317,7 @@ main:has(> .playback-page) > :not(.playback-page) {
   }
 }
 
-/* Scrubbing must never retain off-screen transforms from an interrupted long transition. */
-.cover-flow.flow-scrubbing .cover-flow-card,
+/* Catalogue replacement resets the window; subsequent navigation stays animated. */
 .cover-flow.flow-jump .cover-flow-card {
   transition: none;
 }
@@ -1294,4 +1325,10 @@ main:has(> .playback-page) > :not(.playback-page) {
 .wikipedia-reader:hover,
 .wikipedia-result:hover:not(:disabled) {
   border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edition-switch::before {
+    transition: none;
+  }
 }

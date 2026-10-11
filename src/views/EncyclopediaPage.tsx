@@ -23,26 +23,24 @@ export function EncyclopediaPage(props: { query: string }) {
           {t("Articles enregistrés")}
         </button>
         <Show when={mode() !== "reference"}>
-          <div
-            class="choices wikipedia-language"
-            role="group"
-            aria-label={t("Langue des articles")}
+          <button
+            class="edition-switch"
+            type="button"
+            role="switch"
+            aria-checked={language() === "en"}
+            aria-label={t("Articles en anglais")}
+            title={t("Langue des articles")}
+            onClick={() => setLanguage(language() === "fr" ? "en" : "fr")}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                event.preventDefault();
+                setLanguage(event.key === "ArrowLeft" ? "fr" : "en");
+              }
+            }}
           >
-            <button
-              aria-pressed={language() === "fr"}
-              aria-label={t("Articles en français")}
-              onClick={() => setLanguage("fr")}
-            >
-              FR
-            </button>
-            <button
-              aria-pressed={language() === "en"}
-              aria-label={t("Articles en anglais")}
-              onClick={() => setLanguage("en")}
-            >
-              EN
-            </button>
-          </div>
+            <span aria-hidden="true">FR</span>
+            <span aria-hidden="true">EN</span>
+          </button>
         </Show>
       </div>
       <Show

@@ -120,3 +120,24 @@ it("marks listened episodes from actual played ranges, never from a seek or a st
     dispose();
   });
 });
+
+it("applies the idle safety mute before starting an episode and keeps volume between episodes", async () => {
+  await createRoot(async (dispose) => {
+    const f = fixture();
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+      () => {},
+      () => 0,
+    );
+    await player.start(feed, feed.episodes[0]!);
+    expect(f.media.volume).toHaveBeenCalledWith(0);
+    expect(vi.mocked(f.media.volume).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(f.media.play).mock.invocationCallOrder[0]!,
+    );
+    player.changeVolume(0.3);
+    await player.start(feed, feed.episodes[0]!);
+    expect(f.media.volume).toHaveBeenLastCalledWith(0.3);
+    dispose();
+  });
+});

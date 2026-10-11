@@ -396,3 +396,26 @@ it("changes crossfade duration without changing the current DSP policy or restar
   });
   vi.unstubAllGlobals();
 });
+
+it("allows offline preemptive mute and volume, then applies the retained value before starting audio", async () => {
+  await createRoot(async (dispose) => {
+    let ready = false;
+    const player = createPlayback(() => ready);
+    await player.volume(0.23);
+    await player.toggleMute();
+    expect(player.state().volume).toBe(0);
+    expect(playbackControl).not.toHaveBeenCalled();
+    player.reset();
+    expect(player.state().volume).toBe(0);
+    ready = true;
+    vi.mocked(playbackState).mockResolvedValue({ ...idlePlayback, volume: 0 });
+    await player.start(tracks, album, "Artist");
+    expect(playbackControl).toHaveBeenCalledWith("volume", 0);
+    expect(vi.mocked(playbackControl).mock.invocationCallOrder.at(-1)).toBeLessThan(
+      vi.mocked(playbackStart).mock.invocationCallOrder[0]!,
+    );
+    await player.toggleMute();
+    expect(player.state().volume).toBe(0.23);
+    dispose();
+  });
+});

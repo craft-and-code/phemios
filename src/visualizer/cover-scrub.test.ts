@@ -29,12 +29,12 @@ it("publishes only the latest rapid slider target per frame and flushes the fina
   expect(frame).toBeUndefined();
   expect(shown).toEqual([99, 70]);
 });
-it("animates adjacent navigation while jumps and active scrubbing never leave covers in transit", () => {
-  expect(animateCoverMove(5, 6, false)).toBe(true);
-  expect(animateCoverMove(6, 5, false)).toBe(true);
-  expect(animateCoverMove(0, 50, false)).toBe(false);
-  expect(animateCoverMove(50, 0, false)).toBe(false);
-  expect(animateCoverMove(5, 6, true)).toBe(false);
+it("animates adjacent moves and long jumps, including slider navigation", () => {
+  expect(animateCoverMove(5, 6)).toBe(true);
+  expect(animateCoverMove(6, 5)).toBe(true);
+  expect(animateCoverMove(0, 50)).toBe(true);
+  expect(animateCoverMove(50, 0)).toBe(true);
+  expect(animateCoverMove(5, 5)).toBe(false);
 });
 
 it("drops pending targets when the album selection changes and accepts later input", () => {

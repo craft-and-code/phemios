@@ -217,7 +217,7 @@ export function PlayerBar() {
           when={active()}
           fallback={
             <button
-              class="icon-button"
+              class="icon-button quiet playback-view-action"
               disabled
               aria-label={t("Ouvrir la vue Lecture")}
               title={t("Ouvrir la vue Lecture")}
@@ -227,7 +227,7 @@ export function PlayerBar() {
           }
         >
           <a
-            class="icon-button"
+            class="icon-button quiet playback-view-action"
             href="#/playback"
             aria-label={t("Ouvrir la vue Lecture")}
             title={t("Ouvrir la vue Lecture")}
@@ -342,7 +342,6 @@ export function PlayerBar() {
         </details>
         <button
           class="speaker-button"
-          disabled={!player.ready() && !active()}
           aria-label={state().volume === 0 ? t("Rétablir le son") : t("Couper le son")}
           aria-pressed={state().volume === 0}
           onClick={() => void player.toggleMute()}
@@ -355,7 +354,6 @@ export function PlayerBar() {
           max="1"
           step="0.01"
           value={state().volume}
-          disabled={!player.ready() && !active()}
           aria-label={t("Volume")}
           onInput={(e) => void player.volume(Number(e.currentTarget.value))}
         />

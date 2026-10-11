@@ -19,7 +19,7 @@ import {
 } from "solid-js";
 import { createListenedEpisodes } from "../podcasts/listened";
 import { browserPodcastMedia, createPodcastPlayback } from "../podcasts/playback";
-import { createRadioPlayback } from "../radio/playback";
+import { browserRadioMedia, createRadioPlayback } from "../radio/playback";
 import { resolveRadio } from "../platform/desktop";
 import { createPlayback } from "./playback";
 import { connectionMonitor } from "./connection";
@@ -176,14 +176,19 @@ export function LibraryProvider(props: ParentProps) {
       podcast.stop();
     },
   );
-  const radio = createRadioPlayback(resolveRadio, async () => {
-    podcast.stop();
-    if (["playing", "paused", "connecting"].includes(player.state().status)) {
-      await player.action("stop");
-      if (["playing", "paused", "connecting"].includes(player.state().status))
-        throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
-    }
-  });
+  const radio = createRadioPlayback(
+    resolveRadio,
+    async () => {
+      podcast.stop();
+      if (["playing", "paused", "connecting"].includes(player.state().status)) {
+        await player.action("stop");
+        if (["playing", "paused", "connecting"].includes(player.state().status))
+          throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
+      }
+    },
+    browserRadioMedia,
+    () => player.state().volume,
+  );
   const podcastListened = createListenedEpisodes();
   const podcast = createPodcastPlayback(
     async () => {
@@ -196,6 +201,7 @@ export function LibraryProvider(props: ParentProps) {
     },
     browserPodcastMedia,
     podcastListened.mark,
+    () => player.state().volume,
   );
 
   createEffect(() => {

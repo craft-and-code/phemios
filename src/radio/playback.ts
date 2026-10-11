@@ -40,6 +40,7 @@ export function createRadioPlayback(
   resolve: (uuid: string) => Promise<unknown>,
   beforePlay: () => Promise<void>,
   createMedia = browserRadioMedia,
+  initialVolume?: () => number,
 ) {
   const [station, setStation] = createSignal<Station>(),
     [status, setStatus] = createSignal<"idle" | "connecting" | "playing" | "paused" | "error">(
@@ -70,6 +71,8 @@ export function createRadioPlayback(
     setStatus("paused");
   }
   async function start(selected: Station) {
+    if (["idle", "ended", "error"].includes(status()) && initialVolume)
+      changeVolume(initialVolume());
     release();
     const held = epoch;
     setStation(selected);

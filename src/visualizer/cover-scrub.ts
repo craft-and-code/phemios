@@ -1,6 +1,6 @@
-/** Adjacent moves retain their animation; large jumps and scrubbing place all covers immediately. */
-export function animateCoverMove(from: number, to: number, scrubbing: boolean) {
-  return !scrubbing && Math.abs(to - from) === 1;
+/** All explicit movement retains the cover transition, including large slider jumps. */
+export function animateCoverMove(from: number, to: number) {
+  return from !== to;
 }
 /** Coalesce high-rate slider input into one bounded cover window per frame; release commits the latest target. */
 export function createCoverScrub(

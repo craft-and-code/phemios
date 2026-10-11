@@ -65,3 +65,19 @@ it("migrates enrichment choices with Discogs disabled and persists its explicit 
   expect(readToolPreferences(storage).discogs).toBe(false);
   expect(() => saveToolPreferences(storage, { discogs: 42 as unknown as boolean })).toThrow();
 });
+
+it("shows missing releases by default, migrates old stores and saves the choice without changing other options", () => {
+  const storage = store();
+  expect(readToolPreferences(storage).showMissingAlbums).toBe(true);
+  saveToolPreferences(storage, { threads: 4 });
+  const old = JSON.parse(storage.getItem()!);
+  delete old.showMissingAlbums;
+  storage.setItem("", JSON.stringify(old));
+  expect(readToolPreferences(storage).showMissingAlbums).toBe(true);
+  saveToolPreferences(storage, { showMissingAlbums: false });
+  expect(readToolPreferences(storage)).toMatchObject({ showMissingAlbums: false, threads: 4 });
+  expect(() =>
+    saveToolPreferences(storage, { showMissingAlbums: "false" as unknown as boolean }),
+  ).toThrow();
+  expect(readToolPreferences(storage).showMissingAlbums).toBe(false);
+});

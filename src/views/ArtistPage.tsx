@@ -1,3 +1,4 @@
+import { createToolPreferences } from "../library/tool-preferences";
 import { BiographyText } from "../components/BiographyText";
 import { MissingAlbumsStatus } from "../components/MissingAlbumsStatus";
 import { SourceBadge } from "../components/SourceBadge";
@@ -17,6 +18,7 @@ export function ArtistPage(props: {
   onCountry: (country: string) => void;
 }) {
   const library = useLibrary();
+  const preferences = createToolPreferences();
   const albums = createMemo(() =>
     library.albums().filter((album) => album.artist === props.artist.reference),
   );
@@ -148,12 +150,18 @@ export function ArtistPage(props: {
           </div>
           <AlbumGrid
             albums={albums()}
-            missing={library.missing
-              .rows()
-              .filter((row) => !row.set_aside && row.artist === props.artist.reference)}
+            missing={
+              preferences.value().showMissingAlbums
+                ? library.missing
+                    .rows()
+                    .filter((row) => !row.set_aside && row.artist === props.artist.reference)
+                : []
+            }
             chronological
           />
-          <MissingAlbumsStatus artist={props.artist.reference} />
+          <Show when={preferences.value().showMissingAlbums}>
+            <MissingAlbumsStatus artist={props.artist.reference} />
+          </Show>
           <Show when={appearances().length}>
             <h2>{t("Participations")}</h2>
             <AlbumGrid albums={appearances()} chronological />

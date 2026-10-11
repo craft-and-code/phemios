@@ -93,3 +93,24 @@ it("reports a refused stream and keeps the selected station available for retry"
     dispose();
   });
 });
+
+it("inherits a preemptive idle mute before audio starts and retains station volume during station changes", async () => {
+  await createRoot(async (dispose) => {
+    const audio = media();
+    const player = createRadioPlayback(
+      async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+      async () => {},
+      () => audio,
+      () => 0,
+    );
+    await player.start(station);
+    expect(audio.volume).toHaveBeenCalledWith(0);
+    expect(vi.mocked(audio.volume).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(audio.play).mock.invocationCallOrder[0]!,
+    );
+    player.changeVolume(0.3);
+    await player.start(station);
+    expect(audio.volume).toHaveBeenLastCalledWith(0.3);
+    dispose();
+  });
+});

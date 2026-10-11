@@ -25,14 +25,12 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
       () => props.albums.map((row) => row.reference).join("\0"),
       () => {
         scrub.cancel();
-        setScrubbing(false);
         setAnimated(false);
         setSelected(props.albums[0]?.reference ?? "");
       },
     ),
   );
   const [dragging, setDragging] = createSignal(false),
-    [scrubbing, setScrubbing] = createSignal(false),
     [animated, setAnimated] = createSignal(true);
   let drag: { id: number; x: number; start: number } | undefined,
     dragged = false;
@@ -41,14 +39,13 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
     if (next) {
       const target = props.albums.indexOf(next);
       if (target === index()) return;
-      setAnimated(animateCoverMove(index(), target, scrubbing() || dragging()));
+      setAnimated(animateCoverMove(index(), target));
       setSelected(next.reference);
     }
   };
   const scrub = createCoverScrub(choose);
   const finishScrub = () => {
     scrub.finish();
-    setScrubbing(false);
   };
   onCleanup(scrub.dispose);
   let movement = 0;
@@ -59,7 +56,7 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
     >
       <div
         class="cover-flow"
-        classList={{ "flow-scrubbing": scrubbing(), "flow-jump": !animated() }}
+        classList={{ "flow-jump": !animated() }}
         role="region"
         aria-label={t("Cover Flow")}
         tabindex="0"
@@ -182,7 +179,6 @@ export function CoverFlow(props: { albums: readonly Album[] }) {
           step="1"
           value={index()}
           aria-label={t("Parcourir les pochettes")}
-          onPointerDown={() => setScrubbing(true)}
           onPointerUp={finishScrub}
           onPointerCancel={finishScrub}
           onLostPointerCapture={finishScrub}
