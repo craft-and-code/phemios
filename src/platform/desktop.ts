@@ -184,3 +184,10 @@ export const downloadEncyclopedia = (
     pageId: article.pageId,
     document: wikipediaDocument(article),
   });
+
+/** Device-private provider configuration returns only its presence, never the retained key. */
+export const configureConcerts = (key: string | null = null, remove = false) =>
+  nativeCall<boolean>("concerts_config", { key, remove });
+/** Explicit fixed-provider page lookup independent of library login. */
+export const searchConcerts = (artist: string, page: number) =>
+  nativeCall<unknown>("concerts_events", { artist, page });

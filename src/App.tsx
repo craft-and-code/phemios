@@ -472,6 +472,7 @@ export function App() {
               "encyclopedia",
               "radio",
               "podcasts",
+              "concerts",
               "settings",
               "relations",
               "players",

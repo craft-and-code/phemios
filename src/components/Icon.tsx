@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  external: "M14 3h7v7M21 3 10 14M10 3H3v18h18v-7",
+  concerts: "M6 3h12v18H6V3Zm-3 4H1v4h2m18-4h2v4h-2M9 7h6M9 11h6M10 17h4",
   "visualizer-off": "M3 3l18 18M3 8v10h10M8 4h13v10M8 22h8M12 18v4",
   terminal: "M3 4h18v16H3V4Zm3 4 3 3-3 3m5 1h6",
   crossfade: "M3 5h4c4 0 6 14 10 14h4M3 19h4c4 0 6-14 10-14h4",

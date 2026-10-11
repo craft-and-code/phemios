@@ -46,3 +46,6 @@ pub mod encyclopedia;
 
 /// Validated system-browser handoff for explicit public source links.
 pub mod external_links;
+
+/// Explicit upcoming live music claims from a configured public provider.
+pub mod concerts;

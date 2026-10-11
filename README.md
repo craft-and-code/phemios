@@ -101,3 +101,7 @@ Playback now includes a complete-track seekable waveform, native shuffle and an 
 ## Website preview
 
 The separate bilingual project website lives in [`site/`](site/README.md). Preview it with `python3 -m http.server 1439 --bind 127.0.0.1 --directory site`. It uses local assets and system fonts, links Aède and FlacCompagnon, and introduces the application without inventing a public download URL. No deployment is performed by the desktop build.
+
+### Concert discovery
+
+Concerts groups the catalogue’s principal artists and explicitly searches Ticketmaster Discovery after a developer key is configured in that view. Dates, venues, sale status, notices, prices and ticket links retain attribution and retrieval time. Each completed artist answer is cached immediately; no navigation launches provider requests. The key stays in the native device-private configuration, separate from browser/account preferences and Aède service keys. Coverage follows the provider’s inventory and pagination limits; live acceptance requires a valid key. See [Concert discovery](docs/design/concerts.md).

@@ -2,6 +2,7 @@
 #![warn(missing_docs)]
 mod aede;
 mod commands;
+mod concerts;
 mod encyclopedia;
 mod exports;
 mod hqplayer;
@@ -51,6 +52,7 @@ pub fn run() -> Result<(), tauri::Error> {
             ));
             app.manage(hqplayer::HqPlayer::default());
             app.manage(encyclopedia::Encyclopedia::default());
+            app.manage(concerts::Concerts::default());
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
                 phemios_core::radio::Directory::default(),
             ))));
@@ -64,6 +66,8 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            concerts::concerts_config,
+            concerts::concerts_events,
             commands::external_open,
             encyclopedia::encyclopedia_search,
             encyclopedia::encyclopedia_article,

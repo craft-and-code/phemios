@@ -26,7 +26,7 @@ const headings = {
 export function menuHeading(id: Section): MenuItem {
   if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
     return "heading:personal";
-  if (["radio", "podcasts"].includes(id)) return "heading:sources";
+  if (["radio", "podcasts", "concerts"].includes(id)) return "heading:sources";
   if (
     [
       "doctor",
@@ -102,6 +102,13 @@ function validate(raw: unknown): MenuPreferences {
     saved.splice(saved.indexOf("relations"), 1);
     saved.splice(saved.indexOf("doctor"), 0, "relations");
   }
+  if (
+    value.version !== 1 &&
+    saved.includes("heading:sources") &&
+    !saved.includes("concerts") &&
+    saved.includes("podcasts")
+  )
+    saved.splice(saved.indexOf("podcasts") + 1, 0, "concerts");
   const legacyDefault = defaultMenuOrder().filter(
     (id) => !["encyclopedia", "achievements"].includes(id),
   );

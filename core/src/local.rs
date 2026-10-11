@@ -310,6 +310,33 @@ impl Engine {
         }
         Ok(())
     }
+    /// Read the private concert-provider key only inside native Rust operations.
+    pub fn concert_key(&self) -> Result<Option<String>, String> {
+        let value = self.config()?;
+        match value.get("ticketmaster") {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::String(key)) => {
+                crate::concerts::validate_key(key)?;
+                Ok(Some(key.clone()))
+            }
+            _ => Err("Configuration Ticketmaster illisible.".into()),
+        }
+    }
+    /// Publish or explicitly remove the concert key without starting an engine or exposing it.
+    pub fn set_concert_key(&self, key: &str, remove: bool) -> Result<(), String> {
+        self.concert_key()?;
+        let mut value = self.config()?;
+        if remove {
+            value
+                .as_object_mut()
+                .ok_or("Configuration locale invalide.")?
+                .remove("ticketmaster");
+        } else {
+            crate::concerts::validate_key(key.trim())?;
+            value["ticketmaster"] = key.trim().into();
+        }
+        self.save(&value)
+    }
     /// Retained service keys are private Rust data, attached only to explicit fetch requests.
     pub fn fetch_keys(&self) -> Result<Value, String> {
         Ok(self.config()?["keys"].clone())

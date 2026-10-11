@@ -71,3 +71,36 @@ fn unscanned_root_can_be_removed_without_starting_engine_or_touching_music() {
     assert_eq!(engine.status().unwrap()["roots"], json!([]));
     assert_eq!(fs::read(music.join("original.flac")).unwrap(), b"untouched");
 }
+
+#[test]
+fn concert_key_is_protected_separate_from_engine_fetch_keys_and_survives_restart() {
+    let data = Sandbox::new("concert-key");
+    let engine = Engine::new(data.0.clone(), PathBuf::from("missing-engine"));
+    assert!(engine.concert_key().unwrap().is_none());
+    engine.set_concert_key("abcdefghijklmnop", false).unwrap();
+    assert!(
+        !engine
+            .fetch_keys()
+            .unwrap()
+            .to_string()
+            .contains("abcdefghijklmnop")
+    );
+    let mut restored = Engine::new(data.0.clone(), PathBuf::from("missing-engine"));
+    assert_eq!(
+        restored.concert_key().unwrap().as_deref(),
+        Some("abcdefghijklmnop")
+    );
+    assert!(
+        !restored
+            .status()
+            .unwrap()
+            .to_string()
+            .contains("abcdefghijklmnop")
+    );
+    restored.set_concert_key("", true).unwrap();
+    assert!(engine.concert_key().unwrap().is_none());
+    assert!(engine.set_concert_key("bad?key", false).is_err());
+    fs::write(engine.file(), b"broken").unwrap();
+    assert!(engine.set_concert_key("abcdefghijklmnop", false).is_err());
+    assert_eq!(fs::read(engine.file()).unwrap(), b"broken");
+}

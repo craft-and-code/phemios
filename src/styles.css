@@ -1508,3 +1508,85 @@ body {
     animation: none;
   }
 }
+
+.concerts-toolbar,
+.concerts-toolbar > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.concerts-config {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  margin-block: 16px;
+}
+.concerts-config label {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: 220px;
+}
+.concerts-config p {
+  flex-basis: 100%;
+  color: var(--muted);
+  margin: 0;
+  font-size: 12px;
+}
+.concerts-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.concerts-list {
+  list-style: none;
+  padding: 0;
+}
+.concerts-list > li {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 36px;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.concerts-list time {
+  color: var(--accent);
+  font-size: 18px;
+}
+.concerts-list time small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 8px;
+}
+.concerts-list h3 {
+  margin: 0 0 6px;
+}
+.concerts-list h3 a {
+  text-decoration: none;
+}
+.concerts-list p {
+  margin-block: 8px;
+}
+.concerts-list small,
+.concerts-list summary {
+  color: var(--muted);
+}
+.concerts-list details {
+  margin-top: 10px;
+}
+@media (max-width: 700px) {
+  .concerts-list > li {
+    grid-template-columns: 1fr 36px;
+    gap: 10px;
+  }
+  .concerts-list time {
+    grid-column: 1/-1;
+  }
+}

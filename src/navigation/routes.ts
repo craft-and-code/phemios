@@ -1,5 +1,6 @@
 import { t } from "../i18n";
 export type Section =
+  | "concerts"
   | "encyclopedia"
   | "achievements"
   | "artists"
@@ -50,6 +51,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "playlists", label: t("Exports M3U"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
+  { id: "concerts", label: t("Concerts"), symbol: "concerts" },
   { id: "relations", label: t("Relations"), symbol: "graph" },
   { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },
   { id: "achievements", label: t("Trophées"), symbol: "trophy" },

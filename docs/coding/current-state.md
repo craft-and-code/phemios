@@ -291,3 +291,7 @@ History performs serialized two-second reads only while its connected view is mo
 ### Optional floating stage and terminal frequency bars
 
 The first Playback scene action disables rendering entirely without changing audio or lyrics. Floating lyrics enter alongside at most 48 orbital rings, discs and diamonds driven by native audible meters, with paused/hidden/reduced-motion scheduling guards. Gradient bars remain available; an alternate Aède terminal style merges neighbouring native bands into twelve ten-segment bars, with green/yellow/red zones, a 350 ms consumed-time peak hold and .45/s decay. Scene and bar-style choices use existing account preference synchronization. Queue lyric feedback mounts below the toolbar rather than among its actions. No visualization dependency was added.
+
+### Explicit concerts from the principal catalogue
+
+Concerts is a configurable source menu with principal-artist grouping across connected origins, chronological dates, country facets, venue/status/notices/prices and explicit ticket links. Ticketmaster Discovery reads require a developer key stored only in the protected native device configuration. Searches are explicit, serialized and bounded; exact performer matches refuse ambiguous IDs, and each completed artist answer is immediately cached with attribution/time and partial-result indication. Missing-key and cached navigation perform no provider lookups. See `docs/design/concerts.md`; live provider acceptance remains pending a key.
