@@ -1,3 +1,4 @@
+import { createQueueLyrics } from "./queue-lyrics-controller";
 import { createSavedSettings } from "./saved-settings";
 import { createTagPreferences } from "./tag-preferences";
 import { createMissingCoverLoader } from "./missing-artwork";
@@ -38,6 +39,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  queueLyrics: ReturnType<typeof createQueueLyrics>;
   savedSettings: ReturnType<typeof createSavedSettings>;
   missing: ReturnType<typeof createMissingCatalog>;
   missingArtwork: {
@@ -214,6 +216,7 @@ export function LibraryProvider(props: ParentProps) {
       await sync(source);
     },
   });
+  const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
   let generation = 0;
@@ -446,6 +449,7 @@ export function LibraryProvider(props: ParentProps) {
 
   const value: Library = {
     savedSettings,
+    queueLyrics,
     missing,
     missingArtwork: {
       image: (row) => {

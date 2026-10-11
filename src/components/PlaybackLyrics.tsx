@@ -1,10 +1,58 @@
-import { createSignal, Show } from "solid-js";
+import { createLyricPhrase } from "../visualizer/lyric-motion";
+import { lyricFit } from "../visualizer/lyric-fit";
+import { createEffect, createSignal, onMount, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
 /** Pointer capture keeps the translucent lyric block visible throughout its move. */
-export function PlaybackLyrics(props: { text: string; floating?: boolean; playing?: boolean }) {
-  const [position, setPosition] = createSignal({ x: 50, y: 76 }),
-    [dragging, setDragging] = createSignal(false);
-  let offset = { x: 0, y: 0 };
+export function PlaybackLyrics(props: { text: string; cue?: string | number; floating?: boolean }) {
+  const [position, setPosition] = createSignal({ x: 50, y: 50 }),
+    [dragging, setDragging] = createSignal(false),
+    [scale, setScale] = createSignal(1);
+  const phrase = createLyricPhrase(
+    () => props.text,
+    () => props.cue ?? props.text,
+    () => !!props.floating,
+  );
+  let offset = { x: 0, y: 0 },
+    element: HTMLParagraphElement | undefined,
+    frame: number | undefined,
+    disposed = false;
+  function measure() {
+    frame = undefined;
+    const span = element?.firstElementChild as HTMLElement | null,
+      stage = element?.parentElement;
+    if (!span || !stage || disposed) return;
+    setScale(
+      lyricFit({
+        width: span.offsetWidth,
+        height: span.offsetHeight,
+        angle: phrase()?.angle ?? 0,
+        stageWidth: stage.clientWidth,
+        stageHeight: stage.clientHeight,
+        ...position(),
+      }),
+    );
+  }
+  function schedule() {
+    if (disposed) return;
+    if (frame !== undefined) cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(measure);
+  }
+  createEffect(() => {
+    void phrase();
+    void position();
+    schedule();
+  });
+  onMount(() => {
+    const observer = new ResizeObserver(schedule);
+    if (element) observer.observe(element);
+    if (element?.parentElement) observer.observe(element.parentElement);
+    void document.fonts.ready.then(schedule);
+    onCleanup(() => observer.disconnect());
+  });
+  onCleanup(() => {
+    disposed = true;
+    if (frame !== undefined) cancelAnimationFrame(frame);
+  });
   function move(event: PointerEvent & { currentTarget: HTMLParagraphElement }) {
     const bounds = event.currentTarget.parentElement?.getBoundingClientRect();
     if (!bounds) return;
@@ -21,6 +69,9 @@ export function PlaybackLyrics(props: { text: string; floating?: boolean; playin
   }
   return (
     <p
+      ref={(node) => {
+        element = node;
+      }}
       class="playback-current-lyrics"
       classList={{ "lyrics-dragging": dragging(), "floating-lyrics": !!props.floating }}
       style={{ left: `${position().x}%`, top: `${position().y}%` }}
@@ -60,13 +111,13 @@ export function PlaybackLyrics(props: { text: string; floating?: boolean; playin
         }));
       }}
     >
-      <Show when={props.floating && props.text} fallback={props.text} keyed>
-        {(text) => (
+      <Show when={phrase()} keyed>
+        {(value) => (
           <span
-            class="floating-phrase"
-            style={{ "animation-play-state": props.playing ? "running" : "paused" }}
+            class="lyric-phrase"
+            style={{ "--lyric-angle": `${value.angle}deg`, "--lyric-scale": scale() }}
           >
-            {text}
+            {value.text}
           </span>
         )}
       </Show>

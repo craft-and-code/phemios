@@ -12,7 +12,7 @@ import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createTrackLyrics } from "../library/track-lyrics";
 import { announceSetting } from "../library/saved-settings";
-import { currentLyricText } from "../library/lyrics";
+import { currentLyricText, activeLyricTime } from "../library/lyrics";
 import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
@@ -144,11 +144,6 @@ export function PlaybackPage() {
           <div class="scene-controls">
             <For
               each={[
-                {
-                  id: "off" as const,
-                  icon: "visualizer-off",
-                  label: t("Désactiver les animations"),
-                },
                 { id: "floating" as const, icon: "sparkles", label: t("Paroles flottantes") },
                 { id: "sphere" as const, icon: "globe", label: t("Sphère") },
                 { id: "waves" as const, icon: "wave", label: t("Vagues") },
@@ -161,7 +156,7 @@ export function PlaybackPage() {
                   title={item.label}
                   aria-label={item.label}
                   aria-pressed={scene() === item.id}
-                  onClick={() => choose(item.id)}
+                  onClick={() => choose(scene() === item.id ? "off" : item.id)}
                 >
                   <Icon name={item.icon} />
                 </button>
@@ -255,7 +250,7 @@ export function PlaybackPage() {
             </Show>
             <PlaybackLyrics
               floating={scene() === "floating"}
-              playing={player.state().status === "playing"}
+              cue={`${player.current()?.reference}:${lyrics()?.synced === false ? phrase() : activeLyricTime(lyrics(), player.seekPosition())}`}
               text={
                 lyrics()?.synced === false
                   ? (plain()[phrase()] ?? "")

@@ -56,25 +56,40 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
         ctx.shadowColor = color;
         ctx.shadowBlur = 8;
         ctx.beginPath();
-        if (point.z > 0.4) {
-          ctx.ellipse(0, 0, radius * 1.5, radius * 0.55, 0, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(0, 0, radius * 0.22, 0, Math.PI * 2);
+        if (point.z > 0) {
+          // Small musical notes replace decorative rings without requiring image assets.
+          ctx.ellipse(
+            -radius * 0.25,
+            radius * 0.35,
+            radius * 0.3,
+            radius * 0.2,
+            -0.4,
+            0,
+            Math.PI * 2,
+          );
           ctx.fill();
-        } else if (point.z < -0.4) {
-          ctx.moveTo(0, -radius);
-          ctx.lineTo(radius, 0);
-          ctx.lineTo(0, radius);
-          ctx.lineTo(-radius, 0);
-          ctx.closePath();
+          ctx.beginPath();
+          ctx.moveTo(0, radius * 0.35);
+          ctx.lineTo(0, -radius);
+          ctx.bezierCurveTo(
+            radius * 0.9,
+            -radius * 0.8,
+            radius * 0.8,
+            -0.1 * radius,
+            radius * 0.35,
+            0,
+          );
           ctx.stroke();
         } else {
-          ctx.arc(0, 0, radius, 0, Math.PI * 2);
+          // A sparse paper-plane silhouette crosses the perspective stage.
+          ctx.moveTo(-radius, -radius * 0.55);
+          ctx.lineTo(radius, 0);
+          ctx.lineTo(-radius * 0.5, radius * 0.7);
+          ctx.lineTo(-radius * 0.3, 0);
+          ctx.closePath();
+          ctx.moveTo(-radius * 0.3, 0);
+          ctx.lineTo(radius, 0);
           ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(-radius * 0.3, -radius * 0.3, 2, 0, Math.PI * 2);
-          ctx.fill();
         }
         ctx.restore();
         continue;

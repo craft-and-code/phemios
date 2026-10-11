@@ -1,15 +1,15 @@
 import { expect, it } from "vitest";
 import { createTerminalBands } from "./terminal-bands";
-it("merges all 24 native bands into the terminal's twelve bars using neighbouring maxima", () => {
+it("preserves independent band energy and clamps invalid native values", () => {
   const meter = createTerminalBands();
   const rows = meter.observe(
     Array.from({ length: 24 }, (_, i) => i / 23),
     0,
     "one",
   );
-  expect(rows).toHaveLength(12);
-  expect(rows[0]?.level).toBe(1 / 23);
-  expect(rows[11]?.level).toBe(1);
+  expect(rows).toHaveLength(24);
+  expect(rows[0]?.level).toBe(0);
+  expect(rows[23]?.level).toBe(1);
 });
 it("holds peaks for 350 consumed milliseconds, decays at .45 per second and freezes on pause", () => {
   const meter = createTerminalBands();
@@ -20,4 +20,15 @@ it("holds peaks for 350 consumed milliseconds, decays at .45 per second and free
   expect(meter.observe([0, 0], 100, "one")[0]?.peak).toBe(0);
   meter.observe([1, 0], 200, "one");
   expect(meter.observe([0, 0], 300, "two")[0]?.peak).toBe(0);
+});
+
+it("retains one segment column for each of the 24 supplied frequency bands", () => {
+  const rows = createTerminalBands().observe(
+    Array.from({ length: 24 }, (_, i) => i / 24),
+    0,
+    "track",
+  );
+  expect(rows).toHaveLength(24);
+  expect(rows[1]?.level).toBe(1 / 24);
+  expect(rows[23]?.level).toBe(23 / 24);
 });

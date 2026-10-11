@@ -1,8 +1,8 @@
 import type { Particle } from "./particles";
 /** Bounded orbital objects expand with native audible energy; no synthetic random meters. */
-export function floatingObjects(time: number, levels: readonly number[], count = 32): Particle[] {
+export function floatingObjects(time: number, levels: readonly number[], count = 7): Particle[] {
   const clock = Number.isFinite(time) ? time : 0;
-  const total = Number.isFinite(count) ? Math.max(0, Math.min(48, Math.floor(count))) : 32;
+  const total = Number.isFinite(count) ? Math.max(0, Math.min(48, Math.floor(count))) : 7;
   return Array.from({ length: total }, (_, i) => {
     const raw = levels[i % 4] ?? 0,
       energy = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw)) : 0;
@@ -24,4 +24,13 @@ export function animationRuns(
   reduced: boolean,
 ) {
   return enabled && playing && !hidden && !reduced;
+}
+
+/** Deterministic cue orientation alternates both signs and never fabricates lyric timing. */
+export function phraseOrientation(text: string): number {
+  const hash = [...text].reduce(
+    (value, letter) => (Math.imul(value, 31) + (letter.codePointAt(0) ?? 0)) | 0,
+    0,
+  );
+  return (hash & 1 ? -1 : 1) * (45 + (Math.abs(hash) % 11));
 }

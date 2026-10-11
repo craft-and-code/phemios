@@ -42,7 +42,7 @@ export function FrequencyBars(props: {
           {(band, i) => (
             <div
               classList={{
-                "band-unavailable": (props.frequencies[i() * 2] ?? 0) >= props.rate * 0.45,
+                "band-unavailable": (props.frequencies[i()] ?? 0) >= props.rate * 0.45,
               }}
             >
               <span class="terminal-band">
@@ -52,14 +52,12 @@ export function FrequencyBars(props: {
                       classList={{
                         lit: row < Math.round(band.level * 10),
                         peak: band.peak > 0 && row === Math.min(9, Math.floor(band.peak * 10)),
-                        "terminal-yellow": row >= 7,
-                        "terminal-red": row >= 9,
                       }}
                     />
                   )}
                 </For>
               </span>
-              <small>{frequency(props.frequencies[i() * 2] ?? 0)}</small>
+              <small>{frequency(props.frequencies[i()] ?? 0)}</small>
             </div>
           )}
         </For>

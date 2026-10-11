@@ -3,7 +3,7 @@ interface Band {
   peak: number;
   held: number;
 }
-/** Aède terminal policy: twelve neighbouring maxima, 350 ms peak hold, .45/s decay. */
+/** Aède terminal policy: 24 independent consumed bands, 350 ms peak hold, .45/s decay. */
 export function createTerminalBands() {
   let rows: Band[] = [],
     previous = 0,
@@ -18,12 +18,9 @@ export function createTerminalBands() {
       const time = Math.max(0, Number.isFinite(position) ? position : 0);
       if (reference !== identity || time < previous) rows = [];
       identity = reference;
-      rows = Array.from({ length: 12 }, (_, i) => {
-        const level = Math.max(
-          ...[levels[i * 2], levels[i * 2 + 1]].map((value) =>
-            Number.isFinite(value) ? Math.max(0, Math.min(1, value ?? 0)) : 0,
-          ),
-        );
+      rows = Array.from({ length: 24 }, (_, i) => {
+        const raw = levels[i];
+        const level = Number.isFinite(raw) ? Math.max(0, Math.min(1, raw ?? 0)) : 0;
         const old = rows[i] ?? { level: 0, peak: 0, held: time };
         const peak = Math.max(
           0,
