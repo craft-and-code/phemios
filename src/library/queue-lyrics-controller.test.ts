@@ -1,4 +1,4 @@
-import { createRoot } from "solid-js";
+import { createRoot, createSignal } from "solid-js";
 import { expect, it, vi } from "vitest";
 import { createQueueLyrics } from "./queue-lyrics-controller";
 import { requestAede } from "../platform/desktop";
@@ -96,4 +96,58 @@ it("stops a captured lyric batch when its account is replaced", async () => {
   } finally {
     dispose();
   }
+});
+
+it("hides retained lyric errors as soon as their queue owner is replaced or logs out", async () => {
+  let dispose!: () => void;
+  const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+  vi.mocked(requestAede).mockRejectedValueOnce(new Error("Previous owner's private words"));
+  const job = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createQueueLyrics({
+      queue: () => [{ reference: "track:first", title: "First" }],
+      sessionFor: () => session(),
+      tasks: { start: vi.fn(), jobs: () => [] },
+    });
+  });
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  expect(job.retained()?.error).toContain("private words");
+  vi.mocked(requestAede).mockReturnValue(new Promise(() => {}));
+  setSession({ ...owner, account: { ...owner.account, id: "replacement" } });
+  expect(job.retained()).toBeUndefined();
+  setSession(undefined);
+  expect(job.retained()).toBeUndefined();
+  dispose();
+});
+it("hides a completed batch's private-title feedback after its captured owner leaves", async () => {
+  let dispose!: () => void;
+  const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+  vi.mocked(requestAede).mockImplementation(async (path, query) =>
+    path.endsWith("/status")
+      ? { capabilities: ["fetch_track_lyrics"] }
+      : { track: query?.track, lyrics: null },
+  );
+  const failure: Job = {
+    task_id: 1,
+    source: "server",
+    kind: "lyrics",
+    release: "track:first",
+    status: "failed",
+    error: { message: "Provider missing" },
+  };
+  const job = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createQueueLyrics({
+      queue: () => [{ reference: "track:first", title: "Private title" }],
+      sessionFor: () => session(),
+      tasks: { start: vi.fn(async () => 1), jobs: () => [failure] },
+    });
+  });
+  await job.acquire();
+  expect(job.message()).toContain("Private title");
+  expect(job.failed()).toBe(true);
+  setSession(undefined);
+  expect(job.message()).toBe("");
+  expect(job.failed()).toBe(false);
+  dispose();
 });

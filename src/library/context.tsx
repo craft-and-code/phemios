@@ -1,4 +1,5 @@
 import { createQueueLyrics } from "./queue-lyrics-controller";
+import { createCatalogBootstrap } from "./catalog-bootstrap";
 import { annotateAlbum } from "./album-annotation";
 import { createAnnotationLoader, parseAnnotation } from "./annotation-loading";
 import { createSavedSettings } from "./saved-settings";
@@ -157,6 +158,18 @@ export function LibraryProvider(props: ParentProps) {
     [imageErrors, setImageErrors] = createStore<Record<string, string | undefined>>({}),
     [annotations, setAnnotations] = createStore<Record<string, Annotation | undefined>>({});
   const [mediaProgress, setMediaProgress] = createSignal<readonly [number, number]>([0, 0]);
+  const bootstrap = createCatalogBootstrap({
+    session: (owner) => (owner === "local" ? localSession() : serverSession()),
+    read: cachedAede,
+    publish: (owner, cached) => {
+      const value = parseSnapshot(cached);
+      if (owner === "local") setLocalSnapshot(value);
+      else setServerSnapshot(value);
+    },
+    failed: (failure) =>
+      setError(failure instanceof Error ? failure.message : t("Cache inaccessible.")),
+  });
+  onCleanup(bootstrap.dispose);
   const connection = connectionMonitor(async () => {
     const current = serverSession();
     if (!current) throw new Error(t("Session absente."));
@@ -348,29 +361,35 @@ export function LibraryProvider(props: ParentProps) {
     for (const owner of ["local", "server"] as const)
       if (annotationOwners[owner] !== next[owner]) {
         annotationOwners[owner] = next[owner];
+        bootstrap.invalidate(owner);
         untrack(() => annotationsLoader.reset(owner));
       }
   });
   onCleanup(annotationsLoader.dispose);
   async function sync(owner: SourceId = source()) {
     if (busy()) return;
+    const current = bootstrap.capture(owner);
     setBusy(true);
     setError("");
     try {
-      const value = parseSnapshot(await syncAede(owner));
+      const raw = await syncAede(owner);
+      if (!current()) return;
+      const value = parseSnapshot(raw);
       clearMedia();
       if (owner === "local") setLocalSnapshot(value);
       else setServerSnapshot(value);
       await annotationsLoader.load(owner);
-      void warmCovers();
+      if (current()) void warmCovers();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
+      if (current())
+        setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
     } finally {
       setBusy(false);
     }
   }
   async function connect(server: string, username: string, password: string) {
     if (busy()) return;
+    bootstrap.invalidate("server");
     setBusy(true);
     setError("");
     try {
@@ -384,6 +403,7 @@ export function LibraryProvider(props: ParentProps) {
     if (serverSession()) await sync("server");
   }
   async function disconnect() {
+    bootstrap.invalidate("server");
     setError("");
     setSession(undefined);
     connection.stop();
@@ -399,6 +419,7 @@ export function LibraryProvider(props: ParentProps) {
     }
   }
   async function enableLocal() {
+    bootstrap.invalidate("local");
     setError("");
     try {
       setLocalSession(await startLocal());
@@ -409,6 +430,7 @@ export function LibraryProvider(props: ParentProps) {
     }
   }
   async function disableLocal() {
+    bootstrap.invalidate("local");
     setLocalSession(undefined);
     annotationsLoader.reset("local");
     try {
@@ -422,18 +444,18 @@ export function LibraryProvider(props: ParentProps) {
   }
   onMount(async () => {
     if (demo) return;
+    let admitted = false;
+    for (const owner of ["server", "local"] as const)
+      admitted = (await bootstrap.load(owner)) || admitted;
+    if (!bootstrap.active()) return;
+    if (admitted) void warmCovers();
+    if (!bootstrap.unused("local")) return;
     try {
-      for (const owner of ["server", "local"] as const) {
-        const cached = await cachedAede(owner);
-        if (cached) {
-          if (owner === "local") setLocalSnapshot(parseSnapshot(cached));
-          else setServerSnapshot(parseSnapshot(cached));
-        }
-      }
-      void warmCovers();
-      if ((await localStatus()).enabled) await enableLocal();
+      const status = await localStatus();
+      if (bootstrap.unused("local") && status.enabled) await enableLocal();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Cache inaccessible."));
+      if (bootstrap.unused("local"))
+        setError(failure instanceof Error ? failure.message : t("Cache inaccessible."));
     }
   });
   onCleanup(() => {

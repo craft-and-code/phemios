@@ -35,7 +35,7 @@ export function browserRadioMedia(): RadioMedia {
     },
   };
 }
-/** Latest explicit selection owns the media; late directory replies cannot restart stopped playback. */
+/** Latest explicit selection owns the media. Disposal closes it permanently; uninterrupted stalls share one deadline. */
 export function createRadioPlayback(
   resolve: (uuid: string) => Promise<unknown>,
   beforePlay: () => Promise<void>,
@@ -48,7 +48,8 @@ export function createRadioPlayback(
     ),
     [error, setError] = createSignal(""),
     [volume, setVolume] = createSignal(0.5);
-  let media: RadioMedia | undefined,
+  let alive = true,
+    media: RadioMedia | undefined,
     epoch = 0,
     audible = 0.5,
     stall: ReturnType<typeof setTimeout> | undefined;
@@ -71,8 +72,8 @@ export function createRadioPlayback(
     setStatus("paused");
   }
   async function start(selected: Station) {
-    if (["idle", "ended", "error"].includes(status()) && initialVolume)
-      changeVolume(initialVolume());
+    if (!alive) return;
+    if (status() === "idle" && initialVolume) changeVolume(initialVolume());
     release();
     const held = epoch;
     setStation(selected);
@@ -86,7 +87,7 @@ export function createRadioPlayback(
       const audio = createMedia();
       media = audio;
       const watch = () => {
-        clearTimeout(stall);
+        if (stall !== undefined) return;
         stall = setTimeout(() => {
           if (held !== epoch) return;
           release();
@@ -101,6 +102,7 @@ export function createRadioPlayback(
         () => {
           if (held === epoch) {
             clearTimeout(stall);
+            stall = undefined;
             setStatus("playing");
           }
         },
@@ -138,7 +140,11 @@ export function createRadioPlayback(
               ? t(
                   "Le lecteur système a refusé de démarrer ce flux. Relancez l’écoute explicitement.",
                 )
-              : failure.message
+              : failure.name === "AbortError"
+                ? t(
+                    "Le lecteur système a interrompu le démarrage de cette radio. Réessayez ou choisissez une autre station.",
+                  )
+                : failure.message
           : t("Lecture radio impossible."),
       );
     }
@@ -149,7 +155,10 @@ export function createRadioPlayback(
     media?.volume(value);
     if (value > 0) audible = value;
   }
-  onCleanup(stop);
+  onCleanup(() => {
+    alive = false;
+    stop();
+  });
   return {
     station,
     status,

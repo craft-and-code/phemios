@@ -15,7 +15,7 @@ import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
-import { createEffect, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { HistoryReset } from "../components/HistoryReset";
 import { CollectionAlbums } from "../components/CollectionAlbums";
 import { useLibrary } from "../library/context";
@@ -26,6 +26,8 @@ import { M3UExport, downloadM3U, type M3UFile } from "../components/M3UExport";
 import { requestAede } from "../platform/desktop";
 import { favouriteAlbums } from "../library/favourites";
 import { createPersonalReads } from "../library/personal-reads";
+import { createPersonalActions } from "../library/personal-actions";
+import { createSavedCollection } from "../library/collection-save";
 import { sectionIcon, type Section } from "../navigation/routes";
 interface Collection {
   name: string;
@@ -46,16 +48,24 @@ export function PersonalPage(props: { section: Section; query: string }) {
     [selected, setSelected] = createSignal(""),
     [message, setMessage] = createSignal(""),
     [saving, setSaving] = createSignal(false),
+    [openedCollection, setOpenedCollection] = createSignal(""),
     [offset, setOffset] = createSignal(0);
   let nameInput: HTMLInputElement | undefined;
-  createEffect(() => {
-    void props.section;
-    void library.source();
-    setOffset(0);
-    setSelected("");
-    setMessage("");
-    setEditingCollection(false);
-  });
+  const actions = createPersonalActions(
+    () => props.section,
+    library.session,
+    library.source,
+    () => {
+      setOffset(0);
+      setSelected("");
+      setMessage("");
+      setEditingCollection(false);
+      setName("");
+      setExpression("");
+      setOpenedCollection("");
+      setSaving(false);
+    },
+  );
   const reads = createPersonalReads(
     () => props.section,
     library.session,
@@ -73,44 +83,49 @@ export function PersonalPage(props: { section: Section; query: string }) {
       offset: offset(),
     });
   const refetch = reads.refetch;
-  const [openedCollection, setOpenedCollection] = createSignal("");
   const album = () => library.albums().find((item) => item.reference === selected());
   const matches = (value: string) => normalizeName(value).includes(normalizeName(props.query));
   async function save() {
     const session = library.session(),
       source = library.source();
-    if (!session || session.account.role === "auditor") return;
+    if (!session || session.account.role === "auditor" || saving()) return;
+    const isCurrent = actions.capture();
     setSaving(true);
     setMessage("");
     try {
-      await requestAede(
-        "/api/me/v1/collection",
-        { name: name() },
-        "PUT",
-        {
-          expression: expression(),
-        },
-        source,
-      );
-      if (session !== library.session() || source !== library.source()) return;
+      await createSavedCollection(name(), expression(), isCurrent, source);
+      if (!isCurrent()) return;
       setMessage(t("Collection enregistrée dans votre compte."));
       setName("");
       setExpression("");
       setEditingCollection(false);
       void refetch();
     } catch (failure) {
-      setMessage(failure instanceof Error ? failure.message : t("Enregistrement impossible."));
+      if (isCurrent())
+        setMessage(failure instanceof Error ? failure.message : t("Enregistrement impossible."));
     } finally {
-      setSaving(false);
+      if (isCurrent()) setSaving(false);
     }
   }
   async function download(id: string) {
+    const isCurrent = actions.capture(),
+      source = library.source();
+    if (!isCurrent()) return;
     setMessage("");
     try {
-      const file = await requestAede<M3UFile>(`/api/me/v1/m3u/${encodeURIComponent(id)}`);
-      setMessage(t("M3U téléchargé : {0}", await downloadM3U(file)));
+      const file = await requestAede<M3UFile>(
+        `/api/me/v1/m3u/${encodeURIComponent(id)}`,
+        {},
+        "GET",
+        undefined,
+        source,
+      );
+      if (!isCurrent()) return;
+      const path = await downloadM3U(file);
+      if (isCurrent()) setMessage(t("M3U téléchargé : {0}", path));
     } catch (failure) {
-      setMessage(failure instanceof Error ? failure.message : t("Téléchargement impossible."));
+      if (isCurrent())
+        setMessage(failure instanceof Error ? failure.message : t("Téléchargement impossible."));
     }
   }
   const favourites = () =>

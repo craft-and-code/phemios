@@ -23,7 +23,7 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
         }
         disabled={
           !job.busy() &&
-          (!job.eligible() || job.retained.loading || job.retained()?.complete === true)
+          (!job.eligible() || job.retainedLoading() || job.retained()?.complete === true)
         }
         onClick={() => {
           if (job.busy()) job.cancel();

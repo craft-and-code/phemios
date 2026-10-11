@@ -2,7 +2,7 @@ import { createSignal, createUniqueId, For, Show, onMount, onCleanup } from "sol
 import { Portal } from "solid-js/web";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
-import { nextChoice } from "../library/choices";
+import { nextChoice, createChoiceTypeahead } from "../library/choices";
 /** Themed single choice with keyboard selection, outside dismissal and a viewport-bound popup. */
 export function ChoiceSelect(props: {
   value: string | number;
@@ -16,10 +16,18 @@ export function ChoiceSelect(props: {
     [open, setOpen] = createSignal(false),
     [active, setActive] = createSignal(0),
     [position, setPosition] = createSignal({ left: 0, top: 0, width: 0 });
+  const typeahead = createChoiceTypeahead(() => props.options);
+  const revealActive = () => {
+    if (open())
+      popup?.querySelector(`[data-choice="${active()}"]`)?.scrollIntoView({ block: "nearest" });
+  };
   let trigger!: HTMLButtonElement, popup: HTMLDivElement | undefined;
   function show() {
     if (props.disabled) return;
+    // WebKit does not focus clicked buttons; combobox keyboard input must follow the popup.
+    trigger.focus();
     props.onFocus?.();
+    typeahead.reset();
     const rect = trigger.getBoundingClientRect(),
       height = Math.min(280, props.options.length * 38 + 12);
     setPosition({
@@ -37,6 +45,7 @@ export function ChoiceSelect(props: {
         : nextChoice(props.options, -1, 1),
     );
     setOpen(true);
+    queueMicrotask(revealActive);
   }
   function choose(index: number) {
     const row = props.options[index];
@@ -60,7 +69,8 @@ export function ChoiceSelect(props: {
           ["ArrowUp", "End"].includes(event.key) ? -1 : 1,
         ),
       );
-      popup?.querySelector(`[data-choice="${active()}"]`)?.scrollIntoView({ block: "nearest" });
+      typeahead.reset();
+      revealActive();
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       if (open()) choose(active());
@@ -70,15 +80,19 @@ export function ChoiceSelect(props: {
       event.stopPropagation();
       setOpen(false);
     } else if (event.key === "Tab") setOpen(false);
-    else if (event.key.length === 1 && !event.metaKey && !event.ctrlKey) {
-      const match = props.options.findIndex(
-        (row) =>
-          !row.disabled && row.label.toLocaleLowerCase().startsWith(event.key.toLocaleLowerCase()),
-      );
+    else if (
+      event.key.length === 1 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.isComposing
+    ) {
+      if (!open()) show();
+      const match = typeahead.find(event.key, event.timeStamp, active());
       if (match >= 0) {
         event.preventDefault();
-        if (!open()) show();
         setActive(match);
+        queueMicrotask(revealActive);
       }
     }
   }

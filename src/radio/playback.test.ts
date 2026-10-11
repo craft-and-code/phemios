@@ -114,3 +114,107 @@ it("inherits a preemptive idle mute before audio starts and retains station volu
     dispose();
   });
 });
+
+it("keeps the chosen radio gain when retrying an interrupted station", async () => {
+  await createRoot(async (dispose) => {
+    const audio = media();
+    audio.play = vi.fn().mockRejectedValue(new Error("interrupted"));
+    const player = createRadioPlayback(
+      async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+      async () => {},
+      () => audio,
+      () => 0.5,
+    );
+    await player.start(station);
+    player.changeVolume(0.2);
+    await player.start(station);
+    expect(audio.volume).toHaveBeenLastCalledWith(0.2);
+    expect(player.volume()).toBe(0.2);
+    dispose();
+  });
+});
+
+it("measures a continuous stall from its first waiting event despite repeated waiting signals", async () => {
+  vi.useFakeTimers();
+  try {
+    await createRoot(async (dispose) => {
+      const audio = media();
+      let waiting = () => {};
+      audio.callbacks = (_playing, next) => {
+        waiting = next;
+      };
+      audio.play = vi.fn(async () => {});
+      const player = createRadioPlayback(
+        async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+        async () => {},
+        () => audio,
+      );
+      await player.start(station);
+      vi.advanceTimersByTime(10_000);
+      waiting();
+      vi.advanceTimersByTime(10_000);
+      expect(player.status()).toBe("error");
+      expect(audio.release).toHaveBeenCalledOnce();
+      dispose();
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("cannot create media from a playback owner which has already been disposed", async () => {
+  let player!: ReturnType<typeof createRadioPlayback>;
+  const resolve = vi.fn(async (uuid: string) => ({
+    stationuuid: uuid,
+    url: "https://radio.example.org/live.mp3",
+  }));
+  const factory = vi.fn(media),
+    beforePlay = vi.fn(async () => {});
+  createRoot((dispose) => {
+    player = createRadioPlayback(resolve, beforePlay, factory);
+    dispose();
+  });
+  await player.start(station);
+  expect(beforePlay).not.toHaveBeenCalled();
+  expect(resolve).not.toHaveBeenCalled();
+  expect(factory).not.toHaveBeenCalled();
+  expect(player.status()).toBe("idle");
+});
+
+it("allows a new full stall window after a playing event has recovered the previous one", async () => {
+  vi.useFakeTimers();
+  try {
+    await createRoot(async (dispose) => {
+      const audio = media();
+      let playing = () => {},
+        waiting = () => {};
+      audio.callbacks = (ready, stalled) => {
+        playing = ready;
+        waiting = stalled;
+      };
+      audio.play = vi.fn(async () => {});
+      const player = createRadioPlayback(
+        async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+        async () => {},
+        () => audio,
+      );
+      try {
+        await player.start(station);
+        vi.advanceTimersByTime(19_000);
+        playing();
+        expect(player.status()).toBe("playing");
+        vi.advanceTimersByTime(5_000);
+        waiting();
+        vi.advanceTimersByTime(19_000);
+        expect(player.status()).toBe("connecting");
+        vi.advanceTimersByTime(1_000);
+        expect(player.status()).toBe("error");
+        expect(audio.release).toHaveBeenCalledOnce();
+      } finally {
+        dispose();
+      }
+    });
+  } finally {
+    vi.useRealTimers();
+  }
+});

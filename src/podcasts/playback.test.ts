@@ -141,3 +141,59 @@ it("applies the idle safety mute before starting an episode and keeps volume bet
     dispose();
   });
 });
+
+it("retains a paused episode when its pending play rejects after an explicit pause", async () => {
+  await createRoot(async (dispose) => {
+    let reject!: (error: Error) => void;
+    const f = fixture();
+    vi.mocked(f.media.play).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+    );
+    const pending = player.start(feed, feed.episodes[0]!);
+    await Promise.resolve();
+    player.pause();
+    reject(new DOMException("Interrupted by pause", "AbortError"));
+    await pending;
+    expect(player.status()).toBe("paused");
+    expect(player.error()).toBe("");
+    expect(f.media.release).not.toHaveBeenCalled();
+    await player.resume();
+    expect(player.status()).toBe("playing");
+    expect(f.media.source).toHaveBeenCalledOnce();
+    dispose();
+  });
+});
+it("ignores an older resume rejection after a newer resume succeeds on the same episode", async () => {
+  await createRoot(async (dispose) => {
+    const f = fixture();
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+    );
+    await player.start(feed, feed.episodes[0]!);
+    player.pause();
+    let reject!: (error: Error) => void;
+    vi.mocked(f.media.play).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const older = player.resume();
+    player.pause();
+    await player.resume();
+    reject(new DOMException("Interrupted previous request", "AbortError"));
+    await older;
+    expect(player.status()).toBe("playing");
+    expect(player.error()).toBe("");
+    expect(f.media.release).not.toHaveBeenCalled();
+    dispose();
+  });
+});

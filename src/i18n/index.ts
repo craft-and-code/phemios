@@ -25,11 +25,16 @@ export function translate(value: Language, message: string, ...parameters: unkno
 export function t(message: string, ...parameters: unknown[]): string {
   return translate(language(), message, ...parameters);
 }
-/** Display a country label without changing the canonical filter value. */
+const countryFormatters: Partial<Record<Language, Intl.DisplayNames>> = {};
+/** Display a country label without changing its filter identity; reuse one formatter per locale. */
 export function countryName(code: string | undefined, fallback: string | null): string {
   if (code && /^[A-Z]{2}$/.test(code))
     try {
-      return new Intl.DisplayNames([language()], { type: "region" }).of(code) ?? fallback ?? code;
+      const selected = language();
+      const formatter = (countryFormatters[selected] ??= new Intl.DisplayNames([selected], {
+        type: "region",
+      }));
+      return formatter.of(code) ?? fallback ?? code;
     } catch {
       /* Unknown codes keep their retained label. */
     }

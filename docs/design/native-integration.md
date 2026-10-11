@@ -320,3 +320,13 @@ The perspective stage uses `overflow: clip`, which clips side artwork without cr
 The [hardening review](../coding/hardening.md) records validated bounds and failure/ownership contracts for preference hydration, annotations, catalog synchronization, protected configuration and Radio Browser. Private annotation pages and mounted drafts bind to the complete captured session; a source reset immediately hides that source's private content. Confirmed writes during a retained read remain authoritative, while another origin's private state remains independent. Read/transport errors never justify inventing a personal value or changing an unreadable store.
 
 Radio directory operations are unauthenticated public reads, independent of Aède connectivity. Mirror discovery and response validation share one 24-second deadline with eight seconds per attempt. The public-only connector confines directory DNS; WebView media playback is a separate boundary and does not inherit that protection.
+
+## Catalog bootstrap and publication admission
+
+A complete native synchronization revalidates exact client credentials before changing disk or retained JSON. Logout/relogin cannot cross this publication: the session lock spans both commits, with catalog network reads outside it. An initial disk-cache load captures the retained Arc before its read; if another publication wins, the current Arc is retained and returned. Identical JSON is not sufficient admission because its object can represent a later publication. Cache reads and returned JSON cloning run outside the retained mutex.
+
+Frontend bootstrap loads each source at most once, only while that source remains unused. Login, local start/stop and synchronization invalidate its pending cache ticket; exact session objects, revisions and provider disposal guard replies/errors and automatic local startup. The other source retains an independent bootstrap. Synchronization also checks its captured revision before frontend publication.
+
+Radio search retains submitted criteria for one active request and at most one replacement. A changed search hides the previous results immediately; failure cannot leave another country's stations under the new globe selection. Unmount drops delayed submissions and admission. Radio media startup owns a non-renewable deadline, retained volume and final disposal; directory/media operations require no Aède session. Aède stores radio favourites only.
+
+Manual and filter-based collection creation share `create_only` writes. Existing rules are preserved on name collisions; explicit rename and delete remain distinct commands. Personal drafts and delayed acknowledgements reset or cease admission when their view, origin or exact session changes.

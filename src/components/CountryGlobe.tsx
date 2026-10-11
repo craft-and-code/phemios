@@ -2,7 +2,15 @@ import { ChoiceSelect } from "./ChoiceSelect";
 import { geoCentroid } from "d3-geo";
 import { countryGeometry } from "../geography/geometry";
 import { t, countryName as displayCountry } from "../i18n";
-import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import {
   countryAt,
   unproject,
@@ -40,22 +48,27 @@ export function CountryGlobe(props: {
     artist.countryCode ??
     countries()?.find((c) => c.name === artist.country || countryName(c.code) === artist.country)
       ?.code;
-  const available = () =>
-    new Set(
-      props.directory
-        ? (countries() ?? []).map((country) => country.code)
-        : props.artists.map(codeFor).filter((code): code is string => !!code),
-    );
-  const selectedCodes = () =>
-    new Set(
+  // Frame and pointer callbacks read owned snapshots rather than instantiate JSX prop memos.
+  const available = createMemo(
+    () =>
+      new Set(
+        props.directory
+          ? (countries() ?? []).map((country) => country.code)
+          : props.artists.map(codeFor).filter((code): code is string => !!code),
+      ),
+  );
+  const selectedCodes = createMemo(() => {
+    const selected = props.selected;
+    return new Set(
       (countries() ?? [])
         .filter((c) =>
-          props.selected.some(
+          selected.some(
             (value) => value === c.name || value === countryName(c.code) || value === c.code,
           ),
         )
         .map((c) => c.code),
     );
+  });
   const focusCountry = (value: string | undefined) => {
     const country = countries()?.find(
       (country) => value === country.code || value === country.name,

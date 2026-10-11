@@ -454,3 +454,34 @@ it("keeps playback controls responsive while a crossfade write is pending", asyn
     }
   });
 });
+
+it("keeps account audio restoration active across transport resets until disposal", () => {
+  let raw: string | null = null;
+  const events = new EventTarget();
+  vi.stubGlobal("window", events);
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => (key === "phemios.audio.v1" ? raw : null),
+    setItem: vi.fn(),
+  });
+  try {
+    createRoot((dispose) => {
+      const player = createPlayback(() => true);
+      player.reset();
+      raw = JSON.stringify({ crossfadeMs: 3000, repeat: "all", policy: "dsp" });
+      events.dispatchEvent(new Event("phemios-settings-loaded"));
+      expect(player.crossfade()).toBe(3000);
+      expect(player.policy()).toBe("dsp");
+      player.reset();
+      raw = JSON.stringify({ crossfadeMs: 1000, repeat: "off", policy: "without-effects" });
+      events.dispatchEvent(new Event("phemios-settings-loaded"));
+      expect(player.crossfade()).toBe(1000);
+      expect(player.policy()).toBe("without-effects");
+      dispose();
+      raw = JSON.stringify({ crossfadeMs: 9000, repeat: "one", policy: "dsp" });
+      events.dispatchEvent(new Event("phemios-settings-loaded"));
+      expect(player.crossfade()).toBe(1000);
+    });
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

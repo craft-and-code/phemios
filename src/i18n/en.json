@@ -1510,5 +1510,7 @@
   "Statistiques Radio Browser invalides.": "Invalid Radio Browser statistics.",
   "Piste": "Track",
   "Retour à {0}": "Back to {0}",
-  "Radio Browser a interrompu la connexion. Réessayez plus tard.": "Radio Browser interrupted the connection. Try again later."
+  "Radio Browser a interrompu la connexion. Réessayez plus tard.": "Radio Browser interrupted the connection. Try again later.",
+  "Synchronisation annulée : la session a changé.": "Synchronization cancelled: the session changed.",
+  "Le lecteur système a interrompu le démarrage de cette radio. Réessayez ou choisissez une autre station.": "The system player interrupted this station's startup. Retry or choose another station."
 }

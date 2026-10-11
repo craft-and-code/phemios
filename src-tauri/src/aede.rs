@@ -8,7 +8,7 @@ use tauri::State;
 pub(crate) struct SourceState {
     pub(crate) session: Arc<Mutex<Option<Client>>>,
     pub(crate) cache: Cache,
-    pub(crate) snapshot: Mutex<Option<Arc<Value>>>,
+    pub(crate) snapshot: crate::snapshots::Snapshot,
 }
 pub(crate) struct Aede {
     pub(crate) server: SourceState,
@@ -124,11 +124,10 @@ pub(crate) async fn aede_sync(
     let state = state.owner(origin);
     let client = client(state)?;
     let cache = state.cache.clone();
-    let snapshot = blocking(move || cache.save(client.snapshot()?)).await?;
-    *state
-        .snapshot
-        .lock()
-        .map_err(|_| "Cache natif indisponible.".to_string())? = Some(Arc::new(snapshot.clone()));
+    let session = state.session.clone();
+    let retained = state.snapshot.clone();
+    let snapshot =
+        blocking(move || crate::snapshots::synchronize(session, retained, cache, client)).await?;
     public(snapshot, origin)
 }
 #[tauri::command]
@@ -141,11 +140,8 @@ pub(crate) async fn aede_cache(
     let origin = self::source(source.as_deref())?;
     let state = state.owner(origin);
     let cache = state.cache.clone();
-    let snapshot = blocking(move || cache.load()).await?;
-    *state
-        .snapshot
-        .lock()
-        .map_err(|_| "Cache natif indisponible.".to_string())? = snapshot.clone().map(Arc::new);
+    let retained = state.snapshot.clone();
+    let snapshot = blocking(move || crate::snapshots::load(cache, retained)).await?;
     snapshot.map(|value| public(value, origin)).transpose()
 }
 #[tauri::command]

@@ -6,7 +6,9 @@ import { parseLyrics } from "./lyrics";
 import { acquireQueueLyrics, queueHasLyrics } from "./queue-lyrics";
 import type { AccountSession } from "./server";
 import type { createJobs } from "./jobs";
-/** The library owns downloads; closing a drawer never cancels the captured authenticated batch. */
+/** The library owns downloads; closing a drawer never cancels the captured authenticated batch.
+ * Retained availability and title-bearing feedback are visible only to their captured owners.
+ */
 export function createQueueLyrics(library: {
   queue: () => readonly { reference: string; title: string }[];
   sessionFor: (reference: string) => AccountSession | undefined;
@@ -14,7 +16,9 @@ export function createQueueLyrics(library: {
 }) {
   const [busy, setBusy] = createSignal(false),
     [message, setMessage] = createSignal(""),
-    [failed, setFailed] = createSignal(false);
+    [failed, setFailed] = createSignal(false),
+    [feedbackOwners, setFeedbackOwners] =
+      createSignal<ReadonlyMap<string, AccountSession | undefined>>();
   let disposed = false,
     cancelled = false;
   onCleanup(() => {
@@ -54,7 +58,7 @@ export function createQueueLyrics(library: {
         a.owners.every((owner, index) => owner === b.owners[index]),
     },
   );
-  const [retained, { refetch }] = createResource(
+  const [retainedState, { refetch }] = createResource(
     () => (identity().references.length && identity().owners.every(Boolean) ? identity() : false),
     async (held) => {
       const current = () => !disposed && identity() === held;
@@ -74,12 +78,28 @@ export function createQueueLyrics(library: {
               reference,
             )?.lines.some((line) => line.text.trim()),
         );
-        return { complete, error: "" };
+        return { held, complete, error: "" };
       } catch (error) {
-        return { complete: false, error: String(error) };
+        return { held, complete: false, error: String(error) };
       }
     },
   );
+  // A disabled Solid resource retains its last answer; expose only its exact current owners.
+  const retained = () => {
+    const held = identity(),
+      value = retainedState();
+    return !disposed && held.owners.every(Boolean) && value?.held === held ? value : undefined;
+  };
+  const feedbackCurrent = () => {
+    const owners = feedbackOwners();
+    return (
+      !disposed &&
+      !!owners &&
+      [...owners].every(
+        ([reference, owner]) => owner !== undefined && owner === library.sessionFor(reference),
+      )
+    );
+  };
   async function acquire() {
     if (busy() || !eligible()) return;
     setBusy(true);
@@ -89,6 +109,7 @@ export function createQueueLyrics(library: {
     const titles = new Map(library.queue().map((row) => [row.reference, row.title]));
     const references = library.queue().map((r) => r.reference),
       owners = new Map(references.map((r) => [r, library.sessionFor(r)]));
+    setFeedbackOwners(owners);
     const current = () =>
       !disposed && !cancelled && references.every((r) => owners.get(r) === library.sessionFor(r));
     try {
@@ -169,10 +190,11 @@ export function createQueueLyrics(library: {
   }
   return {
     busy,
-    message,
-    failed,
+    message: () => (feedbackCurrent() ? message() : ""),
+    failed: () => feedbackCurrent() && failed(),
     eligible,
     retained,
+    retainedLoading: () => !disposed && identity().owners.every(Boolean) && retainedState.loading,
     acquire,
     cancel: () => {
       cancelled = true;

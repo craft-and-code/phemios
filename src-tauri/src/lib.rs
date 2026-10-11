@@ -10,6 +10,7 @@ mod local;
 mod playback;
 mod podcast;
 mod radio;
+mod snapshots;
 mod themes;
 mod volumes;
 use tauri::Manager;
@@ -22,7 +23,7 @@ pub fn run() -> Result<(), tauri::Error> {
             let root = app.path().app_data_dir()?.join("cache");
             let source = |path| aede::SourceState {
                 session: std::sync::Arc::new(std::sync::Mutex::new(None)),
-                snapshot: std::sync::Mutex::new(None),
+                snapshot: std::sync::Arc::new(std::sync::Mutex::new(None)),
                 cache: phemios_core::cache::Cache::new(path),
             };
             let executable = std::env::current_exe()?

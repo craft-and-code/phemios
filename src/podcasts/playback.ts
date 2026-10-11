@@ -58,7 +58,10 @@ export function browserPodcastMedia(): PodcastMedia {
     },
   };
 }
-/** Exclusive explicit podcast playback rejects late completions and never records music history. */
+/** Explicit episode ownership and play-attempt tickets reject late completions after pause/restart.
+ * Pause retains its finite media and clock; a superseded play rejection cannot release it.
+ * Podcast playback never records catalogue music history.
+ */
 export function createPodcastPlayback(
   beforePlay: () => Promise<void>,
   createMedia = browserPodcastMedia,
@@ -76,10 +79,12 @@ export function createPodcastPlayback(
     [volume, setVolume] = createSignal(0.5);
   let media: PodcastMedia | undefined,
     epoch = 0,
+    playAttempt = 0,
     audible = 0.5,
     stall: ReturnType<typeof setTimeout> | undefined;
   function release() {
     epoch++;
+    playAttempt++;
     clearTimeout(stall);
     media?.release();
     media = undefined;
@@ -108,7 +113,8 @@ export function createPodcastPlayback(
     if (["idle", "ended", "error"].includes(status()) && initialVolume)
       changeVolume(initialVolume());
     release();
-    const held = epoch;
+    const held = epoch,
+      attempt = ++playAttempt;
     setPodcast(feed);
     setEpisode(row);
     setStatus("connecting");
@@ -153,7 +159,7 @@ export function createPodcastPlayback(
       watch(held);
       await audio.play();
     } catch (e) {
-      if (epoch !== held) return;
+      if (epoch !== held || attempt !== playAttempt) return;
       fail();
       if (e instanceof Error && e.name === "NotAllowedError")
         setError(t("Relancez explicitement la lecture de cet épisode."));
@@ -162,8 +168,9 @@ export function createPodcastPlayback(
   function pause() {
     if (!media) return;
     clearTimeout(stall);
-    media.pause();
+    playAttempt++;
     setStatus("paused");
+    media.pause();
   }
   async function resume() {
     if (!media) {
@@ -172,13 +179,14 @@ export function createPodcastPlayback(
       if (feed && row) await start(feed, row);
       return;
     }
-    const held = epoch;
+    const held = epoch,
+      attempt = ++playAttempt;
     setStatus("connecting");
     watch(held);
     try {
       await media.play();
     } catch {
-      if (held === epoch) fail();
+      if (held === epoch && attempt === playAttempt) fail();
     }
   }
   function changeVolume(n: number) {

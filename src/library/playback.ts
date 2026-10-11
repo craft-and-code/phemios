@@ -353,8 +353,6 @@ export function createPlayback(
     }
   }
   function reset() {
-    if (typeof window !== "undefined")
-      window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
     cancelDiscovery();

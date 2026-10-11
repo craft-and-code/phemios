@@ -1,5 +1,9 @@
 import { expect, it, vi } from "vitest";
-import { saveBrowsingCollection, deleteSavedCollection } from "./collection-save";
+import {
+  saveBrowsingCollection,
+  deleteSavedCollection,
+  createSavedCollection,
+} from "./collection-save";
 import { requestAede } from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 it("deletes only the explicitly chosen owner collection and never reports a replacement session's success", async () => {
@@ -110,4 +114,22 @@ it("saves label rules on their captured source and refuses unsupported labels be
     { expression, create_only: true },
     "local",
   );
+});
+
+it("refuses a colliding new collection without overwriting its existing rule", async () => {
+  vi.mocked(requestAede).mockReset();
+  let saved = "genre:Jazz";
+  vi.mocked(requestAede).mockImplementation(async (_path, _query, _method, body) => {
+    const input = body as { expression: string; create_only?: boolean };
+    if (input.create_only) throw new Error("Collection already exists");
+    saved = input.expression;
+    return {};
+  });
+  await expect(createSavedCollection("Road", "genre:Rock", () => true, "local")).rejects.toThrow(
+    "Collection already exists",
+  );
+  expect(saved).toBe("genre:Jazz");
+  vi.mocked(requestAede).mockClear();
+  expect(await createSavedCollection("Road", "genre:Rock", () => false, "local")).toBe(false);
+  expect(requestAede).not.toHaveBeenCalled();
 });
