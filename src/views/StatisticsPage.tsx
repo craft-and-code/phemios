@@ -6,8 +6,9 @@ import { csvDocument, statisticsCsv, type CsvRow } from "../library/statistics-c
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
+import { createDiagnosticRead } from "../library/diagnostic-read";
 import { browseArtists } from "../library/selection";
 import { requestAede } from "../platform/desktop";
 import {
@@ -37,19 +38,23 @@ export function StatisticsPage() {
         )
       : undefined;
   });
-  const [report] = createResource(reader, (read) => read(0));
-  const [doctor] = createResource(
+  const report = createDiagnosticRead(
+    () => {
+      const read = reader();
+      return read ? { read, session: library.session(), source: library.source() } : false;
+    },
+    (key) => key.read(0),
+  );
+  const doctor = createDiagnosticRead(
     () =>
-      library.session() && {
-        session: library.session(),
-        source: library.source(),
-        refresh: refresh(),
-      },
+      library.session()
+        ? { session: library.session(), source: library.source(), refresh: refresh() }
+        : false,
     async (key) =>
       parseDiagnosis(await requestAede("/api/v1/doctor", { limit: "1" }, "GET", null, key.source)),
   );
   const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
-  const currentReport = () => (library.session() ? report() : undefined);
+  const currentReport = report.current;
   const own = () =>
     Object.values(library.annotations).filter(
       (value) => !!value && referenceSource(value.reference) === library.source(),
@@ -145,7 +150,7 @@ export function StatisticsPage() {
             class="icon-button quiet"
             title={t("Télécharger toutes les statistiques en CSV")}
             aria-label={t("Télécharger toutes les statistiques en CSV")}
-            disabled={exporting() || report.loading || doctor.loading || !isNative()}
+            disabled={exporting() || report.loading() || doctor.loading() || !isNative()}
             onClick={() => void downloadCsv()}
           >
             <Show when={exporting()} fallback={<Icon name="download" />}>
@@ -153,7 +158,7 @@ export function StatisticsPage() {
             </Show>
           </button>
           <button
-            disabled={!library.session() || report.loading}
+            disabled={!library.session() || report.loading()}
             onClick={() => setRefresh((value) => value + 1)}
           >
             {t("Actualiser")}{" "}
@@ -173,12 +178,12 @@ export function StatisticsPage() {
           )}{" "}
         </p>
       </Show>
-      <Show when={report.loading}>
+      <Show when={report.loading()}>
         <PageLoader label={t("Chargement des statistiques Aède…")} />
       </Show>
-      <Show when={report.error}>
+      <Show when={report.error()}>
         <p role="alert">
-          {t("Statistiques indisponibles :")} {String(report.error)}
+          {t("Statistiques indisponibles :")} {String(report.error())}
         </p>
       </Show>
       <h2>{t("Votre collection")}</h2>
@@ -195,15 +200,15 @@ export function StatisticsPage() {
       <Show when={library.session()}>
         <section>
           <h2>{t("Intégrité et analyses enregistrées")}</h2>
-          <Show when={doctor.error}>
+          <Show when={doctor.error()}>
             <p role="alert">
-              {t("Diagnostic indisponible :")} {String(doctor.error)}
+              {t("Diagnostic indisponible :")} {String(doctor.error())}
             </p>
           </Show>
-          <Show when={doctor.loading}>
+          <Show when={doctor.loading()}>
             <PageLoader inline label={t("Chargement du diagnostic…")} />
           </Show>
-          <Show when={doctor()}>
+          <Show when={doctor.current()}>
             {(result) => (
               <div class="stat-tiles">
                 <For

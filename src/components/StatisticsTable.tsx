@@ -1,6 +1,7 @@
 import { PageLoader } from "./PageLoader";
 import { t } from "../i18n";
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
+import { createDiagnosticRead } from "../library/diagnostic-read";
 import { numberLabel, type Page, type Statistics } from "../library/statistics";
 export interface StatRow {
   label: string;
@@ -17,23 +18,24 @@ export function StatisticsTable(props: {
   rows: (report: Statistics) => Page<StatRow>;
 }) {
   const [offset, setOffset] = createSignal(0);
-  const [report, { refetch }] = createResource(offset, (at) =>
-    at ? props.read(at) : Promise.resolve(props.first),
+  const report = createDiagnosticRead(
+    () => ({ offset: offset(), read: props.read, first: props.first }),
+    (key) => (key.offset ? key.read(key.offset) : Promise.resolve(key.first)),
   );
-  const page = () => props.rows(report() ?? props.first);
+  const page = () => props.rows(report.current() ?? props.first);
   const max = () => Math.max(1, ...page().items.map((row) => row.count));
   return (
     <section class="stat-table">
       <h2>{props.title}</h2>
       <small>{props.unit}</small>
-      <Show when={report.loading}>
+      <Show when={report.loading()}>
         <PageLoader inline />
       </Show>
-      <Show when={report.error}>
-        <p role="alert">{String(report.error)}</p>
-        <button onClick={() => refetch()}>{t("Réessayer")}</button>
+      <Show when={report.error()}>
+        <p role="alert">{String(report.error())}</p>
+        <button onClick={() => report.refetch()}>{t("Réessayer")}</button>
       </Show>
-      <Show when={!report.loading && !report.error}>
+      <Show when={!report.loading() && !report.error()}>
         <Show
           when={page().items.length}
           fallback={<p class="muted">{t("Aucune donnée enregistrée.")}</p>}
@@ -61,7 +63,7 @@ export function StatisticsTable(props: {
       <Show when={page().total > 50}>
         <div class="stat-pagination">
           <button
-            disabled={offset() === 0 || report.loading}
+            disabled={offset() === 0 || report.loading()}
             onClick={() => setOffset(Math.max(0, offset() - 50))}
           >
             {t("Précédent")}{" "}
@@ -70,7 +72,7 @@ export function StatisticsTable(props: {
             {offset() + 1}–{Math.min(offset() + 50, page().total)} / {numberLabel(page().total)}
           </span>
           <button
-            disabled={offset() + 50 >= page().total || report.loading}
+            disabled={offset() + 50 >= page().total || report.loading()}
             onClick={() => setOffset(offset() + 50)}
           >
             {t("Suivant")}{" "}

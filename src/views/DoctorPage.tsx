@@ -1,6 +1,7 @@
 import { EmptyState } from "../components/EmptyState";
 import { t } from "../i18n";
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
+import { createDiagnosticRead } from "../library/diagnostic-read";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { issueLabels, parseDoctor, severityLabels, type Severity } from "../library/doctor";
@@ -11,18 +12,29 @@ export function DoctorPage() {
   const library = useLibrary(),
     [severity, setSeverity] = createSignal<Severity | "">(""),
     [offset, setOffset] = createSignal(0);
-  const [report, { refetch }] = createResource(
+  const report = createDiagnosticRead(
     () =>
       library.session()
-        ? { session: library.session(), severity: severity(), offset: offset() }
+        ? {
+            session: library.session(),
+            source: library.source(),
+            severity: severity(),
+            offset: offset(),
+          }
         : false,
     async (key) =>
       parseDoctor(
-        await requestAede("/api/v1/doctor", {
-          offset: String(key.offset),
-          limit: "50",
-          ...(key.severity ? { severity: key.severity } : {}),
-        }),
+        await requestAede(
+          "/api/v1/doctor",
+          {
+            offset: String(key.offset),
+            limit: "50",
+            ...(key.severity ? { severity: key.severity } : {}),
+          },
+          "GET",
+          null,
+          key.source,
+        ),
         key.offset,
       ),
   );
@@ -57,11 +69,11 @@ export function DoctorPage() {
           class="icon-button quiet"
           aria-label={t("Actualiser le diagnostic")}
           title={t("Actualiser le diagnostic")}
-          aria-busy={report.loading}
-          disabled={!library.session() || report.loading}
-          onClick={() => refetch()}
+          aria-busy={report.loading()}
+          disabled={!library.session() || report.loading()}
+          onClick={() => report.refetch()}
         >
-          <Show when={report.loading} fallback={<Icon name="refresh" />}>
+          <Show when={report.loading()} fallback={<Icon name="refresh" />}>
             <span class="spinner" aria-hidden="true" />
           </Show>
         </button>
@@ -69,43 +81,43 @@ export function DoctorPage() {
       <Show when={!library.session()}>
         <p class="notice">{t("Connectez Aède pour lire les diagnostics.")}</p>
       </Show>
-      <Show when={report.loading}>
+      <Show when={report.loading()}>
         <span class="sr-only" role="status">
           {t("Lecture des diagnostics…")}
         </span>
       </Show>
-      <Show when={report.error}>
+      <Show when={report.error()}>
         <p role="alert">
-          {t("Diagnostic indisponible :")} {String(report.error)}
+          {t("Diagnostic indisponible :")} {String(report.error())}
         </p>
       </Show>
-      <Show when={library.session() && report() && !report.error}>
-        {(_ready) => (
+      <Show when={report.current()}>
+        {(ready) => (
           <>
             <div class="doctor-summary">
               <For each={["error", "warning", "info"] as const}>
                 {(value) => (
                   <div class={`doctor-count ${value}`}>
-                    <strong>{numberLabel(report()!.summary[value])}</strong>
+                    <strong>{numberLabel(ready().summary[value])}</strong>
                     <span>{t(severityLabels[value])}</span>
                   </div>
                 )}
               </For>
             </div>
             <p class="muted">
-              {numberLabel(report()!.unverified_files)}{" "}
+              {numberLabel(ready().unverified_files)}{" "}
               {t("fichiers sans vérification enregistrée ·")}{" "}
-              {numberLabel(report()!.pending_analyses)}{" "}
+              {numberLabel(ready().pending_analyses)}{" "}
               {t("analyses en attente. Les raisons détaillées sont celles d’Aède.")}{" "}
             </p>
             <Show
-              when={report()!.total}
+              when={ready().total}
               fallback={
                 <EmptyState icon="doctor">{t("Aucun diagnostic dans cette sélection.")}</EmptyState>
               }
             >
               <ul class="doctor-issues">
-                <For each={report()!.items}>
+                <For each={ready().items}>
                   {(issue) => (
                     <li class={issue.severity}>
                       <span class="doctor-severity">{t(severityLabels[issue.severity])}</span>
@@ -142,11 +154,11 @@ export function DoctorPage() {
                   {t("Précédents")}{" "}
                 </button>
                 <span>
-                  {offset() + 1}–{Math.min(offset() + 50, report()!.total)} /{" "}
-                  {numberLabel(report()!.total)}
+                  {offset() + 1}–{Math.min(offset() + 50, ready().total)} /{" "}
+                  {numberLabel(ready().total)}
                 </span>
                 <button
-                  disabled={offset() + 50 >= report()!.total}
+                  disabled={offset() + 50 >= ready().total}
                   onClick={() => setOffset(offset() + 50)}
                 >
                   {t("Suivants")}{" "}
