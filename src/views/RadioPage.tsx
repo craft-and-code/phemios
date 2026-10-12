@@ -1,3 +1,4 @@
+import { createRadioTuner, radioTuningKey } from "../radio/tuner";
 import { Feedback } from "../components/Feedback";
 import { CountryGlobe } from "../components/CountryGlobe";
 import { createDirectoryCount } from "../radio/directory-count";
@@ -11,7 +12,7 @@ import {
 import { EmptyState } from "../components/EmptyState";
 import { RadioSearch } from "../components/RadioSearch";
 import { RadioFavourites } from "../components/RadioFavourites";
-import { createAccountRadioFavourites } from "../radio/account-favourites";
+import { createAccountRadioFavourites, radioFavouriteOwner } from "../radio/account-favourites";
 import { readRadioFavourites } from "../radio/favourites";
 import { locale } from "../i18n";
 import { t, countryName } from "../i18n";
@@ -25,12 +26,7 @@ export function RadioPage(props: { query: string }) {
   const library = useLibrary(),
     radio = library.radio;
   const favourites = createAccountRadioFavourites(
-    () => {
-      const session = library.session();
-      return session
-        ? `${library.source()}|${session.server}|${session.account.username}`
-        : undefined;
-    },
+    () => radioFavouriteOwner(library.source(), library.session()),
     (owner, method, body) =>
       requestAede(
         "/api/me/v1/preferences",
@@ -73,6 +69,13 @@ export function RadioPage(props: { query: string }) {
   );
   const { stations, more, offset, selected, busy, error, loaded, search, setSelected } = directory;
   const chosen = () => stations()[selected()];
+  const tuner = createRadioTuner({
+    stations,
+    select: setSelected,
+    station: radio.station,
+    status: radio.status,
+    start: radio.start,
+  });
   onMount(() => {
     try {
       setCountry(radioCountryPreference(localStorage, navigator.languages));
@@ -239,12 +242,24 @@ export function RadioPage(props: { query: string }) {
                 value={selected()}
                 aria-label={t("Sélectionner une station sur le cadran")}
                 aria-valuetext={chosen()?.name ?? ""}
-                onInput={(e) => setSelected(Number(e.currentTarget.value))}
+                onPointerDown={() => tuner.begin()}
+                onInput={(e) => tuner.preview(Number(e.currentTarget.value))}
+                onChange={() => tuner.change()}
+                onPointerUp={() => tuner.finish()}
+                onPointerCancel={tuner.cancel}
+                onLostPointerCapture={tuner.cancel}
+                onKeyDown={(event) => {
+                  if (radioTuningKey(event.key)) tuner.begin();
+                }}
+                onKeyUp={(event) => {
+                  if (radioTuningKey(event.key)) tuner.finish();
+                }}
+                onBlur={() => tuner.finish()}
               />
             </div>
             <p class="muted">
               {t(
-                "Glissez le cadran, utilisez les flèches du clavier ou choisissez une station, puis lancez l’écoute.",
+                "Glissez le cadran ou utilisez les flèches pour changer de station pendant l’écoute. Sinon, sélectionnez une station puis lancez l’écoute.",
               )}{" "}
             </p>
           </div>
@@ -255,7 +270,7 @@ export function RadioPage(props: { query: string }) {
                   <button
                     class="radio-station"
                     aria-pressed={selected() === i()}
-                    onClick={() => setSelected(i())}
+                    onClick={() => tuner.choose(i())}
                   >
                     <span class="radio-station-number">
                       {String(offset() + i() + 1).padStart(2, "0")}

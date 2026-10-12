@@ -1,8 +1,14 @@
-import { createEffect, createSignal, onCleanup } from "solid-js";
+import type { AccountSession } from "../library/server";
+import type { SourceId } from "../library/sources";
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import type { Station } from "./directory";
 import { readRadioFavourites } from "./favourites";
 export const radioAccountKey = "phemios.radio-favourites";
+/** Stable source/authority/account identity; login renames do not create another favourite owner. */
+export function radioFavouriteOwner(source: SourceId, session: AccountSession | undefined) {
+  return session ? `${source}|${session.server}|${session.account.id}` : undefined;
+}
 /** Current-owner preferences retain only public station metadata; playback never uses this service. */
 export function createAccountRadioFavourites(
   owner: () => string | undefined,
@@ -12,20 +18,21 @@ export function createAccountRadioFavourites(
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
     [loaded, setLoaded] = createSignal(false);
+  const identity = createMemo(owner);
   let generation = 0;
   const decode = (value: unknown) =>
     readRadioFavourites({ getItem: () => JSON.stringify(value), setItem: () => {} });
   createEffect(() => {
-    const identity = owner(),
+    const heldOwner = identity(),
       epoch = ++generation;
     setStations([]);
     setLoaded(false);
     setBusy(false);
     setError("");
-    if (!identity) return;
+    if (!heldOwner) return;
     void (async () => {
       try {
-        const response = (await request(identity, "GET")) as { values?: Record<string, unknown> };
+        const response = (await request(heldOwner, "GET")) as { values?: Record<string, unknown> };
         if (
           !response ||
           !response.values ||
@@ -47,17 +54,17 @@ export function createAccountRadioFavourites(
   });
   onCleanup(() => generation++);
   async function publish(rows: Station[]) {
-    const identity = owner(),
+    const heldOwner = identity(),
       epoch = generation;
-    if (!identity || !loaded() || busy()) return;
+    if (!heldOwner || !loaded() || busy()) return;
     setBusy(true);
     setError("");
     try {
       const value = { version: 1, stations: decode({ version: 1, stations: rows }) };
       if (new TextEncoder().encode(JSON.stringify(value)).length > 8192)
         throw Error(t("La limite de favoris radio du compte est atteinte."));
-      await request(identity, "PATCH", { values: { [radioAccountKey]: value } });
-      if (epoch === generation && identity === owner()) setStations(value.stations);
+      await request(heldOwner, "PATCH", { values: { [radioAccountKey]: value } });
+      if (epoch === generation && heldOwner === identity()) setStations(value.stations);
     } catch (failure) {
       if (epoch === generation) setError(String(failure));
     } finally {
@@ -68,7 +75,7 @@ export function createAccountRadioFavourites(
     stations,
     error,
     busy,
-    available: () => !!owner() && loaded(),
+    available: () => !!identity() && loaded(),
     has: (uuid: string) => stations().some((row) => row.uuid === uuid),
     toggle: (row: Station) =>
       publish(
