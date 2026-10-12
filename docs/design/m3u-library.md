@@ -12,6 +12,8 @@ Listing reads metadata only and deliberately returns `track_count:null`. Only se
 
 ## Preview, downloads and recovery
 
+The file list and selected content have separate height-bounded scroll areas, with keyboard focus and independent right-side scrollbars. The category/search toolbar and pagination remain outside those areas. Narrow windows stack the panes without giving an unbounded list control of the page height. Page/category/query updates are batched before admitting the next read.
+
 Simple path-only and extended files, a UTF-8 BOM and CRLF are supported. Extended titles are associated with their next entry; an unnamed entry uses its last path component. The original text is retained for exact download, including BOM and line endings. Native publication derives a confined opaque basename and a fixed `.m3u`/`.m3u8` extension, creates private files without overwriting previous downloads, and ignores a server-supplied destination path.
 
 File and export reads resolve failures inside the view, keeping Refresh/Retry and navigation available. Results, selected content and download acknowledgements belong to the exact session, source, category, query, page and file. Changing owner immediately hides retained personal content; unmount prevents further request admission. Explicit Refresh checks capabilities again, so updating the same server does not require a logout. Query changes are coalesced for 250 ms before enumerating folders.

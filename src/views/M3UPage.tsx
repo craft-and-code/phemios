@@ -1,4 +1,4 @@
-import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
+import { batch, createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { createM3UBrowser } from "../library/m3u-browser";
@@ -27,8 +27,10 @@ export function M3UPage(props: { query: string }) {
       () => props.query,
       (value) => {
         const timer = setTimeout(() => {
-          setOffset(0);
-          setQuery(value.trim());
+          batch(() => {
+            setOffset(0);
+            setQuery(value.trim());
+          });
         }, 250);
         onCleanup(() => clearTimeout(timer));
       },
@@ -66,8 +68,10 @@ export function M3UPage(props: { query: string }) {
     }
   }
   function choose(next: M3UKind) {
-    setOffset(0);
-    setKind(next);
+    batch(() => {
+      setOffset(0);
+      setKind(next);
+    });
   }
   return (
     <section class="page m3u-page">
@@ -132,7 +136,7 @@ export function M3UPage(props: { query: string }) {
         }
       >
         <div class="m3u-workspace">
-          <ul class="m3u-library">
+          <ul class="m3u-library" tabIndex={0} aria-label={t("Fichiers de la bibliothèque")}>
             <For each={reads.page()?.items}>
               {(row) => (
                 <li>
@@ -184,7 +188,7 @@ export function M3UPage(props: { query: string }) {
               {(file) => (
                 <>
                   <div class="section-heading">
-                    <h2>{file().name}</h2>
+                    <h2 title={file().name}>{file().name}</h2>
                     <button
                       class="icon-button"
                       title={t("Télécharger le M3U")}
@@ -198,7 +202,9 @@ export function M3UPage(props: { query: string }) {
                     </button>
                   </div>
                   <Show when={file().path}>
-                    <p class="muted m3u-file-path">{file().path}</p>
+                    <p class="muted m3u-file-path" title={file().path}>
+                      {file().path}
+                    </p>
                   </Show>
                   <p class="muted">{t("{0} pistes", file().titles.length)}</p>
                   <Show
@@ -207,7 +213,7 @@ export function M3UPage(props: { query: string }) {
                       <EmptyState icon="playlist">{t("Cette liste M3U est vide.")}</EmptyState>
                     }
                   >
-                    <ol>
+                    <ol tabIndex={0} aria-label={file().name}>
                       <For each={file().titles}>{(title) => <li>{title}</li>}</For>
                     </ol>
                   </Show>
