@@ -48,7 +48,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
   { id: "history", label: t("Historique"), symbol: "history" },
-  { id: "playlists", label: t("Exports M3U"), symbol: "playlist" },
+  { id: "playlists", label: t("Listes M3U"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
   { id: "concerts", label: t("Concerts"), symbol: "concerts" },

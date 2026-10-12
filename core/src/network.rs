@@ -362,6 +362,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/preferences"
                     | "/api/me/v1/moods"
                     | "/api/me/v1/m3u"
+                    | "/api/me/v1/m3u-files"
                     | "/api/me/v1/collections"
                     | "/api/me/v1/collection"
                     | "/api/me/v1/collection/albums"
@@ -370,6 +371,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/history"
             ) || task_path(path, false)
                 || playlist_path(path)
+                || library_playlist_path(path)
                 || account_path(path, false)
         }
         "PUT" => matches!(
@@ -454,3 +456,8 @@ fn account_path(path: &str, sessions: bool) -> bool {
 #[cfg(test)]
 #[path = "network_test_support.rs"]
 pub(crate) mod test_support;
+
+fn library_playlist_path(path: &str) -> bool {
+    path.strip_prefix("/api/me/v1/m3u-files/m3u-file-")
+        .is_some_and(|id| id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit()))
+}

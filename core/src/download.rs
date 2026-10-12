@@ -17,6 +17,42 @@ pub fn publish(folder: &Path, id: &str, response: &Value) -> Result<PathBuf, Str
         .ok_or("Contenu M3U invalide.")?;
     publish_named(folder, id, "m3u", content.as_bytes())
 }
+/// Save an existing folder M3U verbatim under an opaque native-selected name.
+/// References remain inert; even an unsafe server filename cannot choose the destination.
+pub fn publish_library_m3u(folder: &Path, id: &str, response: &Value) -> Result<PathBuf, String> {
+    if !id.strip_prefix("m3u-file-").is_some_and(|value| {
+        value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+    }) || response["id"].as_str() != Some(id)
+    {
+        return Err("Identité de M3U invalide.".into());
+    }
+    let filename = response["filename"]
+        .as_str()
+        .ok_or("Contenu M3U invalide.")?
+        .to_ascii_lowercase();
+    let extension = if filename.ends_with(".m3u8") {
+        "m3u8"
+    } else if filename.ends_with(".m3u") {
+        "m3u"
+    } else {
+        return Err("Contenu M3U invalide.".into());
+    };
+    let content = response["content"]
+        .as_str()
+        .filter(|value| value.len() <= 8 * 1024 * 1024 && !value.contains('\0'))
+        .ok_or("Contenu M3U invalide.")?;
+    let entries = content
+        .trim_start_matches('\u{feff}')
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .count();
+    if entries > 4096 || response["track_count"].as_u64() != Some(entries as u64) {
+        return Err("Contenu M3U invalide.".into());
+    }
+    publish_named(folder, id, extension, content.as_bytes())
+}
+
 fn publish_named(
     folder: &Path,
     stem: &str,

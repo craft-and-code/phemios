@@ -102,3 +102,52 @@ fn wikipedia_text_exports_are_identity_scoped_and_repeated_downloads_preserve_pr
     assert_eq!(std::fs::read_dir(&folder).unwrap().count(), 2);
     std::fs::remove_dir_all(folder).unwrap();
 }
+
+#[test]
+fn folder_playlist_download_keeps_simple_bom_bytes_and_uses_only_opaque_names() {
+    let root = std::env::temp_dir().join(format!("phemios-folder-playlist-{}", std::process::id()));
+    let id = format!("m3u-file-{}", "c".repeat(64));
+    let response = json!({"id":id,"filename":"../../unsafe.m3u8", "content":"\u{feff}one.flac\r\ntwo.mp3\r\n", "track_count":2});
+    let first = publish_library_m3u(&root, &id, &response).unwrap();
+    let second = publish_library_m3u(&root, &id, &response).unwrap();
+    assert_eq!(first.file_name().unwrap(), format!("{id}.m3u8").as_str());
+    assert_ne!(first, second);
+    assert_eq!(
+        fs::read(first).unwrap(),
+        response["content"].as_str().unwrap().as_bytes()
+    );
+    assert!(
+        publish_library_m3u(
+            &root,
+            &id,
+            &json!({"id":"wrong", "filename":"one.m3u", "content":"one.flac", "track_count":1})
+        )
+        .is_err()
+    );
+    assert!(
+        publish_library_m3u(
+            &root,
+            &id,
+            &json!({"id":id, "filename":"one.m3u", "content":"one.flac\0", "track_count":1})
+        )
+        .is_err()
+    );
+    assert!(publish_library_m3u(&root, "../../escape", &response).is_err());
+    assert!(
+        publish_library_m3u(
+            &root,
+            &id,
+            &json!({"id":id, "filename":"one.html", "content":"one.flac", "track_count":1})
+        )
+        .is_err()
+    );
+    assert!(
+        publish_library_m3u(
+            &root,
+            &id,
+            &json!({"id":id, "filename":"one.m3u", "content":"one.flac", "track_count":2})
+        )
+        .is_err()
+    );
+    fs::remove_dir_all(root).unwrap();
+}

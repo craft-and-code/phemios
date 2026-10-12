@@ -284,3 +284,30 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.m3u-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.m3u-toolbar > .icon-button {
+  margin-left: auto;
+}
+.m3u-row-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.m3u-library .m3u-row-name small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.m3u-file-path {
+  overflow-wrap: anywhere;
+}

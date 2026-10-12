@@ -338,3 +338,9 @@ Manual and filter-based collection creation share `create_only` writes. Existing
 Scene controls overlay the visual stage vertically without a reserved layout row. Canvas-local point reuse, indexed frequency segments and surface refresh admission are documented in the [visualizer review](../coding/visualizer-performance.md). Pause/hidden/unmount scheduling, resident lyric typography and the existing draw ceiling retain their previous contracts.
 
 Annotation reads accept all eight canonical Aède entity kinds, including kinds without a Phémios detail page. Native qualification covers those same kinds. Ownership markers are interpreted only immediately after the first entity delimiter; marker-like text inside a legitimate server file key is preserved. Snapshot publication still requires every bounded page to validate, exact captured session admission and a single source. Invalid responses retain useful translated validation details rather than a heading with no explanation. Unsupported detail kinds remain retained annotations and are not turned into invented catalogue routes.
+
+## Existing folder playlist browsing
+
+The [M3U library view](m3u-library.md) defaults to authenticated discovery of existing watched-root `.m3u`/`.m3u8` files, including files generated directly by Aède. Saved account exports remain a separate category. Discovery does not read content for counts; selected text stays inert and exact native downloads use a bounded opaque filename. The `library_m3u_files` capability guards the additive routes and full-query pagination. Explicit Refresh recovers after updating the same server, and failed reads retain local Retry instead of replacing the view.
+
+The [radio tuner](radio-tuner.md) previews a gesture and retunes the currently engaged radio only on release; it remains independent of an Aède login.

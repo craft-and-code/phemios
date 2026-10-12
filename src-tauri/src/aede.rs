@@ -312,8 +312,14 @@ pub(crate) async fn aede_download(
     let client = client(state.owner(self::source(source.as_deref())?))?;
     let folder = state.downloads.clone();
     blocking(move || {
-        let response = client.request("GET", &format!("/api/me/v1/m3u/{id}"), &[], None)?;
-        let path = phemios_core::download::publish(&folder, &id, &response)?;
+        let library_file = id.starts_with("m3u-file-");
+        let route = if library_file { "m3u-files" } else { "m3u" };
+        let response = client.request("GET", &format!("/api/me/v1/{route}/{id}"), &[], None)?;
+        let path = if library_file {
+            phemios_core::download::publish_library_m3u(&folder, &id, &response)?
+        } else {
+            phemios_core::download::publish(&folder, &id, &response)?
+        };
         Ok(path.to_string_lossy().into_owned())
     })
     .await

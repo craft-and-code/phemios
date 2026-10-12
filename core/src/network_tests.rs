@@ -548,3 +548,48 @@ fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
         json!({"artists":[expected_artist],"albums":[expected_album],"scannedAt":42,"server":server,"accountId":"fixture"})
     );
 }
+
+#[test]
+fn library_m3u_files_admit_only_read_only_bounded_opaque_ids() {
+    let id = format!("m3u-file-{}", "b".repeat(64));
+    assert!(allowed("GET", "/api/me/v1/m3u-files"));
+    assert!(allowed("GET", &format!("/api/me/v1/m3u-files/{id}")));
+    for method in ["POST", "PUT", "DELETE", "PATCH"] {
+        assert!(!allowed(method, "/api/me/v1/m3u-files"));
+        assert!(!allowed(method, &format!("/api/me/v1/m3u-files/{id}")));
+    }
+    for suffix in [
+        "../../private",
+        "m3u-file-abc",
+        "m3u-file-/etc",
+        "playlist-abc",
+    ] {
+        assert!(!allowed("GET", &format!("/api/me/v1/m3u-files/{suffix}")));
+    }
+}
+
+#[test]
+fn folder_playlist_errors_translate_known_codes_without_echoing_server_text() {
+    for (status, code) in [
+        (404, "m3u_file_not_found"),
+        (409, "m3u_files_changed"),
+        (413, "m3u_files_too_large"),
+        (422, "m3u_text_invalid"),
+        (422, "m3u_path_invalid"),
+        (503, "m3u_files_timeout"),
+        (503, "m3u_file_unavailable"),
+    ] {
+        let detail =
+            serde_json::json!({"error":{"code":code,"message":"SECRET /private/untrusted"}});
+        let answer =
+            errors::request_failure(status, "GET", "/api/me/v1/m3u-files", false, Some(&detail));
+        assert!(answer.contains("M3U"));
+        assert!(!answer.contains("SECRET"));
+        assert!(!answer.contains("untrusted"));
+    }
+    let detail = serde_json::json!({"error":{"code":"m3u_text_invalid","message":"SECRET"}});
+    assert_eq!(
+        errors::request_failure(403, "GET", "/api/me/v1/m3u-files", false, Some(&detail)),
+        failure(403)
+    );
+}
