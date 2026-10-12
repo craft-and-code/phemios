@@ -39,7 +39,7 @@ export function RatedPage(props: { query: string }) {
   return (
     <section class="page rated-page">
       <StickyHeader>
-        <div class="rating-filter">
+        <div class="selection-filter-row">
           <ResultCount value={albums().length} />
           <span>{t("Note minimale")}</span>
           <StarRating

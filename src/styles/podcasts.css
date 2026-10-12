@@ -11,6 +11,9 @@
   flex: 1;
   min-width: 220px;
 }
+.podcast-add input {
+  min-height: var(--form-control-height);
+}
 .podcast-library {
   display: grid;
   grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);

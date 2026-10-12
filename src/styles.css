@@ -22,6 +22,7 @@
   --muted: #a4a6a7;
   --border: #303234;
   --surface: #1a1c1d;
+  --form-control-height: 38px;
   --sidebar: #151718;
   --player: #1a1c1d;
   font-synthesis: none;
@@ -1110,7 +1111,7 @@ main:has(> .playback-page) > :not(.playback-page) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 38px;
+  min-height: var(--form-control-height);
   padding: 8px 14px;
   vertical-align: middle;
 }
@@ -1671,7 +1672,7 @@ textarea,
   margin-bottom: 20px;
 }
 .page-sticky-header .personal-selection-actions,
-.page-sticky-header .rating-filter,
+.page-sticky-header .selection-filter-row,
 .page-sticky-header .page-heading {
   margin-block: 0;
 }

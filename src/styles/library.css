@@ -1332,20 +1332,18 @@ button.metadata-link:hover {
   white-space: pre-line;
 }
 
-.rating-filter {
+.selection-filter-row {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 .card-rating {
   color: var(--accent) !important;
   letter-spacing: -1px;
 }
 
-.rating-filter {
-  flex-wrap: wrap;
-}
 .history-reset {
   align-self: flex-start;
 }

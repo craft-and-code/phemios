@@ -36,6 +36,11 @@ export const Interactive: Story = {
       input = canvas.getByRole("textbox"),
       button = canvas.getByRole("button", { name: "S’abonner" });
     await expect(button).toBeDisabled();
+    const inputBox = input.getBoundingClientRect(),
+      buttonBox = button.getBoundingClientRect();
+    expect(inputBox.height).toBeGreaterThan(20);
+    expect(Math.abs(inputBox.height - buttonBox.height)).toBeLessThan(0.6);
+    expect(Math.abs(inputBox.top - buttonBox.top)).toBeLessThan(0.6);
     await userEvent.type(input, "https://example.org/feed.xml");
     await expect(button).toBeEnabled();
     await userEvent.clear(input);
@@ -44,6 +49,9 @@ export const Interactive: Story = {
     await userEvent.click(button);
     await expect(button).toBeDisabled();
     await expect(button).toHaveAttribute("aria-busy", "true");
+    expect(
+      Math.abs(input.getBoundingClientRect().height - button.getBoundingClientRect().height),
+    ).toBeLessThan(0.6);
   },
 };
 export const ReadOnly: Story = { args: { url: "https://example.org/feed.xml", disabled: true } };

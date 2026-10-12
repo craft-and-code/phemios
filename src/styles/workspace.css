@@ -548,6 +548,7 @@ button:is(:hover, :focus-visible) .activity-glyph > .activity-stop {
   margin-block: 0;
 }
 
-.page-sticky-header .tag-choices {
-  margin-block: 12px 0;
+.page-sticky-header .selection-filter-row > .tag-choices {
+  flex: 1 1 240px;
+  margin-block: 0;
 }
