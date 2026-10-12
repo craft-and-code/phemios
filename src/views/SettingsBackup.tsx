@@ -1,5 +1,6 @@
-import { createPendingAction } from "../library/pending-action";
-import { createSignal, Show } from "solid-js";
+import { interfacePreferences, interfaceProfileIdentity } from "../library/account-preferences";
+import { createPreferenceTransfer } from "../library/preference-transfer";
+import { Show, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { ActionButton } from "../components/ActionButton";
 import { Feedback } from "../components/Feedback";
@@ -8,53 +9,32 @@ import {
   exportPreferenceBackup,
   parsePreferenceBackup,
   applyPreferenceBackup,
-  type PreferenceBackup,
 } from "../library/preference-backup";
 import { announceSetting } from "../library/saved-settings";
 import { applyPreferences, readPreferences } from "../library/preferences";
 /** A native chosen file is reviewed before an explicit all-settings restore. */
 export function SettingsBackup() {
-  const action = createPendingAction<"export" | "import">(),
-    busy = () => action.pending() !== undefined;
-  const [pending, setPending] = createSignal<PreferenceBackup>(),
-    [error, setError] = createSignal(""),
-    [message, setMessage] = createSignal("");
-  async function run(exporting: boolean) {
-    if (busy()) return;
-    setError("");
-    setMessage("");
-    setPending(undefined);
-    try {
-      await action.run(exporting ? "export" : "import", async () => {
-        if (exporting) {
-          const path = await exportPreferences(exportPreferenceBackup(localStorage));
-          if (path) setMessage(t("Préférences enregistrées : {0}", path));
-        } else {
-          const raw = await importPreferences();
-          if (raw !== null) setPending(parsePreferenceBackup(raw));
-        }
-      });
-    } catch (failure) {
-      setError(String(failure));
-    }
-  }
-  function restore() {
-    const input = pending();
-    if (!input) return;
-    try {
-      const values = applyPreferenceBackup(localStorage, input);
-      applyPreferences(readPreferences(localStorage));
+  const transfer = createPreferenceTransfer({
+    identity: interfaceProfileIdentity,
+    read: () => exportPreferenceBackup(interfacePreferences),
+    export: exportPreferences,
+    import: importPreferences,
+    parse: parsePreferenceBackup,
+    apply(input) {
+      const values = applyPreferenceBackup(interfacePreferences, input);
+      applyPreferences(readPreferences(interfacePreferences));
       window.dispatchEvent(new Event("phemios-settings-loaded"));
       window.dispatchEvent(new Event("phemios-preferences"));
       for (const [key, value] of Object.entries(values))
         announceSetting(key, JSON.stringify(value));
-      setPending(undefined);
-      setMessage(t("Préférences importées."));
-      setError("");
-    } catch (failure) {
-      setError(String(failure));
-    }
-  }
+    },
+  });
+  const busy = () => transfer.action() !== undefined;
+  onMount(() => window.addEventListener("phemios-settings-loaded", transfer.changed));
+  onCleanup(() => {
+    transfer.dispose();
+    window.removeEventListener("phemios-settings-loaded", transfer.changed);
+  });
   return (
     <section class="settings-card">
       <h2>{t("Sauvegarde des préférences")}</h2>
@@ -66,22 +46,22 @@ export function SettingsBackup() {
       <div class="settings-actions">
         <ActionButton
           icon="download"
-          busy={action.pending() === "export"}
+          busy={transfer.action() === "export"}
           disabled={!isNative() || busy()}
-          onClick={() => void run(true)}
+          onClick={() => void transfer.run(true)}
         >
           {t("Exporter les préférences")}
         </ActionButton>
         <ActionButton
           icon="upload"
-          busy={action.pending() === "import"}
+          busy={transfer.action() === "import"}
           disabled={!isNative() || busy()}
-          onClick={() => void run(false)}
+          onClick={() => void transfer.run(false)}
         >
           {t("Importer les préférences")}
         </ActionButton>
       </div>
-      <Show when={pending()}>
+      <Show when={transfer.pending()}>
         <div class="preference-import-review">
           <p>
             {t(
@@ -89,17 +69,17 @@ export function SettingsBackup() {
             )}
           </p>
           <div class="settings-actions">
-            <ActionButton icon="check" onClick={restore}>
+            <ActionButton icon="check" onClick={transfer.apply}>
               {t("Appliquer les préférences")}
             </ActionButton>
-            <ActionButton icon="close" onClick={() => setPending(undefined)}>
+            <ActionButton icon="close" onClick={transfer.clearPending}>
               {t("Annuler")}
             </ActionButton>
           </div>
         </div>
       </Show>
-      <Feedback error message={error()} onClose={() => setError("")} />
-      <Feedback message={message()} onClose={() => setMessage("")} />
+      <Feedback error message={transfer.error()} onClose={transfer.clearError} />
+      <Feedback message={transfer.message()} onClose={transfer.clearMessage} />
     </section>
   );
 }

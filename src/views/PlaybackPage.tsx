@@ -1,3 +1,4 @@
+import { interfacePreferences } from "../library/account-preferences";
 import { lyricAct } from "../visualizer/lyric-treatment";
 import {
   createEffect,
@@ -37,21 +38,25 @@ export function PlaybackPage() {
     window.addEventListener("phemios-queue-toggle", toggleQueue);
     onCleanup(() => window.removeEventListener("phemios-queue-toggle", toggleQueue));
     function restore() {
+      setSpectrum(false);
+      setBarStyle("gradient");
+      setScene("sphere");
+      setError("");
       try {
-        const savedBands = localStorage.getItem("phemios.spectrum");
+        const savedBands = interfacePreferences.getItem("phemios.spectrum");
         if (savedBands !== null) {
           const value = JSON.parse(savedBands);
           if (typeof value !== "boolean") throw new Error(t("Préférences invalides."));
           setSpectrum(value);
         }
-        const savedStyle = localStorage.getItem("phemios.spectrum-style");
+        const savedStyle = interfacePreferences.getItem("phemios.spectrum-style");
         if (savedStyle) {
           const value = JSON.parse(savedStyle);
           if (!["gradient", "terminal"].includes(value))
             throw new Error(t("Préférences invalides."));
           setBarStyle(value);
         }
-        const raw = localStorage.getItem("phemios.visualizer");
+        const raw = interfacePreferences.getItem("phemios.visualizer");
         if (raw) {
           const value = JSON.parse(raw);
           if (!["off", "sphere", "waves", "landscape", "floating"].includes(value))
@@ -99,7 +104,7 @@ export function PlaybackPage() {
     !!player.current() && ["playing", "paused", "connecting"].includes(player.state().status);
   function choose(value: Scene) {
     try {
-      localStorage.setItem("phemios.visualizer", JSON.stringify(value));
+      interfacePreferences.setItem("phemios.visualizer", JSON.stringify(value));
       announceSetting("phemios.visualizer", JSON.stringify(value));
       setScene(value);
       setError("");
@@ -181,7 +186,7 @@ export function PlaybackPage() {
                 onClick={() => {
                   try {
                     const value = !spectrum();
-                    localStorage.setItem("phemios.spectrum", JSON.stringify(value));
+                    interfacePreferences.setItem("phemios.spectrum", JSON.stringify(value));
                     announceSetting("phemios.spectrum", JSON.stringify(value));
                     setSpectrum(value);
                   } catch (failure) {
@@ -204,7 +209,7 @@ export function PlaybackPage() {
                   onClick={() => {
                     try {
                       const next = barStyle() === "gradient" ? "terminal" : "gradient";
-                      localStorage.setItem("phemios.spectrum-style", JSON.stringify(next));
+                      interfacePreferences.setItem("phemios.spectrum-style", JSON.stringify(next));
                       announceSetting("phemios.spectrum-style", JSON.stringify(next));
                       setBarStyle(next);
                     } catch (failure) {

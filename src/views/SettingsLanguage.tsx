@@ -1,3 +1,4 @@
+import { interfacePreferences } from "../library/account-preferences";
 import { Feedback } from "../components/Feedback";
 import { ChoiceSelect } from "../components/ChoiceSelect";
 import { createSignal, onMount, onCleanup } from "solid-js";
@@ -9,7 +10,7 @@ export function SettingsLanguage() {
     [error, setError] = createSignal("");
   onMount(() => {
     try {
-      setLanguage(readPreferences(localStorage).language);
+      setLanguage(readPreferences(interfacePreferences).language);
     } catch (failure) {
       setError(String(failure));
     }
@@ -17,7 +18,8 @@ export function SettingsLanguage() {
   onMount(() => {
     const reload = () => {
       try {
-        setLanguage(readPreferences(localStorage).language);
+        setLanguage(readPreferences(interfacePreferences).language);
+        setError("");
       } catch (failure) {
         setError(String(failure));
       }
@@ -36,11 +38,11 @@ export function SettingsLanguage() {
           onChange={(selected) => {
             try {
               const next = {
-                  ...readPreferences(localStorage),
+                  ...readPreferences(interfacePreferences),
                   language: selected as "fr" | "en",
                 },
                 raw = JSON.stringify(next);
-              localStorage.setItem("phemios.appearance", raw);
+              interfacePreferences.setItem("phemios.appearance", raw);
               applyPreferences(next);
               announceSetting("phemios.appearance", raw);
               setLanguage(next.language);

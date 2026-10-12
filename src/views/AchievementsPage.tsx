@@ -1,44 +1,15 @@
-import { createResource, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 import { locale, t } from "../i18n";
 import { useLibrary } from "../library/context";
-import { requestAede } from "../platform/desktop";
-import { parseAchievements } from "../library/achievements";
+import { createAchievementLoading } from "../library/achievement-loading";
 import { Icon } from "../components/Icon";
 import { Feedback } from "../components/Feedback";
 import { EmptyState } from "../components/EmptyState";
 /** The engine exposes only anonymous locks until owner-private evidence unlocks them. */
 export function AchievementsPage() {
   const library = useLibrary();
-  const [loaded, { refetch }] = createResource(
-    () => library.session() && { session: library.session()!, source: library.source() },
-    async (key) => {
-      const info = await requestAede<{ capabilities: string[] }>(
-        "/api/v1/status",
-        {},
-        "GET",
-        null,
-        key.source,
-      );
-      if (!info.capabilities.includes("private_achievements"))
-        throw new Error(t("Mettez à jour puis redémarrez Aède pour les trophées."));
-      const raw = await requestAede(
-        "/api/me/v1/achievements",
-        {},
-        key.session.account.role === "auditor" ? "GET" : "POST",
-        key.session.account.role === "auditor" ? null : {},
-        key.source,
-      );
-      if (key.session !== library.session() || key.source !== library.source())
-        throw new Error(t("Session invalide."));
-      return { session: key.session, source: key.source, value: parseAchievements(raw) };
-    },
-  );
-  const rows = () => {
-    const value = loaded();
-    return value && value.session === library.session() && value.source === library.source()
-      ? value.value
-      : undefined;
-  };
+  const loaded = createAchievementLoading(library.session, library.source);
+  const rows = loaded.current;
   return (
     <section class="page achievements-page">
       <div class="section-heading">
@@ -46,15 +17,15 @@ export function AchievementsPage() {
         <button
           class="icon-button quiet"
           aria-label={t("Actualiser")}
-          disabled={!library.session() || loaded.loading}
-          onClick={() => void refetch()}
+          disabled={!library.session() || loaded.loading()}
+          onClick={() => void loaded.refetch()}
         >
-          <Show when={loaded.loading} fallback={<Icon name="refresh" />}>
+          <Show when={loaded.loading()} fallback={<Icon name="refresh" />}>
             <span class="spinner" />
           </Show>
         </button>
       </div>
-      <Feedback error message={loaded.error ? String(loaded.error) : ""} />
+      <Feedback error message={loaded.error()} />
       <Show
         when={library.session()}
         fallback={

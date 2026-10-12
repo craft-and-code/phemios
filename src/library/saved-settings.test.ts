@@ -3,6 +3,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { requestAede } from "../platform/desktop";
 import { announceSetting, createSavedSettings, parseAccountSettings } from "./saved-settings";
 import type { AccountSession } from "./server";
+import {
+  interfacePreferences,
+  accountPreferenceOwner,
+  createAccountPreferenceProfiles,
+} from "./account-preferences";
+import { readPreferences, defaultPreferences } from "./preferences";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 let values: Map<string, string>;
 beforeEach(() => {
@@ -19,6 +25,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 const account = (id: string): AccountSession => ({
   server: "http://127.0.0.1:3412",
+  nativeSession: `session-${id}`,
   account: { id, username: id, role: "user" },
 });
 const settle = async () => {
@@ -60,7 +67,7 @@ it("ignores a late response from a replaced account and preserves corrupt device
   await settle();
   expect(values.get("phemios.appearance")).toBe("broken json");
   expect(values.has("phemios.duration")).toBe(false);
-  expect(settings.error()).not.toBe("");
+  expect(settings.error()).toBe("");
   dispose();
 });
 it("serializes independent preference writes and never sends queued changes to a replacement account", async () => {
@@ -73,18 +80,26 @@ it("serializes independent preference writes and never sends queued changes to a
     });
   });
   let dispose!: () => void;
-  const [session, setSession] = createSignal<AccountSession | undefined>(account("one"));
+  const original = account("one"),
+    [session, setSession] = createSignal<AccountSession | undefined>(original);
   createRoot((cleanup) => {
     dispose = cleanup;
     createSavedSettings(session, () => "server");
   });
   await settle();
+  expect(
+    vi
+      .mocked(requestAede)
+      .mock.calls.slice(0, 2)
+      .map((call) => call[5]),
+  ).toEqual([original, original]);
   announceSetting("phemios.duration", "true");
   announceSetting("phemios.visualizer", '"waves"');
   await settle();
   const patches = () => vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
   expect(patches()).toHaveLength(1);
   expect(patches()[0]?.[3]).toEqual({ values: { "phemios.duration": true } });
+  expect(patches()[0]?.[5]).toBe(original);
   setSession(account("two"));
   release();
   await settle();
@@ -106,12 +121,17 @@ it("rolls back every account preference when a device write fails during hydrati
   values.set("phemios.duration", "true");
   values.set("phemios.visualizer", '"floating"');
   values.set("private-data", "untouched");
+  const owner = account("one");
+  const scoped = createAccountPreferenceProfiles(localStorage);
+  scoped.activate(accountPreferenceOwner(owner, "server"));
+  scoped.storage.setItem("phemios.duration", "true");
+  scoped.storage.setItem("phemios.visualizer", '"floating"');
   const previous = [...values];
   let fail = true;
   vi.stubGlobal("localStorage", {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => {
-      if (key === "phemios.visualizer" && fail) {
+      if (key.startsWith("phemios.interface-profile.v1:") && fail) {
         fail = false;
         throw new Error("No space");
       }
@@ -126,7 +146,6 @@ it("rolls back every account preference when a device write fails during hydrati
   );
   let dispose!: () => void;
   let settings!: ReturnType<typeof createSavedSettings>;
-  const owner = account("one");
   createRoot((cleanup) => {
     dispose = cleanup;
     settings = createSavedSettings(
@@ -140,7 +159,12 @@ it("rolls back every account preference when a device write fails during hydrati
   dispose();
 });
 it("refuses to overwrite an unreadable audio preference store on login", async () => {
-  values.set("phemios.audio.v1", "broken json");
+  values.set("phemios.audio.v1", "broken legacy json");
+  const owner = account("one");
+  const scoped = createAccountPreferenceProfiles(localStorage);
+  scoped.activate(accountPreferenceOwner(owner, "server"));
+  scoped.storage.setItem("phemios.audio.v1", '"broken json"');
+  const original = [...values];
   vi.mocked(requestAede).mockImplementation(async (path) =>
     path === "/api/v1/status"
       ? { capabilities: ["account_preferences"] }
@@ -152,7 +176,6 @@ it("refuses to overwrite an unreadable audio preference store on login", async (
   );
   let dispose!: () => void;
   let settings!: ReturnType<typeof createSavedSettings>;
-  const owner = account("one");
   createRoot((cleanup) => {
     dispose = cleanup;
     settings = createSavedSettings(
@@ -161,7 +184,7 @@ it("refuses to overwrite an unreadable audio preference store on login", async (
     );
   });
   await settle();
-  expect(values.get("phemios.audio.v1")).toBe("broken json");
+  expect([...values]).toEqual(original);
   expect(values.has("phemios.duration")).toBe(false);
   expect(settings.error()).not.toBe("");
   dispose();
@@ -188,17 +211,59 @@ it("preserves edits made during account loading and then synchronizes their fina
     );
   });
   await settle();
-  values.set("phemios.visualizer", '"waves"');
+  interfacePreferences.setItem("phemios.visualizer", '"waves"');
   announceSetting("phemios.visualizer", '"waves"');
-  values.set("phemios.visualizer", '"floating"');
+  interfacePreferences.setItem("phemios.visualizer", '"floating"');
   announceSetting("phemios.visualizer", '"floating"');
   finish({ values: { "phemios.visualizer": "sphere", "phemios.duration": true } });
   await settle();
-  expect(values.get("phemios.visualizer")).toBe('"floating"');
-  expect(values.get("phemios.duration")).toBe("true");
+  expect(interfacePreferences.getItem("phemios.visualizer")).toBe('"floating"');
+  expect(interfacePreferences.getItem("phemios.duration")).toBe("true");
   const patches = vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
   expect(patches).toHaveLength(1);
   expect(patches[0]?.[3]).toEqual({ values: { "phemios.visualizer": "floating" } });
   expect(settings.error()).toBe("");
   dispose();
+});
+
+it("does not expose Alice's interface profile to logout or Bob's partial preferences", async () => {
+  const alice = { ...defaultPreferences, language: "en" as const, background: "#222222" };
+  const [session, setSession] = createSignal<AccountSession | undefined>(account("alice"));
+  vi.mocked(requestAede).mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["account_preferences"] }
+      : {
+          values:
+            session()?.account.id === "alice"
+              ? { "phemios.appearance": alice }
+              : { "phemios.duration": true },
+        },
+  );
+  let dispose!: () => void;
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    createSavedSettings(session, () => "server");
+  });
+  try {
+    await settle();
+    expect(readPreferences(interfacePreferences).background).toBe("#222222");
+    setSession(undefined);
+    expect(readPreferences(interfacePreferences)).toEqual(defaultPreferences);
+    setSession(account("bob"));
+    await settle();
+    expect(readPreferences(interfacePreferences)).toEqual(defaultPreferences);
+    const bob = { ...readPreferences(interfacePreferences), language: "en" as const };
+    interfacePreferences.setItem("phemios.appearance", JSON.stringify(bob));
+    announceSetting("phemios.appearance", JSON.stringify(bob));
+    await settle();
+    const patches = vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
+    expect(patches[0]?.[3]).toEqual({ values: { "phemios.appearance": bob } });
+    expect(bob.background).toBe(defaultPreferences.background);
+    setSession(account("alice"));
+    await settle();
+    expect(readPreferences(interfacePreferences)).toEqual(alice);
+    expect(values.has("phemios.appearance")).toBe(false);
+  } finally {
+    dispose();
+  }
 });

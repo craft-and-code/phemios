@@ -67,3 +67,16 @@ it("refuses protocol-only and retired relay literals while preserving public any
   for (const host of ["192.0.0.9", "192.0.0.10"])
     expect(podcastUrl(`https://${host}/audio`)).toBe(`https://${host}/audio`);
 });
+
+it("normalizes parseable dates before private persistence while preserving null and signed ISO years", () => {
+  for (const [date, expected] of [
+    [null, null],
+    ["Thu, 29 Feb 2024 12:34:56 GMT", "2024-02-29T12:34:56.000Z"],
+    ["+010000-01-01T00:00:00.000Z", "+010000-01-01T00:00:00.000Z"],
+    ["-000001-01-01T00:00:00.000Z", "-000001-01-01T00:00:00.000Z"],
+  ]) {
+    expect(
+      validatedPodcast({ ...feed, episodes: [{ ...feed.episodes[0], date }] }).episodes[0]?.date,
+    ).toBe(expected);
+  }
+});

@@ -43,3 +43,55 @@ pub(crate) async fn podcast_download(
     })
     .await
 }
+
+/// The caller supplies no owner or path; a native session and process ticket select the private store.
+#[tauri::command]
+pub(crate) async fn podcast_state(
+    version: u32,
+    source: String,
+    session: String,
+    state: State<'_, crate::aede::Aede>,
+) -> Result<serde_json::Value, String> {
+    crate::aede::bridge(version)?;
+    let origin = crate::aede::source(Some(&source))?;
+    let client = crate::aede::client(state.owner(origin))?;
+    let held = state.owner(origin).session.clone();
+    let generation = state.owner(origin).generation.clone();
+    let store = state.podcasts.clone();
+    crate::aede::blocking(move || {
+        crate::sessions::with_current(&held, &generation, &session, &client, || {
+            store
+                .lock()
+                .map_err(|_| "Données podcasts occupées.")?
+                .read(origin, &client)
+        })
+    })
+    .await
+}
+
+/// Publish a narrow mutation only for the current native generation and a server-confirmed writable role.
+#[tauri::command]
+pub(crate) async fn podcast_update(
+    version: u32,
+    source: String,
+    session: String,
+    action: String,
+    payload: serde_json::Value,
+    state: State<'_, crate::aede::Aede>,
+) -> Result<serde_json::Value, String> {
+    crate::aede::bridge(version)?;
+    let origin = crate::aede::source(Some(&source))?;
+    let client = crate::aede::client(state.owner(origin))?;
+    let held = state.owner(origin).session.clone();
+    let generation = state.owner(origin).generation.clone();
+    let store = state.podcasts.clone();
+    crate::aede::blocking(move || {
+        crate::sessions::private_write(&held, &generation, &session, &client, || {
+            store
+                .lock()
+                .map_err(|_| "Données podcasts occupées.")?
+                .update(origin, &client, &action, &payload)
+        })
+    })
+    .await
+}

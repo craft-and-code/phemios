@@ -1,3 +1,6 @@
+import { useLibrary } from "../library/context";
+import { createAccountSavedArticles } from "./account-saved";
+import { PageLoader } from "../components/PageLoader";
 import { createEffect, createMemo, createSignal, For, on, onCleanup, Show } from "solid-js";
 import { t, locale, type Language } from "../i18n";
 import {
@@ -6,6 +9,8 @@ import {
   translateEncyclopedia,
   downloadEncyclopedia,
   isNative,
+  readArticleState,
+  updateArticleState,
 } from "../platform/desktop";
 import { ActionButton } from "../components/ActionButton";
 import { EmptyState } from "../components/EmptyState";
@@ -21,6 +26,11 @@ export function WikipediaPanel(props: {
   onLanguageUnavailable: (language: Language) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const library = useLibrary();
+  const saved = createAccountSavedArticles(library.session, library.source, {
+    read: readArticleState,
+    update: updateArticleState,
+  });
   const [term, setTerm] = createSignal(props.query);
   const language = () => props.language;
   const state = createWikipediaExplorer(
@@ -31,6 +41,7 @@ export function WikipediaPanel(props: {
       download: downloadEncyclopedia,
     },
     language,
+    saved,
   );
   let alive = true;
   createEffect(
@@ -45,7 +56,12 @@ export function WikipediaPanel(props: {
       { defer: true },
     ),
   );
-  createEffect(() => props.onBusy(!!state.busy()));
+  createEffect(() => props.onBusy(!!state.busy() || saved.pending()));
+  createEffect(() => {
+    library.session();
+    library.source();
+    state.reset();
+  });
   createEffect(on(() => props.mode, state.back));
   onCleanup(() => {
     alive = false;
@@ -141,9 +157,13 @@ export function WikipediaPanel(props: {
               <Show
                 when={savedRows().length}
                 fallback={
-                  <EmptyState icon="heart">
-                    {t("Aucun article enregistré dans cette sélection.")}
-                  </EmptyState>
+                  <Show when={!saved.loading()} fallback={<PageLoader inline />}>
+                    <EmptyState icon="heart">
+                      {saved.available()
+                        ? t("Aucun article enregistré dans cette sélection.")
+                        : t("Connectez-vous pour accéder aux données de votre compte.")}
+                    </EmptyState>
+                  </Show>
                 }
               >
                 <div class="wikipedia-results">
@@ -159,7 +179,8 @@ export function WikipediaPanel(props: {
                           class="icon-button quiet"
                           aria-label={t("Retirer la copie locale")}
                           title={t("Retirer la copie locale")}
-                          onClick={() => state.saved.remove(row)}
+                          disabled={!saved.writable() || !!state.busy()}
+                          onClick={() => void state.saved.remove(row)}
                         >
                           <Icon name="trash" />
                         </button>
@@ -182,15 +203,17 @@ export function WikipediaPanel(props: {
           <WikipediaReader
             article={article()}
             retained={state.retained()}
-            busy={!!state.busy()}
+            busy={!!state.busy() || saved.pending()}
+            writable={saved.writable()}
+            saving={saved.pending()}
             loading={state.busy() === "article"}
             downloading={state.busy() === "download"}
             native={isNative()}
             onBack={state.back}
-            onSave={state.save}
+            onSave={() => void state.save()}
             onDownload={() => void state.download()}
             onRefresh={() => void state.open(article(), true)}
-            onRemove={() => state.saved.remove(article())}
+            onRemove={() => void state.saved.remove(article())}
           />
         )}
       </Show>

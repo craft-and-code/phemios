@@ -12,16 +12,20 @@ pub(crate) async fn local_status(version: u32, state: State<'_, Aede>) -> Result
 #[tauri::command]
 pub(crate) async fn local_start(version: u32, state: State<'_, Aede>) -> Result<Value, String> {
     bridge(version)?;
+    let generation = state
+        .local
+        .generation
+        .load(std::sync::atomic::Ordering::SeqCst);
     let engine = state.engine.clone();
     let client =
         blocking(move || engine.lock().map_err(|_| "Moteur local occupé.")?.start()).await?;
-    let account = client.account();
-    *state
-        .local
-        .session
-        .lock()
-        .map_err(|_| "Session locale indisponible.")? = Some(client);
-    Ok(account)
+    crate::sessions::publish_login(
+        &state.local.session,
+        &state.local.generation,
+        generation,
+        client,
+        true,
+    )
 }
 #[tauri::command]
 pub(crate) async fn local_stop(
@@ -32,12 +36,7 @@ pub(crate) async fn local_stop(
 ) -> Result<(), String> {
     bridge(version)?;
     hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    state
-        .local
-        .session
-        .lock()
-        .map_err(|_| "Session locale indisponible.")?
-        .take();
+    crate::sessions::invalidate(&state.local.session, &state.local.generation)?;
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();

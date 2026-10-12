@@ -49,3 +49,15 @@ pub mod external_links;
 
 /// Explicit upcoming live music claims from a configured public provider.
 pub mod concerts;
+
+/// Native account-owned podcast subscriptions and listened evidence.
+pub mod podcast_store;
+mod private_storage;
+
+/// Account-private retained Wikipedia articles.
+pub mod article_store;
+mod private_documents;
+
+#[cfg(test)]
+#[path = "podcast_store_test_support.rs"]
+mod private_store_test_support;

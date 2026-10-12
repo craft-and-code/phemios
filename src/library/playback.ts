@@ -1,3 +1,4 @@
+import { interfacePreferences, interfaceProfileIdentity } from "./account-preferences";
 import {
   audioPreferenceKey,
   defaultAudioPreferences,
@@ -41,7 +42,7 @@ export function createPlayback(
   const [crossfade, setCrossfade] = createSignal(defaultAudioPreferences.crossfadeMs);
   function restoreAudio() {
     try {
-      const next = parseAudioPreferences(localStorage.getItem(audioPreferenceKey));
+      const next = parseAudioPreferences(interfacePreferences.getItem(audioPreferenceKey));
       setAudio(next);
       setCrossfade(next.crossfadeMs);
       setPolicy(next.policy);
@@ -53,7 +54,7 @@ export function createPlayback(
   function saveAudio(next: AudioPreferences) {
     const raw = JSON.stringify(next);
     parseAudioPreferences(raw);
-    localStorage.setItem(audioPreferenceKey, raw);
+    interfacePreferences.setItem(audioPreferenceKey, raw);
     setAudio(next);
     announceSetting(audioPreferenceKey, raw);
   }
@@ -63,7 +64,7 @@ export function createPlayback(
     await playbackControl("repeat", audio().repeat);
     await playbackControl("volume", state().volume);
   }
-  let pendingCrossfade: { ms: number; lifetime: number } | undefined,
+  let pendingCrossfade: { ms: number; lifetime: number; profile: object } | undefined,
     crossfadeRunning = false;
   async function chooseCrossfade(ms: number) {
     if (busy()) return;
@@ -74,7 +75,7 @@ export function createPlayback(
       return;
     }
     setCrossfade(ms);
-    pendingCrossfade = { ms, lifetime };
+    pendingCrossfade = { ms, lifetime, profile: interfaceProfileIdentity() };
     if (crossfadeRunning) return;
     crossfadeRunning = true;
     // Hot policy writes retain polling/focus and coalesce only not-yet-sent choices.
@@ -82,15 +83,17 @@ export function createPlayback(
       while (pendingCrossfade) {
         const chosen = pendingCrossfade;
         pendingCrossfade = undefined;
-        if (chosen.lifetime !== lifetime) continue;
+        const current = () =>
+          chosen.lifetime === lifetime && chosen.profile === interfaceProfileIdentity();
+        if (!current()) continue;
         try {
           if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", chosen.ms);
-          if (chosen.lifetime === lifetime) {
+          if (current()) {
             saveAudio({ ...audio(), crossfadeMs: chosen.ms });
             setError("");
           }
         } catch (failure) {
-          if (chosen.lifetime === lifetime) {
+          if (current()) {
             if (!pendingCrossfade) setCrossfade(audio().crossfadeMs);
             setError(message(failure));
           }
@@ -121,7 +124,7 @@ export function createPlayback(
     if (preferenceKey)
       try {
         localStorage.setItem(preferenceKey, next ? "remaining" : "duration");
-        localStorage.setItem("phemios.duration", JSON.stringify(next));
+        interfacePreferences.setItem("phemios.duration", JSON.stringify(next));
         announceSetting("phemios.duration", JSON.stringify(next));
       } catch {
         setError(t("Préférence de durée non mémorisée."));
@@ -373,9 +376,8 @@ export function createPlayback(
   }
   const restoreTime = () => {
     try {
-      const next = localStorage.getItem("phemios.duration") === "true";
+      const next = interfacePreferences.getItem("phemios.duration") === "true";
       setRemaining(next);
-      if (preferenceKey) localStorage.setItem(preferenceKey, next ? "remaining" : "duration");
     } catch {
       setError(t("Préférence de durée indisponible."));
     }

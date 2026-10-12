@@ -240,3 +240,38 @@ it("rejects duplicate downloads, exposes failures and ignores late export notice
   expect(state.notice()).toBe("");
   expect(state.busy()).toBe("");
 });
+
+it("acknowledges asynchronous private saves only in the still-open article generation", async () => {
+  let finish!: (success: boolean) => void;
+  const saved = {
+    rows: () => [],
+    error: () => "",
+    remove: () => true,
+    save: vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+    ),
+  };
+  const state = createWikipediaExplorer(
+    { search: async () => ({}), read: async () => article },
+    () => "fr",
+    saved,
+  );
+  await state.open(article);
+  const request = state.save();
+  expect(saved.save).toHaveBeenCalledExactlyOnceWith(article);
+  expect(state.notice()).toBe("");
+  state.reset();
+  finish(true);
+  await request;
+  expect(state.notice()).toBe("");
+  expect(state.article()).toBeNull();
+  await state.open(article);
+  const current = state.save();
+  finish(true);
+  await current;
+  expect(state.notice()).not.toBe("");
+  state.dispose();
+});

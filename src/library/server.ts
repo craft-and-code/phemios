@@ -26,6 +26,8 @@ export interface Track {
   path?: string;
 }
 export interface AccountSession {
+  /** Non-secret native process generation for private-file admission. */
+  nativeSession?: string;
   server: string;
   account: { id: string; username: string; role: string };
 }

@@ -1,3 +1,4 @@
+import { interfacePreferences, interfaceProfileIdentity } from "../library/account-preferences";
 import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
 import { announceSetting } from "../library/saved-settings";
@@ -18,17 +19,29 @@ export function SettingsAppearance() {
   const [name, setName] = createSignal("Phémios"),
     [busy, setBusy] = createSignal(false),
     [notice, setNotice] = createSignal("");
+  let alive = true,
+    identity = interfaceProfileIdentity();
+  onCleanup(() => {
+    alive = false;
+  });
   onMount(() => {
     try {
-      setValue(readPreferences(localStorage));
+      setValue(readPreferences(interfacePreferences));
     } catch (e) {
       setError(String(e));
     }
   });
   onMount(() => {
     const reload = () => {
+      const next = interfaceProfileIdentity();
+      if (next !== identity) {
+        identity = next;
+        setName("Phémios");
+        setNotice("");
+        setError("");
+      }
       try {
-        setValue(readPreferences(localStorage));
+        setValue(readPreferences(interfacePreferences));
       } catch (failure) {
         setError(String(failure));
       }
@@ -38,8 +51,8 @@ export function SettingsAppearance() {
   });
   function update(next: Preferences) {
     try {
-      readPreferences(localStorage);
-      localStorage.setItem("phemios.appearance", JSON.stringify(next));
+      readPreferences(interfacePreferences);
+      interfacePreferences.setItem("phemios.appearance", JSON.stringify(next));
       announceSetting("phemios.appearance", JSON.stringify(next));
       setValue(next);
       applyPreferences(next);
@@ -150,16 +163,18 @@ export function SettingsAppearance() {
         <button
           disabled={busy() || !isNative()}
           onClick={async () => {
+            const held = interfaceProfileIdentity(),
+              current = () => alive && interfaceProfileIdentity() === held;
             setBusy(true);
             setError("");
             setNotice("");
             try {
               const path = await exportTheme(writeTheme(name(), value()));
-              if (path) setNotice(t("Thème enregistré : {0}", path));
+              if (path && current()) setNotice(t("Thème enregistré : {0}", path));
             } catch (failure) {
-              setError(String(failure));
+              if (current()) setError(String(failure));
             } finally {
-              setBusy(false);
+              if (alive) setBusy(false);
             }
           }}
         >
@@ -168,21 +183,23 @@ export function SettingsAppearance() {
         <button
           disabled={busy() || !isNative()}
           onClick={async () => {
+            const held = interfaceProfileIdentity(),
+              current = () => alive && interfaceProfileIdentity() === held;
             setBusy(true);
             setError("");
             setNotice("");
             try {
               const raw = await importTheme();
-              if (raw !== null) {
+              if (raw !== null && current()) {
                 if (update(readTheme(raw, value().language))) {
                   setName((JSON.parse(raw) as { name: string }).name);
                   setNotice(t("Thème importé."));
                 }
               }
             } catch (failure) {
-              setError(String(failure));
+              if (current()) setError(String(failure));
             } finally {
-              setBusy(false);
+              if (alive) setBusy(false);
             }
           }}
         >

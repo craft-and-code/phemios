@@ -7,6 +7,7 @@ use tauri::State;
 
 pub(crate) struct SourceState {
     pub(crate) session: Arc<Mutex<Option<Client>>>,
+    pub(crate) generation: Arc<std::sync::atomic::AtomicU64>,
     pub(crate) cache: Cache,
     pub(crate) snapshot: crate::snapshots::Snapshot,
 }
@@ -15,6 +16,8 @@ pub(crate) struct Aede {
     pub(crate) local: SourceState,
     pub(crate) engine: Arc<Mutex<phemios_core::local::Engine>>,
     pub(crate) playback_source: Arc<Mutex<phemios_core::federation::Source>>,
+    pub(crate) articles: Arc<Mutex<phemios_core::article_store::Store>>,
+    pub(crate) podcasts: Arc<Mutex<phemios_core::podcast_store::Store>>,
     pub(crate) downloads: std::path::PathBuf,
 }
 impl Aede {
@@ -64,18 +67,18 @@ pub(crate) async fn aede_login(
     state: State<'_, Aede>,
 ) -> Result<Value, String> {
     bridge(version)?;
-    let client = blocking(move || Client::login(&server, &username, &password)).await?;
-    let account = client.account();
-    let mut session = state
+    let generation = state
         .server
-        .session
-        .lock()
-        .map_err(|_| "Session native indisponible.".to_string())?;
-    if session.is_some() {
-        return Err("Déconnectez la session active avant de changer de compte.".into());
-    }
-    *session = Some(client);
-    Ok(account)
+        .generation
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let client = blocking(move || Client::login(&server, &username, &password)).await?;
+    crate::sessions::publish_login(
+        &state.server.session,
+        &state.server.generation,
+        generation,
+        client,
+        false,
+    )
 }
 #[tauri::command]
 pub(crate) async fn aede_logout(
@@ -86,12 +89,7 @@ pub(crate) async fn aede_logout(
 ) -> Result<(), String> {
     bridge(version)?;
     hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    let session = state
-        .server
-        .session
-        .lock()
-        .map_err(|_| "Session native indisponible.")?
-        .take();
+    let session = crate::sessions::invalidate(&state.server.session, &state.server.generation)?;
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
@@ -152,6 +150,7 @@ pub(crate) async fn aede_request(
     mut query: BTreeMap<String, String>,
     mut body: Option<Value>,
     source: Option<String>,
+    expected_session: Option<String>,
     state: State<'_, Aede>,
 ) -> Result<Value, String> {
     bridge(version)?;
@@ -169,35 +168,63 @@ pub(crate) async fn aede_request(
     if origin == phemios_core::federation::Source::Local && path == "/api/auth/v1/password" {
         return Err("Le secret du moteur local est géré par Phémios.".into());
     }
+    // Owner-bearing reads and all mutations must retain the frontend's original
+    // process ticket; choosing whichever client is current after IPC queuing is unsafe.
+    if expected_session.is_none()
+        && (method != "GET"
+            || path.starts_with("/api/me/")
+            || path.starts_with("/api/auth/")
+            || path.starts_with("/api/admin/"))
+    {
+        return Err("Session remplacée ou déconnectée. Reconnectez-vous.".into());
+    }
     let client = client(state.owner(origin))?;
+    let session = state.owner(origin).session.clone();
+    let generation = state.owner(origin).generation.clone();
     let engine = state.engine.clone();
     blocking(move || {
-        if method == "POST" && path == "/api/admin/v1/fetch" {
-            if client.account()["account"]["role"] != "admin" {
-                return Err("Un administrateur Aède est nécessaire.".into());
-            }
-            let keys = engine
-                .lock()
-                .map_err(|_| "Moteur local occupé.")?
-                .fetch_keys()?;
-            let status = if keys.as_object().is_some_and(|rows| !rows.is_empty()) {
-                client.request("GET", "/api/v1/status", &[], None)?
-            } else {
-                serde_json::json!({})
-            };
-            phemios_core::enrichment::attach_service_keys(
-                body.as_mut().ok_or("Demande d’enrichissement invalide.")?,
-                &keys,
-                &status,
-            )?;
-        }
-        let query: Vec<_> = query
-            .iter()
-            .map(|(key, value)| (key.as_str(), value.as_str()))
-            .collect();
-        public(
-            client.request(&method, &path, &query, body.as_ref())?,
-            origin,
+        crate::sessions::scoped_dispatch(
+            &session,
+            &generation,
+            expected_session.as_deref(),
+            &client,
+            || {
+                if method == "POST" && path == "/api/admin/v1/fetch" {
+                    if client.account()["account"]["role"] != "admin" {
+                        return Err("Un administrateur Aède est nécessaire.".into());
+                    }
+                    let keys = engine
+                        .lock()
+                        .map_err(|_| "Moteur local occupé.")?
+                        .fetch_keys()?;
+                    let status = if keys.as_object().is_some_and(|rows| !rows.is_empty()) {
+                        client.request("GET", "/api/v1/status", &[], None)?
+                    } else {
+                        serde_json::json!({})
+                    };
+                    phemios_core::enrichment::attach_service_keys(
+                        body.as_mut().ok_or("Demande d’enrichissement invalide.")?,
+                        &keys,
+                        &status,
+                    )?;
+                }
+                let query: Vec<_> = query
+                    .iter()
+                    .map(|(key, value)| (key.as_str(), value.as_str()))
+                    .collect();
+                crate::sessions::scoped_dispatch(
+                    &session,
+                    &generation,
+                    expected_session.as_deref(),
+                    &client,
+                    || {
+                        public(
+                            client.request(&method, &path, &query, body.as_ref())?,
+                            origin,
+                        )
+                    },
+                )
+            },
         )
     })
     .await
@@ -306,21 +333,30 @@ pub(crate) async fn aede_download(
     version: u32,
     id: String,
     source: Option<String>,
+    expected_session: Option<String>,
     state: State<'_, Aede>,
 ) -> Result<String, String> {
     bridge(version)?;
-    let client = client(state.owner(self::source(source.as_deref())?))?;
+    let ticket = expected_session.ok_or("Session invalide.")?;
+    let owner = state.owner(self::source(source.as_deref())?);
+    let client = client(owner)?;
+    let session = owner.session.clone();
+    let generation = owner.generation.clone();
     let folder = state.downloads.clone();
     blocking(move || {
-        let library_file = id.starts_with("m3u-file-");
-        let route = if library_file { "m3u-files" } else { "m3u" };
-        let response = client.request("GET", &format!("/api/me/v1/{route}/{id}"), &[], None)?;
-        let path = if library_file {
-            phemios_core::download::publish_library_m3u(&folder, &id, &response)?
-        } else {
-            phemios_core::download::publish(&folder, &id, &response)?
-        };
-        Ok(path.to_string_lossy().into_owned())
+        crate::sessions::scoped_dispatch(&session, &generation, Some(&ticket), &client, || {
+            let library_file = id.starts_with("m3u-file-");
+            let route = if library_file { "m3u-files" } else { "m3u" };
+            let response = client.request("GET", &format!("/api/me/v1/{route}/{id}"), &[], None)?;
+            crate::sessions::with_current(&session, &generation, &ticket, &client, || {
+                let path = if library_file {
+                    phemios_core::download::publish_library_m3u(&folder, &id, &response)?
+                } else {
+                    phemios_core::download::publish(&folder, &id, &response)?
+                };
+                Ok(path.to_string_lossy().into_owned())
+            })
+        })
     })
     .await
 }

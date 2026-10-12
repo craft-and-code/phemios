@@ -1,3 +1,4 @@
+import { activateInterfaceProfile, interfacePreferences } from "./account-preferences";
 import { createRoot } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createPlayback } from "./playback";
@@ -456,32 +457,102 @@ it("keeps playback controls responsive while a crossfade write is pending", asyn
 });
 
 it("keeps account audio restoration active across transport resets until disposal", () => {
-  let raw: string | null = null;
+  const values = new Map<string, string>();
   const events = new EventTarget();
   vi.stubGlobal("window", events);
   vi.stubGlobal("localStorage", {
-    getItem: (key: string) => (key === "phemios.audio.v1" ? raw : null),
-    setItem: vi.fn(),
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, raw: string) => values.set(key, raw),
   });
   try {
     createRoot((dispose) => {
       const player = createPlayback(() => true);
       player.reset();
-      raw = JSON.stringify({ crossfadeMs: 3000, repeat: "all", policy: "dsp" });
+      interfacePreferences.setItem(
+        "phemios.audio.v1",
+        JSON.stringify({ crossfadeMs: 3000, repeat: "all", policy: "dsp" }),
+      );
       events.dispatchEvent(new Event("phemios-settings-loaded"));
       expect(player.crossfade()).toBe(3000);
       expect(player.policy()).toBe("dsp");
       player.reset();
-      raw = JSON.stringify({ crossfadeMs: 1000, repeat: "off", policy: "without-effects" });
+      interfacePreferences.setItem(
+        "phemios.audio.v1",
+        JSON.stringify({ crossfadeMs: 1000, repeat: "off", policy: "without-effects" }),
+      );
       events.dispatchEvent(new Event("phemios-settings-loaded"));
       expect(player.crossfade()).toBe(1000);
       expect(player.policy()).toBe("without-effects");
       dispose();
-      raw = JSON.stringify({ crossfadeMs: 9000, repeat: "one", policy: "dsp" });
+      interfacePreferences.setItem(
+        "phemios.audio.v1",
+        JSON.stringify({ crossfadeMs: 9000, repeat: "one", policy: "dsp" }),
+      );
       events.dispatchEvent(new Event("phemios-settings-loaded"));
       expect(player.crossfade()).toBe(1000);
     });
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("does not apply a pending crossfade acknowledgement or failure to a replaced interface profile", async () => {
+  for (const failed of [false, true]) {
+    const values = new Map<string, string>();
+    vi.stubGlobal("window", new EventTarget());
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    });
+    await createRoot(async (dispose) => {
+      activateInterfaceProfile("alice", (value) => value);
+      const player = createPlayback(() => true);
+      let complete!: () => void;
+      vi.mocked(playbackControl).mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            complete = () => (failed ? reject(new Error("Alice obsolete action")) : resolve());
+          }),
+      );
+      const pending = player.chooseCrossfade(3000);
+      activateInterfaceProfile("bob", (value) => value);
+      const bob = { crossfadeMs: 5000, repeat: "off", policy: "without-effects" };
+      interfacePreferences.setItem("phemios.audio.v1", JSON.stringify(bob));
+      window.dispatchEvent(new Event("phemios-settings-loaded"));
+      try {
+        complete();
+        await pending;
+        expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!)).toEqual(bob);
+        expect(player.crossfade()).toBe(5000);
+        expect(player.error()).toBe("");
+      } finally {
+        dispose();
+        vi.unstubAllGlobals();
+      }
+    });
+  }
+});
+
+it("does not rewrite a preceding account's duration slot during new-profile hydration", () => {
+  const values = new Map<string, string>([["phemios.playback-time:server:alice", "remaining"]]);
+  vi.stubGlobal("window", new EventTarget());
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
+  createRoot((dispose) => {
+    try {
+      activateInterfaceProfile("alice", (value) => value);
+      const player = createPlayback(() => false);
+      player.identify("server:alice");
+      expect(player.remaining()).toBe(true);
+      activateInterfaceProfile("bob", (value) => value);
+      window.dispatchEvent(new Event("phemios-settings-loaded"));
+      expect(player.remaining()).toBe(false);
+      expect(values.get("phemios.playback-time:server:alice")).toBe("remaining");
+    } finally {
+      dispose();
+      vi.unstubAllGlobals();
+    }
+  });
 });

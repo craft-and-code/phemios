@@ -1,25 +1,52 @@
 import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
-import { createSignal, For, Show, onCleanup } from "solid-js";
+import { createSignal, createMemo, createEffect, on, For, Show, onCleanup } from "solid-js";
 import { t, locale } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createEpisodeDownloads } from "../podcasts/downloads";
 import { readPodcastFeed, downloadPodcastEpisode, isNative } from "../platform/desktop";
 import { parsePodcastFeed, podcastUrl } from "../podcasts/feed";
-import { createUnsubscribe } from "../podcasts/unsubscribe";
-import { createSubscriptions } from "../podcasts/subscriptions";
 import { Icon } from "../components/Icon";
 import { EmptyState } from "../components/EmptyState";
 /** RSS subscriptions stay usable offline; adding/updating is explicit and never starts an episode. */
 export function PodcastsPage(props: { query: string }) {
   const library = useLibrary(),
-    subscriptions = createSubscriptions(),
+    subscriptions = library.podcastSubscriptions,
     [url, setUrl] = createSignal(""),
     [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
     [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
   const downloads = createEpisodeDownloads(downloadPodcastEpisode);
-  const unsubscribe = createUnsubscribe(subscriptions.remove);
+  type Actor = ReturnType<typeof subscriptions.capture>;
+  const [removal, setRemoval] = createSignal<{ url: string; title: string; actor: Actor }>();
+  const unsubscribe = {
+    pending: () => (removal()?.actor.current() ? removal() : undefined),
+    cancel: () => setRemoval(undefined),
+    ask: (feed: { url: string; title: string }) =>
+      setRemoval({ ...feed, actor: subscriptions.capture() }),
+    async confirm() {
+      const held = removal();
+      if (!held || !held.actor.current()) return;
+      if ((await held.actor.remove(held.url)) && held.actor.current() && removal() === held) {
+        setRemoval(undefined);
+        setSelected(subscriptions.feeds()[0]?.url ?? "");
+      }
+    },
+  };
+  const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
+  createEffect(
+    on(owner, () => {
+      setUrl("");
+      setSelected("");
+      setBusy("");
+      setError("");
+      unsubscribe.cancel();
+    }),
+  );
+  createEffect(() => {
+    const rows = subscriptions.feeds();
+    if (!rows.some((row) => row.url === selected())) setSelected(rows[0]?.url ?? "");
+  });
   let alive = true;
   onCleanup(() => {
     alive = false;
@@ -30,26 +57,33 @@ export function PodcastsPage(props: { query: string }) {
       `${e.title} ${e.summary}`.toLocaleLowerCase().includes(props.query.toLocaleLowerCase()),
     );
   async function load(value: string, action: "subscribe" | "refresh" = "subscribe") {
-    if (busy()) return;
+    if (busy() || !subscriptions.writable()) return;
+    const actor = subscriptions.capture();
     setBusy(action);
     setError("");
     try {
       const source = podcastUrl(value.trim()),
         xml = await readPodcastFeed(source);
-      if (!alive) return;
+      if (!alive || !actor.current()) return;
       const data = parsePodcastFeed(xml, source);
-      if (subscriptions.save(data)) {
+      if ((await actor.save(data)) && alive && actor.current()) {
         setSelected(data.url);
         setUrl("");
       }
     } catch (e) {
-      if (alive) setError(String(e));
+      if (alive && actor.current()) setError(String(e));
     } finally {
-      if (alive) setBusy("");
+      if (alive && actor.current()) setBusy("");
     }
   }
   return (
     <section class="page podcasts-page">
+      <Show when={!library.session()}>
+        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
+      </Show>
+      <Show when={subscriptions.loading()}>
+        <PageLoader />
+      </Show>
       <form
         class="podcast-add"
         onSubmit={(e) => {
@@ -65,10 +99,10 @@ export function PodcastsPage(props: { query: string }) {
             placeholder="https://example.org/podcast.xml"
             value={url()}
             onInput={(e) => setUrl(e.currentTarget.value)}
-            disabled={!!busy()}
+            disabled={!!busy() || !subscriptions.writable()}
           />
         </label>
-        <button class="primary" disabled={!!busy() || !isNative()}>
+        <button class="primary" disabled={!!busy() || !isNative() || !subscriptions.writable()}>
           {t("S’abonner")}
         </button>
         <Show when={busy() === "subscribe"}>
@@ -123,7 +157,7 @@ export function PodcastsPage(props: { query: string }) {
                   <h2>{current().title}</h2>
                   <button
                     class="icon-button"
-                    disabled={!!busy() || !isNative()}
+                    disabled={!!busy() || !isNative() || !subscriptions.writable()}
                     aria-busy={busy() === "refresh"}
                     aria-label={t("Actualiser les épisodes")}
                     title={t("Actualiser les épisodes")}
@@ -138,7 +172,7 @@ export function PodcastsPage(props: { query: string }) {
                   </button>
                   <button
                     class="icon-button quiet icon-close"
-                    disabled={!!busy()}
+                    disabled={!!busy() || !subscriptions.writable()}
                     aria-label={t("Se désabonner")}
                     title={t("Se désabonner")}
                     onClick={() => {
@@ -157,15 +191,17 @@ export function PodcastsPage(props: { query: string }) {
                     >
                       <span>{t("Se désabonner de « {0} » ?", pending().title)}</span>
                       <button
-                        disabled={!!busy()}
+                        disabled={!!busy() || !subscriptions.writable()}
                         onClick={() => {
-                          if (unsubscribe.confirm())
-                            setSelected(subscriptions.feeds()[0]?.url ?? "");
+                          void unsubscribe.confirm();
                         }}
                       >
                         {t("Confirmer")}
                       </button>
-                      <button disabled={!!busy()} onClick={unsubscribe.cancel}>
+                      <button
+                        disabled={!!busy() || !subscriptions.writable()}
+                        onClick={unsubscribe.cancel}
+                      >
                         {t("Annuler")}
                       </button>
                     </div>

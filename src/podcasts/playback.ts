@@ -67,6 +67,7 @@ export function createPodcastPlayback(
   createMedia = browserPodcastMedia,
   completed: (feed: string, id: string) => void = () => {},
   initialVolume?: () => number,
+  captureOwner: () => () => boolean = () => () => true,
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -110,6 +111,8 @@ export function createPodcastPlayback(
     }, 20000);
   }
   async function start(feed: Podcast, row: Episode) {
+    const ownerCurrent = captureOwner();
+    if (!ownerCurrent()) return;
     if (["idle", "ended", "error"].includes(status()) && initialVolume)
       changeVolume(initialVolume());
     release();
@@ -124,12 +127,12 @@ export function createPodcastPlayback(
     try {
       const url = podcastUrl(row.url);
       await beforePlay();
-      if (epoch !== held) return;
+      if (epoch !== held || !ownerCurrent()) return;
       const audio = createMedia();
       media = audio;
       let marked = false;
       function markListened() {
-        if (marked || epoch !== held || !audio.played) return;
+        if (marked || epoch !== held || !ownerCurrent() || !audio.played) return;
         if (episodeListened(audio.played(), duration())) {
           marked = true;
           completed(feed.url, row.id);

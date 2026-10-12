@@ -2,6 +2,13 @@ import { createSignal } from "solid-js";
 import { t } from "../i18n";
 import { wikipediaArticle, type WikipediaArticle } from "./wikipedia";
 export type ArticleStorage = Pick<Storage, "getItem" | "setItem">;
+/** Exploration accepts a private native collection or an explicitly supplied legacy/test store. */
+export interface SavedArticleCollection {
+  rows: () => readonly WikipediaArticle[];
+  error: () => string;
+  save: (value: WikipediaArticle) => boolean | Promise<boolean>;
+  remove: (value: WikipediaArticle) => boolean | Promise<boolean>;
+}
 const key = "phemios.encyclopedia.v1";
 const limit = 3 * 1024 * 1024;
 function read(storage: ArticleStorage): WikipediaArticle[] {
@@ -16,8 +23,8 @@ function read(storage: ArticleStorage): WikipediaArticle[] {
     throw new Error(t("Articles enregistrés illisibles."));
   return rows;
 }
-/** Explicit device-local copies retain provenance; corrupt stores and failed writes stay intact. */
-export function createSavedArticles(storage: ArticleStorage = localStorage) {
+/** Explicit legacy/test access only: desktop saved articles never adopt this unowned device store. */
+export function createSavedArticles(storage: ArticleStorage) {
   const [rows, setRows] = createSignal<WikipediaArticle[]>([]),
     [error, setError] = createSignal("");
   try {

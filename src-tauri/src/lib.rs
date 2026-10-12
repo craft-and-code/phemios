@@ -1,6 +1,9 @@
 //! Desktop wiring; domain rules belong to Aède, client policies to phemios-core.
 #![warn(missing_docs)]
+#[cfg(test)]
+mod account_test_support;
 mod aede;
+mod articles;
 mod commands;
 mod concerts;
 mod encyclopedia;
@@ -10,6 +13,7 @@ mod local;
 mod playback;
 mod podcast;
 mod radio;
+mod sessions;
 mod snapshots;
 mod themes;
 mod volumes;
@@ -23,6 +27,7 @@ pub fn run() -> Result<(), tauri::Error> {
             let root = app.path().app_data_dir()?.join("cache");
             let source = |path| aede::SourceState {
                 session: std::sync::Arc::new(std::sync::Mutex::new(None)),
+                generation: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 snapshot: std::sync::Arc::new(std::sync::Mutex::new(None)),
                 cache: phemios_core::cache::Cache::new(path),
             };
@@ -45,6 +50,16 @@ pub fn run() -> Result<(), tauri::Error> {
                 )),
                 playback_source: std::sync::Arc::new(std::sync::Mutex::new(
                     phemios_core::federation::Source::Server,
+                )),
+                articles: std::sync::Arc::new(std::sync::Mutex::new(
+                    phemios_core::article_store::Store::new(
+                        app.path().app_data_dir()?.join("private-articles"),
+                    ),
+                )),
+                podcasts: std::sync::Arc::new(std::sync::Mutex::new(
+                    phemios_core::podcast_store::Store::new(
+                        app.path().app_data_dir()?.join("private-podcasts"),
+                    ),
                 )),
                 downloads: app.path().download_dir()?.join("Phémios"),
             });
@@ -91,6 +106,10 @@ pub fn run() -> Result<(), tauri::Error> {
             local::local_keys,
             podcast::podcast_feed,
             podcast::podcast_download,
+            podcast::podcast_state,
+            podcast::podcast_update,
+            articles::article_state,
+            articles::article_update,
             radio::radio_search,
             radio::radio_statistics,
             radio::radio_resolve,

@@ -1,4 +1,5 @@
-import { createSignal, For, Show } from "solid-js";
+import { interfaceProfileIdentity } from "../library/account-preferences";
+import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import {
   moveMenu,
@@ -14,6 +15,18 @@ export function SettingsNavigation(props: { menu: ReturnType<typeof createMenuPr
     [target, setTarget] = createSignal<MenuItem>(),
     [editing, setEditing] = createSignal<MenuItem>(),
     [name, setName] = createSignal("");
+  let identity = interfaceProfileIdentity();
+  const changed = () => {
+    const next = interfaceProfileIdentity();
+    if (next === identity) return;
+    identity = next;
+    setDragged(undefined);
+    setTarget(undefined);
+    setEditing(undefined);
+    setName("");
+  };
+  onMount(() => window.addEventListener("phemios-settings-loaded", changed));
+  onCleanup(() => window.removeEventListener("phemios-settings-loaded", changed));
   const move = (id: MenuItem, delta: number) => {
     const order = [...props.menu.value().order],
       index = order.indexOf(id),

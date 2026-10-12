@@ -1,5 +1,4 @@
 import { parseAudioPreferences } from "./audio-preferences";
-import { writePreferenceEntries } from "./preference-storage";
 import { parseShortcuts } from "../navigation/shortcuts-policy";
 import { readPreferences, applyPreferences } from "./preferences";
 import { readMenuPreferences } from "../navigation/menu-preferences";
@@ -9,22 +8,23 @@ import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import type { AccountSession } from "./server";
 import type { SourceId } from "./sources";
-export const accountSettingKeys = [
-  "phemios.appearance",
-  "phemios.navigation.v1",
-  "phemios.tools.v1",
-  "phemios.duration",
-  "phemios.visualizer",
-  "phemios.spectrum",
-  "phemios.spectrum-style",
-  "phemios.shortcuts.v1",
-  "phemios.audio.v1",
-] as const;
+import { accountSettingKeys } from "./account-preference-keys";
+export { accountSettingKeys } from "./account-preference-keys";
+import {
+  accountPreferenceOwner,
+  activateInterfaceProfile,
+  interfacePreferences,
+  replaceInterfaceProfile,
+  interfaceProfileOwner,
+  interfaceProfileIdentity,
+} from "./account-preferences";
 /** Publish only explicitly supported non-secret settings after a successful local write. */
 export function announceSetting(key: string, raw: string) {
   if (typeof window !== "undefined" && accountSettingKeys.some((value) => value === key))
     window.dispatchEvent(
-      new CustomEvent("phemios-setting-save", { detail: { key, value: JSON.parse(raw) } }),
+      new CustomEvent("phemios-setting-save", {
+        detail: { key, value: JSON.parse(raw), owner: interfaceProfileOwner() },
+      }),
     );
 }
 /** Parse the account projection without admitting native roots, credentials or arbitrary storage keys. */
@@ -78,7 +78,17 @@ export function createSavedSettings(
     edited = new Map();
     setError("");
     setStatus("");
+    const owner = accountPreferenceOwner(identity, origin);
+    try {
+      activateInterfaceProfile(owner, (values) => parseAccountSettings({ values }));
+    } catch (failure) {
+      setError(String(failure));
+    }
+    applyPreferences(readPreferences(interfacePreferences));
+    window.dispatchEvent(new Event("phemios-settings-loaded"));
+    window.dispatchEvent(new Event("phemios-preferences"));
     if (!identity) return;
+    const projection = interfaceProfileIdentity();
     void (async () => {
       try {
         const info = await requestAede<{ capabilities?: string[] }>(
@@ -87,6 +97,7 @@ export function createSavedSettings(
           "GET",
           null,
           origin,
+          identity,
         );
         if (!info.capabilities?.includes("account_preferences"))
           throw new Error(
@@ -94,24 +105,12 @@ export function createSavedSettings(
           );
         if (epoch !== generation || session() !== identity) return;
         const values = parseAccountSettings(
-          await requestAede("/api/me/v1/preferences", {}, "GET", null, origin),
+          await requestAede("/api/me/v1/preferences", {}, "GET", null, origin, identity),
         );
         if (epoch !== generation || session() !== identity) return;
-        // Preserve every unreadable device setting, including transport and shortcuts.
-        const retained = Object.fromEntries(
-          accountSettingKeys.flatMap((key) => {
-            const raw = localStorage.getItem(key);
-            return raw === null ? [] : [[key, JSON.parse(raw)]];
-          }),
-        );
-        parseAccountSettings({ values: retained });
-        const next: Record<string, unknown> = {
-          "phemios.duration": values["phemios.duration"] ?? false,
-          ...values,
-        };
-        for (const key of edited.keys()) delete next[key];
-        writePreferenceEntries(localStorage, next);
-        applyPreferences(readPreferences(localStorage));
+        const next = { ...values, ...Object.fromEntries(edited) };
+        if (!replaceInterfaceProfile(projection, next)) return;
+        applyPreferences(readPreferences(interfacePreferences));
         loaded = true;
         loading = false;
         window.dispatchEvent(new Event("phemios-settings-loaded"));
@@ -136,7 +135,10 @@ export function createSavedSettings(
       setStatus(t("Préférences enregistrées sur cet appareil."));
       return;
     }
-    const { key, value } = (event as CustomEvent<{ key: string; value: unknown }>).detail;
+    const { key, value, owner } = (
+      event as CustomEvent<{ key: string; value: unknown; owner?: string }>
+    ).detail;
+    if (owner !== accountPreferenceOwner(identity, origin)) return;
     if (!accountSettingKeys.some((known) => known === key)) return;
     if (loading) {
       edited.set(key, value);
@@ -168,6 +170,7 @@ export function createSavedSettings(
           "PATCH",
           { values: { [key]: value } },
           origin,
+          identity,
         );
         if (epoch === generation) {
           setStatus(t("Enregistré dans votre compte Aède."));
@@ -185,6 +188,14 @@ export function createSavedSettings(
   onCleanup(() => {
     generation++;
     window.removeEventListener("phemios-setting-save", save);
+    try {
+      activateInterfaceProfile(undefined, (values) => parseAccountSettings({ values }));
+    } catch {
+      /* Preserve an unreadable device profile. */
+    }
+    applyPreferences(readPreferences(interfacePreferences));
+    window.dispatchEvent(new Event("phemios-settings-loaded"));
+    window.dispatchEvent(new Event("phemios-preferences"));
   });
   return { error, status };
 }

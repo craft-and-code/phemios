@@ -41,12 +41,17 @@ pub(crate) async fn playback_state(
     crate::aede::public(snapshot, origin)
 }
 #[tauri::command]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Versioned flat playback IPC retains its controls and native States while adding exact session admission."
+)]
 pub(crate) async fn playback_start(
     version: u32,
     tracks: Vec<String>,
     device: String,
     index: usize,
     policy: String,
+    expected_session: Option<String>,
     player: State<'_, Arc<Player>>,
     state: State<'_, Aede>,
     hq: State<'_, crate::hqplayer::HqPlayer>,
@@ -65,8 +70,11 @@ pub(crate) async fn playback_start(
             Ok(raw)
         })
         .collect::<Result<Vec<_>, String>>()?;
+    let ticket = expected_session.ok_or("Session invalide.")?;
     let client = client(state.owner(origin))?;
     let owner = state.owner(origin).session.clone();
+    let owner_generation = state.owner(origin).generation.clone();
+    crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || Ok(()))?;
     let source = state.playback_source.clone();
     let player = player.inner().clone();
     let controller = hq.controller.clone();
@@ -75,6 +83,7 @@ pub(crate) async fn playback_start(
     let generation = epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
     let mappings = hq.mappings.lock().map_err(|_| "HQPlayer occupé.")?.clone();
     blocking(move || {
+        crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || Ok(()))?;
         let current = || epoch.load(std::sync::atomic::Ordering::SeqCst) == generation;
         let prepared = if device == phemios_core::hqplayer::OUTPUT {
             Some(phemios_core::hqplayer::Controller::prepare(
@@ -89,6 +98,10 @@ pub(crate) async fn playback_start(
         };
         let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
         if !current()
+            || owner_generation
+                .load(std::sync::atomic::Ordering::SeqCst)
+                .to_string()
+                != ticket
             || !owner
                 .lock()
                 .map_err(|_| "Session native indisponible.")?

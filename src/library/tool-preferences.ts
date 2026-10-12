@@ -1,3 +1,4 @@
+import { interfacePreferences } from "./account-preferences";
 import { announceSetting } from "./saved-settings";
 import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
@@ -77,7 +78,7 @@ export function saveToolPreferences(
   return next;
 }
 /** Reactive settings update only after persistence; callers display the returned error. */
-export function createToolPreferences(storage: Store = localStorage) {
+export function createToolPreferences(storage: Store = interfacePreferences) {
   const [value, setValue] = createSignal({
     ...defaultToolPreferences,
     excluded: [] as ToolPreferences["excluded"],

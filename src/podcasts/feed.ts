@@ -120,7 +120,11 @@ export function validatedPodcast(value: unknown): Podcast {
           (!Number.isFinite(e.duration) || e.duration <= 0 || e.duration > 86400))
       )
         throw new Error(t("Abonnements podcasts illisibles."));
-      return { ...e, url: podcastUrl(e.url) };
+      return {
+        ...e,
+        url: podcastUrl(e.url),
+        date: e.date === null ? null : new Date(e.date).toISOString(),
+      };
     });
   if (new Set(episodes.map((e) => e.id)).size !== episodes.length)
     throw new Error(t("Abonnements podcasts illisibles."));

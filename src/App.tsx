@@ -491,19 +491,17 @@ export function App() {
               "tracks",
               "tags",
               "labels",
-              "encyclopedia",
               "radio",
-              "podcasts",
               "concerts",
               "settings",
               "relations",
               "players",
             ].includes(section()) &&
-            library.origins().length > 1
+            library.trackSources().length > 1
           }
         >
           <div class="choices library-source" aria-label={t("Origine des données personnelles")}>
-            <For each={library.origins()}>
+            <For each={library.trackSources().map((row) => row.source)}>
               {(source) => (
                 <button
                   aria-pressed={library.source() === source}

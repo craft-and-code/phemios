@@ -11,6 +11,8 @@ export function WikipediaReader(props: {
   loading: boolean;
   downloading: boolean;
   native: boolean;
+  writable: boolean;
+  saving: boolean;
   onBack: () => void;
   onSave: () => void;
   onDownload: () => void;
@@ -42,7 +44,7 @@ export function WikipediaReader(props: {
           </button>
           <button
             class="icon-button quiet"
-            disabled={props.busy}
+            disabled={props.busy || !props.writable}
             aria-pressed={props.retained}
             aria-label={
               props.retained
@@ -56,7 +58,9 @@ export function WikipediaReader(props: {
             }
             onClick={() => (props.retained ? props.onRemove() : props.onSave())}
           >
-            <Icon name="heart" />
+            <Show when={props.saving} fallback={<Icon name="heart" />}>
+              <span class="spinner" />
+            </Show>
           </button>
           <button
             class="icon-button quiet"

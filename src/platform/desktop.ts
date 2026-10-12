@@ -33,18 +33,33 @@ async function nativeCall<T>(command: string, args: Record<string, unknown> = {}
     throw new Error(typeof error === "string" ? t(error) : t("Opération native impossible."));
   }
 }
-export const loginAede = (server: string, username: string, password: string) =>
-  nativeCall<import("../library/server").AccountSession>("aede_login", {
+const nativeSessions: Partial<Record<SourceId, string>> = {};
+/** An opaque non-secret process ticket binds queued IPC to its original session, not a caller-supplied owner. */
+function rememberNativeSession(
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (typeof account.nativeSession === "string") nativeSessions[source] = account.nativeSession;
+  else delete nativeSessions[source];
+}
+export async function loginAede(server: string, username: string, password: string) {
+  const account = await nativeCall<import("../library/server").AccountSession>("aede_login", {
     server,
     username,
     password,
   });
+  rememberNativeSession("server", account);
+  return account;
+}
 export const downloadAede = (id: string, source: SourceId = requestSource) =>
-  nativeCall<string>("aede_download", { id, source });
+  nativeCall<string>("aede_download", { id, source, expectedSession: nativeSessions[source] });
 /** Fetch the server-selected complete report and save it under the native Downloads folder. */
 export const downloadAnalysisAede = (reference: string) =>
   nativeCall<string>("aede_download_analysis", { reference });
-export const logoutAede = () => nativeCall<void>("aede_logout");
+export function logoutAede() {
+  delete nativeSessions.server;
+  return nativeCall<void>("aede_logout");
+}
 export const syncAede = (source: SourceId = requestSource) =>
   nativeCall<unknown>("aede_sync", { source });
 export const cachedAede = (source: SourceId = "server") =>
@@ -57,16 +72,27 @@ export function requestAede<T>(
   method = "GET",
   body: unknown = null,
   source: SourceId = requestSource,
+  expectedAccount?: import("../library/server").AccountSession,
 ): Promise<T> {
   const entity =
     query.ref ??
     query.reference ??
     query.track ??
     (body && typeof body === "object"
-      ? ((body as Record<string, unknown>).release ?? (body as Record<string, unknown>).track)
+      ? ((body as Record<string, unknown>).release ??
+        (body as Record<string, unknown>).reference ??
+        (body as Record<string, unknown>).track)
       : undefined);
   const origin = typeof entity === "string" ? referenceSource(entity) : source;
-  return nativeCall<T>("aede_request", { path, query, method, body, source: origin });
+  const expectedSession = expectedAccount ? expectedAccount.nativeSession : nativeSessions[origin];
+  return nativeCall<T>("aede_request", {
+    path,
+    query,
+    method,
+    body,
+    source: origin,
+    ...(expectedSession ? { expectedSession } : {}),
+  });
 }
 
 /** PCM credentials and device callbacks stay native; only bounded transport controls cross IPC. */
@@ -77,7 +103,14 @@ export const playbackStart = (
   device: string,
   index: number,
   policy = "without-effects",
-) => nativeCall<void>("playback_start", { tracks, device, index, policy });
+) =>
+  nativeCall<void>("playback_start", {
+    tracks,
+    device,
+    index,
+    policy,
+    expectedSession: nativeSessions[tracks[0] ? referenceSource(tracks[0]) : requestSource],
+  });
 export const playbackControl = (action: string, value: unknown = null) =>
   nativeCall<unknown>("playback_control", { action, value });
 
@@ -108,9 +141,15 @@ export interface LocalStatus {
   keys: { fanart: boolean; acoustid: boolean };
 }
 export const localStatus = () => nativeCall<LocalStatus>("local_status");
-export const startLocal = () =>
-  nativeCall<import("../library/server").AccountSession>("local_start");
-export const stopLocal = () => nativeCall<void>("local_stop");
+export async function startLocal() {
+  const account = await nativeCall<import("../library/server").AccountSession>("local_start");
+  rememberNativeSession("local", account);
+  return account;
+}
+export function stopLocal() {
+  delete nativeSessions.local;
+  return nativeCall<void>("local_stop");
+}
 export const pickLocalRoots = () => nativeCall<void>("local_pick_roots");
 export const scanLocal = (full: boolean, threads: number) =>
   nativeCall<{ task_id: number; status: "queued" }>("local_scan", { full, threads });
@@ -196,3 +235,51 @@ export const searchConcerts = (artist: string, page: number) =>
 export const importPreferences = () => nativeCall<string | null>("preferences_import");
 export const exportPreferences = (document: string) =>
   nativeCall<string | null>("preferences_export", { document });
+
+/** Native identity selects the private podcast document; IPC supplies no account identifier or path. */
+export function readPodcastState(
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession) return Promise.reject(new Error(t("Session invalide.")));
+  return nativeCall<unknown>("podcast_state", { source, session: account.nativeSession });
+}
+/** Apply only a captured-session private podcast mutation. */
+export function updatePodcastState(
+  action: "save" | "remove" | "mark",
+  payload: unknown,
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession) return Promise.reject(new Error(t("Session invalide.")));
+  return nativeCall<unknown>("podcast_update", {
+    action,
+    payload,
+    source,
+    session: account.nativeSession,
+  });
+}
+
+/** Read retained articles using only the captured process ticket and actual native source. */
+export function readArticleState(
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession) return Promise.reject(new Error(t("Session invalide.")));
+  return nativeCall<unknown>("article_state", { source, session: account.nativeSession });
+}
+/** Save/remove one article under exact native generation; no owner or pathname crosses IPC. */
+export function updateArticleState(
+  action: "save" | "remove",
+  payload: unknown,
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession) return Promise.reject(new Error(t("Session invalide.")));
+  return nativeCall<unknown>("article_update", {
+    action,
+    payload,
+    source,
+    session: account.nativeSession,
+  });
+}

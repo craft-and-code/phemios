@@ -1,3 +1,4 @@
+import { interfacePreferences } from "../library/account-preferences";
 import { announceSetting } from "../library/saved-settings";
 import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
@@ -200,7 +201,7 @@ export function moveMenu(order: readonly MenuItem[], item: MenuItem, before: Men
   return next;
 }
 /** The shell and Settings share this confirmed state; saving failure leaves navigation unchanged. */
-export function createMenuPreferences(storage: Store = localStorage) {
+export function createMenuPreferences(storage: Store = interfacePreferences) {
   const [value, setValue] = createSignal<MenuPreferences>({
     order: defaultMenuOrder(),
     hidden: [],

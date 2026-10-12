@@ -20,10 +20,11 @@ import {
   createMemo,
   onMount,
   onCleanup,
+  on,
   type ParentProps,
   type Accessor,
 } from "solid-js";
-import { createListenedEpisodes } from "../podcasts/listened";
+import { createAccountPodcasts } from "../podcasts/account-store";
 import { browserPodcastMedia, createPodcastPlayback } from "../podcasts/playback";
 import { browserRadioMedia, createRadioPlayback } from "../radio/playback";
 import { resolveRadio } from "../platform/desktop";
@@ -58,7 +59,8 @@ interface Library {
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
   podcast: ReturnType<typeof createPodcastPlayback>;
-  podcastListened: ReturnType<typeof createListenedEpisodes>;
+  podcastListened: ReturnType<typeof createAccountPodcasts>;
+  podcastSubscriptions: ReturnType<typeof createAccountPodcasts>;
   tasks: ReturnType<typeof createJobs>;
   artists: Accessor<readonly Artist[]>;
   albums: Accessor<readonly Album[]>;
@@ -208,7 +210,7 @@ export function LibraryProvider(props: ParentProps) {
     browserRadioMedia,
     () => player.state().volume,
   );
-  const podcastListened = createListenedEpisodes();
+  const podcastListened = createAccountPodcasts(session, source);
   const podcast = createPodcastPlayback(
     async () => {
       radio.stop();
@@ -219,9 +221,14 @@ export function LibraryProvider(props: ParentProps) {
       }
     },
     browserPodcastMedia,
-    podcastListened.mark,
+    (feed, id) => {
+      void podcastListened.mark(feed, id);
+    },
     () => player.state().volume,
+    () => podcastListened.capture().current,
   );
+
+  createEffect(on([session, source], () => podcast.stop(), { defer: true }));
 
   createEffect(() => {
     const account = session();
@@ -500,6 +507,7 @@ export function LibraryProvider(props: ParentProps) {
     radio,
     podcast,
     podcastListened,
+    podcastSubscriptions: podcastListened,
     player,
     artists,
     albums,

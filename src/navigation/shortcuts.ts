@@ -1,3 +1,4 @@
+import { interfacePreferences } from "../library/account-preferences";
 import { createSignal, onCleanup, onMount } from "solid-js";
 import { announceSetting } from "../library/saved-settings";
 import {
@@ -22,7 +23,7 @@ export function createShortcuts() {
     [error, setError] = createSignal("");
   function restore() {
     try {
-      setValue(parseShortcuts(localStorage.getItem(shortcutKey)));
+      setValue(parseShortcuts(interfacePreferences.getItem(shortcutKey)));
       setError("");
     } catch (failure) {
       setError(String(failure));
@@ -41,7 +42,7 @@ export function createShortcuts() {
     try {
       const raw = JSON.stringify(next);
       parseShortcuts(raw);
-      localStorage.setItem(shortcutKey, raw);
+      interfacePreferences.setItem(shortcutKey, raw);
       setValue(next);
       setError("");
       announceSetting(shortcutKey, raw);

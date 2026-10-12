@@ -197,3 +197,25 @@ it("ignores an older resume rejection after a newer resume succeeds on the same 
     dispose();
   });
 });
+
+it("ignores played evidence from a replaced private podcast owner", async () => {
+  await createRoot(async (dispose) => {
+    let active = true;
+    const f = fixture(),
+      completed = vi.fn();
+    f.media.played = () => [[0, 89]];
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+      completed,
+      undefined,
+      () => () => active,
+    );
+    await player.start(feed, feed.episodes[0]!);
+    active = false;
+    f.time(89, 90);
+    f.change("ended");
+    expect(completed).not.toHaveBeenCalled();
+    dispose();
+  });
+});

@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { t, type Language } from "../i18n";
-import { createSavedArticles, type ArticleStorage } from "./saved";
+import { createSavedArticles, type ArticleStorage, type SavedArticleCollection } from "./saved";
 import {
   wikipediaArticle,
   wikipediaSearch,
@@ -17,9 +17,9 @@ interface WikipediaApi {
 export function createWikipediaExplorer(
   api: WikipediaApi,
   language: () => Language,
-  storage: ArticleStorage = localStorage,
+  storage: ArticleStorage | SavedArticleCollection,
 ) {
-  const saved = createSavedArticles(storage);
+  const saved: SavedArticleCollection = "rows" in storage ? storage : createSavedArticles(storage);
   const [hits, setHits] = createSignal<WikipediaHit[]>([]),
     [article, setArticle] = createSignal<WikipediaArticle | null>(null),
     [busy, setBusy] = createSignal<"" | "search" | "article" | "download">(""),
@@ -176,9 +176,21 @@ export function createWikipediaExplorer(
       generation++;
     },
     save() {
-      const row = article();
-      if (row && saved.save(row))
-        setNotice(t("Article disponible hors connexion sur cet appareil."));
+      const row = article(),
+        ticket = generation;
+      if (disposed || !row) return;
+      const completed = (success: boolean) => {
+        if (success && !disposed && ticket === generation && article() === row)
+          setNotice(t("Article disponible hors connexion sur cet appareil."));
+      };
+      const result = saved.save(row);
+      if (typeof result === "boolean") {
+        completed(result);
+        return;
+      }
+      return result.then(completed).catch((failure) => {
+        if (!disposed && ticket === generation && article() === row) setError(String(failure));
+      });
     },
     retained() {
       const row = article();
