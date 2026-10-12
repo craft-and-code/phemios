@@ -332,3 +332,9 @@ Frontend bootstrap loads each source at most once, only while that source remain
 Radio search retains submitted criteria for one active request and at most one replacement. A changed search hides the previous results immediately; failure cannot leave another country's stations under the new globe selection. Unmount drops delayed submissions and admission. Radio media startup owns a non-renewable deadline, retained volume and final disposal; directory/media operations require no Aède session. Aède stores radio favourites only.
 
 Manual and filter-based collection creation share `create_only` writes. Existing rules are preserved on name collisions; explicit rename and delete remain distinct commands. Personal drafts and delayed acknowledgements reset or cease admission when their view, origin or exact session changes.
+
+## Playback scene ownership and private annotations
+
+Scene controls overlay the visual stage vertically without a reserved layout row. Canvas-local point reuse, indexed frequency segments and surface refresh admission are documented in the [visualizer review](../coding/visualizer-performance.md). Pause/hidden/unmount scheduling, resident lyric typography and the existing draw ceiling retain their previous contracts.
+
+Annotation reads accept all eight canonical Aède entity kinds, including kinds without a Phémios detail page. Native qualification covers those same kinds. Ownership markers are interpreted only immediately after the first entity delimiter; marker-like text inside a legitimate server file key is preserved. Snapshot publication still requires every bounded page to validate, exact captured session admission and a single source. Invalid responses retain useful translated validation details rather than a heading with no explanation. Unsupported detail kinds remain retained annotations and are not turned into invented catalogue routes.

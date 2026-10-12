@@ -150,72 +150,72 @@ export function PlaybackPage() {
               </button>
             </Show>
           </header>
-          <div class="scene-controls">
-            <For
-              each={[
-                { id: "floating" as const, icon: "sparkles", label: t("Paroles flottantes") },
-                { id: "sphere" as const, icon: "globe", label: t("Sphère") },
-                { id: "waves" as const, icon: "wave", label: t("Vagues") },
-                { id: "landscape" as const, icon: "landscape", label: t("Relief") },
-              ]}
-            >
-              {(item) => (
-                <button
-                  class="icon-button quiet"
-                  title={item.label}
-                  aria-label={item.label}
-                  aria-pressed={scene() === item.id}
-                  onClick={() => choose(scene() === item.id ? "off" : item.id)}
-                >
-                  <Icon name={item.icon} />
-                </button>
-              )}
-            </For>
-            <button
-              class="icon-button quiet"
-              title={t("Afficher les fréquences")}
-              aria-label={t("Afficher les fréquences")}
-              aria-pressed={spectrum()}
-              disabled={!player.state().spectrum_hz || player.state().device === "@hqplayer"}
-              onClick={() => {
-                try {
-                  const value = !spectrum();
-                  localStorage.setItem("phemios.spectrum", JSON.stringify(value));
-                  announceSetting("phemios.spectrum", JSON.stringify(value));
-                  setSpectrum(value);
-                } catch (failure) {
-                  setError(String(failure));
-                }
-              }}
-            >
-              <Icon name="spectrum" />
-            </button>
-            <Show when={spectrum()}>
+          <div class="playback-visuals">
+            <div class="scene-controls">
+              <For
+                each={[
+                  { id: "floating" as const, icon: "sparkles", label: t("Paroles flottantes") },
+                  { id: "sphere" as const, icon: "globe", label: t("Sphère") },
+                  { id: "waves" as const, icon: "wave", label: t("Vagues") },
+                  { id: "landscape" as const, icon: "landscape", label: t("Relief") },
+                ]}
+              >
+                {(item) => (
+                  <button
+                    class="icon-button quiet"
+                    title={item.label}
+                    aria-label={item.label}
+                    aria-pressed={scene() === item.id}
+                    onClick={() => choose(scene() === item.id ? "off" : item.id)}
+                  >
+                    <Icon name={item.icon} />
+                  </button>
+                )}
+              </For>
               <button
                 class="icon-button quiet"
-                title={
-                  barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
-                }
-                aria-label={
-                  barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
-                }
-                aria-pressed={barStyle() === "terminal"}
+                title={t("Afficher les fréquences")}
+                aria-label={t("Afficher les fréquences")}
+                aria-pressed={spectrum()}
+                disabled={!player.state().spectrum_hz || player.state().device === "@hqplayer"}
                 onClick={() => {
                   try {
-                    const next = barStyle() === "gradient" ? "terminal" : "gradient";
-                    localStorage.setItem("phemios.spectrum-style", JSON.stringify(next));
-                    announceSetting("phemios.spectrum-style", JSON.stringify(next));
-                    setBarStyle(next);
+                    const value = !spectrum();
+                    localStorage.setItem("phemios.spectrum", JSON.stringify(value));
+                    announceSetting("phemios.spectrum", JSON.stringify(value));
+                    setSpectrum(value);
                   } catch (failure) {
                     setError(String(failure));
                   }
                 }}
               >
-                <Icon name="terminal" />
+                <Icon name="spectrum" />
               </button>
-            </Show>
-          </div>
-          <div class="playback-visuals">
+              <Show when={spectrum()}>
+                <button
+                  class="icon-button quiet"
+                  title={
+                    barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
+                  }
+                  aria-label={
+                    barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
+                  }
+                  aria-pressed={barStyle() === "terminal"}
+                  onClick={() => {
+                    try {
+                      const next = barStyle() === "gradient" ? "terminal" : "gradient";
+                      localStorage.setItem("phemios.spectrum-style", JSON.stringify(next));
+                      announceSetting("phemios.spectrum-style", JSON.stringify(next));
+                      setBarStyle(next);
+                    } catch (failure) {
+                      setError(String(failure));
+                    }
+                  }}
+                >
+                  <Icon name="terminal" />
+                </button>
+              </Show>
+            </div>
             <Show
               when={
                 playbackLayers(scene(), spectrum(), !!player.state().spectrum_hz?.length)

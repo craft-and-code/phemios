@@ -1,4 +1,4 @@
-import { createMemo, For, Show } from "solid-js";
+import { createMemo, For, Index, Show } from "solid-js";
 import { createTerminalBands } from "../visualizer/terminal-bands";
 /** Consumed frequency energies with optional Aède terminal segmentation and held peaks. */
 export function FrequencyBars(props: {
@@ -38,11 +38,11 @@ export function FrequencyBars(props: {
           </For>
         }
       >
-        <For each={rows()}>
+        <Index each={rows()}>
           {(band, i) => (
             <div
               classList={{
-                "band-unavailable": (props.frequencies[i()] ?? 0) >= props.rate * 0.45,
+                "band-unavailable": (props.frequencies[i] ?? 0) >= props.rate * 0.45,
               }}
             >
               <span class="terminal-band">
@@ -50,17 +50,17 @@ export function FrequencyBars(props: {
                   {(row) => (
                     <i
                       classList={{
-                        lit: row < Math.round(band.level * 10),
-                        peak: band.peak > 0 && row === Math.min(9, Math.floor(band.peak * 10)),
+                        lit: row < Math.round(band().level * 10),
+                        peak: band().peak > 0 && row === Math.min(9, Math.floor(band().peak * 10)),
                       }}
                     />
                   )}
                 </For>
               </span>
-              <small>{frequency(props.frequencies[i()] ?? 0)}</small>
+              <small>{frequency(props.frequencies[i] ?? 0)}</small>
             </div>
           )}
-        </For>
+        </Index>
       </Show>
     </div>
   );

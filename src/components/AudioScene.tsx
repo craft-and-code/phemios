@@ -2,8 +2,8 @@ import { drawFloatingDepth } from "../visualizer/floating-depth";
 import { floatingObjects, animationRuns } from "../visualizer/floating";
 import { createEffect, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
-import { orbit, orbitDrag } from "../visualizer/orbit";
-import { particles, type Scene } from "../visualizer/particles";
+import { orbit, orbitDrag, orbitField } from "../visualizer/orbit";
+import { createParticleField, type Scene } from "../visualizer/particles";
 /** Perspective-projected 3D particles follow native consumed-sample RMS envelopes; pause holds the last pose. */
 export function AudioScene(props: { scene: Scene; playing: boolean; levels: readonly number[] }) {
   let canvas: HTMLCanvasElement | undefined,
@@ -11,18 +11,20 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     clock = 0,
     last = 0,
     lastDraw = 0,
-    bands: readonly number[] = [0, 0, 0, 0];
+    bands: readonly number[] = [0, 0, 0, 0],
+    width = 0,
+    height = 0,
+    color = "";
   let yaw = 0,
     pitch = 0,
     drag: { id: number; x: number; y: number; yaw: number; pitch: number } | undefined;
+  let field: ReturnType<typeof createParticleField> | undefined;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   function draw() {
-    if (!canvas) return;
+    if (!canvas || document.hidden) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const width = canvas.clientWidth,
-      height = canvas.clientHeight,
-      ratio = Math.min(2, window.devicePixelRatio);
+    const ratio = Math.min(2, window.devicePixelRatio);
     if (!width || !height) return;
     if (
       canvas.width !== Math.round(width * ratio) ||
@@ -33,14 +35,17 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     }
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    const color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(),
-      scale = Math.min(width, height) * 0.32;
+    const scale = Math.min(width, height) * 0.32;
     if (props.scene === "floating") drawFloatingDepth(ctx, width, height, clock, yaw, pitch, color);
-    const points = (
+    const energy = reduced.matches ? [0, 0, 0, 0] : bands;
+    const points =
       props.scene === "floating"
-        ? floatingObjects(clock, reduced.matches ? [0, 0, 0, 0] : bands)
-        : particles(props.scene, clock, reduced.matches ? [0, 0, 0, 0] : bands)
-    ).map((p) => orbit(p, yaw, pitch));
+        ? floatingObjects(clock, energy).map((p) => orbit(p, yaw, pitch))
+        : orbitField(
+            (field ??= createParticleField()).update(props.scene, clock, energy),
+            yaw,
+            pitch,
+          );
     points.sort((a, b) => b.z - a.z);
     for (const point of points) {
       const perspective = 3.4 / (3.4 + point.z),
@@ -104,6 +109,14 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     }
     ctx.globalAlpha = 1;
   }
+  // Layout and theme can change independently of the audio clock; neither needs per-frame reads.
+  function refreshSurface() {
+    if (!canvas || document.hidden) return;
+    width = canvas.clientWidth;
+    height = canvas.clientHeight;
+    color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+    draw();
+  }
   function tick(timestamp: number) {
     if (!animationRuns(props.scene !== "off", props.playing, document.hidden, reduced.matches)) {
       frame = 0;
@@ -124,9 +137,9 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     cancelAnimationFrame(frame);
     frame = 0;
     last = 0;
+    refreshSurface();
     if (animationRuns(props.scene !== "off", props.playing, document.hidden, reduced.matches))
       frame = requestAnimationFrame(tick);
-    else draw();
   }
   createEffect(() => {
     if (props.playing) bands = props.levels;
@@ -137,17 +150,17 @@ export function AudioScene(props: { scene: Scene; playing: boolean; levels: read
     schedule();
   });
   onMount(() => {
-    const observer = new ResizeObserver(draw);
+    const observer = new ResizeObserver(refreshSurface);
     if (canvas) observer.observe(canvas);
     document.addEventListener("visibilitychange", schedule);
     reduced.addEventListener("change", schedule);
-    window.addEventListener("phemios-preferences", draw);
+    window.addEventListener("phemios-preferences", refreshSurface);
     schedule();
     onCleanup(() => {
       observer.disconnect();
       document.removeEventListener("visibilitychange", schedule);
       reduced.removeEventListener("change", schedule);
-      window.removeEventListener("phemios-preferences", draw);
+      window.removeEventListener("phemios-preferences", refreshSurface);
       cancelAnimationFrame(frame);
     });
   });
