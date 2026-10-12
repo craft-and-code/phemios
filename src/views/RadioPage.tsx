@@ -1,3 +1,4 @@
+import { RadioWave } from "../components/RadioWave";
 import { radioBrowseSession } from "../radio/browse-session";
 import { createRadioTuner, radioTuningKey } from "../radio/tuner";
 import { createRadioTuningSound } from "../radio/tuning-sound";
@@ -91,8 +92,9 @@ export function RadioPage(props: { query: string }) {
       : radio.station()
         ? radio.volume()
         : library.player.state().volume;
+  const tuningAudio = createRadioTuningAudio();
   const tuningSound = createRadioTuningSound({
-    audio: createRadioTuningAudio(),
+    audio: tuningAudio,
     preset: "whistle",
     volume: tuningVolume,
     error: () => setPreferenceError(t("Le son de réglage radio n’est pas disponible.")),
@@ -280,9 +282,8 @@ export function RadioPage(props: { query: string }) {
             </div>
             <div class="radio-dial">
               <svg class="radio-scale" viewBox="0 0 900 120" aria-hidden="true">
-                <path
-                  class="radio-wave"
-                  d="M0 70 Q25 20 50 70 T100 70 T150 70 T200 70 T250 70 T300 70 T350 70 T400 70 T450 70 T500 70 T550 70 T600 70 T650 70 T700 70 T750 70 T800 70 T850 70 T900 70"
+                <RadioWave
+                  sample={(target) => tuningAudio.sample?.(target) || radio.sample(target)}
                 />
                 <For each={Array.from({ length: stations().length }, (_, i) => i)}>
                   {(i) => {

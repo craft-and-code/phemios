@@ -72,7 +72,11 @@ it("cannot start a stopped station from a late directory response", async () => 
     player.stop();
     reply({ stationuuid: station.uuid, url: "https://radio.example.org/live.mp3" });
     await pending;
-    expect(factory).not.toHaveBeenCalled();
+    expect(factory).toHaveBeenCalledOnce();
+    const retired = factory.mock.results[0]!.value as RadioMedia;
+    expect(retired.source).not.toHaveBeenCalled();
+    expect(retired.play).not.toHaveBeenCalled();
+    expect(retired.release).toHaveBeenCalledOnce();
     expect(player.status()).toBe("idle");
     dispose();
   });
@@ -217,4 +221,63 @@ it("allows a new full stall window after a playing event has recovered the previ
   } finally {
     vi.useRealTimers();
   }
+});
+
+it("samples only the playing radio voice and invalidates it on pause or Stop", async () => {
+  await createRoot(async (dispose) => {
+    const audio = {
+      ...media(),
+      sample: vi.fn((target: Float32Array) => {
+        target.fill(0.25);
+        return true;
+      }),
+    };
+    const player = createRadioPlayback(
+      async () => ({ stationuuid: station.uuid, url: "https://radio.example.org/live.mp3" }),
+      async () => {},
+      () => audio,
+    );
+    const samples = new Float32Array(8);
+    expect(player.sample(samples)).toBe(false);
+    await player.start(station);
+    expect(player.sample(samples)).toBe(true);
+    expect(samples[0]).toBe(0.25);
+    player.pause();
+    expect(player.sample(samples)).toBe(false);
+    expect(samples[0]).toBe(0);
+    expect(audio.sample).toHaveBeenCalledTimes(1);
+    player.stop();
+    expect(player.sample(samples)).toBe(false);
+    dispose();
+  });
+});
+
+it("prepares measurement inside the start gesture but never plays a canceled admission", async () => {
+  await createRoot(async (dispose) => {
+    let finish!: () => void;
+    const admission = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const audio = { ...media(), prepare: vi.fn() };
+    const resolve = vi.fn(async (uuid: string) => ({
+      stationuuid: uuid,
+      url: "https://radio.example.org/live.mp3",
+    }));
+    const player = createRadioPlayback(
+      resolve,
+      () => admission,
+      () => audio,
+    );
+    const pending = player.start(station);
+    expect(audio.prepare).toHaveBeenCalledOnce();
+    expect(audio.play).not.toHaveBeenCalled();
+    player.stop();
+    finish();
+    await pending;
+    expect(resolve).not.toHaveBeenCalled();
+    expect(audio.source).not.toHaveBeenCalled();
+    expect(audio.play).not.toHaveBeenCalled();
+    expect(audio.release).toHaveBeenCalledOnce();
+    dispose();
+  });
 });

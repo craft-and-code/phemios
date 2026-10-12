@@ -1,3 +1,4 @@
+import { ActivityGlyph } from "./ActivityGlyph";
 import { QueueLyrics } from "./QueueLyrics";
 import { QueueSave } from "./QueueSave";
 import { locale } from "../i18n";
@@ -210,16 +211,30 @@ export function PlaybackQueue(props: { onClose: () => void }) {
                 fallback={
                   <button
                     class="icon-button quiet queue-lyrics-track"
-                    title={t("Télécharger les paroles")}
-                    aria-label={t("Télécharger les paroles")}
-                    disabled={lyrics.busy() || !lyrics.eligible(row.reference)}
-                    onClick={() => void lyrics.acquire(row.reference)}
+                    title={
+                      lyrics.acquiring() === row.reference
+                        ? t("Arrêter le téléchargement des paroles")
+                        : t("Télécharger les paroles")
+                    }
+                    aria-label={
+                      lyrics.acquiring() === row.reference
+                        ? t("Arrêter le téléchargement des paroles")
+                        : t("Télécharger les paroles")
+                    }
+                    disabled={
+                      (lyrics.busy() && lyrics.acquiring() !== row.reference) ||
+                      !lyrics.eligible(row.reference)
+                    }
+                    onClick={() => {
+                      if (lyrics.acquiring() === row.reference) void lyrics.cancel();
+                      else void lyrics.acquire(row.reference);
+                    }}
                   >
                     <Show
                       when={lyrics.acquiring() === row.reference}
                       fallback={<Icon name="lyrics-download" />}
                     >
-                      <span class="spinner" aria-hidden="true" />
+                      <ActivityGlyph cancellable />
                     </Show>
                   </button>
                 }

@@ -282,3 +282,7 @@
     height: 260px;
   }
 }
+
+.radio-scale .radio-wave[data-signal="measured"] {
+  opacity: 0.6;
+}

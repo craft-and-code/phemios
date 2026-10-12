@@ -28,6 +28,9 @@ interface TuningAudioFixture {
     suspend: Mock<() => Promise<void>>;
     close: Mock<() => Promise<void>>;
     createGain: Mock<() => Gain>;
+    createAnalyser: Mock<
+      () => { fftSize: number; connect: Mock; disconnect: Mock; getFloatTimeDomainData: Mock }
+    >;
     createBuffer: Mock<
       (
         channels: number,
@@ -68,6 +71,12 @@ export function tuningAudioFixture(): TuningAudioFixture {
     close: vi.fn(async () => {
       context.state = "closed";
     }),
+    createAnalyser: vi.fn(() => ({
+      fftSize: 0,
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      getFloatTimeDomainData: vi.fn((data: Float32Array) => data.fill(0.2)),
+    })),
     createGain: vi.fn(() => {
       const node = { gain: parameter(), connect: vi.fn(), disconnect: vi.fn() };
       gains.push(node);

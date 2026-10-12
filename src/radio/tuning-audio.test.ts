@@ -139,3 +139,20 @@ it("waits for an in-flight idle suspension before resuming a new gesture", async
   expect(fixture.context.state).toBe("running");
   audio.dispose();
 });
+
+it("exposes only active tuning-loop PCM and clears its samples on release and disposal", async () => {
+  const fixture = tuningAudioFixture(),
+    audio = createRadioTuningAudio(fixture.factory),
+    samples = new Float32Array(16);
+  expect(audio.sample?.(samples)).toBe(false);
+  await audio.ready();
+  const voice = audio.loop("whistle", 0.5);
+  expect(audio.sample?.(samples)).toBe(true);
+  expect(samples[0]).toBeCloseTo(0.2);
+  voice.stop();
+  audio.idle();
+  expect(audio.sample?.(samples)).toBe(false);
+  expect(samples[0]).toBe(0);
+  audio.dispose();
+  expect(audio.sample?.(samples)).toBe(false);
+});

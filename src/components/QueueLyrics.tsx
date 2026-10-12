@@ -1,3 +1,4 @@
+import { ActivityGlyph } from "./ActivityGlyph";
 import { Portal } from "solid-js/web";
 import { createEffect, createMemo, on, Show } from "solid-js";
 import { createDownloadFeedback } from "../library/download-feedback";
@@ -53,7 +54,7 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
           (!job.eligible() || job.retainedLoading() || job.retained()?.complete === true)
         }
         onClick={() => {
-          if (job.busy()) job.cancel();
+          if (job.busy()) void job.cancel();
           else void job.acquire();
         }}
       >
@@ -61,7 +62,7 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
           when={job.busy()}
           fallback={<Icon name={feedback.phase() === "complete" ? "check" : "lyrics-download"} />}
         >
-          <span class="spinner" />
+          <ActivityGlyph cancellable />
         </Show>
       </button>
       <Show when={props.feedbackHost()}>

@@ -6,6 +6,8 @@ export interface RadioTuningVoice {
 export interface RadioTuningAudio {
   /** Prepare silently during pointerdown to retain WebKit's user activation. */
   ready: () => Promise<void>;
+  /** Optional PCM inspection reads only this controller’s active feedback voice. */
+  sample?: (target: Float32Array<ArrayBuffer>) => boolean;
   loop: (preset: RadioTuningPreset, volume: number) => RadioTuningVoice;
   /** Master gain also controls voices finishing their release fade. */
   volume: (value: number) => void;

@@ -12,7 +12,8 @@ import type { createJobs } from "./jobs";
 export function createQueueLyrics(library: {
   queue: () => readonly { reference: string; title: string }[];
   sessionFor: (reference: string) => AccountSession | undefined;
-  tasks: Pick<ReturnType<typeof createJobs>, "start" | "jobs">;
+  tasks: Pick<ReturnType<typeof createJobs>, "start" | "jobs"> &
+    Partial<Pick<ReturnType<typeof createJobs>, "cancel">>;
 }) {
   const [busy, setBusy] = createSignal(false),
     [message, setMessage] = createSignal(""),
@@ -20,7 +21,8 @@ export function createQueueLyrics(library: {
     [feedbackOwners, setFeedbackOwners] =
       createSignal<ReadonlyMap<string, AccountSession | undefined>>();
   let disposed = false,
-    cancelled = false;
+    cancelled = false,
+    activeTask: { id: number; reference: string; owner: AccountSession | undefined } | undefined;
   onCleanup(() => {
     disposed = true;
     cancelled = true;
@@ -82,12 +84,18 @@ export function createQueueLyrics(library: {
           if (!current()) return;
           setAcquiring(reference);
           const id = await library.tasks.start("lyrics", reference, false);
+          activeTask = { id, reference, owner: owners.get(reference) };
+          if (!current()) {
+            if (cancelled && !disposed) await cancel();
+            return;
+          }
           const deadline = Date.now() + 300000;
           while (current()) {
             const job = library.tasks
               .jobs()
               .find((r) => r.task_id === id && r.source === referenceSource(reference));
             if (job?.status === "completed" && (!job.result || job.result.exit_code === 0)) {
+              activeTask = undefined;
               await availability.read(reference, owners.get(reference));
               return;
             }
@@ -96,13 +104,15 @@ export function createQueueLyrics(library: {
               ["failed", "cancelled"].includes(job?.status ?? "") ||
               (job?.status === "completed" && job.result?.exit_code !== 0) ||
               Date.now() > deadline
-            )
+            ) {
+              activeTask = undefined;
               throw new Error(
                 job?.tracking_error ||
                   job?.error?.message ||
                   job?.result?.stderr.trim().slice(0, 800) ||
                   t("Téléchargement des paroles interrompu."),
               );
+            }
             await new Promise<void>((resolve) => setTimeout(resolve, 300));
           }
         },
@@ -133,6 +143,22 @@ export function createQueueLyrics(library: {
       if (!disposed) {
         setBusy(false);
         setAcquiring("");
+        activeTask = undefined;
+      }
+    }
+  }
+  async function cancel() {
+    cancelled = true;
+    const task = activeTask;
+    activeTask = undefined;
+    if (!task || disposed || !task.owner || task.owner !== library.sessionFor(task.reference))
+      return;
+    try {
+      await library.tasks.cancel?.(task.id, referenceSource(task.reference));
+    } catch (failure) {
+      if (feedbackCurrent()) {
+        setFailed(true);
+        setMessage(String(failure));
       }
     }
   }
@@ -146,9 +172,7 @@ export function createQueueLyrics(library: {
     retained: availability.retained,
     retainedLoading: availability.loading,
     acquire,
-    cancel: () => {
-      cancelled = true;
-    },
+    cancel,
     clear: () => setMessage(""),
   };
 }

@@ -116,6 +116,17 @@ export function PlaybackPage() {
   }
   return (
     <section class="playback-page" classList={{ "queue-open": queue() }}>
+      <Show when={!queue() && player.queue().length > 0}>
+        <button
+          class="icon-button quiet playback-queue-toggle"
+          aria-label={t("Afficher ou masquer la liste de lecture")}
+          title={t("Afficher ou masquer la liste de lecture")}
+          aria-pressed={queue()}
+          onClick={() => setQueue(!queue())}
+        >
+          <Icon name="list" />
+        </button>
+      </Show>
       <Show
         when={active()}
         fallback={
@@ -149,17 +160,6 @@ export function PlaybackPage() {
                 </Show>
               </p>
             </div>
-            <Show when={!queue()}>
-              <button
-                class="icon-button quiet"
-                aria-label={t("Afficher ou masquer la liste de lecture")}
-                title={t("Afficher ou masquer la liste de lecture")}
-                aria-pressed={queue()}
-                onClick={() => setQueue(!queue())}
-              >
-                <Icon name="list" />
-              </button>
-            </Show>
           </header>
           <div class="playback-visuals">
             <div class="scene-controls">

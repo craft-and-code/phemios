@@ -412,8 +412,10 @@ export function createPlayback(
     equals: (previous, next) =>
       previous.length === next.length && previous.every((index, offset) => index === next[offset]),
   });
+  // Keep occurrence objects resident even when native Jump briefly clears/replaces its order.
+  const occurrences = createMemo(() => selection().map((row, index) => ({ ...row, index })));
   const orderedQueue = createMemo(() => {
-    const rows = selection(),
+    const rows = occurrences(),
       order = queueOrder();
     return (
       order.length
@@ -421,10 +423,7 @@ export function createPlayback(
         : retainedOrder().length
           ? retainedOrder()
           : rows.map((_, index) => index)
-    ).map((index) => ({
-      ...rows[index]!,
-      index,
-    }));
+    ).map((index) => rows[index]!);
   });
   /** Replay retained order after Stop; active queues retain their native occurrence jump. */
   async function playQueueOccurrence(occurrence: number) {

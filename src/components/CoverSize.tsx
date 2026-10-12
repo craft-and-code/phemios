@@ -13,7 +13,7 @@ export function CoverSize(props: {
       classList={{ "cover-size-disabled": props.disabled }}
       title={t("Taille des pochettes · double-clic pour réinitialiser")}
     >
-      <Icon name="disc" />
+      <Icon name="cover-size" />
       <ScrubRange
         class="cover-size-range"
         aria-label={t("Taille des pochettes")}

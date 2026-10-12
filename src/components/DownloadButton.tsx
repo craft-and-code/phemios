@@ -1,3 +1,4 @@
+import { ActivityGlyph } from "./ActivityGlyph";
 import { createEffect, createSignal, on, Show } from "solid-js";
 import { t } from "../i18n";
 import { createDownloadFeedback } from "../library/download-feedback";
@@ -12,6 +13,8 @@ export function DownloadButton(props: {
   completed?: boolean;
   confirmOnResolve?: boolean;
   icon?: string;
+  onCancel?: () => unknown;
+  cancelLabel?: string;
   onError?: (failure: unknown) => void;
   class?: string;
   identity?: unknown;
@@ -52,11 +55,20 @@ export function DownloadButton(props: {
         type="button"
         class={`icon-button quiet ${props.class ?? ""}`}
         classList={{ "download-complete": state.phase() === "complete" }}
-        disabled={props.disabled || busy()}
+        disabled={props.disabled || (busy() && !props.onCancel)}
         aria-busy={busy()}
-        aria-label={props.label}
-        title={state.phase() === "complete" ? t("Téléchargement terminé") : props.label}
-        onClick={() => void act()}
+        aria-label={busy() && props.onCancel ? (props.cancelLabel ?? t("Arrêter")) : props.label}
+        title={
+          busy() && props.onCancel
+            ? (props.cancelLabel ?? t("Arrêter"))
+            : state.phase() === "complete"
+              ? t("Téléchargement terminé")
+              : props.label
+        }
+        onClick={() => {
+          if (busy()) props.onCancel?.();
+          else void act();
+        }}
       >
         <Show
           when={busy()}
@@ -64,7 +76,7 @@ export function DownloadButton(props: {
             <Icon name={state.phase() === "complete" ? "check" : (props.icon ?? "download")} />
           }
         >
-          <span class="spinner" aria-hidden="true" />
+          <ActivityGlyph cancellable={!!props.onCancel} />
         </Show>
       </button>
       <Feedback error message={error()} onClose={() => setError("")} />

@@ -324,6 +324,8 @@ it("retains queue row identities across clock polls and updates them only when o
     });
     await vi.advanceTimersByTimeAsync(120);
     expect(player.queue().map((row) => row.index)).toEqual([1, 0]);
+    expect(player.queue()[0]).toBe(rows[1]);
+    expect(player.queue()[1]).toBe(rows[0]);
     dispose();
   });
 });

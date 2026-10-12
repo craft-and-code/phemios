@@ -389,3 +389,36 @@ it("refreshes only the completed track instead of re-probing every retained queu
     dispose();
   }
 });
+
+it("cancels the captured server task even when Stop precedes its submission acknowledgement", async () => {
+  let finish!: (id: number) => void, dispose!: () => void;
+  vi.mocked(requestAede).mockImplementation(async (path, query) =>
+    path.endsWith("/status")
+      ? { capabilities: ["fetch_track_lyrics"] }
+      : { track: query?.track, lyrics: null },
+  );
+  const cancel = vi.fn(async () => {}),
+    start = vi.fn(
+      () =>
+        new Promise<number>((resolve) => {
+          finish = resolve;
+        }),
+    );
+  const controller = createRoot((end) => {
+    dispose = end;
+    return createQueueLyrics({
+      queue: () => [{ reference: "track:first", title: "First" }],
+      sessionFor: () => owner,
+      tasks: { jobs: () => [], start, cancel },
+    });
+  });
+  const pending = controller.acquire("track:first");
+  for (let i = 0; i < 30; i++) await Promise.resolve();
+  expect(start).toHaveBeenCalledOnce();
+  await controller.cancel();
+  finish(81);
+  await pending;
+  expect(cancel).toHaveBeenCalledExactlyOnceWith(81, "server");
+  expect(controller.busy()).toBe(false);
+  dispose();
+});

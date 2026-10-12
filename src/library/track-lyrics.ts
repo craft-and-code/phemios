@@ -25,7 +25,7 @@ export function createTrackLyrics(options: {
         (row) =>
           row.kind === "lyrics" &&
           row.release === reference &&
-          row.source === source &&
+          (row.source ?? "server") === source &&
           row.status === "completed",
       )?.task_id;
   });
@@ -54,25 +54,30 @@ export function createTrackLyrics(options: {
           a.expanded === b.expanded),
     },
   );
-  const [words, { refetch }] = createResource(identity, async ({ reference, session }) => {
-    try {
-      const raw = await requestAede(
-        "/api/v1/lyrics",
-        { track: reference },
-        "GET",
-        null,
-        referenceSource(reference),
-      );
-      if (reference !== options.reference() || session !== options.session())
-        throw new Error(t("Session invalide."));
-      return { reference, session, lyrics: parseLyrics(raw, reference), error: "" };
-    } catch (failure) {
-      // Resource errors must stay inside the optional panel, never break track navigation.
-      return { reference, session, lyrics: null, error: String(failure) };
-    }
-  });
+  const [words, { refetch }] = createResource(
+    identity,
+    async ({ reference, session }) => {
+      try {
+        const raw = await requestAede(
+          "/api/v1/lyrics",
+          { track: reference },
+          "GET",
+          null,
+          referenceSource(reference),
+        );
+        if (reference !== options.reference() || session !== options.session())
+          throw new Error(t("Session invalide."));
+        return { reference, session, lyrics: parseLyrics(raw, reference), error: "" };
+      } catch (failure) {
+        // Resource errors must stay inside the optional panel, never break track navigation.
+        return { reference, session, lyrics: null, error: String(failure) };
+      }
+    },
+    { initialValue: undefined },
+  );
   const current = () => {
-    const value = words();
+    // Optional reads retain the surrounding workspace and queue rather than enter its Suspense.
+    const value = words.latest;
     return value?.reference === options.reference() && value.session === options.session()
       ? value
       : undefined;

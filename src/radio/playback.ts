@@ -1,39 +1,18 @@
+import { browserRadioMedia } from "./browser-media";
+export { browserRadioMedia } from "./browser-media";
 import { t } from "../i18n";
 import { createSignal, onCleanup } from "solid-js";
 import { parseResolved, type Station } from "./directory";
 export interface RadioMedia {
+  /** Prepare a silent optional measurement context while explicit user activation is available. */
+  prepare?: () => void;
+  /** Pre-output samples from this radio only; false means no readable signal. */
+  sample?: (target: Float32Array<ArrayBuffer>) => boolean;
   source: (url: string) => void;
   volume: (value: number) => void;
   play: () => Promise<void>;
   release: () => void;
   callbacks: (playing: () => void, waiting: () => void, failure: () => void) => void;
-}
-/** Use native WebView codecs for live Internet media, with no Aède credentials or catalogue history. */
-export function browserRadioMedia(): RadioMedia {
-  const audio = new Audio();
-  audio.preload = "none";
-  return {
-    source: (url) => {
-      audio.src = url;
-    },
-    volume: (value) => {
-      audio.volume = value;
-    },
-    play: () => audio.play(),
-    release: () => {
-      audio.onplaying = null;
-      audio.onwaiting = null;
-      audio.onerror = null;
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
-    },
-    callbacks: (playing, waiting, failure) => {
-      audio.onplaying = playing;
-      audio.onwaiting = waiting;
-      audio.onerror = failure;
-    },
-  };
 }
 /** Latest explicit selection owns the media. Disposal closes it permanently; uninterrupted stalls share one deadline. */
 export function createRadioPlayback(
@@ -84,12 +63,13 @@ export function createRadioPlayback(
     setStatus("connecting");
     setError("");
     try {
+      const audio = createMedia();
+      media = audio;
+      audio.prepare?.();
       await beforePlay();
       if (held !== epoch) return;
       const url = parseResolved(await resolve(selected.uuid), selected.uuid);
       if (held !== epoch) return;
-      const audio = createMedia();
-      media = audio;
       const watch = () => {
         if (stall !== undefined) return;
         stall = setTimeout(() => {
@@ -165,6 +145,10 @@ export function createRadioPlayback(
   });
   return {
     station,
+    sample(target: Float32Array<ArrayBuffer>) {
+      target.fill(0);
+      return status() === "playing" && !!media?.sample?.(target);
+    },
     status,
     revision,
     error,

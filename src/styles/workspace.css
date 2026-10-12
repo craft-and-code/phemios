@@ -460,3 +460,51 @@ main > .playback-page {
     width: min(290px, calc(100% - 48px));
   }
 }
+
+.playback-queue-toggle {
+  position: absolute;
+  right: 40px;
+  top: 40px;
+  z-index: 6;
+}
+.playback-stage > .playback-view-header {
+  padding-right: 48px;
+}
+/* Ordinary lyrics need their own scene extent when no canvas is mounted. */
+.playback-stage > .playback-visuals {
+  flex: 1 0 220px;
+}
+
+/* Nested queue spans must not reshape the rotating activity glyph. */
+.activity-glyph,
+.playback-page .playback-queue .activity-glyph {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  gap: 0;
+}
+.activity-glyph > .spinner,
+.playback-page .playback-queue .activity-glyph > .spinner {
+  display: block;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.activity-glyph > .activity-stop,
+.playback-page .playback-queue .activity-glyph > .activity-stop {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+button:is(:hover, :focus-visible) .activity-glyph:has(.activity-stop) > .spinner {
+  opacity: 0;
+}
+button:is(:hover, :focus-visible) .activity-glyph > .activity-stop {
+  opacity: 1;
+}

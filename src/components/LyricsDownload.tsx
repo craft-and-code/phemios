@@ -18,6 +18,7 @@ export function LyricsDownload(props: { reference: string }) {
   type Identity = ReturnType<typeof identity>;
   const [submitting, setSubmitting] = createSignal<Identity>(),
     [submitted, setSubmitted] = createSignal<{ held: Identity; id: number }>(),
+    [cancelled, setCancelled] = createSignal<Identity>(),
     [error, setError] = createSignal<{ held: Identity; message: string }>();
   const job = () => {
     const held = submitted();
@@ -38,6 +39,7 @@ export function LyricsDownload(props: { reference: string }) {
   async function fetchWords() {
     const held = identity();
     setSubmitting(held);
+    setCancelled(undefined);
     setError(undefined);
     try {
       const info = await requestAede<{ capabilities?: string[] }>(
@@ -50,8 +52,12 @@ export function LyricsDownload(props: { reference: string }) {
       if (!info.capabilities?.includes("fetch_track_lyrics"))
         throw new Error(t("Mettez à jour puis redémarrez Aède pour télécharger les paroles."));
       if (!held.session || held !== identity()) throw new Error(t("Session invalide."));
+      if (cancelled() === held) return;
       const id = await library.tasks.start("lyrics", held.reference, false);
-      if (held === identity()) setSubmitted({ held, id });
+      if (held === identity()) {
+        setSubmitted({ held, id });
+        if (cancelled() === held) await library.tasks.cancel(id, referenceSource(held.reference));
+      }
     } catch (failure) {
       if (held === identity()) setError({ held, message: String(failure) });
     } finally {
@@ -83,6 +89,27 @@ export function LyricsDownload(props: { reference: string }) {
           job()?.status === "completed" && (!job()?.result || job()?.result?.exit_code === 0)
         }
         confirmOnResolve={false}
+        cancelLabel={t("Arrêter le téléchargement des paroles")}
+        onCancel={() => {
+          const held = identity(),
+            current = job();
+          if (
+            cancelled() === held ||
+            !held.session ||
+            held.session !== library.sessionFor(held.reference)
+          )
+            return;
+          setCancelled(held);
+          if (current)
+            void library.tasks
+              .cancel(current.task_id, referenceSource(held.reference))
+              .catch((failure) => {
+                if (held === identity()) {
+                  setCancelled(undefined);
+                  setError({ held, message: String(failure) });
+                }
+              });
+        }}
         onClick={fetchWords}
       />
       <Show when={failure() || taskFailure()}>

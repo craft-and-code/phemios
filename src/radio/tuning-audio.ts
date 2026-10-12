@@ -19,6 +19,7 @@ export function createRadioTuningAudio(
 ): RadioTuningAudio {
   let context: AudioContext | undefined,
     master: GainNode | undefined,
+    analyser: AnalyserNode | undefined,
     disposed = false;
   let closing: ReturnType<typeof setTimeout> | undefined;
   const buffers = new Map<RadioTuningPreset, AudioBuffer>();
@@ -50,6 +51,8 @@ export function createRadioTuningAudio(
     clearTimeout(closing);
     for (const voice of voices) voice.release();
     master?.disconnect();
+    analyser?.disconnect();
+    analyser = undefined;
     master = undefined;
     buffers.clear();
     const held = context;
@@ -65,6 +68,8 @@ export function createRadioTuningAudio(
         context = createContext();
         master = context.createGain();
         master.gain.value = 0;
+        analyser = context.createAnalyser();
+        analyser.fftSize = 2048;
         master.connect(context.destination);
       }
       const held = context;
@@ -85,6 +90,12 @@ export function createRadioTuningAudio(
       suspendIfIdle();
     },
     volume,
+    sample(target) {
+      target.fill(0);
+      if (!wanted || !voices.size || !analyser || context?.state !== "running") return false;
+      analyser.getFloatTimeDomainData(target);
+      return true;
+    },
     loop(preset, value) {
       const held = context,
         output = master;
@@ -104,6 +115,7 @@ export function createRadioTuningAudio(
       source.loop = true;
       source.connect(envelope);
       envelope.connect(output);
+      if (analyser) envelope.connect(analyser);
       envelope.gain.setValueAtTime(0, held.currentTime);
       envelope.gain.linearRampToValueAtTime(0.13, held.currentTime + 0.015);
       volume(value);

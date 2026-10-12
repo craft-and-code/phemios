@@ -4,15 +4,18 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import { DownloadButton } from "../../../src/components/DownloadButton";
 
 type DownloadArgs = ComponentProps<typeof DownloadButton> & {
+  cancellable?: boolean;
   outcome?: "success" | "cancel" | "error";
 };
 function DownloadFixture(args: DownloadArgs) {
   const [result, setResult] = createSignal("Not started");
+  let cancelled = false;
   const timers = new Set<ReturnType<typeof setTimeout>>();
   onCleanup(() => {
     for (const timer of timers) clearTimeout(timer);
   });
   async function publish() {
+    cancelled = false;
     setResult("Pending fictional publication");
     await new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
@@ -25,7 +28,7 @@ function DownloadFixture(args: DownloadArgs) {
       setResult("Failed");
       throw new Error("Fictional download failure; no file was written.");
     }
-    if (args.outcome === "cancel") {
+    if (cancelled || args.outcome === "cancel") {
       setResult("Cancelled");
       return false;
     }
@@ -35,7 +38,19 @@ function DownloadFixture(args: DownloadArgs) {
   return (
     <>
       <div class="component-download">
-        <DownloadButton {...args} onClick={publish} />
+        <DownloadButton
+          {...args}
+          onClick={publish}
+          {...(args.cancellable
+            ? {
+                cancelLabel: "Cancel fictional download",
+                onCancel: () => {
+                  cancelled = true;
+                  setResult("Cancelled");
+                },
+              }
+            : {})}
+        />
       </div>
       <output class="component-readout" data-testid="publication">
         {result()}
@@ -96,3 +111,22 @@ export const Cancelled: Story = {
 };
 export const Failed: Story = { args: { outcome: "error" } };
 export const Disabled: Story = { args: { disabled: true } };
+
+export const StopOnHover: Story = {
+  args: { cancellable: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement),
+      button = canvas.getByRole("button", { name: "Download fictional report" });
+    await userEvent.click(button);
+    await userEvent.hover(button);
+    await expect(getComputedStyle(button.querySelector(".activity-stop")!).opacity).toBe("1");
+    const rect = button.querySelector(".spinner")!.getBoundingClientRect();
+    await expect(rect.width).toBeCloseTo(rect.height, 3);
+    await userEvent.click(button);
+    await waitFor(async () => {
+      await expect(button).toHaveAttribute("aria-busy", "false");
+    });
+    await expect(canvas.getByTestId("publication")).toHaveTextContent("Cancelled");
+    await expect(button).not.toHaveClass("download-complete");
+  },
+};
