@@ -33,6 +33,52 @@ impl Store {
         validate(&value)?;
         Ok(value)
     }
+    /// Prepare an additive explicit restore, retaining current subscriptions/evidence and document extensions.
+    pub(crate) fn prepare_restore(
+        &self,
+        source: Source,
+        client: &Client,
+        imported: &Value,
+    ) -> Result<Value, String> {
+        writable(client)?;
+        validate(imported)?;
+        let owner = Self::owner(source, client)?;
+        let mut value = self.document(&owner)?;
+        for field in ["feeds", "episodes"] {
+            let incoming = imported[field]
+                .as_array()
+                .ok_or("Données podcasts illisibles.")?;
+            let held = value[field]
+                .as_array_mut()
+                .ok_or("Données podcasts illisibles.")?;
+            for row in incoming {
+                let exists = held.iter().any(|existing| {
+                    if field == "feeds" {
+                        existing["url"] == row["url"]
+                    } else {
+                        existing["feed"] == row["feed"] && existing["id"] == row["id"]
+                    }
+                });
+                if !exists {
+                    held.push(row.clone());
+                }
+            }
+        }
+        validate(&value)?;
+        self.document.preflight(&owner, &value)?;
+        Ok(value)
+    }
+    /// Publish a previously preflighted restore while the bridge retains this store lock.
+    pub(crate) fn commit_restore(
+        &self,
+        source: Source,
+        client: &Client,
+        prepared: Value,
+    ) -> Result<(), String> {
+        writable(client)?;
+        validate(&prepared)?;
+        self.document.write(&Self::owner(source, client)?, prepared)
+    }
     /// Read only this authenticated source/authority/account; legacy device stores are unrelated.
     pub fn read(&self, source: Source, client: &Client) -> Result<Value, String> {
         let value = self.document(&Self::owner(source, client)?)?;
@@ -46,12 +92,7 @@ impl Store {
         action: &str,
         payload: &Value,
     ) -> Result<Value, String> {
-        if !matches!(
-            client.account()["account"]["role"].as_str(),
-            Some("user" | "admin")
-        ) {
-            return Err("Ce compte ne peut pas modifier ses podcasts.".into());
-        }
+        writable(client)?;
         let owner = Self::owner(source, client)?;
         let mut value = self.document(&owner)?;
         match action {
@@ -90,6 +131,17 @@ impl Store {
         self.read(source, client)
     }
 }
+fn writable(client: &Client) -> Result<(), String> {
+    if matches!(
+        client.account()["account"]["role"].as_str(),
+        Some("user" | "admin")
+    ) {
+        Ok(())
+    } else {
+        Err("Ce compte ne peut pas modifier ses podcasts.".into())
+    }
+}
+
 fn text(value: &Value, max: usize, empty: bool) -> bool {
     value.as_str().is_some_and(|text| {
         text.encode_utf16().count() <= max && (empty || !text.trim().is_empty())
@@ -205,7 +257,7 @@ fn validate_feed(value: &Value) -> Result<(), String> {
     }
     Ok(())
 }
-fn validate(value: &Value) -> Result<(), String> {
+pub(crate) fn validate(value: &Value) -> Result<(), String> {
     let feeds = value["feeds"]
         .as_array()
         .filter(|rows| rows.len() <= 100)

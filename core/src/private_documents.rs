@@ -98,8 +98,7 @@ impl Store {
         }
         Ok(Some(value))
     }
-    pub(crate) fn write(&self, owner: &Value, mut value: Value) -> Result<(), String> {
-        self.read(owner)?;
+    fn encoded(&self, owner: &Value, mut value: Value) -> Result<Vec<u8>, String> {
         let fields = value.as_object_mut().ok_or("Données privées illisibles.")?;
         fields.insert("version".into(), 1.into());
         fields.insert("owner".into(), owner.clone());
@@ -108,6 +107,15 @@ impl Store {
         if bytes.len() > self.kind.limit() {
             return Err("Limite de stockage privé atteinte.".into());
         }
+        Ok(bytes)
+    }
+    /// Preflight the exact retained wrapper budget, including unknown document extensions.
+    pub(crate) fn preflight(&self, owner: &Value, value: &Value) -> Result<(), String> {
+        self.encoded(owner, value.clone()).map(|_| ())
+    }
+    pub(crate) fn write(&self, owner: &Value, value: Value) -> Result<(), String> {
+        self.read(owner)?;
+        let bytes = self.encoded(owner, value)?;
         private_storage::create_root(&self.root)?;
         let path = self.path(owner);
         let pending = path.with_extension("pending");

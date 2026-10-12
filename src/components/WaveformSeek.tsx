@@ -39,7 +39,12 @@ export function WaveformSeek() {
   const progress = () =>
     Math.max(0, Math.min(100, (player.seekPosition() / (duration() || 1)) * 100));
   return (
-    <div class="waveform-seek" aria-busy={result.loading} title={display().error}>
+    <div
+      class="waveform-seek"
+      classList={{ "waveform-idle": player.state().status === "idle" }}
+      aria-busy={result.loading}
+      title={display().error}
+    >
       <svg viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
         <line x1="0" x2="1000" y1="20" y2="20" class="waveform-baseline" />
         <path class="waveform-envelope" d={path()} />

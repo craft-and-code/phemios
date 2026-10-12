@@ -13,7 +13,7 @@ it("retains words in order with bounded visual chunks and deterministic cue typo
   expect(lyricTreatment(text, 2000)).not.toEqual(value);
   expect(lyricTreatment("word ".repeat(200), 0).chunks.length).toBeLessThanOrEqual(4);
 });
-it("offers four typography families, several sizes and marked orientations in both directions", () => {
+it("offers four typography families, several sizes and restrained orientations in both directions", () => {
   const values = Array.from({ length: 40 }, (_, cue) =>
     lyricTreatment("Original fixture phrase", cue, { track: `track:${cue}`, phase: 0 }),
   );
@@ -21,9 +21,7 @@ it("offers four typography families, several sizes and marked orientations in bo
   expect(new Set(values.map((value) => value.angle)).size).toBeGreaterThan(10);
   expect(values.some((value) => value.angle < 0)).toBe(true);
   expect(values.some((value) => value.angle > 0)).toBe(true);
-  expect(values.every((value) => Math.abs(value.angle) >= 45 && Math.abs(value.angle) <= 79)).toBe(
-    true,
-  );
+  expect(values.every((value) => Math.abs(value.angle) <= 40)).toBe(true);
   expect(new Set(values.map((value) => value.size)).size).toBe(4);
 });
 
@@ -60,4 +58,15 @@ it("keeps complete punctuation-delimited clauses together before balancing unpun
   expect(
     lyricTreatment("A silver morning rises; the horizon opens wide", 0).chunks.map((c) => c.text),
   ).toEqual(["A silver morning rises;", "the horizon opens wide"]);
+});
+
+it("includes level phrases and keeps every supplied cue inside the forty-degree orientation bound", () => {
+  const angles = Array.from(
+    { length: 200 },
+    (_, cue) => lyricTreatment("Words remain readable", cue).angle,
+  );
+  expect(angles.every((angle) => Math.abs(angle) <= 40)).toBe(true);
+  expect(angles).toContain(0);
+  expect(angles.some((angle) => angle < -30)).toBe(true);
+  expect(angles.some((angle) => angle > 30)).toBe(true);
 });

@@ -1,3 +1,4 @@
+import { createRetainedSearch } from "./retained-search";
 import { createQueueLyrics } from "./queue-lyrics-controller";
 import { createCatalogBootstrap } from "./catalog-bootstrap";
 import { annotateAlbum } from "./album-annotation";
@@ -70,6 +71,7 @@ interface Library {
   localSession: Accessor<AccountSession | undefined>;
   source: Accessor<SourceId>;
   origins: Accessor<readonly SourceId[]>;
+  advancedSearch: ReturnType<typeof createRetainedSearch>;
   trackSources: Accessor<readonly import("./combined-tracks").TrackSource[]>;
   chooseSource: (source: SourceId) => void;
   sessionFor: (reference: string) => AccountSession | undefined;
@@ -79,6 +81,8 @@ interface Library {
   connected: Accessor<boolean>;
   error: Accessor<string>;
   snapshot: Accessor<Snapshot | undefined>;
+  /** Public projection remains readable after logout, without private annotations. */
+  publicSnapshot: (source: SourceId) => Snapshot | undefined;
   connect: (server: string, username: string, password: string) => Promise<void>;
   sync: (source?: SourceId) => Promise<void>;
   disconnect: () => Promise<void>;
@@ -128,6 +132,16 @@ export function LibraryProvider(props: ParentProps) {
         : [];
     }),
   );
+  const advancedSearch = createRetainedSearch(() =>
+    JSON.stringify(
+      trackSources().map((row) => [
+        row.source,
+        row.identity,
+        row.scannedAt,
+        (row.source === "local" ? localSession() : serverSession())?.nativeSession,
+      ]),
+    ),
+  );
   const tagPreferences = createTagPreferences();
   const source = createMemo(() =>
     effectiveSource(
@@ -149,6 +163,12 @@ export function LibraryProvider(props: ParentProps) {
           ...base,
           artists: [...(local?.artists ?? []), ...(remote?.artists ?? [])],
           albums: [...(local?.albums ?? []), ...(remote?.albums ?? [])],
+          ...(local?.tracks || remote?.tracks
+            ? { tracks: [...(local?.tracks ?? []), ...(remote?.tracks ?? [])] }
+            : {}),
+          ...(local?.labels || remote?.labels
+            ? { labels: [...(local?.labels ?? []), ...(remote?.labels ?? [])] }
+            : {}),
         }
       : undefined;
   });
@@ -368,6 +388,9 @@ export function LibraryProvider(props: ParentProps) {
     for (const owner of ["local", "server"] as const)
       if (annotationOwners[owner] !== next[owner]) {
         annotationOwners[owner] = next[owner];
+        untrack(() => {
+          if (player.ownsSource(owner)) player.reset();
+        });
         bootstrap.invalidate(owner);
         untrack(() => annotationsLoader.reset(owner));
       }
@@ -400,6 +423,8 @@ export function LibraryProvider(props: ParentProps) {
     setBusy(true);
     setError("");
     try {
+      // Revoke and halt the previous server account before admitting new credentials.
+      if (serverSession()) await releaseServer();
       setSession(await loginAede(server, username, password));
       connection.start();
     } catch (failure) {
@@ -409,7 +434,7 @@ export function LibraryProvider(props: ParentProps) {
     }
     if (serverSession()) await sync("server");
   }
-  async function disconnect() {
+  async function releaseServer() {
     bootstrap.invalidate("server");
     setError("");
     setSession(undefined);
@@ -417,15 +442,23 @@ export function LibraryProvider(props: ParentProps) {
     annotationsLoader.reset("server");
     try {
       await logoutAede();
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Déconnexion interrompue."));
     } finally {
       connection.stop();
-      if (referenceSource(player.state().reference) === "server") player.reset();
+      if (player.ownsSource("server")) player.reset();
       setSession(undefined);
     }
   }
+  async function disconnect() {
+    try {
+      await releaseServer();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : t("Déconnexion interrompue."));
+    }
+  }
+  let startingLocal = false;
   async function enableLocal() {
+    if (startingLocal) return;
+    startingLocal = true;
     bootstrap.invalidate("local");
     setError("");
     try {
@@ -434,6 +467,8 @@ export function LibraryProvider(props: ParentProps) {
       await sync("local");
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Moteur local indisponible."));
+    } finally {
+      startingLocal = false;
     }
   }
   async function disableLocal() {
@@ -443,7 +478,7 @@ export function LibraryProvider(props: ParentProps) {
     try {
       await stopLocal();
       setLocalSession(undefined);
-      if (referenceSource(player.state().reference) === "local") player.reset();
+      if (player.ownsSource("local")) player.reset();
       if (source() === "local") chooseSource("server");
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Arrêt local impossible."));
@@ -517,6 +552,7 @@ export function LibraryProvider(props: ParentProps) {
     localSession,
     source,
     origins,
+    advancedSearch,
     trackSources,
     chooseSource,
     sessionFor,
@@ -526,6 +562,7 @@ export function LibraryProvider(props: ParentProps) {
     connected,
     error,
     snapshot,
+    publicSnapshot: (source) => (source === "local" ? localSnapshot() : serverSnapshot()),
     connect,
     sync,
     disconnect,

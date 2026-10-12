@@ -1,8 +1,15 @@
 import { t } from "../i18n";
+import { parseCatalogTrack, type CatalogTrack } from "./track-page";
+import { parseLabel, parseLabelDetail, type LabelSummary, type LabelDetail } from "./labels";
+import { referenceSource } from "./sources";
 import type { Album, Artist } from "./types";
+export type CachedLabel = LabelSummary & LabelDetail;
 export interface Snapshot {
   artists: Artist[];
   albums: Album[];
+  /** Absent in legacy caches; an empty array means a complete synchronized empty projection. */
+  tracks?: CatalogTrack[];
+  labels?: CachedLabel[];
   server: string;
   accountId: string;
   scannedAt: number;
@@ -127,12 +134,44 @@ export function parseSnapshot(value: unknown): Snapshot {
       searchFields: strings(row.search_fields ?? []),
     } satisfies Album;
   });
-  for (const rows of [artists, albums])
+  const tracks =
+    snapshot.tracks === undefined
+      ? undefined
+      : (() => {
+          if (!Array.isArray(snapshot.tracks)) throw new Error(t("Catalogue Aède invalide."));
+          return snapshot.tracks.map(parseCatalogTrack);
+        })();
+  const labels =
+    snapshot.labels === undefined
+      ? undefined
+      : (() => {
+          if (!Array.isArray(snapshot.labels)) throw new Error(t("Catalogue Aède invalide."));
+          return snapshot.labels.map((raw): CachedLabel => {
+            const summary = parseLabel(raw);
+            const detail = parseLabelDetail(raw, summary.reference);
+            if (
+              summary.releaseCount !== detail.releases.length ||
+              new Set(detail.releases).size !== detail.releases.length
+            )
+              throw new Error(t("Label Aède invalide."));
+            return { ...summary, ...detail };
+          });
+        })();
+  if (
+    tracks?.some(
+      (track) =>
+        track.release && referenceSource(track.reference) !== referenceSource(track.release),
+    )
+  )
+    throw new Error(t("Catalogue Aède invalide."));
+  for (const rows of [artists, albums, ...(tracks ? [tracks] : []), ...(labels ? [labels] : [])])
     if (new Set(rows.map((row) => row.reference)).size !== rows.length)
       throw new Error(t("Références Aède dupliquées."));
   return {
     artists,
     albums,
+    ...(tracks ? { tracks } : {}),
+    ...(labels ? { labels } : {}),
     server: string(snapshot.server),
     accountId: string(snapshot.accountId),
     scannedAt: Number(snapshot.scannedAt),

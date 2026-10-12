@@ -75,3 +75,57 @@ it("imports only on explicit approval and ignores a result after disposal", asyn
   expect(closed.parse).not.toHaveBeenCalled();
   expect(closed.apply).not.toHaveBeenCalled();
 });
+
+it("does not publish a private backup fetched after its requesting owner has changed", async () => {
+  let identity = {},
+    finish!: (value: string) => void;
+  const read = new Promise<string>((resolve) => {
+      finish = resolve;
+    }),
+    exported = vi.fn(async () => "/fictional/private.json");
+  const transfer = createRoot(() =>
+    createPreferenceTransfer({
+      identity: () => identity,
+      read: () => read,
+      export: exported,
+      import: async () => null,
+      parse: () => ({}),
+      apply: () => {},
+    }),
+  );
+  const operation = transfer.run(true);
+  identity = {};
+  transfer.changed();
+  finish("Alice private podcast/article backup");
+  await operation;
+  expect(exported).not.toHaveBeenCalled();
+  transfer.dispose();
+});
+it("keeps asynchronous restore pending and does not acknowledge it to a replacement owner", async () => {
+  let identity = {},
+    finish!: () => void;
+  const restored = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  const transfer = createRoot(() =>
+    createPreferenceTransfer({
+      identity: () => identity,
+      read: () => "",
+      export: async () => null,
+      import: async () => "backup",
+      parse: () => ({}),
+      apply: () => restored,
+    }),
+  );
+  await transfer.run(false);
+  const operation = transfer.apply();
+  expect(transfer.action()).toBe("restore");
+  expect(transfer.pending()).toEqual({});
+  identity = {};
+  transfer.changed();
+  finish();
+  await operation;
+  expect(transfer.message()).toBe("");
+  expect(transfer.pending()).toBeUndefined();
+  transfer.dispose();
+});

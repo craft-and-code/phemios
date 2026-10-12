@@ -1,3 +1,4 @@
+import { ScrubRange } from "./ScrubRange";
 import { createCoverMotion, coverWindow } from "../visualizer/cover-motion";
 import { coverLetterStops, type CoverPosition } from "../visualizer/cover-position";
 import { createCoverScrub } from "../visualizer/cover-scrub";
@@ -202,8 +203,7 @@ export function CoverFlow(props: {
             )}
           </For>
         </div>
-        <input
-          type="range"
+        <ScrubRange
           min="0"
           max={Math.max(0, props.albums.length - 1)}
           step="1"

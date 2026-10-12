@@ -1,3 +1,4 @@
+import { CoverSize } from "./components/CoverSize";
 import { StickyHeader } from "./components/StickyHeader";
 import { createCoverPosition } from "./visualizer/cover-position";
 import { contextualReference } from "./navigation/contextual-play";
@@ -57,6 +58,7 @@ import { WorkspacePage } from "./views/WorkspacePage";
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
   const library = useLibrary();
+  const [coverSizes, setCoverSizes] = createSignal<Record<string, number>>({});
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
   const shortcuts = createShortcuts();
@@ -435,6 +437,13 @@ export function App() {
               </Show>
               <span>{library.busy() ? t("Synchronisation…") : ""}</span>
               <Show when={hasFilters()}>
+                <Show when={["albums", "compilations", "genres"].includes(section())}>
+                  <CoverSize
+                    value={coverSizes()[section()] ?? 150}
+                    disabled={section() === "albums" && coverFlow()}
+                    onChange={(value) => setCoverSizes((old) => ({ ...old, [section()]: value }))}
+                  />
+                </Show>
                 <button
                   class="icon-button"
                   title={t("Inverser l’ordre alphabétique")}
@@ -589,6 +598,7 @@ export function App() {
                   }
                 >
                   <LibraryPage
+                    coverSize={coverSizes()[section()] ?? 150}
                     section={section()}
                     filters={filters()}
                     setFilters={setFilters}

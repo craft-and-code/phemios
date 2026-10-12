@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -180,6 +181,7 @@ export function MoodsPage() {
           </For>
         </div>
       </Show>
+      <AccountNotice />
       <Show when={response.loading}>
         <PageLoader />
       </Show>
@@ -334,9 +336,7 @@ export function MoodsPage() {
         )}
       </Show>
       <Show when={!library.session()}>
-        <EmptyState icon="moods">
-          {t("Connectez-vous pour accéder aux données de votre compte.")}
-        </EmptyState>
+        <EmptyState icon="moods">{t("Aucune piste dans cette ambiance.")}</EmptyState>
       </Show>
     </section>
   );

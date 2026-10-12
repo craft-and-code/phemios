@@ -231,10 +231,18 @@ export const configureConcerts = (key: string | null = null, remove = false) =>
 export const searchConcerts = (artist: string, page: number) =>
   nativeCall<unknown>("concerts_events", { artist, page });
 
-/** Explicit native file dialogs exchange only the bounded interface-preference snapshot. */
+/** Explicit native dialogs exchange bounded preferences and reviewed per-account personal backups. */
 export const importPreferences = () => nativeCall<string | null>("preferences_import");
-export const exportPreferences = (document: string) =>
-  nativeCall<string | null>("preferences_export", { document });
+export const exportPreferences = (
+  document: string,
+  source?: SourceId,
+  account?: import("../library/server").AccountSession,
+) =>
+  nativeCall<string | null>("preferences_export", {
+    document,
+    source,
+    session: account?.nativeSession,
+  });
 
 /** Native identity selects the private podcast document; IPC supplies no account identifier or path. */
 export function readPodcastState(
@@ -282,4 +290,33 @@ export function updateArticleState(
     source,
     session: account.nativeSession,
   });
+}
+
+/** Personal backup admission always captures the connected native account generation. */
+export function readPersonalBackup(
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession)
+    throw new Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
+  return nativeCall<unknown>("personal_backup_read", { source, session: account.nativeSession });
+}
+/** Explicitly reviewed restoration adds data only to the captured destination account. */
+export function restorePersonalBackup(
+  payload: unknown,
+  source: SourceId,
+  account: import("../library/server").AccountSession,
+) {
+  if (!account.nativeSession)
+    throw new Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
+  return nativeCall<void>("personal_backup_restore", {
+    source,
+    session: account.nativeSession,
+    payload,
+  });
+}
+/** Export the server-confirmed note for this exact source/session, never an unsaved draft. */
+export function downloadNoteAede(reference: string) {
+  const source = referenceSource(reference);
+  return nativeCall<string>("note_export", { reference, expectedSession: nativeSessions[source] });
 }

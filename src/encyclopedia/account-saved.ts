@@ -12,7 +12,8 @@ interface Api {
     owner: AccountSession,
   ): Promise<unknown>;
 }
-function parse(raw: unknown): WikipediaArticle[] {
+/** Shared admission for native saved copies and explicit portable backup records. */
+export function parseAccountArticles(raw: unknown): WikipediaArticle[] {
   const value = raw as { version?: unknown; articles?: unknown };
   if (!value || value.version !== 1 || !Array.isArray(value.articles) || value.articles.length > 40)
     throw new Error(t("Articles enregistrés illisibles."));
@@ -22,6 +23,8 @@ function parse(raw: unknown): WikipediaArticle[] {
       t("Stockage des articles plein. Retirez une copie pour en enregistrer une autre."),
     );
   const rows = value.articles.map(wikipediaArticle);
+  if (rows.some((row) => new TextEncoder().encode(row.text).byteLength > 512 * 1024))
+    throw new Error(t("Articles enregistrés illisibles."));
   if (new Set(rows.map((row) => `${row.language}:${row.pageId}`)).size !== rows.length)
     throw new Error(t("Articles enregistrés illisibles."));
   return rows;
@@ -54,7 +57,7 @@ export function createAccountSavedArticles(
     void api
       .read(held.source, held.owner)
       .then((raw) => {
-        if (current(held)) setSnapshot({ scope: held, rows: parse(raw) });
+        if (current(held)) setSnapshot({ scope: held, rows: parseAccountArticles(raw) });
       })
       .catch((error) => {
         if (current(held)) setFailure({ scope: held, message: String(error) });
@@ -82,7 +85,7 @@ export function createAccountSavedArticles(
       try {
         const raw = await api.update(action, payload, held.source, held.owner);
         if (!current(held)) return false;
-        setSnapshot({ scope: held, rows: parse(raw) });
+        setSnapshot({ scope: held, rows: parseAccountArticles(raw) });
         return true;
       } catch (error) {
         if (current(held)) setFailure({ scope: held, message: String(error) });

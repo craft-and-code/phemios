@@ -1,86 +1,99 @@
 import { Feedback } from "./Feedback";
-import { createSignal, Show } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import { referenceSource } from "../library/sources";
-import { Icon } from "./Icon";
-/** Explicit LRCLIB acquisition delegates exact-track scope and sidecar preservation to Aède. */
+import { DownloadButton } from "./DownloadButton";
+/** Explicit LRCLIB acquisition delegates exact-track scope and sidecar preservation to Aède.
+ * The download check follows confirmed completion, and replaced owners cannot inherit old jobs.
+ */
 export function LyricsDownload(props: { reference: string }) {
-  const library = useLibrary(),
-    [busy, setBusy] = createSignal(false),
-    [error, setError] = createSignal("");
-  const job = () =>
-    library.tasks
-      .jobs()
-      .slice()
-      .reverse()
-      .find(
-        (row) =>
-          row.release === props.reference &&
-          row.kind === "lyrics" &&
-          row.source === referenceSource(props.reference),
-      );
-  const active = () => busy() || ["queued", "running"].includes(job()?.status ?? "");
+  const library = useLibrary();
+  const identity = createMemo(
+    () => ({ reference: props.reference, session: library.sessionFor(props.reference) }),
+    undefined,
+    { equals: (a, b) => a.reference === b.reference && a.session === b.session },
+  );
+  type Identity = ReturnType<typeof identity>;
+  const [submitting, setSubmitting] = createSignal<Identity>(),
+    [submitted, setSubmitted] = createSignal<{ held: Identity; id: number }>(),
+    [error, setError] = createSignal<{ held: Identity; message: string }>();
+  const job = () => {
+    const held = submitted();
+    return held?.held === identity()
+      ? library.tasks
+          .jobs()
+          .find(
+            (row) =>
+              row.task_id === held.id &&
+              row.kind === "lyrics" &&
+              row.release === held.held.reference &&
+              row.source === referenceSource(held.held.reference),
+          )
+      : undefined;
+  };
+  const active = () =>
+    submitting() === identity() || ["queued", "running"].includes(job()?.status ?? "");
   async function fetchWords() {
-    setBusy(true);
-    setError("");
+    const held = identity();
+    setSubmitting(held);
+    setError(undefined);
     try {
-      const source = referenceSource(props.reference),
-        session = library.sessionFor(props.reference);
       const info = await requestAede<{ capabilities?: string[] }>(
         "/api/v1/status",
         {},
         "GET",
         null,
-        source,
+        referenceSource(held.reference),
       );
       if (!info.capabilities?.includes("fetch_track_lyrics"))
         throw new Error(t("Mettez à jour puis redémarrez Aède pour télécharger les paroles."));
-      if (!session || session !== library.sessionFor(props.reference))
-        throw new Error(t("Session invalide."));
-      await library.tasks.start("lyrics", props.reference, false);
+      if (!held.session || held !== identity()) throw new Error(t("Session invalide."));
+      const id = await library.tasks.start("lyrics", held.reference, false);
+      if (held === identity()) setSubmitted({ held, id });
     } catch (failure) {
-      setError(String(failure));
+      if (held === identity()) setError({ held, message: String(failure) });
     } finally {
-      setBusy(false);
+      if (submitting() === held) setSubmitting(undefined);
     }
   }
+  const failure = () => (error()?.held === identity() ? (error()?.message ?? "") : "");
+  const taskFailure = () =>
+    job()?.tracking_error ||
+    (job() &&
+    !active() &&
+    (job()?.status !== "completed" || (job()?.result && job()?.result?.exit_code !== 0))
+      ? job()?.error?.message ||
+        job()?.result?.stderr.trim().slice(0, 800) ||
+        t("Téléchargement impossible.")
+      : "");
   return (
     <span class="lyrics-action">
-      <button
-        class="icon-button quiet"
-        aria-label={t("Télécharger les paroles")}
-        title={t("Télécharger les paroles · LRCLIB, sans clé API")}
+      <DownloadButton
+        label={t("Télécharger les paroles · LRCLIB, sans clé API")}
+        icon="lyrics-download"
+        identity={identity()}
         disabled={
-          active() ||
-          library.sessionFor(props.reference)?.account.role !== "admin" ||
-          !library.sessionFor(props.reference)?.server.startsWith("http://")
+          identity().session?.account.role !== "admin" ||
+          !identity().session?.server.startsWith("http://")
         }
-        aria-busy={active()}
-        onClick={() => void fetchWords()}
-      >
-        <Show when={active()} fallback={<Icon name="lyrics-download" />}>
-          <span class="spinner" />
-        </Show>
-      </button>
-      <Show when={error()}>
+        busy={active()}
+        completed={
+          job()?.status === "completed" && (!job()?.result || job()?.result?.exit_code === 0)
+        }
+        confirmOnResolve={false}
+        onClick={fetchWords}
+      />
+      <Show when={failure() || taskFailure()}>
         <Feedback
           class="lyrics-action-result"
           error
-          message={error()}
-          onClose={() => setError("")}
-        />
-      </Show>
-      <Show when={job() && !active()}>
-        <Feedback
-          class="lyrics-action-result"
-          error={job()?.status !== "completed"}
-          message={
-            job()?.status === "completed"
-              ? job()?.result?.stdout || t("Tâche terminée.")
-              : job()?.error?.message || job()?.result?.stderr || t("Téléchargement impossible.")
-          }
+          message={failure() || taskFailure()}
+          onClose={() => {
+            setError(undefined);
+            setSubmitted(undefined);
+          }}
         />
       </Show>
     </span>

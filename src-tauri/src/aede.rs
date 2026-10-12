@@ -342,7 +342,11 @@ pub(crate) async fn aede_download(
     let client = client(owner)?;
     let session = owner.session.clone();
     let generation = owner.generation.clone();
-    let folder = state.downloads.clone();
+    let folder = state
+        .downloads
+        .parent()
+        .ok_or("Dossier de téléchargement inaccessible.")?
+        .to_path_buf();
     blocking(move || {
         crate::sessions::scoped_dispatch(&session, &generation, Some(&ticket), &client, || {
             let library_file = id.starts_with("m3u-file-");

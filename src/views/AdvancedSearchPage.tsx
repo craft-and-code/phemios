@@ -2,7 +2,7 @@ import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { advancedExpression, blankSearch, type SearchCriteria } from "../library/advanced-search";
+import { advancedExpression, type SearchCriteria } from "../library/advanced-search";
 import { combinedTrackReader } from "../library/combined-tracks";
 import { TrackResults } from "../components/TrackResults";
 import { SelectionCollection } from "../components/SelectionCollection";
@@ -14,9 +14,7 @@ import { Icon } from "../components/Icon";
 /** Explicit submissions share Aède's owner-private evaluator and bounded catalog paging. */
 export function AdvancedSearchPage() {
   const library = useLibrary(),
-    [criteria, setCriteria] = createSignal(blankSearch()),
-    [submitted, setSubmitted] = createSignal<{ expression: string }>(),
-    [offset, setOffset] = createSignal(0),
+    { criteria, setCriteria, submitted, offset, setOffset } = library.advancedSearch,
     [error, setError] = createSignal("");
   const text = (field: string, value: string) =>
     setCriteria((old) => ({ ...old, text: { ...old.text, [field]: value } }));
@@ -28,8 +26,7 @@ export function AdvancedSearchPage() {
     });
   function submit() {
     try {
-      setSubmitted({ expression: advancedExpression(criteria()) });
-      setOffset(0);
+      library.advancedSearch.submit(advancedExpression(criteria()));
       setError("");
     } catch (failure) {
       setError(String(failure));
@@ -83,7 +80,16 @@ export function AdvancedSearchPage() {
   });
   const [results] = createResource(
     () => reader() && { read: reader()!, offset: offset() },
-    (key) => key.read(key.offset),
+    async (key) => {
+      const scope = library.advancedSearch.scope(),
+        request = submitted()!,
+        expression = request.expression;
+      const cached = library.advancedSearch.cached(expression, key.offset);
+      if (cached) return cached;
+      const value = await key.read(key.offset);
+      library.advancedSearch.remember(scope, expression, key.offset, value, request);
+      return value;
+    },
   );
   const field = (id: string, label: string) => (
     <label>
@@ -257,8 +263,7 @@ export function AdvancedSearchPage() {
           <button
             type="button"
             onClick={() => {
-              setCriteria(blankSearch());
-              setSubmitted(undefined);
+              library.advancedSearch.reset();
               setError("");
             }}
           >

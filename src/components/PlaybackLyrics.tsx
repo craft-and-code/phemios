@@ -33,8 +33,12 @@ export function PlaybackLyrics(props: {
     const fittedPhrase = phrase();
     setScale(
       lyricFit({
-        width: span.offsetWidth + (props.floating ? span.offsetHeight * 0.18 : 0),
-        height: span.offsetHeight + (props.floating ? span.offsetWidth * 0.18 : 0),
+        width:
+          Math.max(span.offsetWidth, span.scrollWidth) +
+          (props.floating ? span.offsetHeight * 0.18 : 0),
+        height:
+          Math.max(span.offsetHeight, span.scrollHeight) +
+          (props.floating ? span.offsetWidth * 0.18 : 0),
         angle: fittedPhrase?.angle ?? 0,
         stageWidth: stage.clientWidth,
         stageHeight: stage.clientHeight,

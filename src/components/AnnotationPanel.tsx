@@ -1,3 +1,5 @@
+import { DownloadButton } from "./DownloadButton";
+import { downloadNoteAede } from "../platform/desktop";
 import { Feedback } from "./Feedback";
 import { normalizeName } from "../library/filtering";
 import { suggestionVocabulary } from "../library/tag-preferences";
@@ -217,6 +219,12 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       </div>
       <div class="section-heading annotation-text-heading">
         <h3>{t("Tags et notes personnelles")}</h3>
+        <DownloadButton
+          label={t("Télécharger la note personnelle")}
+          identity={scope()}
+          disabled={!savedNote().trim() || !scope().session || read.loading() || !!read.error()}
+          onClick={() => downloadNoteAede(props.reference)}
+        />
         <Show when={!editing()}>
           <button
             class="icon-button quiet"

@@ -23,6 +23,7 @@ export function LibraryPage(props: {
   setFilters: (filters: Filters) => void;
   reverse: boolean;
   coverFlow?: boolean;
+  coverSize?: number;
   coverPosition: CoverPosition;
 }) {
   const library = useLibrary();
@@ -95,6 +96,7 @@ export function LibraryPage(props: {
                 fallback={
                   <AlbumGrid
                     albums={albums()}
+                    coverSize={props.coverSize}
                     reverse={props.reverse}
                     emptyIcon={sectionIcon(props.section)}
                   />

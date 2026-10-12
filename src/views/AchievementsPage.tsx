@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { For, Show } from "solid-js";
 import { locale, t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -25,13 +26,12 @@ export function AchievementsPage() {
           </Show>
         </button>
       </div>
+      <AccountNotice />
       <Feedback error message={loaded.error()} />
       <Show
         when={library.session()}
         fallback={
-          <EmptyState icon="trophy">
-            {t("Connectez-vous pour accéder aux données de votre compte.")}
-          </EmptyState>
+          <EmptyState icon="trophy">{t("Aucun trophée dévoilé dans cette sélection.")}</EmptyState>
         }
       >
         <div class="achievement-grid">

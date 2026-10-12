@@ -21,3 +21,5 @@ File and export reads resolve failures inside the view, keeping Refresh/Retry an
 ## Verification scope
 
 Tests exercise exact simple/BOM/CRLF content, target/count/page validation, confined downloads, narrow read-only routes, recovery after read failure, same-server capability updates, late owner/source replies and disposal. Fixtures use fictional names and owned temporary folders. Provider availability, network mount behavior, other-platform filesystem permissions and native range-event ordering are separate acceptance.
+
+Explicit native downloads now use the operating system Downloads directory directly. Names remain native-selected and create-only; existing files and exact M3U bytes are retained. Shared DownloadButton shows a confirmed green check for three seconds, resets on another selected file/account and keeps scoped failure feedback beside the preview path. See [the client follow-up](client-followup.md).

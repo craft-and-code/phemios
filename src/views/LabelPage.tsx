@@ -5,8 +5,8 @@ import { createResource, createSignal, createEffect, onCleanup, Show } from "sol
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { parseLabelDetail } from "../library/labels";
-import { sourceLink } from "../library/server";
+import { parseLabelDetail, type LabelDetail } from "../library/labels";
+import { sourceLink, type AccountSession, type Snapshot } from "../library/server";
 import { FilterBar } from "../components/FilterBar";
 import { SelectionCollection } from "../components/SelectionCollection";
 import { Icon } from "../components/Icon";
@@ -16,6 +16,14 @@ import { referenceSource } from "../library/sources";
 import type { Filters } from "../library/types";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { SourceBadge } from "../components/SourceBadge";
+interface LabelResult {
+  reference: string;
+  session: AccountSession | undefined;
+  snapshot: Snapshot | undefined;
+  detail?: LabelDetail;
+  error?: string;
+}
+
 /** Attributed label biography precedes its owned albums, with explicit missing-cache feedback. */
 export function LabelPage(props: {
   reference: string;
@@ -28,34 +36,54 @@ export function LabelPage(props: {
   onCleanup(() => {
     alive = false;
   });
+  const source = () => referenceSource(props.reference);
   const [result] = createResource(
     () => ({
       reference: props.reference,
       session: library.sessionFor(props.reference),
-      catalog: library.albums(),
+      snapshot: library.publicSnapshot(source()),
     }),
-    async (key) => {
-      if (!key.session)
-        return {
-          error: t("Connectez-vous pour accéder aux données de votre compte."),
-          session: key.session,
-        };
+    async (key): Promise<LabelResult> => {
+      const cached =
+        !key.session || key.session.server === key.snapshot?.server
+          ? key.snapshot?.labels?.find((row) => row.reference === key.reference)
+          : undefined;
+      const current = () =>
+        alive &&
+        key.reference === props.reference &&
+        key.session === library.sessionFor(key.reference) &&
+        key.snapshot === library.publicSnapshot(referenceSource(key.reference));
       try {
-        const detail = parseLabelDetail(
-          await requestAede("/api/v1/label", { ref: key.reference }),
-          key.reference,
-        );
-        if (!alive || key.session !== library.sessionFor(key.reference))
-          throw new Error(t("Session invalide."));
+        let detail: LabelDetail | undefined = cached;
+        if (key.session) {
+          let raw: unknown;
+          try {
+            raw = await requestAede("/api/v1/label", { ref: key.reference });
+          } catch (failure) {
+            if (!cached) throw failure;
+          }
+          if (raw !== undefined) detail = parseLabelDetail(raw, key.reference);
+        }
+        if (!detail)
+          throw new Error(
+            t("Ce label n’est pas encore enregistré dans ce cache. Synchronisez la bibliothèque."),
+          );
+        if (!current()) return { ...key };
         props.onTitle(detail.name);
-        return { detail, session: key.session };
+        return { ...key, detail };
       } catch (failure) {
-        return { error: String(failure), session: key.session };
+        return { ...key, error: String(failure) };
       }
     },
   );
-  const current = () =>
-    result()?.session === library.sessionFor(props.reference) ? result() : undefined;
+  const current = () => {
+    const value = result();
+    return value?.reference === props.reference &&
+      value.session === library.sessionFor(props.reference) &&
+      value.snapshot === library.publicSnapshot(source())
+      ? value
+      : undefined;
+  };
   const detail = () => current()?.detail;
   const albums = () =>
     library.albums().filter((album) => detail()?.releases.includes(album.reference));

@@ -1,3 +1,4 @@
+import { DownloadButton } from "../components/DownloadButton";
 import { Icon } from "../components/Icon";
 import { For, Show } from "solid-js";
 import { t, locale } from "../i18n";
@@ -15,7 +16,7 @@ export function WikipediaReader(props: {
   saving: boolean;
   onBack: () => void;
   onSave: () => void;
-  onDownload: () => void;
+  onDownload: () => Promise<boolean>;
   onRefresh: () => void;
   onRemove: () => void;
 }) {
@@ -62,17 +63,13 @@ export function WikipediaReader(props: {
               <span class="spinner" />
             </Show>
           </button>
-          <button
-            class="icon-button quiet"
-            disabled={props.busy || !props.native}
-            aria-label={t("Télécharger l’article sur cet ordinateur")}
-            title={t("Télécharger l’article sur cet ordinateur")}
+          <DownloadButton
+            label={t("Télécharger l’article sur cet ordinateur")}
+            identity={props.article}
+            disabled={!props.native || (props.busy && !props.downloading)}
+            busy={props.downloading}
             onClick={props.onDownload}
-          >
-            <Show when={props.downloading} fallback={<Icon name="download" />}>
-              <span class="spinner" />
-            </Show>
-          </button>
+          />
         </div>
       </div>
       <h2>{props.article.title}</h2>

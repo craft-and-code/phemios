@@ -44,9 +44,14 @@ fn write_document(path: &Path, document: &str) -> Result<(), String> {
         std::process::id(),
         NEXT.fetch_add(1, Ordering::Relaxed)
     ));
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options
         .open(&temporary)
         .map_err(|_| "Fichier non enregistré.")?;
     let result = (|| {
@@ -65,7 +70,8 @@ fn write_document(path: &Path, document: &str) -> Result<(), String> {
 #[path = "exports_tests.rs"]
 mod tests;
 
-const PREFERENCE_LIMIT: usize = 128 * 1024;
+const LEGACY_PREFERENCE_LIMIT: usize = 128 * 1024;
+const PREFERENCE_LIMIT: usize = 12 * 1024 * 1024;
 const PREFERENCE_KEYS: [&str; 9] = [
     "phemios.appearance",
     "phemios.navigation.v1",
@@ -77,8 +83,8 @@ const PREFERENCE_KEYS: [&str; 9] = [
     "phemios.shortcuts.v1",
     "phemios.audio.v1",
 ];
-// File transport validates the envelope; TypeScript applies every existing semantic preference parser before admission.
-fn validate_preferences(document: &str) -> Result<(), String> {
+// Native validates the complete private envelope; TypeScript also applies semantic preference parsers before review.
+fn validate_preferences(document: &str) -> Result<bool, String> {
     if document.len() > PREFERENCE_LIMIT || document.contains('\0') {
         return Err("Sauvegarde des préférences invalide.".into());
     }
@@ -91,16 +97,32 @@ fn validate_preferences(document: &str) -> Result<(), String> {
         .as_object()
         .ok_or("Sauvegarde des préférences invalide.")?;
     if parsed["format"] != "phemios-preferences"
-        || parsed["version"] != 1
-        || root.len() != 3
         || values.len() != PREFERENCE_KEYS.len()
         || values
             .keys()
             .any(|key| !PREFERENCE_KEYS.contains(&key.as_str()))
+        || serde_json::to_vec(values)
+            .map_err(|_| "Sauvegarde des préférences invalide.")?
+            .len()
+            > LEGACY_PREFERENCE_LIMIT
     {
         return Err("Sauvegarde des préférences invalide.".into());
     }
-    Ok(())
+    let private = match parsed["version"].as_u64() {
+        Some(1)
+            if root.len() == 3
+                && !root.contains_key("personal")
+                && document.len() <= LEGACY_PREFERENCE_LIMIT =>
+        {
+            false
+        }
+        Some(2) if root.len() == 4 && root.contains_key("personal") => {
+            phemios_core::personal_backup::validate(&parsed["personal"])?;
+            true
+        }
+        _ => return Err("Sauvegarde des préférences invalide.".into()),
+    };
+    Ok(private)
 }
 #[tauri::command]
 pub(crate) async fn preferences_import(
@@ -137,9 +159,27 @@ pub(crate) async fn preferences_export(
     version: u32,
     app: AppHandle,
     document: String,
+    source: Option<String>,
+    session: Option<String>,
+    state: tauri::State<'_, crate::aede::Aede>,
 ) -> Result<Option<String>, String> {
     bridge(version)?;
-    validate_preferences(&document)?;
+    let private = validate_preferences(&document)?;
+    let admission = if private {
+        let origin = crate::aede::source(Some(
+            source
+                .as_deref()
+                .ok_or("Session remplacée ou déconnectée. Reconnectez-vous.")?,
+        ))?;
+        let ticket = session.ok_or("Session remplacée ou déconnectée. Reconnectez-vous.")?;
+        let client = crate::aede::client(state.owner(origin))?;
+        let held = state.owner(origin).session.clone();
+        let generation = state.owner(origin).generation.clone();
+        crate::sessions::with_current(&held, &generation, &ticket, &client, || Ok(()))?;
+        Some((held, generation, ticket, client))
+    } else {
+        None
+    };
     blocking(move || {
         let Some(file) = app
             .dialog()
@@ -153,8 +193,26 @@ pub(crate) async fn preferences_export(
         let path = file
             .into_path()
             .map_err(|_| "Destination des préférences invalide.")?;
-        write_document(&path, &document)?;
+        if let Some((held, generation, ticket, client)) = admission {
+            write_private_preferences(&path, &document, &held, &generation, &ticket, &client)?;
+        } else {
+            write_document(&path, &document)?;
+        }
         Ok(Some(path.to_string_lossy().into_owned()))
     })
     .await
+}
+
+// A chosen file cannot be published by a replaced same-account login or source generation.
+fn write_private_preferences(
+    path: &Path,
+    document: &str,
+    held: &std::sync::Mutex<Option<phemios_core::network::Client>>,
+    generation: &AtomicU64,
+    ticket: &str,
+    client: &phemios_core::network::Client,
+) -> Result<(), String> {
+    crate::sessions::with_current(held, generation, ticket, client, || {
+        write_document(path, document)
+    })
 }

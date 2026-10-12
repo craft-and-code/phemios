@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { ConcertResults } from "../components/ConcertResults";
 import { createMemo, createResource, createSignal, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -132,6 +133,7 @@ export function ConcertsPage(props: { query: string }) {
           </ActionButton>
         </div>
       </div>
+      <AccountNotice />
       <Show when={busy()}>
         <p class="concerts-progress" role="status">
           <span class="spinner" />

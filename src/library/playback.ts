@@ -7,7 +7,7 @@ import {
 } from "./audio-preferences";
 import { announceSetting } from "./saved-settings";
 import { t } from "../i18n";
-import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
+import { batch, createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 import {
   playbackControl,
   playbackOutputs,
@@ -20,6 +20,7 @@ import type { Track } from "./server";
 import { createSeekProgress } from "./seek-progress";
 import { playbackSelection, type PlayableSelection } from "./playback-selection";
 import type { Artist, Album } from "./types";
+import { referenceSource, type SourceId } from "./sources";
 const message = (failure: unknown) =>
   failure instanceof Error ? failure.message : t("Lecture indisponible.");
 /** Explicit playback owns one serialized poll; it never starts during offline browsing. */
@@ -33,9 +34,11 @@ export function createPlayback(
     [discovering, setDiscovering] = createSignal(false),
     [device, setDevice] = createSignal(""),
     [selection, setSelection] = createSignal<PlayableSelection[]>([]),
+    [retainedOrder, setRetainedOrder] = createSignal<readonly number[]>([]),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
     [target, setTarget] = createSignal(""),
+    [pendingReference, setPendingReference] = createSignal(""),
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
   const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
@@ -140,6 +143,19 @@ export function createPlayback(
     }
     if (["playing", "paused"].includes(state().status)) await action("policy", value);
   }
+  async function startRows(rows: PlayableSelection[], index: number, epoch: number) {
+    setPendingReference(rows[index]?.reference ?? rows[0]?.reference ?? "");
+    await configureAudio();
+    if (epoch !== generation) return;
+    await playbackStart(
+      rows.map((row) => row.reference),
+      device(),
+      index,
+      policy(),
+    );
+    if (epoch !== generation) return;
+    await refresh(epoch, rows);
+  }
   async function startReference(reference = target()) {
     if (!ready() || busy() || !reference || !catalog) return;
     beforeStart();
@@ -155,26 +171,20 @@ export function createPlayback(
     setError("");
     cancel();
     const epoch = generation;
+    setPendingReference(reference);
     try {
       const response = await requestAede("/api/v1/presentation/playback", { ref: reference });
       if (epoch !== generation) return;
       const data = catalog(),
         rows = playbackSelection(response, data.albums, data.artists);
-      await configureAudio();
-      if (epoch !== generation) return;
-      await playbackStart(
-        rows.map((r) => r.reference),
-        device(),
-        0,
-        policy(),
-      );
-      if (epoch !== generation) return;
-      setSelection(rows);
-      await refresh(epoch);
+      await startRows(rows, 0, epoch);
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
     } finally {
-      if (epoch === generation) setBusy(false);
+      if (epoch === generation) {
+        setPendingReference("");
+        setBusy(false);
+      }
     }
   }
   async function startSelection(value: unknown) {
@@ -187,24 +197,17 @@ export function createPlayback(
     try {
       const data = catalog(),
         rows = playbackSelection(value, data.albums, data.artists);
-      await configureAudio();
-      if (epoch !== generation) return;
-      await playbackStart(
-        rows.map((row) => row.reference),
-        device(),
-        0,
-        policy(),
-      );
-      if (epoch !== generation) return;
-      setSelection(rows);
-      await refresh(epoch);
+      await startRows(rows, 0, epoch);
     } catch (failure) {
       if (epoch === generation) {
         setError(message(failure));
         throw failure;
       }
     } finally {
-      if (epoch === generation) setBusy(false);
+      if (epoch === generation) {
+        setPendingReference("");
+        setBusy(false);
+      }
     }
   }
   let timer: ReturnType<typeof setTimeout> | undefined,
@@ -215,11 +218,20 @@ export function createPlayback(
     clearTimeout(timer);
     timer = undefined;
   }
-  async function refresh(epoch: number) {
+  async function refresh(epoch: number, rows?: PlayableSelection[]) {
     try {
       const value = parsePlayback(await playbackState());
       if (epoch !== generation) return;
-      setState(value);
+      const selected = rows ?? selection();
+      if (value.queue.some((index) => index >= selected.length))
+        throw new Error(t("File de lecture invalide."));
+      // Queue consumers must never observe new metadata paired with old occurrence indices.
+      batch(() => {
+        if (rows) setSelection(rows);
+        if (rows || value.queue.length)
+          setRetainedOrder(value.queue.length ? value.queue : selected.map((_, index) => index));
+        setState(value);
+      });
       if (!["idle", "ended", "error"].includes(value.status))
         timer = setTimeout(
           () => void refresh(epoch),
@@ -261,30 +273,25 @@ export function createPlayback(
     try {
       if (!tracks.length || tracks.length > 4096 || index < 0 || index >= tracks.length)
         throw new Error(t("Sélection limitée à 4096 pistes."));
-      await configureAudio();
-      if (epoch !== generation) return;
-      await playbackStart(
-        tracks.map((t) => t.reference),
-        device(),
-        index,
-        policy(),
-      );
-      if (epoch !== generation) return;
-      setSelection(
-        tracks.map((t, i) => ({
-          reference: t.reference,
-          title: t.title,
+      await startRows(
+        tracks.map((track, offset) => ({
+          reference: track.reference,
+          title: track.title,
           album,
           artist,
-          number: i + 1,
+          number: offset + 1,
           albumTotal: tracks.length,
         })),
+        index,
+        epoch,
       );
-      await refresh(epoch);
     } catch (failure) {
       if (epoch === generation) setError(message(failure));
     } finally {
-      if (epoch === generation) setBusy(false);
+      if (epoch === generation) {
+        setPendingReference("");
+        setBusy(false);
+      }
     }
   }
   let discoveryTimer: ReturnType<typeof setTimeout> | undefined,
@@ -364,8 +371,12 @@ export function createPlayback(
     pendingVolume = undefined;
     pendingCrossfade = undefined;
     setCrossfade(audio().crossfadeMs);
-    setState({ ...idlePlayback, volume: state().volume });
-    setSelection([]);
+    batch(() => {
+      setState({ ...idlePlayback, volume: state().volume });
+      setSelection([]);
+      setRetainedOrder([]);
+      setPendingReference("");
+    });
     setOutputs([]);
     setDevice("");
     setError("");
@@ -404,12 +415,49 @@ export function createPlayback(
   const orderedQueue = createMemo(() => {
     const rows = selection(),
       order = queueOrder();
-    return (order.length ? order : rows.map((_, index) => index)).map((index) => ({
+    return (
+      order.length
+        ? order
+        : retainedOrder().length
+          ? retainedOrder()
+          : rows.map((_, index) => index)
+    ).map((index) => ({
       ...rows[index]!,
       index,
     }));
   });
+  /** Replay retained order after Stop; active queues retain their native occurrence jump. */
+  async function playQueueOccurrence(occurrence: number) {
+    if (["playing", "paused", "connecting"].includes(state().status))
+      return action("jump", occurrence);
+    if (!ready() || busy() || !Number.isSafeInteger(occurrence)) return;
+    const ordered = orderedQueue(),
+      index = ordered.findIndex((row) => row.index === occurrence);
+    if (index < 0 || !ordered.length || ordered.length > 4096) return;
+    beforeStart();
+    setBusy(true);
+    setError("");
+    cancel();
+    const epoch = generation;
+    try {
+      await startRows(ordered, index, epoch);
+    } catch (failure) {
+      if (epoch === generation) setError(message(failure));
+    } finally {
+      if (epoch === generation) {
+        setPendingReference("");
+        setBusy(false);
+      }
+    }
+  }
+  /** Empty transport state must not impersonate a source after Stop or during admission. */
+  const ownsSource = (source: SourceId) =>
+    [state().reference, selection()[0]?.reference, pendingReference()].some(
+      (reference) => !!reference && referenceSource(reference) === source,
+    );
   return {
+    ownsSource,
+    playQueueOccurrence,
     seek: progress.seek,
     previewSeek: progress.preview,
     clearSeekPreview: progress.clearPreview,

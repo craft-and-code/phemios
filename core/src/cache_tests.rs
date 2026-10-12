@@ -80,3 +80,20 @@ fn unchanged_catalog_reuses_art_after_another_sync() {
     );
     fs::remove_dir_all(cache.root).unwrap();
 }
+
+#[test]
+fn optional_public_track_and_label_arrays_refuse_corruption_without_replacing_cache() {
+    let cache = fixture();
+    let base =
+        json!({"artists":[],"albums":[],"server":"http://localhost:1","accountId":"fictional"});
+    let saved = cache.save(base.clone()).unwrap();
+    for key in ["tracks", "labels"] {
+        for invalid in [Value::Null, json!({})] {
+            let mut next = base.clone();
+            next[key] = invalid;
+            assert!(cache.save(next).is_err());
+            assert_eq!(cache.load().unwrap(), Some(saved.clone()));
+        }
+    }
+    fs::remove_dir_all(cache.root).unwrap();
+}

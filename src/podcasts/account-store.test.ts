@@ -136,3 +136,41 @@ it("keeps confirmed subscriptions on write failure and denies audit/disposed mut
     view.dispose();
   }
 });
+
+it("reloads after private backup restoration and refuses older in-flight snapshots", async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(readPodcastState)
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockResolvedValue(retained);
+  const view = scope();
+  try {
+    await settle();
+    view.store.reload();
+    await settle();
+    expect(view.store.feeds()).toEqual([feed]);
+    finish(empty);
+    await settle();
+    expect(view.store.feeds()).toEqual([feed]);
+    let complete!: (value: unknown) => void;
+    vi.mocked(updatePodcastState).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        }),
+    );
+    const mutation = view.store.mark(feed.url, "two");
+    await settle();
+    view.store.reload();
+    await settle();
+    complete(empty);
+    expect(await mutation).toBe(false);
+    expect(view.store.feeds()).toEqual([feed]);
+  } finally {
+    view.dispose();
+  }
+});

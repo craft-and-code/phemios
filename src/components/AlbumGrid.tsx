@@ -10,6 +10,7 @@ import type { Album } from "../library/types";
 /** Each local edition keeps its own identity and cover when opening details. */
 export function AlbumGrid(props: {
   albums: readonly Album[];
+  coverSize?: number | undefined;
   missing?: readonly MissingAlbum[];
   reverse?: boolean;
   chronological?: boolean;
@@ -28,7 +29,10 @@ export function AlbumGrid(props: {
         </EmptyState>
       }
     >
-      <div class="album-grid">
+      <div
+        class="album-grid"
+        style={props.coverSize ? { "--album-cover-min": `${props.coverSize}px` } : undefined}
+      >
         <For each={entries()}>
           {(entry) => {
             const album = entry.album;

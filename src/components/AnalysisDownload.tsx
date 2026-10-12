@@ -1,76 +1,58 @@
 import { Feedback } from "./Feedback";
+import { DownloadButton } from "./DownloadButton";
 import { t } from "../i18n";
-import { createSignal, Show } from "solid-js";
+import { createMemo, createSignal, createEffect, on } from "solid-js";
 import { downloadAnalysisAede } from "../platform/desktop";
-import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
-/** Export comes from Aède; no user-selected filesystem path enters the native bridge. */
+/** Server-authored reports acknowledge only their exact captured reference and owner. */
 export function AnalysisDownload(props: {
   reference: string;
   album?: boolean;
   available: boolean;
   onStatus?: (message: string, failure: boolean) => void;
 }) {
-  const library = useLibrary();
-  const [busy, setBusy] = createSignal(false),
-    [path, setPath] = createSignal(""),
-    [failure, setFailure] = createSignal("");
+  const library = useLibrary(),
+    scope = createMemo(() => ({
+      reference: props.reference,
+      session: library.sessionFor(props.reference),
+    }));
+  const [message, setMessage] = createSignal(""),
+    [failed, setFailed] = createSignal(false);
+  createEffect(on(scope, () => setMessage("")));
+  function publish(message: string, error: boolean) {
+    if (props.onStatus) props.onStatus(message, error);
+    else {
+      setMessage(message);
+      setFailed(error);
+    }
+  }
   async function download() {
-    const reference = props.reference,
-      session = library.sessionFor(reference);
-    const current = () =>
-      reference === props.reference && session === library.sessionFor(reference);
-    setBusy(true);
-    setFailure("");
-    setPath("");
+    const held = scope();
     try {
-      const saved = await downloadAnalysisAede(reference);
-      if (current()) {
-        if (props.onStatus) props.onStatus(`${t("Enregistré :")} ${saved}`, false);
-        else setPath(saved);
-      }
+      const path = await downloadAnalysisAede(held.reference);
+      if (scope() !== held) return false;
+      publish(t("Enregistré :") + " " + path, false);
+      return true;
     } catch (error) {
-      if (current()) {
-        const message = error instanceof Error ? error.message : t("Téléchargement impossible.");
-        if (props.onStatus) props.onStatus(message, true);
-        else setFailure(message);
-      }
-    } finally {
-      setBusy(false);
+      if (scope() === held)
+        publish(
+          (error instanceof Error ? error.message : t("Téléchargement impossible.")) +
+            " " +
+            t("Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin."),
+          true,
+        );
+      return false;
     }
   }
   return (
     <div class="analysis-download">
-      <button
-        class="icon-button quiet"
-        disabled={!library.sessionFor(props.reference) || !props.available || busy()}
+      <DownloadButton
+        identity={scope()}
+        disabled={!scope().session || !props.available}
+        label={t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))}
         onClick={download}
-        aria-busy={busy()}
-        aria-label={
-          busy()
-            ? t("Téléchargement du rapport…")
-            : t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))
-        }
-        title={t("Télécharger le JSON {0}", props.album ? t("de l’album") : t("du titre"))}
-      >
-        <Show when={busy()} fallback={<Icon name="download" />}>
-          <span class="spinner" aria-hidden="true" />
-        </Show>
-      </button>
-      <Show when={path()}>
-        <Feedback message={t("Enregistré :") + " " + path()} onClose={() => setPath("")} />
-      </Show>
-      <Show when={failure()}>
-        <Feedback
-          error
-          message={
-            failure() +
-            " " +
-            t("Un rapport complet et actuel est nécessaire ; relancez l’analyse si besoin.")
-          }
-          onClose={() => setFailure("")}
-        />
-      </Show>
+      />
+      <Feedback message={message()} error={failed()} onClose={() => setMessage("")} />
     </div>
   );
 }

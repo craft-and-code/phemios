@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { useLibrary } from "../library/context";
 import { createAccountSavedArticles } from "./account-saved";
 import { PageLoader } from "../components/PageLoader";
@@ -80,6 +81,9 @@ export function WikipediaPanel(props: {
   });
   return (
     <section class="wikipedia-panel" aria-label={t("Articles Wikipédia")}>
+      <Show when={props.mode === "saved"}>
+        <AccountNotice connected={saved.available()} />
+      </Show>
       <Show when={state.saved.error()}>
         <p class="error" role="alert">
           {state.saved.error()}
@@ -159,9 +163,7 @@ export function WikipediaPanel(props: {
                 fallback={
                   <Show when={!saved.loading()} fallback={<PageLoader inline />}>
                     <EmptyState icon="heart">
-                      {saved.available()
-                        ? t("Aucun article enregistré dans cette sélection.")
-                        : t("Connectez-vous pour accéder aux données de votre compte.")}
+                      {t("Aucun article enregistré dans cette sélection.")}
                     </EmptyState>
                   </Show>
                 }
@@ -211,7 +213,7 @@ export function WikipediaPanel(props: {
             native={isNative()}
             onBack={state.back}
             onSave={() => void state.save()}
-            onDownload={() => void state.download()}
+            onDownload={state.download}
             onRefresh={() => void state.open(article(), true)}
             onRemove={() => void state.saved.remove(article())}
           />

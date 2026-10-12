@@ -25,24 +25,97 @@ impl SnapshotBudget {
     }
 }
 impl Client {
-    /// Synchronize both complete same-epoch projections under the cache's shared JSON-byte limit.
-    /// Oversized pages fail before retention; differing artist/album epochs allow three attempts.
+    /// Synchronize complete same-epoch public projections under the cache's shared JSON-byte limit.
+    /// Oversized pages fail before retention; differing projection epochs allow three attempts.
     pub fn snapshot(&self) -> Result<Value, String> {
         for _ in 0..3 {
             let mut budget = SnapshotBudget {
                 remaining: crate::cache::MAX_CATALOG,
             };
             // Reserve the fixed wrapper first; page-array overhead is deliberately conservative.
-            budget.reserve(&json!({"artists":[],"albums":[],"scannedAt":u64::MAX,"server":self.server,"accountId":self.account["id"]}))?;
+            budget.reserve(&json!({"artists":[],"albums":[],"tracks":[],"labels":[],"scannedAt":u64::MAX,"server":self.server,"accountId":self.account["id"]}))?;
             let artists = self.pages("/api/v1/presentation/artists", &mut budget)?;
             let albums = self.pages("/api/v1/presentation/albums", &mut budget)?;
-            if artists.1 == albums.1 {
+            let mut tracks = self.pages("/api/v1/presentation/tracks", &mut budget)?;
+            for track in &mut tracks.0 {
+                let fields = track.as_object_mut().ok_or("Piste Aède invalide.")?;
+                fields.retain(|key, _| {
+                    matches!(
+                        key.as_str(),
+                        "reference"
+                            | "title"
+                            | "release"
+                            | "album_title"
+                            | "disc_no"
+                            | "track_no"
+                            | "album_position"
+                            | "duration_ms"
+                            | "analysis_available"
+                            | "lyrics_available"
+                            | "spectrum_available"
+                    )
+                });
+            }
+            let summaries = self.pages("/api/v1/labels", &mut budget)?;
+            if artists.1 == albums.1 && artists.1 == tracks.1 && artists.1 == summaries.1 {
+                let labels = self.label_details(summaries.0, &mut budget)?;
+                if !labels.is_empty() {
+                    // Detail responses have no epoch: a final label probe refuses torn associations.
+                    let probe = self.request(
+                        "GET",
+                        "/api/v1/labels",
+                        &[("offset", "0"), ("limit", "1")],
+                        None,
+                    )?;
+                    if probe["scanned_at"].as_u64() != Some(artists.1)
+                        || probe["total"].as_u64() != Some(labels.len() as u64)
+                    {
+                        continue;
+                    }
+                }
                 return Ok(
-                    json!({"artists":artists.0,"albums":albums.0,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]}),
+                    json!({"artists":artists.0,"albums":albums.0,"tracks":tracks.0,"labels":labels,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]}),
                 );
             }
         }
         Err("Le catalogue change pendant la synchronisation. Réessayez.".into())
+    }
+    fn label_details(
+        &self,
+        summaries: Vec<Value>,
+        budget: &mut SnapshotBudget,
+    ) -> Result<Vec<Value>, String> {
+        let mut labels = Vec::with_capacity(summaries.len());
+        for summary in summaries {
+            let reference = summary["reference"]
+                .as_str()
+                .ok_or("Label Aède invalide.")?;
+            let detail = self.request("GET", "/api/v1/label", &[("ref", reference)], None)?;
+            if detail["reference"] != summary["reference"]
+                || detail["name"] != summary["name"]
+                || !detail["releases"].is_array()
+                || summary["release_count"].as_u64()
+                    != detail["releases"].as_array().map(|rows| rows.len() as u64)
+            {
+                return Err("Label Aède invalide.".into());
+            }
+            // Copy only this public contract, never arbitrary response extensions or owner data.
+            let mut label = json!({"reference":detail["reference"], "name":detail["name"],
+                "release_count":summary["release_count"], "releases":detail["releases"]});
+            if !detail["biography"].is_null() {
+                let prose = &detail["biography"];
+                if ["text", "url", "lang", "licence", "source"]
+                    .iter()
+                    .any(|key| prose[key].as_str().is_none())
+                {
+                    return Err("Biographie Aède invalide.".into());
+                }
+                label["biography"] = json!({"text":prose["text"], "url":prose["url"], "lang":prose["lang"], "licence":prose["licence"], "source":prose["source"]});
+            }
+            budget.reserve(&label)?;
+            labels.push(label);
+        }
+        Ok(labels)
     }
     fn pages(&self, path: &str, budget: &mut SnapshotBudget) -> Result<(Vec<Value>, u64), String> {
         let mut items = Vec::new();

@@ -1,3 +1,5 @@
+import { DownloadButton } from "../components/DownloadButton";
+import { AccountNotice } from "../components/AccountNotice";
 import { batch, createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -46,23 +48,28 @@ export function M3UPage(props: { query: string }) {
   const reads = createM3UBrowser(scope, (path, query, source) =>
     requestAede(path, query, "GET", null, source),
   );
-  createEffect(on(scope, () => setMessage(""), { defer: true }));
+  const downloadIdentity = createMemo(() => ({ scope: scope(), file: reads.selected() }));
+  createEffect(on(downloadIdentity, () => setMessage(""), { defer: true }));
   async function download() {
     const held = scope(),
       file = reads.detail();
-    if (!held || !file || busy()) return;
+    if (!held || !file || busy()) return false;
     setBusy(true);
     setMessage("");
     setFailed(false);
     try {
       const path = await downloadM3U(file);
-      if (!disposed && reads.isCurrentFile(held, file.id))
+      if (!disposed && reads.isCurrentFile(held, file.id)) {
         setMessage(t("M3U téléchargé : {0}", path));
+        return true;
+      }
+      return false;
     } catch (failure) {
       if (!disposed && reads.isCurrentFile(held, file.id)) {
         setFailed(true);
         setMessage(String(failure));
       }
+      return false;
     } finally {
       if (!disposed) setBusy(false);
     }
@@ -102,7 +109,7 @@ export function M3UPage(props: { query: string }) {
           </Show>
         </button>
       </div>
-      <Feedback message={message()} error={failed()} onClose={() => setMessage("")} />
+      <AccountNotice />
       <Feedback error message={reads.error()} />
       <Show
         when={
@@ -126,11 +133,9 @@ export function M3UPage(props: { query: string }) {
         fallback={
           <Show when={!reads.loading() && !reads.error()}>
             <EmptyState icon="playlist">
-              {!library.session()
-                ? t("Connectez votre bibliothèque pour afficher ses listes M3U.")
-                : kind() === "files"
-                  ? t("Aucun fichier M3U dans cette sélection.")
-                  : t("Aucun export M3U enregistré.")}
+              {kind() === "files"
+                ? t("Aucun fichier M3U dans cette sélection.")
+                : t("Aucun export M3U enregistré.")}
             </EmptyState>
           </Show>
         }
@@ -189,22 +194,21 @@ export function M3UPage(props: { query: string }) {
                 <>
                   <div class="section-heading">
                     <h2 title={file().name}>{file().name}</h2>
-                    <button
-                      class="icon-button"
-                      title={t("Télécharger le M3U")}
-                      aria-label={t("Télécharger le M3U")}
-                      disabled={busy() || reads.detailLoading()}
-                      onClick={() => void download()}
-                    >
-                      <Show when={busy()} fallback={<Icon name="download" />}>
-                        <span class="spinner" />
-                      </Show>
-                    </button>
+                    <DownloadButton
+                      identity={downloadIdentity()}
+                      label={t("Télécharger le M3U")}
+                      disabled={reads.detailLoading()}
+                      busy={busy()}
+                      onClick={download}
+                    />
                   </div>
                   <Show when={file().path}>
                     <p class="muted m3u-file-path" title={file().path}>
                       {file().path}
                     </p>
+                  </Show>
+                  <Show when={message()}>
+                    <Feedback message={message()} error={failed()} onClose={() => setMessage("")} />
                   </Show>
                   <p class="muted">{t("{0} pistes", file().titles.length)}</p>
                   <Show

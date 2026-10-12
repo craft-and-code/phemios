@@ -1,16 +1,43 @@
 import { Portal } from "solid-js/web";
-import { Show } from "solid-js";
+import { createEffect, createMemo, on, Show } from "solid-js";
+import { createDownloadFeedback } from "../library/download-feedback";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { Icon } from "./Icon";
 import { Feedback } from "./Feedback";
 /** This drawer displays the shared download operation without owning its lifetime. */
 export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined }) {
-  const job = useLibrary().queueLyrics;
+  const library = useLibrary(),
+    job = library.queueLyrics;
+  const feedback = createDownloadFeedback();
+  const identity = createMemo(
+    () =>
+      library.player
+        .queue()
+        .map((row) => ({ reference: row.reference, owner: library.sessionFor(row.reference) })),
+    undefined,
+    {
+      equals: (a, b) =>
+        a.length === b.length &&
+        a.every(
+          (row, index) => row.reference === b[index]?.reference && row.owner === b[index]?.owner,
+        ),
+    },
+  );
+  createEffect(on(identity, () => feedback.reset()));
+  createEffect(
+    on(
+      () => !job.busy() && !job.failed() && !!job.message() && job.retained()?.complete === true,
+      (complete, previous) => {
+        if (complete && !previous) feedback.complete();
+      },
+    ),
+  );
   return (
     <span class="queue-lyrics">
       <button
         class="icon-button quiet"
+        classList={{ "download-complete": feedback.phase() === "complete" }}
         aria-label={
           job.busy()
             ? t("Arrêter le téléchargement des paroles")
@@ -30,7 +57,10 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
           else void job.acquire();
         }}
       >
-        <Show when={job.busy()} fallback={<Icon name="lyrics-download" />}>
+        <Show
+          when={job.busy()}
+          fallback={<Icon name={feedback.phase() === "complete" ? "check" : "lyrics-download"} />}
+        >
           <span class="spinner" />
         </Show>
       </button>
@@ -39,7 +69,7 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
           <Portal mount={host()}>
             <Feedback
               class="queue-lyrics-result"
-              message={job.message() || job.retained()?.error || ""}
+              message={(job.failed() ? job.message() : "") || job.retained()?.error || ""}
               error={job.failed() || !!job.retained()?.error}
               onClose={job.clear}
             />

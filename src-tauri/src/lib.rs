@@ -10,6 +10,8 @@ mod encyclopedia;
 mod exports;
 mod hqplayer;
 mod local;
+mod notes;
+mod personal_backup;
 mod playback;
 mod podcast;
 mod radio;
@@ -91,6 +93,9 @@ pub fn run() -> Result<(), tauri::Error> {
             encyclopedia::encyclopedia_export,
             hqplayer::hqplayer_connect,
             hqplayer::hqplayer_disconnect,
+            notes::note_export,
+            personal_backup::personal_backup_read,
+            personal_backup::personal_backup_restore,
             exports::statistics_export,
             exports::preferences_import,
             exports::preferences_export,

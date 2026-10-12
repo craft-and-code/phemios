@@ -15,7 +15,7 @@ it("restarts the arrival for repeated supplied cues while clock-only polls prese
     expect(phrase()).not.toBe(initial);
     expect(phrase()?.text).toBe(initial?.text);
     setFloating(true);
-    expect(Math.abs(phrase()?.angle ?? 0)).toBeGreaterThanOrEqual(45);
+    expect(Math.abs(phrase()?.angle ?? 0)).toBeLessThanOrEqual(40);
     setText("");
     expect(phrase()).toBeUndefined();
     dispose();

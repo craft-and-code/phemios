@@ -92,3 +92,73 @@ it("retains optional catalog addition dates without guessing legacy dates", () =
   );
   expect(() => parseSnapshot({ ...data, albums: [{ ...album, added_at: -1 }] })).toThrow();
 });
+
+const publicSnapshot = () => ({
+  artists: [],
+  albums: [],
+  server: "https://catalog.example",
+  accountId: "fictional",
+  scannedAt: 42,
+});
+const cachedTrack = {
+  reference: "track:@phemios/server/first",
+  title: "First track",
+  release: null,
+  album_title: null,
+  disc_no: null,
+  track_no: null,
+  album_position: null,
+  duration_ms: 1000,
+  analysis_available: false,
+  lyrics_available: true,
+  spectrum_available: false,
+};
+const cachedLabel = {
+  reference: "label:@phemios/server/imprint",
+  name: "Fictional imprint",
+  release_count: 1,
+  releases: ["release:@phemios/server/first"],
+  biography: {
+    text: "Attributed label prose",
+    url: "https://source.example/profile",
+    lang: "en",
+    licence: "CC BY-SA",
+    source: "discogs",
+  },
+};
+it("retains exact cached track and label facts without personal fields, while legacy arrays stay unknown", () => {
+  const legacy = parseSnapshot(publicSnapshot());
+  expect(legacy.tracks).toBeUndefined();
+  expect(legacy.labels).toBeUndefined();
+  const complete = parseSnapshot({
+    ...publicSnapshot(),
+    tracks: [{ ...cachedTrack, personal_note: "must not survive" }],
+    labels: [cachedLabel],
+  });
+  expect(complete.tracks).toEqual([{ ...cachedTrack, analyses: [] }]);
+  expect(complete.labels).toEqual([
+    {
+      reference: cachedLabel.reference,
+      name: cachedLabel.name,
+      releaseCount: 1,
+      releases: cachedLabel.releases,
+      biography: cachedLabel.biography,
+    },
+  ]);
+});
+it("refuses malformed optional projections and duplicate or cross-source identities", () => {
+  for (const tracks of [
+    null,
+    {},
+    [cachedTrack, cachedTrack],
+    [{ ...cachedTrack, release: "release:@phemios/local/foreign" }],
+  ])
+    expect(() => parseSnapshot({ ...publicSnapshot(), tracks })).toThrow();
+  for (const labels of [
+    null,
+    {},
+    [cachedLabel, cachedLabel],
+    [{ ...cachedLabel, releases: ["release:@phemios/local/foreign"] }],
+  ])
+    expect(() => parseSnapshot({ ...publicSnapshot(), labels })).toThrow();
+});

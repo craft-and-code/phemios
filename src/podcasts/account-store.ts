@@ -4,12 +4,13 @@ import { readPodcastState, updatePodcastState } from "../platform/desktop";
 import type { AccountSession } from "../library/server";
 import type { SourceId } from "../library/sources";
 import { podcastUrl, validatedPodcast, type Podcast } from "./feed";
-interface State {
+export interface PodcastAccountState {
   feeds: Podcast[];
   episodes: { feed: string; id: string }[];
 }
-function parse(raw: unknown): State {
-  const value = raw as State;
+/** Shared admission for native projections and explicit portable backup records. */
+export function parsePodcastAccountState(raw: unknown): PodcastAccountState {
+  const value = raw as PodcastAccountState;
   if (
     !value ||
     !Array.isArray(value.feeds) ||
@@ -50,7 +51,9 @@ export function createAccountPodcasts(
     return owner ? { owner, source: source() } : undefined;
   });
   type Scope = NonNullable<ReturnType<typeof scope>>;
-  const [row, setRow] = createSignal<{ scope: Scope; data: State }>();
+  const [revision, setRevision] = createSignal(0);
+  let loadEpoch = 0;
+  const [row, setRow] = createSignal<{ scope: Scope; data: PodcastAccountState }>();
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [pending, setPending] = createSignal(false);
@@ -59,20 +62,23 @@ export function createAccountPodcasts(
   const current = (held: Scope | undefined) => alive && !!held && scope() === held;
   const admitted = () => (current(row()?.scope) ? row()?.data : undefined);
   createEffect(() => {
-    const held = scope();
+    revision();
+    const held = scope(),
+      epoch = ++loadEpoch;
+    const admittedRead = () => current(held) && epoch === loadEpoch;
     setError("");
     setLoading(!!held);
     setPending(false);
     if (!held) return;
     void readPodcastState(held.source, held.owner)
       .then((raw) => {
-        if (current(held)) setRow({ scope: held, data: parse(raw) });
+        if (admittedRead()) setRow({ scope: held!, data: parsePodcastAccountState(raw) });
       })
       .catch((failure) => {
-        if (current(held)) setError(String(failure));
+        if (admittedRead()) setError(String(failure));
       })
       .finally(() => {
-        if (current(held)) setLoading(false);
+        if (admittedRead()) setLoading(false);
       });
   });
   onCleanup(() => {
@@ -92,18 +98,20 @@ export function createAccountPodcasts(
         return false;
       const work = tail.then(async () => {
         if (!active()) return false;
+        const epoch = loadEpoch;
+        const admittedWrite = () => active() && epoch === loadEpoch;
         setPending(true);
         setError("");
         try {
           const raw = await updatePodcastState(action, payload, held.source, held.owner);
-          if (!active()) return false;
-          setRow({ scope: held, data: parse(raw) });
+          if (!admittedWrite()) return false;
+          setRow({ scope: held, data: parsePodcastAccountState(raw) });
           return true;
         } catch (failure) {
-          if (active()) setError(String(failure));
+          if (admittedWrite()) setError(String(failure));
           return false;
         } finally {
-          if (active()) setPending(false);
+          if (admittedWrite()) setPending(false);
         }
       });
       tail = work;
@@ -117,6 +125,8 @@ export function createAccountPodcasts(
     };
   }
   return {
+    /** Explicit restoration reload; stale reads/mutation replies cannot replace the new snapshot. */
+    reload: () => setRevision((value) => value + 1),
     feeds: () => admitted()?.feeds ?? [],
     has: (feed: string, id: string) =>
       admitted()?.episodes.some((row) => row.feed === feed && row.id === id) ?? false,

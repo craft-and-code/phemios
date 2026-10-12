@@ -86,7 +86,7 @@ export function lyricTreatment(
     offset: composition === 1 ? (index % 2 ? 0.12 : -0.12) : 0,
   }));
   const base = phraseOrientation(seed),
-    angle = Math.sign(base) * (Math.abs(base) + (hash % 3) * 12);
+    angle = Math.sign(base) * (hash % 41);
   return {
     angle,
     font: (hashText(typography.track) + phase) % 4,

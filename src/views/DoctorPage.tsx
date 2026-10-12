@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { EmptyState } from "../components/EmptyState";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -78,9 +79,7 @@ export function DoctorPage() {
           </Show>
         </button>
       </div>
-      <Show when={!library.session()}>
-        <p class="notice">{t("Connectez Aède pour lire les diagnostics.")}</p>
-      </Show>
+      <AccountNotice />
       <Show when={report.loading()}>
         <span class="sr-only" role="status">
           {t("Lecture des diagnostics…")}

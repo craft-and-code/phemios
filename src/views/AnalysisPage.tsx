@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { IntegrityStatus } from "../components/IntegrityStatus";
 import { Feedback } from "../components/Feedback";
@@ -108,9 +109,7 @@ export function AnalysisPage(props: { query: string }) {
           onClose={() => setNotice({ message: "", failure: false })}
         />
       </Show>
-      <Show when={!library.session()}>
-        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-      </Show>
+      <AccountNotice administrator />
       <Show when={report.loading}>
         <PageLoader />
       </Show>

@@ -1,3 +1,5 @@
+import { DownloadButton } from "../components/DownloadButton";
+import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
 import { createSignal, createMemo, createEffect, on, For, Show, onCleanup } from "solid-js";
@@ -16,7 +18,8 @@ export function PodcastsPage(props: { query: string }) {
     [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
     [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
-  const downloads = createEpisodeDownloads(downloadPodcastEpisode);
+  const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
+  const downloads = createEpisodeDownloads(downloadPodcastEpisode, owner);
   type Actor = ReturnType<typeof subscriptions.capture>;
   const [removal, setRemoval] = createSignal<{ url: string; title: string; actor: Actor }>();
   const unsubscribe = {
@@ -33,7 +36,6 @@ export function PodcastsPage(props: { query: string }) {
       }
     },
   };
-  const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
   createEffect(
     on(owner, () => {
       setUrl("");
@@ -78,9 +80,7 @@ export function PodcastsPage(props: { query: string }) {
   }
   return (
     <section class="page podcasts-page">
-      <Show when={!library.session()}>
-        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-      </Show>
+      <AccountNotice />
       <Show when={subscriptions.loading()}>
         <PageLoader />
       </Show>
@@ -228,22 +228,15 @@ export function PodcastsPage(props: { query: string }) {
                             <p>{row.summary}</p>
                           </Show>
                         </div>
-                        <button
-                          type="button"
-                          class="icon-button"
-                          disabled={!isNative() || !!downloads.busy()}
-                          aria-busy={downloads.busy() === row.url}
-                          aria-label={t("Télécharger {0}", row.title)}
-                          title={t("Télécharger {0}", row.title)}
-                          onClick={() => void downloads.save(row.url, row.title)}
-                        >
-                          <Show
-                            when={downloads.busy() === row.url}
-                            fallback={<Icon name="download" />}
-                          >
-                            <span class="spinner" aria-hidden="true" />
-                          </Show>
-                        </button>
+                        <DownloadButton
+                          label={t("Télécharger {0}", row.title)}
+                          identity={owner()}
+                          disabled={
+                            !isNative() || (!!downloads.busy() && downloads.busy() !== row.url)
+                          }
+                          busy={downloads.busy() === row.url}
+                          onClick={() => downloads.save(row.url, row.title)}
+                        />
                         <button
                           class="icon-button"
                           aria-label={t("Lire {0}", row.title)}

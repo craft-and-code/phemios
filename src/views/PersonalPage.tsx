@@ -2,6 +2,7 @@ import { PageLoader } from "../components/PageLoader";
 import { CoverPlay } from "../components/CoverPlay";
 import { historyTrackAction } from "../library/history-actions";
 import { currentHistoryListen } from "../library/history-current";
+import { AccountNotice } from "../components/AccountNotice";
 import { StickyHeader } from "../components/StickyHeader";
 import { Feedback } from "../components/Feedback";
 import { ResultCount } from "../components/ResultCount";
@@ -145,9 +146,6 @@ export function PersonalPage(props: { section: Section; query: string }) {
     );
   return (
     <section class="page personal-page">
-      <Show when={!library.session() && !library.demo}>
-        <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-      </Show>
       <Show when={props.section === "favourites"}>
         <StickyHeader>
           <div class="personal-selection-actions">
@@ -158,6 +156,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             />
           </div>
         </StickyHeader>
+        <AccountNotice connected={!!library.session() || library.demo} />
         <Show
           when={favourites().length}
           fallback={
@@ -188,6 +187,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             <Icon name="library" />
           </button>
         </div>
+        <AccountNotice connected={!!library.session() || library.demo} />
         <Show when={editingCollection()}>
           <form
             id="collection-editor"
@@ -327,6 +327,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
+        <AccountNotice connected={!!library.session() || library.demo} />
         <Show when={listening()}>
           {(row) => (
             <div class="history-current">

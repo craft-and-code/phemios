@@ -1,9 +1,9 @@
-import { createMemo, createResource, createSignal, onCleanup } from "solid-js";
+import { createSignal, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import { referenceSource } from "./sources";
-import { parseLyrics } from "./lyrics";
-import { acquireQueueLyrics, queueHasLyrics } from "./queue-lyrics";
+import { createQueueLyricAvailability } from "./queue-lyrics-availability";
+import { acquireQueueLyrics } from "./queue-lyrics";
 import type { AccountSession } from "./server";
 import type { createJobs } from "./jobs";
 /** The library owns downloads; closing a drawer never cancels the captured authenticated batch.
@@ -25,71 +25,18 @@ export function createQueueLyrics(library: {
     disposed = true;
     cancelled = true;
   });
-  const eligible = () =>
+  const eligible = (reference?: string) =>
     library.queue().length > 0 &&
-    library.queue().every((r) => {
-      const s = library.sessionFor(r.reference);
-      return s?.account.role === "admin" && s.server.startsWith("http://");
-    });
-  const identity = createMemo(
-    () => {
-      const references = [...new Set(library.queue().map((r) => r.reference))].sort();
-      return {
-        references,
-        owners: references.map((r) => library.sessionFor(r)),
-        revision: library.tasks
-          .jobs()
-          .filter(
-            (job) =>
-              job.kind === "lyrics" &&
-              job.status === "completed" &&
-              references.includes(job.release ?? ""),
-          )
-          .map((job) => `${job.source}:${job.task_id}`)
-          .sort()
-          .join(","),
-      };
-    },
-    undefined,
-    {
-      equals: (a, b) =>
-        a?.revision === b.revision &&
-        a.references.join("\n") === b.references.join("\n") &&
-        a.owners.every((owner, index) => owner === b.owners[index]),
-    },
-  );
-  const [retainedState, { refetch }] = createResource(
-    () => (identity().references.length && identity().owners.every(Boolean) ? identity() : false),
-    async (held) => {
-      const current = () => !disposed && identity() === held;
-      try {
-        const complete = await queueHasLyrics(
-          held.references,
-          current,
-          async (reference) =>
-            !!parseLyrics(
-              await requestAede(
-                "/api/v1/lyrics",
-                { track: reference },
-                "GET",
-                null,
-                referenceSource(reference),
-              ),
-              reference,
-            )?.lines.some((line) => line.text.trim()),
-        );
-        return { held, complete, error: "" };
-      } catch (error) {
-        return { held, complete: false, error: String(error) };
-      }
-    },
-  );
-  // A disabled Solid resource retains its last answer; expose only its exact current owners.
-  const retained = () => {
-    const held = identity(),
-      value = retainedState();
-    return !disposed && held.owners.every(Boolean) && value?.held === held ? value : undefined;
-  };
+    (reference === undefined || library.queue().some((row) => row.reference === reference)) &&
+    library
+      .queue()
+      .filter((row) => reference === undefined || row.reference === reference)
+      .every((r) => {
+        const s = library.sessionFor(r.reference);
+        return s?.account.role === "admin" && s.server.startsWith("http://");
+      });
+  const availability = createQueueLyricAvailability({ ...library, jobs: library.tasks.jobs });
+  const [acquiring, setAcquiring] = createSignal("");
   const feedbackCurrent = () => {
     const owners = feedbackOwners();
     return (
@@ -100,14 +47,17 @@ export function createQueueLyrics(library: {
       )
     );
   };
-  async function acquire() {
-    if (busy() || !eligible()) return;
+  async function acquire(reference?: string) {
+    if (busy() || !eligible(reference)) return;
     setBusy(true);
     setFailed(false);
     setMessage("");
     cancelled = false;
     const titles = new Map(library.queue().map((row) => [row.reference, row.title]));
-    const references = library.queue().map((r) => r.reference),
+    const references = library
+        .queue()
+        .filter((row) => reference === undefined || row.reference === reference)
+        .map((r) => r.reference),
       owners = new Map(references.map((r) => [r, library.sessionFor(r)]));
     setFeedbackOwners(owners);
     const current = () =>
@@ -127,25 +77,20 @@ export function createQueueLyrics(library: {
       const failures: string[] = [];
       const result = await acquireQueueLyrics(references, {
         current,
-        available: async (reference) => {
-          const raw = await requestAede(
-            "/api/v1/lyrics",
-            { track: reference },
-            "GET",
-            null,
-            referenceSource(reference),
-          );
-          return !!parseLyrics(raw, reference)?.lines.some((r) => r.text.trim());
-        },
+        available: (reference) => availability.read(reference, owners.get(reference)),
         acquire: async (reference) => {
           if (!current()) return;
+          setAcquiring(reference);
           const id = await library.tasks.start("lyrics", reference, false);
           const deadline = Date.now() + 300000;
           while (current()) {
             const job = library.tasks
               .jobs()
               .find((r) => r.task_id === id && r.source === referenceSource(reference));
-            if (job?.status === "completed" && (!job.result || job.result.exit_code === 0)) return;
+            if (job?.status === "completed" && (!job.result || job.result.exit_code === 0)) {
+              await availability.read(reference, owners.get(reference));
+              return;
+            }
             if (
               job?.tracking_error ||
               ["failed", "cancelled"].includes(job?.status ?? "") ||
@@ -177,7 +122,7 @@ export function createQueueLyrics(library: {
       });
       if (current()) {
         setFailed(result.failed > 0);
-        void refetch();
+        availability.refresh();
       }
     } catch (error) {
       if (current()) {
@@ -185,7 +130,10 @@ export function createQueueLyrics(library: {
         setMessage(String(error));
       }
     } finally {
-      if (!disposed) setBusy(false);
+      if (!disposed) {
+        setBusy(false);
+        setAcquiring("");
+      }
     }
   }
   return {
@@ -193,8 +141,10 @@ export function createQueueLyrics(library: {
     message: () => (feedbackCurrent() ? message() : ""),
     failed: () => feedbackCurrent() && failed(),
     eligible,
-    retained,
-    retainedLoading: () => !disposed && identity().owners.every(Boolean) && retainedState.loading,
+    available: availability.available,
+    acquiring: () => (feedbackCurrent() ? acquiring() : ""),
+    retained: availability.retained,
+    retainedLoading: availability.loading,
     acquire,
     cancel: () => {
       cancelled = true;

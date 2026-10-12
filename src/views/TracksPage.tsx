@@ -6,6 +6,7 @@ import { t } from "../i18n";
 import { createMemo, createResource, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
+import { publicCatalogSources, cachedTrackPage } from "../library/offline-catalog";
 import { combinedTrackReader } from "../library/combined-tracks";
 import { sourceLabel } from "../library/sources";
 import { TrackResults } from "../components/TrackResults";
@@ -21,20 +22,36 @@ export function TracksPage(props: {
   const library = useLibrary(),
     offset = () => props.offset,
     setOffset = props.setOffset;
+  const sources = createMemo(() =>
+    publicCatalogSources(library.publicSnapshot, library.trackSources()),
+  );
   const reader = createMemo(() => {
-    const sources = library.trackSources(),
+    const choices = sources(),
       query = props.query;
-    return sources.length
-      ? combinedTrackReader(sources, (source, at) =>
-          requestAede(
+    if (!choices.length) return undefined;
+    const cached = new Set<string>();
+    const read = combinedTrackReader(choices, async (source, at) => {
+      const choice = choices.find((row) => row.source === source)!;
+      if (choice.online) {
+        try {
+          return await requestAede(
             "/api/v1/presentation/tracks",
             { offset: String(at), limit: "50", q: query },
             "GET",
             null,
             source,
-          ),
-        )
-      : undefined;
+          );
+        } catch (failure) {
+          if (!choice.snapshot?.tracks) throw failure;
+        }
+      }
+      cached.add(source);
+      return cachedTrackPage(choice.snapshot, query, at);
+    });
+    return async (offset: number, size: number) => ({
+      ...(await read(offset, size)),
+      cached: [...cached],
+    });
   });
   const [page, { refetch }] = createResource(
     () => reader() && { read: reader()!, offset: offset(), size: props.size },
@@ -77,7 +94,7 @@ export function TracksPage(props: {
         <p role="alert">{props.preferenceError}</p>
       </Show>
       <Show when={!reader()}>
-        <p class="notice">{t("Connectez Aède pour consulter toutes les pistes.")}</p>
+        <EmptyState icon="list">{t("Aucune piste dans cette recherche.")}</EmptyState>
       </Show>
       <Show when={page.error}>
         <p role="alert">
@@ -98,15 +115,9 @@ export function TracksPage(props: {
                 </p>
               )}
             </For>
-            <Show
-              when={library
-                .origins()
-                .some((source) => !library.trackSources().some((row) => row.source === source))}
-            >
+            <Show when={props.query.trim() && value().cached.length}>
               <p class="notice">
-                {t(
-                  "Les pistes de la bibliothèque déconnectée seront disponibles après reconnexion.",
-                )}
+                {t("Recherche hors connexion : titres des pistes et des albums enregistrés.")}
               </p>
             </Show>
             <Show when={!value().items.length}>

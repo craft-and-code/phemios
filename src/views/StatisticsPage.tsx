@@ -1,12 +1,12 @@
+import { DownloadButton } from "../components/DownloadButton";
 import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
-import { Icon } from "../components/Icon";
 import { exportStatistics, isNative } from "../platform/desktop";
 import { csvDocument, statisticsCsv, type CsvRow } from "../library/statistics-csv";
 import { locale } from "../i18n";
 import { t } from "../i18n";
 import { referenceSource } from "../library/sources";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, on, createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { browseArtists } from "../library/selection";
@@ -90,6 +90,13 @@ export function StatisticsPage() {
           [t("Participants du cache"), numberLabel(library.artists().length)],
         ];
   };
+  const exportScope = createMemo(() => ({ session: library.session(), source: library.source() }));
+  createEffect(
+    on(exportScope, () => {
+      setExportStatus("");
+      setExportError("");
+    }),
+  );
   let pageElement!: HTMLElement;
   async function downloadCsv() {
     if (exporting()) return;
@@ -125,9 +132,14 @@ export function StatisticsPage() {
       const document = read ? await statisticsCsv(read, extra, current) : csvDocument(extra);
       if (!current()) throw new Error(t("Session invalide."));
       const path = await exportStatistics(document);
-      if (path && current()) setExportStatus(t("CSV enregistré : {0}", path));
+      if (path && current()) {
+        setExportStatus(t("CSV enregistré : {0}", path));
+        return true;
+      }
+      return false;
     } catch (failure) {
       if (current()) setExportError(String(failure));
+      return false;
     } finally {
       setExporting(false);
     }
@@ -146,17 +158,13 @@ export function StatisticsPage() {
           )}
         </p>
         <div class="settings-actions">
-          <button
-            class="icon-button quiet"
-            title={t("Télécharger toutes les statistiques en CSV")}
-            aria-label={t("Télécharger toutes les statistiques en CSV")}
-            disabled={exporting() || report.loading() || doctor.loading() || !isNative()}
-            onClick={() => void downloadCsv()}
-          >
-            <Show when={exporting()} fallback={<Icon name="download" />}>
-              <span class="spinner" />
-            </Show>
-          </button>
+          <DownloadButton
+            label={t("Télécharger toutes les statistiques en CSV")}
+            identity={exportScope()}
+            disabled={report.loading() || doctor.loading() || !isNative()}
+            busy={exporting()}
+            onClick={downloadCsv}
+          />
           <button
             disabled={!library.session() || report.loading()}
             onClick={() => setRefresh((value) => value + 1)}

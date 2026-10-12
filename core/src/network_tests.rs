@@ -509,7 +509,12 @@ fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
     let expected_artist = artist.clone();
     let expected_album = album.clone();
     let worker = std::thread::spawn(move || {
-        for (kind, row) in [("artists", artist), ("albums", album)] {
+        for (path, rows) in [
+            ("/api/v1/presentation/artists", vec![artist]),
+            ("/api/v1/presentation/albums", vec![album]),
+            ("/api/v1/presentation/tracks", vec![]),
+            ("/api/v1/labels", vec![]),
+        ] {
             let (mut stream, _) = listener.accept().unwrap();
             stream
                 .set_read_timeout(Some(Duration::from_secs(3)))
@@ -524,9 +529,10 @@ fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
             assert!(
                 String::from_utf8(header)
                     .unwrap()
-                    .starts_with(&format!("GET /api/v1/presentation/{kind}?"))
+                    .starts_with(&format!("GET {path}?"))
             );
-            let body = json!({"total":1,"scanned_at":42,"offset":0,"items":[row]}).to_string();
+            let body =
+                json!({"total":rows.len(),"scanned_at":42,"offset":0,"items":rows}).to_string();
             write!(
                 stream,
                 "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
@@ -545,7 +551,7 @@ fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
     worker.join().unwrap();
     assert_eq!(
         snapshot,
-        json!({"artists":[expected_artist],"albums":[expected_album],"scannedAt":42,"server":server,"accountId":"fixture"})
+        json!({"artists":[expected_artist],"albums":[expected_album],"tracks":[],"labels":[],"scannedAt":42,"server":server,"accountId":"fixture"})
     );
 }
 
@@ -591,5 +597,72 @@ fn folder_playlist_errors_translate_known_codes_without_echoing_server_text() {
     assert_eq!(
         errors::request_failure(403, "GET", "/api/me/v1/m3u-files", false, Some(&detail)),
         failure(403)
+    );
+}
+
+#[test]
+fn snapshot_retains_exact_public_label_details_without_private_extensions() {
+    let label = json!({"reference":"label:fictional","name":"Fictional","release_count":1});
+    let biography = json!({"text":"Attributed prose","url":"https://source.example/label","lang":"en","licence":"CC BY-SA","source":"discogs"});
+    let page =
+        |rows: Vec<Value>| json!({"items":rows,"offset":0,"total":rows.len(),"scanned_at":42});
+    let (authority, worker) = test_support::replies(vec![
+        ("/api/v1/presentation/artists", page(vec![])),
+        ("/api/v1/presentation/albums", page(vec![])),
+        (
+            "/api/v1/presentation/tracks",
+            page(vec![
+                json!({"reference":"track:first","title":"First track","personal_note":"private extension must not enter public cache"}),
+            ]),
+        ),
+        ("/api/v1/labels", page(vec![label.clone()])),
+        (
+            "/api/v1/label",
+            json!({"reference":"label:fictional","name":"Fictional","releases":["release:first"],"biography":biography,"personal_note":"private extension must not enter public cache"}),
+        ),
+        ("/api/v1/labels", page(vec![label])),
+    ]);
+    let snapshot = test_support::client(authority).snapshot().unwrap();
+    worker.join().unwrap();
+    assert_eq!(
+        snapshot["labels"],
+        json!([{"reference":"label:fictional","name":"Fictional","release_count":1,"releases":["release:first"],"biography":biography}])
+    );
+    assert!(!snapshot.to_string().contains("private extension"));
+}
+#[test]
+fn snapshot_refuses_label_details_from_a_changed_scan_without_publication() {
+    let mut replies = Vec::new();
+    for _ in 0..3 {
+        let page = |rows: Vec<Value>, epoch: u64| json!({"items":rows,"offset":0,"total":rows.len(),"scanned_at":epoch});
+        replies.extend([
+            ("/api/v1/presentation/artists", page(vec![], 42)),
+            ("/api/v1/presentation/albums", page(vec![], 42)),
+            ("/api/v1/presentation/tracks", page(vec![], 42)),
+            (
+                "/api/v1/labels",
+                page(
+                    vec![
+                        json!({"reference":"label:fictional","name":"Fictional","release_count":0}),
+                    ],
+                    42,
+                ),
+            ),
+            (
+                "/api/v1/label",
+                json!({"reference":"label:fictional","name":"Fictional","releases":[]}),
+            ),
+            (
+                "/api/v1/labels",
+                page(vec![json!({"reference":"label:fictional"})], 43),
+            ),
+        ]);
+    }
+    let (authority, worker) = test_support::replies(replies);
+    let answer = test_support::client(authority).snapshot();
+    worker.join().unwrap();
+    assert_eq!(
+        answer.unwrap_err(),
+        "Le catalogue change pendant la synchronisation. Réessayez."
     );
 }

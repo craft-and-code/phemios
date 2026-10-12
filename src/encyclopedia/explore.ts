@@ -132,17 +132,21 @@ export function createWikipediaExplorer(
   /** File export is independent from the explicitly retained reading copy. */
   async function download() {
     const row = article();
-    if (disposed || busy() || !row) return;
+    if (disposed || busy() || !row) return false;
     invalidate();
     const ticket = generation;
     setBusy("download");
     try {
       if (!api.download) throw Error(t("Le téléchargement nécessite l’application desktop."));
       const path = await api.download(row);
-      if (!disposed && ticket === generation && article() === row)
+      if (!disposed && ticket === generation && article() === row) {
         setNotice(t("Article téléchargé : {0}", path));
+        return true;
+      }
+      return false;
     } catch (failure) {
       if (!disposed && ticket === generation && article() === row) setError(String(failure));
+      return false;
     } finally {
       if (!disposed && ticket === generation) setBusy("");
     }

@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import { createMemo, Show } from "solid-js";
+import { createMemo } from "solid-js";
 import { useLibrary } from "../library/context";
 import { recentAlbums } from "../library/recent-albums";
 import { searchAlbum } from "../library/filtering";
@@ -17,21 +17,12 @@ export function RecentPage(props: { query: string }) {
       ),
     ),
   );
-  const unknown = () => library.albums().filter((a) => a.addedAt == null).length;
   return (
     <section class="page recent-page">
       <p class="muted">
         {t("30 derniers jours · date d’entrée dans le catalogue ·")} {albums().length} {t("album")}{" "}
         {albums().length > 1 ? "s" : ""}
       </p>
-      <Show when={unknown()}>
-        <p class="notice">
-          {unknown()}{" "}
-          {t(
-            "albums ont une date d’ajout inconnue. Les nouveaux ajouts seront datés lors des prochains scans Aède.",
-          )}{" "}
-        </p>
-      </Show>
       <AlbumGrid albums={albums()} emptyIcon="sparkles" />
     </section>
   );

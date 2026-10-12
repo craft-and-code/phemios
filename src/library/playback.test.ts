@@ -2,6 +2,8 @@ import { activateInterfaceProfile, interfacePreferences } from "./account-prefer
 import { createRoot } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createPlayback } from "./playback";
+import { createQueueLyrics } from "./queue-lyrics-controller";
+import { referenceSource } from "./sources";
 import { idlePlayback } from "./playback-state";
 import {
   playbackState,
@@ -554,5 +556,274 @@ it("does not rewrite a preceding account's duration slot during new-profile hydr
       dispose();
       vi.unstubAllGlobals();
     }
+  });
+});
+
+it("publishes the replacement album metadata and rejects a prior track poll after switching selections", async () => {
+  await createRoot(async (dispose) => {
+    const nextAlbum = { ...album, reference: "release:next", title: "Next release" };
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album, nextAlbum], artists: [] }),
+    );
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    await player.start(tracks, album, "First artist");
+    let oldReply!: (value: unknown) => void;
+    vi.mocked(playbackState).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          oldReply = resolve;
+        }),
+    );
+    await vi.advanceTimersByTimeAsync(60);
+    vi.mocked(requestAede).mockResolvedValueOnce({
+      items: [
+        {
+          reference: "track:next",
+          title: "New title",
+          release: nextAlbum.reference,
+          number: 1,
+          album_total: 1,
+        },
+      ],
+    });
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:next",
+      total: 1,
+      queue: [0],
+    });
+    await player.startReference(nextAlbum.reference);
+    expect(player.current()?.title).toBe("New title");
+    expect(player.current()?.album).toBe(nextAlbum);
+    oldReply({ ...idlePlayback, status: "playing", reference: "track:one", total: 2 });
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    expect(player.current()?.title).toBe("New title");
+    expect(player.current()?.album).toBe(nextAlbum);
+    expect(player.queue().map((row) => row.reference)).toEqual(["track:next"]);
+    dispose();
+  });
+});
+
+it("publishes a shorter replacement selection atomically with native state for actual queue consumers", async () => {
+  await createRoot(async (dispose) => {
+    const nextAlbum = { ...album, reference: "release:next", title: "Next release" };
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album, nextAlbum], artists: [] }),
+    );
+    const session = {
+      server: "http://127.0.0.1:8787",
+      account: { id: "fixture", username: "fixture", role: "auditor" as const },
+    };
+    createQueueLyrics({
+      queue: player.queue,
+      sessionFor: (reference) => {
+        referenceSource(reference);
+        return session;
+      },
+      tasks: { start: vi.fn(), jobs: () => [] },
+    });
+    vi.mocked(requestAede).mockImplementation(async (path, query) =>
+      path.endsWith("/playback")
+        ? {
+            items: [
+              {
+                reference: "track:next",
+                title: "New title",
+                release: nextAlbum.reference,
+                number: 1,
+                album_total: 1,
+              },
+            ],
+          }
+        : { track: query?.track, lyrics: null },
+    );
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      queue: [0, 1],
+    });
+    await player.start(tracks, album, "Artist");
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:next",
+      total: 1,
+      queue: [0],
+    });
+    await player.startReference(nextAlbum.reference);
+    expect(playbackStart).toHaveBeenCalledTimes(2);
+    expect(player.error()).toBe("");
+    expect(player.current()?.title).toBe("New title");
+    expect(player.current()?.album).toBe(nextAlbum);
+    dispose();
+  });
+});
+
+it("retains the last confirmed order on Stop and restarts the selected occurrence in that order", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:two",
+      total: 2,
+      index: 1,
+      queue: [1, 0],
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist", 1);
+    vi.mocked(playbackState).mockResolvedValueOnce({ ...idlePlayback });
+    await player.action("stop");
+    expect(player.queue().map((row) => row.reference)).toEqual(["track:two", "track:one"]);
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      index: 1,
+      queue: [0, 1],
+    });
+    await player.playQueueOccurrence(0);
+    expect(playbackStart).toHaveBeenLastCalledWith(
+      ["track:two", "track:one"],
+      "",
+      1,
+      "without-effects",
+    );
+    expect(player.current()?.title).toBe("First");
+    expect(player.queue().map((row) => row.reference)).toEqual(["track:two", "track:one"]);
+    dispose();
+  });
+});
+
+it("does not restart a stopped queue after its account is reset during audio configuration", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValueOnce({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      queue: [0, 1],
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist");
+    vi.mocked(playbackState).mockResolvedValueOnce({ ...idlePlayback });
+    await player.action("stop");
+    vi.mocked(playbackStart).mockClear();
+    let release!: () => void;
+    vi.mocked(playbackControl).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const pending = player.playQueueOccurrence(0);
+    await Promise.resolve();
+    player.reset();
+    release();
+    await pending;
+    expect(playbackStart).not.toHaveBeenCalled();
+    expect(player.queue()).toEqual([]);
+    dispose();
+  });
+});
+
+it("keeps stopped local rows only while their source is admitted and preserves them on server logout", async () => {
+  await createRoot(async (dispose) => {
+    const localTracks = tracks.map((track) => ({
+      ...track,
+      reference: `track:@phemios/local/${track.reference.slice(6)}`,
+    }));
+    vi.mocked(playbackState)
+      .mockResolvedValueOnce({
+        ...idlePlayback,
+        status: "playing",
+        reference: localTracks[0]!.reference,
+        total: 2,
+        queue: [0, 1],
+      })
+      .mockResolvedValueOnce(idlePlayback);
+    const player = createPlayback(() => true);
+    await player.start(localTracks, album, "Artist");
+    await player.action("stop");
+    expect(player.ownsSource("server")).toBe(false);
+    if (player.ownsSource("server")) player.reset();
+    expect(player.queue().map((row) => row.reference)).toEqual(
+      localTracks.map((track) => track.reference),
+    );
+    expect(player.ownsSource("local")).toBe(true);
+    if (player.ownsSource("local")) player.reset();
+    expect(player.queue()).toEqual([]);
+    expect(player.ownsSource("server")).toBe(false);
+    expect(player.ownsSource("local")).toBe(false);
+    dispose();
+  });
+});
+
+it("clears stopped server rows on exact account replacement without consuming local playback", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState)
+      .mockResolvedValueOnce({
+        ...idlePlayback,
+        status: "playing",
+        reference: "track:one",
+        total: 2,
+        queue: [0, 1],
+      })
+      .mockResolvedValueOnce(idlePlayback);
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Private collection owner");
+    await player.action("stop");
+    expect(player.ownsSource("local")).toBe(false);
+    expect(player.ownsSource("server")).toBe(true);
+    if (player.ownsSource("server")) player.reset();
+    expect(player.queue()).toEqual([]);
+    await player.playQueueOccurrence(0);
+    expect(playbackStart).toHaveBeenCalledOnce();
+    dispose();
+  });
+});
+
+it("invalidates a pending presentation before account replacement can replay its private selection", async () => {
+  await createRoot(async (dispose) => {
+    let resolve!: (value: unknown) => void;
+    vi.mocked(requestAede).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album], artists: [] }),
+    );
+    const pending = player.startReference("collection:@phemios/local/private");
+    expect(player.ownsSource("local")).toBe(true);
+    expect(player.ownsSource("server")).toBe(false);
+    if (player.ownsSource("local")) player.reset();
+    resolve({
+      items: [
+        {
+          reference: "track:one",
+          title: "First",
+          release: album.reference,
+          number: 1,
+          album_total: 1,
+        },
+      ],
+    });
+    await pending;
+    expect(playbackStart).not.toHaveBeenCalled();
+    expect(player.queue()).toEqual([]);
+    dispose();
   });
 });

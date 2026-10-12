@@ -21,6 +21,46 @@ impl Store {
         validate(&value)?;
         Ok(value)
     }
+    /// Prepare an additive explicit restore without replacing current editions or document extensions.
+    pub(crate) fn prepare_restore(
+        &self,
+        source: Source,
+        client: &Client,
+        imported: &Value,
+    ) -> Result<Value, String> {
+        writable(client)?;
+        validate(imported)?;
+        let owner = private_documents::owner(source, client)?;
+        let mut value = self.document(&owner)?;
+        let incoming = imported["articles"]
+            .as_array()
+            .ok_or("Articles enregistrés illisibles.")?;
+        let held = value["articles"]
+            .as_array_mut()
+            .ok_or("Articles enregistrés illisibles.")?;
+        for row in incoming {
+            if !held.iter().any(|existing| {
+                existing["language"] == row["language"] && existing["pageId"] == row["pageId"]
+            }) {
+                held.push(row.clone());
+            }
+        }
+        validate(&value)?;
+        self.document.preflight(&owner, &value)?;
+        Ok(value)
+    }
+    /// Publish a preflighted restore while the bridge retains this store lock.
+    pub(crate) fn commit_restore(
+        &self,
+        source: Source,
+        client: &Client,
+        prepared: Value,
+    ) -> Result<(), String> {
+        writable(client)?;
+        validate(&prepared)?;
+        self.document
+            .write(&private_documents::owner(source, client)?, prepared)
+    }
     /// Read this source/authority/account's articles, without inspecting legacy device storage.
     pub fn read(&self, source: Source, client: &Client) -> Result<Value, String> {
         let value = self.document(&private_documents::owner(source, client)?)?;
@@ -34,12 +74,7 @@ impl Store {
         action: &str,
         payload: &Value,
     ) -> Result<Value, String> {
-        if !matches!(
-            client.account()["account"]["role"].as_str(),
-            Some("user" | "admin")
-        ) {
-            return Err("Ce compte ne peut pas modifier ses articles.".into());
-        }
+        writable(client)?;
         identity(payload)?;
         let owner = private_documents::owner(source, client)?;
         let mut value = self.document(&owner)?;
@@ -66,6 +101,17 @@ impl Store {
         self.read(source, client)
     }
 }
+fn writable(client: &Client) -> Result<(), String> {
+    if matches!(
+        client.account()["account"]["role"].as_str(),
+        Some("user" | "admin")
+    ) {
+        Ok(())
+    } else {
+        Err("Ce compte ne peut pas modifier ses articles.".into())
+    }
+}
+
 fn identity(value: &Value) -> Result<(), String> {
     if !matches!(value["language"].as_str(), Some("fr" | "en")) || !positive(&value["pageId"]) {
         return Err("Article enregistré invalide.".into());
@@ -100,7 +146,7 @@ fn article(value: &Value) -> Result<(), String> {
     }
     Ok(())
 }
-fn validate(value: &Value) -> Result<(), String> {
+pub(crate) fn validate(value: &Value) -> Result<(), String> {
     let rows = value["articles"]
         .as_array()
         .filter(|rows| rows.len() <= 40)

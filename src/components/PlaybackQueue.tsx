@@ -9,7 +9,9 @@ import { Feedback } from "./Feedback";
 import { Icon } from "./Icon";
 /** Occurrence edits share the native queue generation and leave the current audio untouched. */
 export function PlaybackQueue(props: { onClose: () => void }) {
-  const player = useLibrary().player,
+  const library = useLibrary(),
+    player = library.player,
+    lyrics = library.queueLyrics,
     [feedbackHost, setFeedbackHost] = createSignal<HTMLElement>(),
     [visible, setVisible] = createSignal(100),
     [dragged, setDragged] = createSignal<{ index: number; id: number }>(),
@@ -86,7 +88,9 @@ export function PlaybackQueue(props: { onClose: () => void }) {
             <li
               data-queue-index={row.index}
               classList={{
-                current: row.index === player.state().index,
+                current:
+                  ["playing", "paused", "connecting"].includes(player.state().status) &&
+                  row.index === player.state().index,
                 "queue-drop-target": dropTarget() === row.index,
               }}
               draggable={reorderable()}
@@ -190,10 +194,38 @@ export function PlaybackQueue(props: { onClose: () => void }) {
               >
                 <Icon name="grip" />
               </button>
+              <Show
+                when={lyrics.available(row.reference) === true}
+                fallback={
+                  <button
+                    class="icon-button quiet queue-lyrics-track"
+                    title={t("Télécharger les paroles")}
+                    aria-label={t("Télécharger les paroles")}
+                    disabled={lyrics.busy() || !lyrics.eligible(row.reference)}
+                    onClick={() => void lyrics.acquire(row.reference)}
+                  >
+                    <Show
+                      when={lyrics.acquiring() === row.reference}
+                      fallback={<Icon name="lyrics-download" />}
+                    >
+                      <span class="spinner" aria-hidden="true" />
+                    </Show>
+                  </button>
+                }
+              >
+                <span
+                  class="queue-lyrics-track queue-lyrics-retained"
+                  title={t("Paroles disponibles")}
+                  role="img"
+                  aria-label={t("Paroles disponibles")}
+                >
+                  <Icon name="lyrics" />
+                </span>
+              </Show>
               <button
                 class="queue-track"
                 disabled={player.busy()}
-                onClick={() => void player.action("jump", row.index)}
+                onClick={() => void player.playQueueOccurrence(row.index)}
               >
                 <small class="queue-track-number">
                   {row.number}/{row.albumTotal}
@@ -205,7 +237,12 @@ export function PlaybackQueue(props: { onClose: () => void }) {
                   </small>
                 </span>
                 <span class="queue-track-state">
-                  <Show when={row.index === player.state().index}>
+                  <Show
+                    when={
+                      ["playing", "paused", "connecting"].includes(player.state().status) &&
+                      row.index === player.state().index
+                    }
+                  >
                     <Icon name={player.state().status === "playing" ? "volume" : "pause"} />
                   </Show>
                 </span>

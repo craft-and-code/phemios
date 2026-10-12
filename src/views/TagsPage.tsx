@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
@@ -79,9 +80,6 @@ export function TagsPage(props: {
             expression={tagCollectionExpression(props.selected, props.query)}
           />
         </div>
-        <Show when={!library.localSession() && !library.serverSession()}>
-          <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-        </Show>
         <Show when={vocabulary().length}>
           <div class="tag-choices" aria-label={t("Choisir un tag")}>
             <button aria-pressed={!props.selected.length} onClick={() => props.onSelect([])}>
@@ -110,6 +108,7 @@ export function TagsPage(props: {
           </div>
         </Show>
       </StickyHeader>
+      <AccountNotice connected={!!library.localSession() || !!library.serverSession()} />
       <Show when={!entries().length}>
         <EmptyState icon="tags">{t("Aucun élément tagué dans cette sélection.")}</EmptyState>
       </Show>

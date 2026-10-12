@@ -203,3 +203,32 @@ pub fn publish_wikipedia(
         document.as_bytes(),
     )
 }
+
+/// Export only the exact owner's server-confirmed Markdown note with collision-safe publication.
+/// Caller titles and paths never choose the destination; unsaved UI drafts are not accepted.
+pub fn publish_note(folder: &Path, reference: &str, response: &Value) -> Result<PathBuf, String> {
+    use std::hash::{Hash, Hasher};
+    if reference.len() > 4096
+        || !["artist:", "release:", "track:"].iter().any(|prefix| {
+            reference
+                .strip_prefix(prefix)
+                .is_some_and(|value| !value.is_empty())
+        })
+        || response["reference"].as_str() != Some(reference)
+        || response["annotation"]["reference"].as_str() != Some(reference)
+    {
+        return Err("Identité de note personnelle invalide.".into());
+    }
+    let note = response["annotation"]["note"]
+        .as_str()
+        .filter(|text| !text.trim().is_empty() && text.len() <= 1024 * 1024 && !text.contains('\0'))
+        .ok_or("Aucune note personnelle disponible à télécharger.")?;
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    reference.hash(&mut hash);
+    publish_named(
+        folder,
+        &format!("phemios-note-{:016x}", hash.finish()),
+        "md",
+        note.as_bytes(),
+    )
+}

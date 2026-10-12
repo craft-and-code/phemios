@@ -61,3 +61,6 @@ mod private_documents;
 #[cfg(test)]
 #[path = "podcast_store_test_support.rs"]
 mod private_store_test_support;
+
+/// Explicit portable backups of account-private podcast and article documents.
+pub mod personal_backup;

@@ -1,9 +1,10 @@
 import { PageLoader } from "../components/PageLoader";
 import { EmptyState } from "../components/EmptyState";
-import { createSignal, createResource, createEffect, on, For, Show } from "solid-js";
+import { createMemo, createSignal, createResource, createEffect, on, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
+import { publicCatalogSources, cachedLabelPage } from "../library/offline-catalog";
 import { parseLabelPage } from "../library/labels";
 import { sourceLabel } from "../library/sources";
 import { SourceBadge } from "../components/SourceBadge";
@@ -15,9 +16,12 @@ export function LabelsPage(props: { query: string }) {
     [offset, setOffset] = createSignal(0);
   const [sort, setSort] = createSignal<"name" | "albums">("name"),
     [descending, setDescending] = createSignal(false);
+  const sources = createMemo(() =>
+    publicCatalogSources(library.publicSnapshot, library.trackSources()),
+  );
   const [pages] = createResource(
     () => ({
-      sources: library.trackSources(),
+      sources: sources(),
       query: props.query,
       offset: offset(),
       sort: sort(),
@@ -27,27 +31,36 @@ export function LabelsPage(props: { query: string }) {
       return Promise.all(
         key.sources.map(async (source) => {
           try {
-            const page = parseLabelPage(
-              await requestAede(
-                "/api/v1/labels",
-                {
-                  offset: String(key.offset),
-                  limit: "50",
-                  sort: key.sort,
-                  order: key.descending ? "desc" : "asc",
-                  ...(key.query.trim() ? { q: key.query.trim() } : {}),
-                },
-                "GET",
-                undefined,
-                source.source,
-              ),
-              key.offset,
-              source.source,
-              source.scannedAt,
-            );
+            const cached = () =>
+              cachedLabelPage(source.snapshot, key.query, key.offset, key.sort, key.descending);
+            let page;
+            if (source.online) {
+              let raw: unknown;
+              try {
+                raw = await requestAede(
+                  "/api/v1/labels",
+                  {
+                    offset: String(key.offset),
+                    limit: "50",
+                    sort: key.sort,
+                    order: key.descending ? "desc" : "asc",
+                    ...(key.query.trim() ? { q: key.query.trim() } : {}),
+                  },
+                  "GET",
+                  undefined,
+                  source.source,
+                );
+              } catch (failure) {
+                if (!source.snapshot?.labels) throw failure;
+                page = cached();
+              }
+              if (page === undefined)
+                page = parseLabelPage(raw, key.offset, source.source, source.scannedAt);
+            } else page = cached();
             return {
               ...page,
               source: source.source,
+              offset: key.offset,
               identity: source.identity,
               query: key.query,
               sort: key.sort,
@@ -58,6 +71,7 @@ export function LabelsPage(props: { query: string }) {
               items: [],
               total: 0,
               source: source.source,
+              offset: key.offset,
               identity: source.identity,
               query: key.query,
               sort: key.sort,
@@ -78,12 +92,13 @@ export function LabelsPage(props: { query: string }) {
   const current = () =>
     pages()?.filter(
       (page) =>
+        page.offset === offset() &&
         page.query === props.query &&
         page.sort === sort() &&
         page.descending === descending() &&
-        library
-          .trackSources()
-          .some((source) => source.source === page.source && source.identity === page.identity),
+        sources().some(
+          (source) => source.source === page.source && source.identity === page.identity,
+        ),
     ) ?? [];
   return (
     <section class="page labels-page">
@@ -125,8 +140,8 @@ export function LabelsPage(props: { query: string }) {
           <Icon name="sort" />
         </button>
       </div>
-      <Show when={!library.trackSources().length}>
-        <p class="notice">{t("Connectez-vous pour parcourir les labels de votre bibliothèque.")}</p>
+      <Show when={!sources().length}>
+        <EmptyState icon="label">{t("Aucun label dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={pages.loading}>
         <PageLoader />
@@ -159,7 +174,7 @@ export function LabelsPage(props: { query: string }) {
       <Show
         when={
           !pages.loading &&
-          library.trackSources().length &&
+          sources().length &&
           current().every((page) => !page.total && !("error" in page))
         }
       >

@@ -87,7 +87,10 @@ impl Cache {
     }
 }
 fn validate(snapshot: &Value) -> Result<(), String> {
-    if !snapshot["artists"].is_array()
+    if ["tracks", "labels"]
+        .iter()
+        .any(|key| snapshot.get(key).is_some_and(|value| !value.is_array()))
+        || !snapshot["artists"].is_array()
         || !snapshot["albums"].is_array()
         || snapshot["server"].as_str().is_none()
         || snapshot["accountId"].as_str().is_none()

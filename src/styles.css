@@ -718,7 +718,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 .playback-current-lyrics {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: min(80%, 800px);
+  width: min(92%, 1100px);
   margin: 0;
   padding: 12px 18px;
   border: 1px solid transparent;
@@ -1719,7 +1719,7 @@ textarea,
 .lyric-chunk {
   display: inline-block;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   font-size: var(--chunk-size, 1em);
   transform: rotateZ(var(--chunk-tilt, 0deg));
 }
@@ -2115,4 +2115,26 @@ main:has(> .library-page .cover-flow) > :not(.library-page) {
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
+}
+
+/* A stopped transport keeps its queue pane and centres the idle state in the remaining scene. */
+.playback-idle {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+.waveform-seek.waveform-idle input[type="range"] {
+  cursor: default;
+}
+.playback-queue .queue-lyrics-track {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+}
+.playback-queue .queue-lyrics-retained {
+  color: var(--accent);
+  display: grid;
+  place-items: center;
 }

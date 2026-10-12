@@ -1,4 +1,6 @@
-import { createSignal, onMount, onCleanup, Show } from "solid-js";
+import { DownloadButton } from "./DownloadButton";
+import { createEffect, createMemo, createSignal, on, onMount, onCleanup, Show } from "solid-js";
+import { createExportState } from "../library/export-state";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -13,34 +15,46 @@ export function QueueSave() {
   const library = useLibrary(),
     player = library.player,
     [draft, setDraft] = createSignal<readonly string[]>(),
-    [name, setName] = createSignal(""),
-    [busy, setBusy] = createSignal(false),
-    [message, setMessage] = createSignal(""),
-    [file, setFile] = createSignal<M3UFile>(),
-    [failure, setFailure] = createSignal(false);
+    [name, setName] = createSignal("");
   const references = () => player.queue().map((row) => row.reference);
   const first = () => references()[0] ?? "";
   const source = () => referenceSource(first());
   const writable = () =>
     !!first() && ["user", "admin"].includes(library.sessionFor(first())?.account.role ?? "");
-  let owner: ReturnType<typeof library.session>,
-    heldSource = source();
+  const scope = createMemo(
+    () => ({ source: source(), session: first() ? library.sessionFor(first()) : undefined }),
+    undefined,
+    { equals: (a, b) => a.source === b.source && a.session === b.session },
+  );
+  const state = createExportState<ReturnType<typeof scope>, M3UFile>(scope);
+  const busy = state.busy,
+    message = state.message,
+    failure = state.failed,
+    file = state.file;
+  const downloadIdentity = createMemo(() => ({ scope: scope(), file: file() }));
+  let draftScope: ReturnType<typeof scope> | undefined;
+  createEffect(
+    on(scope, () => {
+      setDraft(undefined);
+      setName("");
+      draftScope = undefined;
+    }),
+  );
   async function save() {
-    const tracks = draft();
-    if (!tracks || busy()) return;
-    setBusy(true);
-    setMessage("");
-    setFailure(false);
-    const current = () => owner === library.sessionFor(tracks[0]!);
+    const tracks = draft(),
+      held = draftScope;
+    if (!tracks || !held || held !== scope() || !held.session) return;
+    const action = state.begin();
+    if (!action) return;
     try {
       const status = await requestAede<{ capabilities: string[] }>(
         "/api/v1/status",
         {},
         "GET",
         null,
-        heldSource,
+        held.source,
       );
-      if (!current()) return;
+      if (!action.current()) return;
       if (!status.capabilities?.includes("queue_m3u"))
         throw new Error(
           t("Mettez à jour puis redémarrez Aède pour enregistrer cette liste de lecture."),
@@ -50,25 +64,40 @@ export function QueueSave() {
         {},
         "POST",
         { name: name(), tracks },
-        heldSource,
+        held.source,
+        held.session,
       );
-      if (!current()) return;
+      if (!action.current()) return;
       if (
         !saved?.id?.startsWith("playlist-") ||
+        typeof saved.name !== "string" ||
         typeof saved.content !== "string" ||
         typeof saved.filename !== "string"
       )
         throw new Error(t("Publication M3U non confirmée par Aède."));
-      setFile({ ...saved, source: heldSource });
+      action.file({ ...saved, source: held.source });
       setDraft(undefined);
-      setMessage(t("M3U enregistré sur Aède."));
+      action.feedback(t("M3U enregistré sur Aède."));
     } catch (error) {
-      if (current()) {
-        setMessage(String(error));
-        setFailure(true);
-      }
+      action.feedback(String(error), true);
     } finally {
-      setBusy(false);
+      action.finish();
+    }
+  }
+  async function download(saved: M3UFile) {
+    if (!scope().session || file() !== saved) return false;
+    const action = state.begin();
+    if (!action) return false;
+    try {
+      const path = await downloadM3U(saved);
+      if (!action.current()) return false;
+      action.feedback(t("M3U téléchargé : {0}", path));
+      return true;
+    } catch (error) {
+      action.feedback(String(error), true);
+      return false;
+    } finally {
+      action.finish();
     }
   }
   return (
@@ -86,42 +115,27 @@ export function QueueSave() {
         title={t("Créer un M3U depuis la liste de lecture")}
         disabled={!writable() || busy()}
         onClick={(_draft) => {
-          owner = library.sessionFor(first());
-          heldSource = source();
+          draftScope = scope();
           setDraft([...references()]);
           setName(t("Liste de lecture"));
-          setMessage("");
+          state.dismiss();
         }}
       >
         <Icon name="playlist" />
       </button>
       <Show when={file()}>
         {(saved) => (
-          <button
-            class="icon-button quiet"
-            aria-label={t("Télécharger le M3U")}
-            title={t("Télécharger le M3U")}
-            disabled={busy() || library.sessionFor(first()) !== owner}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                setFailure(false);
-                setMessage(t("M3U téléchargé : {0}", await downloadM3U(saved())));
-              } catch (error) {
-                setFailure(true);
-                setMessage(String(error));
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <Icon name="download" />
-          </button>
+          <DownloadButton
+            label={t("Télécharger le M3U")}
+            identity={downloadIdentity()}
+            disabled={busy() || !scope().session}
+            onClick={() => download(saved())}
+          />
         )}
       </Show>
       <Show when={message()}>
         <div class="queue-save-feedback">
-          <Feedback message={message()} error={failure()} onClose={() => setMessage("")} />
+          <Feedback message={message()} error={failure()} onClose={state.dismiss} />
         </div>
       </Show>
       <Show when={draft()}>

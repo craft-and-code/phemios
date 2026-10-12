@@ -116,7 +116,11 @@ export function PlaybackPage() {
     <section class="playback-page" classList={{ "queue-open": queue() }}>
       <Show
         when={active()}
-        fallback={<EmptyState icon="visualizer">{t("Aucun morceau en lecture")}</EmptyState>}
+        fallback={
+          <div class="playback-idle">
+            <EmptyState icon="visualizer">{t("Aucun morceau en lecture")}</EmptyState>
+          </div>
+        }
       >
         <div class="playback-stage">
           <header class="playback-view-header">
@@ -297,9 +301,9 @@ export function PlaybackPage() {
             </p>
           </Show>
         </div>
-        <Show when={queue()}>
-          <PlaybackQueue onClose={() => setQueue(false)} />
-        </Show>
+      </Show>
+      <Show when={queue()}>
+        <PlaybackQueue onClose={() => setQueue(false)} />
       </Show>
     </section>
   );

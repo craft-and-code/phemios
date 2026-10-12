@@ -1,4 +1,4 @@
-import { createRoot } from "solid-js";
+import { createRoot, createSignal } from "solid-js";
 import { expect, it } from "vitest";
 import { createEpisodeDownloads } from "./downloads";
 it("prevents duplicate requests, reports the path and permits a later retry", async () => {
@@ -51,4 +51,55 @@ it("does not publish a late acknowledgement after the page is closed", async () 
   finish("/downloads/Episode.mp3");
   await pending;
   expect(downloads.message()).toBe("");
+});
+
+it("hides saved episode feedback immediately when its exact owner changes", async () => {
+  let dispose!: () => void;
+  const alice = {},
+    bob = {},
+    [owner, setOwner] = createSignal(alice);
+  const downloads = createRoot((end) => {
+    dispose = end;
+    return createEpisodeDownloads(async () => "/downloads/Alice episode.mp3", owner);
+  });
+  try {
+    await downloads.save("https://example.org/a.mp3", "Alice episode");
+    expect(downloads.message()).toContain("Alice episode");
+    setOwner(bob);
+    expect(downloads.message()).toBe("");
+    expect(downloads.failed()).toBe(false);
+  } finally {
+    dispose();
+  }
+});
+it("refuses old-owner success and failure after switching away and back", async () => {
+  for (const failure of [false, true]) {
+    let dispose!: () => void, finish!: () => void;
+    const alice = {},
+      bob = {},
+      [owner, setOwner] = createSignal(alice);
+    const downloads = createRoot((end) => {
+      dispose = end;
+      return createEpisodeDownloads(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () =>
+              failure ? reject(new Error("Alice episode error")) : resolve("/downloads/Alice.mp3");
+          }),
+        owner,
+      );
+    });
+    try {
+      const pending = downloads.save("https://example.org/a.mp3", "Alice episode");
+      setOwner(bob);
+      expect(downloads.busy()).toBe("");
+      setOwner(alice);
+      finish();
+      expect(await pending).toBe(false);
+      expect(downloads.message()).toBe("");
+      expect(downloads.failed()).toBe(false);
+    } finally {
+      dispose();
+    }
+  }
 });
