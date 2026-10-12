@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   assertComponentExplorerImport,
   componentExplorerArguments,
+  componentExplorerPublicAsset,
 } from "../scripts/component-explorer-policy.mjs";
 
 const root = path.resolve("/fictional/phemios");
@@ -50,4 +51,26 @@ test("the component boundary refuses transitive native imports and full applicat
     path.join(root, "src/platform/desktop.ts"),
   ])
     assert.throws(() => assertComponentExplorerImport(source, importer, root), /cannot import/);
+});
+
+test("the development explorer serves only its exact public boundary file", () => {
+  for (const method of ["GET", "HEAD"])
+    assert.equal(
+      componentExplorerPublicAsset(method, "/geography/countries.json?v=1", root),
+      path.join(root, "public/geography/countries.json"),
+    );
+  for (const url of [
+    undefined,
+    "/geography/../private.json",
+    "/geography/%2e%2e/private.json",
+    "/geography/countries.json/extra",
+    "/.env",
+    "/geography/",
+  ])
+    assert.equal(componentExplorerPublicAsset("GET", url, root), undefined);
+  for (const method of [undefined, "POST", "PUT", "DELETE"])
+    assert.equal(
+      componentExplorerPublicAsset(method, "/geography/countries.json", root),
+      undefined,
+    );
 });

@@ -29,11 +29,14 @@ export function CountryGlobe(props: {
   directory?: boolean;
   focus?: string;
   onReset?: () => string;
+  /** Optional local geometry loader; the app defaults to its bundled HTTP asset. */
+  loadCountries?: (() => Promise<readonly Country[]>) | undefined;
   artists: readonly Artist[];
   selected: readonly (string | null)[];
   onSelect: (value: string | undefined, additive?: boolean) => void;
 }) {
   const [countries] = createResource(async () => {
+    if (props.loadCountries) return props.loadCountries();
     const response = await fetch("/geography/countries.json");
     if (!response.ok) throw new Error(t("Frontières indisponibles"));
     return (await response.json()) as Country[];

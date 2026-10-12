@@ -44,3 +44,10 @@ export function assertComponentExplorerImport(source, importer, root) {
   )
     throw new Error(`The component explorer cannot import native application state: ${local}`);
 }
+
+/** An exact, read-only local asset mapping avoids publishing the general public directory. */
+export function componentExplorerPublicAsset(method, url, root) {
+  if (!["GET", "HEAD"].includes(method) || url?.split("?")[0] !== "/geography/countries.json")
+    return undefined;
+  return path.join(root, "public/geography/countries.json");
+}

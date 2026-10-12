@@ -1,18 +1,26 @@
 import { For } from "solid-js";
 import { t, countryName } from "../i18n";
 import { additiveCountrySelection, isMac } from "../library/selection";
+import type { Country } from "../geography/projection";
 import type { Artist } from "../library/types";
 import { CountryGlobe } from "./CountryGlobe";
 
 /** Keep the globe and keyboard country choices independent from the changing result list. */
 export function CountryExplorer(props: {
+  /** Local geometry injection makes isolated presentation independent of asset serving. */
+  loadCountries?: (() => Promise<readonly Country[]>) | undefined;
   artists: readonly Artist[];
   selected: readonly (string | null)[];
   onSelect: (country: string | null | undefined, additive?: boolean) => void;
 }) {
   return (
     <aside class="country-exploration" aria-label={t("Exploration des pays")}>
-      <CountryGlobe artists={props.artists} selected={props.selected} onSelect={props.onSelect} />
+      <CountryGlobe
+        loadCountries={props.loadCountries}
+        artists={props.artists}
+        selected={props.selected}
+        onSelect={props.onSelect}
+      />
       <div class="choices" aria-label={t("Pays d’origine")}>
         <button aria-pressed={!props.selected.length} onClick={() => props.onSelect(undefined)}>
           {t("Tous")}

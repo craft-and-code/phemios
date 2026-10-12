@@ -9,6 +9,7 @@ const config: StorybookConfig = {
       builder: { viteConfigPath: path.resolve(import.meta.dirname, "../vite.config.ts") },
     },
   },
+  staticDirs: [{ from: "../../../public/geography", to: "/geography" }],
   addons: ["@storybook/addon-docs"],
   core: { disableTelemetry: true },
 };

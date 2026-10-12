@@ -1674,10 +1674,21 @@ button.metadata-link:hover {
   align-items: center;
   gap: 10px;
   min-width: 0;
-  flex: 0 1 164px;
+  flex: 0 1 222px;
   color: var(--muted);
 }
-.cover-size-control > svg {
+.cover-size-reset {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  flex: 0 0 24px;
+}
+.cover-size-reset > svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -1688,6 +1699,15 @@ button.metadata-link:hover {
   min-width: 0;
   margin: 0;
 }
-.cover-size-disabled > svg {
+.cover-size-disabled .cover-size-reset {
   opacity: 0.35;
+}
+
+.cover-size-value {
+  min-width: 6ch;
+  flex: 0 0 auto;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

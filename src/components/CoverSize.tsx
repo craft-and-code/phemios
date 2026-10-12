@@ -1,19 +1,35 @@
 import { t } from "../i18n";
 import { Icon } from "./Icon";
 import { ScrubRange } from "./ScrubRange";
-/** Explicit cover density, with a native range and double-click restoration. */
+/** Explicit pixel size; pointer double-click or keyboard activation restores the default. */
 export function CoverSize(props: {
   value: number;
   disabled: boolean;
   onChange: (value: number) => void;
 }) {
   return (
-    <label
+    <div
+      role="group"
+      aria-label={t("Taille des pochettes")}
       class="cover-size-control"
       classList={{ "cover-size-disabled": props.disabled }}
       title={t("Taille des pochettes · double-clic pour réinitialiser")}
     >
-      <Icon name="cover-size" />
+      <button
+        type="button"
+        class="cover-size-reset"
+        aria-label={t("Taille des pochettes · double-clic pour réinitialiser")}
+        title={t("Taille des pochettes · double-clic pour réinitialiser")}
+        disabled={props.disabled}
+        onDblClick={() => {
+          if (!props.disabled) props.onChange(150);
+        }}
+        onClick={(event) => {
+          if (!props.disabled && event.detail === 0) props.onChange(150);
+        }}
+      >
+        <Icon name="cover-size" />
+      </button>
       <ScrubRange
         class="cover-size-range"
         aria-label={t("Taille des pochettes")}
@@ -28,6 +44,7 @@ export function CoverSize(props: {
           if (!props.disabled) props.onChange(150);
         }}
       />
-    </label>
+      <output class="cover-size-value">{props.value} px</output>
+    </div>
   );
 }

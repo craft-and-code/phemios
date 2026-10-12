@@ -41,3 +41,31 @@
 .component-size input {
   flex: 1;
 }
+
+.component-empty {
+  position: relative;
+  min-height: 280px;
+  display: grid;
+}
+.component-stat {
+  width: 160px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.component-stat > strong {
+  display: block;
+  white-space: nowrap;
+}
+.component-scene {
+  position: relative;
+  width: 100%;
+  height: 360px;
+}
+.component-sticky {
+  height: 320px;
+  overflow: auto;
+}
+.component-frame:has(.player-bar) {
+  max-width: 1200px;
+}

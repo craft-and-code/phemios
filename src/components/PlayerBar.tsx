@@ -1,3 +1,4 @@
+import { PlayerTransport } from "./PlayerTransport";
 import { repeatDisabled } from "../navigation/contextual-play";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { WaveformSeek } from "./WaveformSeek";
@@ -82,130 +83,134 @@ export function PlayerBar() {
             {status()}
           </small>
           <Show when={issue()}>
-            <small class="playback-error" role="alert">
+            <small class="playback-error" role="alert" title={issue()}>
               {issue()}
             </small>
           </Show>
         </span>
       </div>
-      <div class="transport">
-        <div class="transport-buttons">
-          <button
-            class="icon-button"
-            disabled={disabled()}
-            aria-label={t("Lecture aléatoire")}
-            title={t("Lecture aléatoire")}
-            aria-pressed={state().shuffled}
-            onClick={() => void player.action("shuffle", !state().shuffled)}
-          >
-            <Icon name="shuffle" />
-          </button>
-          <button
-            class="icon-button"
-            disabled={disabled()}
-            aria-label={t("Morceau précédent")}
-            onClick={() => void player.action("previous")}
-          >
-            <Icon name="previous" />
-          </button>
-
-          <div class="play-control">
+      <PlayerTransport
+        controls={
+          <>
             <button
-              class="play-button"
-              disabled={
-                player.busy() ||
-                (!player.ready() && !active()) ||
-                (!active() && state().status !== "ended" && !player.target())
-              }
-              aria-label={
-                state().status === "playing"
-                  ? t("Mettre en pause")
-                  : active()
-                    ? t("Reprendre la lecture")
-                    : t("Lancer la lecture")
-              }
-              onClick={() =>
-                void (state().status === "playing"
-                  ? player.action("pause")
-                  : state().status === "paused"
-                    ? player.action("resume")
-                    : player.target()
-                      ? player.startReference()
-                      : player.action("resume"))
-              }
+              class="icon-button"
+              disabled={disabled()}
+              aria-label={t("Lecture aléatoire")}
+              title={t("Lecture aléatoire")}
+              aria-pressed={state().shuffled}
+              onClick={() => void player.action("shuffle", !state().shuffled)}
             >
-              <Icon name={state().status === "playing" ? "pause" : "play"} />
+              <Icon name="shuffle" />
             </button>
             <button
-              class="icon-button transport-stop"
-              disabled={
-                player.busy() ||
-                !["playing", "paused", "connecting", "ended", "error"].includes(state().status)
-              }
-              aria-label={t("Arrêter la lecture")}
-              onClick={() => void player.action("stop")}
+              class="icon-button"
+              disabled={disabled()}
+              aria-label={t("Morceau précédent")}
+              onClick={() => void player.action("previous")}
             >
-              <Icon name="stop" />
+              <Icon name="previous" />
+            </button>
+
+            <div class="play-control">
+              <button
+                class="play-button"
+                disabled={
+                  player.busy() ||
+                  (!player.ready() && !active()) ||
+                  (!active() && state().status !== "ended" && !player.target())
+                }
+                aria-label={
+                  state().status === "playing"
+                    ? t("Mettre en pause")
+                    : active()
+                      ? t("Reprendre la lecture")
+                      : t("Lancer la lecture")
+                }
+                onClick={() =>
+                  void (state().status === "playing"
+                    ? player.action("pause")
+                    : state().status === "paused"
+                      ? player.action("resume")
+                      : player.target()
+                        ? player.startReference()
+                        : player.action("resume"))
+                }
+              >
+                <Icon name={state().status === "playing" ? "pause" : "play"} />
+              </button>
+              <button
+                class="icon-button transport-stop"
+                disabled={
+                  player.busy() ||
+                  !["playing", "paused", "connecting", "ended", "error"].includes(state().status)
+                }
+                aria-label={t("Arrêter la lecture")}
+                onClick={() => void player.action("stop")}
+              >
+                <Icon name="stop" />
+              </button>
+            </div>
+            <button
+              class="icon-button"
+              disabled={
+                disabled() ||
+                (state().repeat !== "all" &&
+                  (state().queue.length
+                    ? state().queue.indexOf(state().index) + 1 >= state().total
+                    : state().index + 1 >= state().total))
+              }
+              aria-label={t("Morceau suivant")}
+              onClick={() => void player.action("next")}
+            >
+              <Icon name="next" />
+            </button>
+            <button
+              class="icon-button"
+              disabled={repeatDisabled(
+                state().status,
+                player.busy(),
+                player.ready(),
+                state().device === "@hqplayer",
+              )}
+              aria-label={t("Répétition")}
+              aria-pressed={state().repeat !== "off"}
+              title={t(
+                state().repeat === "one"
+                  ? "Répéter le morceau"
+                  : state().repeat === "all"
+                    ? "Répéter la sélection"
+                    : "Répétition désactivée",
+              )}
+              onClick={() =>
+                void player.action(
+                  "repeat",
+                  state().repeat === "off" ? "all" : state().repeat === "all" ? "one" : "off",
+                )
+              }
+            >
+              <Icon name={state().repeat === "one" ? "repeat-one" : "repeat"} />
+            </button>
+          </>
+        }
+        timeline={
+          <div class="playback-progress">
+            <small>{time(position())}</small>
+            <WaveformSeek />
+            <button
+              class="time-toggle"
+              aria-label={
+                player.remaining() ? t("Afficher la durée totale") : t("Afficher le temps restant")
+              }
+              aria-pressed={player.remaining()}
+              onClick={player.toggleTime}
+            >
+              {player.remaining() && state().duration_ms !== null
+                ? `−${time(Math.max(0, state().duration_ms! - position()))}`
+                : time(state().duration_ms)}
             </button>
           </div>
-          <button
-            class="icon-button"
-            disabled={
-              disabled() ||
-              (state().repeat !== "all" &&
-                (state().queue.length
-                  ? state().queue.indexOf(state().index) + 1 >= state().total
-                  : state().index + 1 >= state().total))
-            }
-            aria-label={t("Morceau suivant")}
-            onClick={() => void player.action("next")}
-          >
-            <Icon name="next" />
-          </button>
-          <button
-            class="icon-button"
-            disabled={repeatDisabled(
-              state().status,
-              player.busy(),
-              player.ready(),
-              state().device === "@hqplayer",
-            )}
-            aria-label={t("Répétition")}
-            aria-pressed={state().repeat !== "off"}
-            title={t(
-              state().repeat === "one"
-                ? "Répéter le morceau"
-                : state().repeat === "all"
-                  ? "Répéter la sélection"
-                  : "Répétition désactivée",
-            )}
-            onClick={() =>
-              void player.action(
-                "repeat",
-                state().repeat === "off" ? "all" : state().repeat === "all" ? "one" : "off",
-              )
-            }
-          >
-            <Icon name={state().repeat === "one" ? "repeat-one" : "repeat"} />
-          </button>
-        </div>
-        <div class="playback-progress">
-          <small>{time(position())}</small>
-          <WaveformSeek />
-          <button
-            class="time-toggle"
-            aria-label={
-              player.remaining() ? t("Afficher la durée totale") : t("Afficher le temps restant")
-            }
-            aria-pressed={player.remaining()}
-            onClick={player.toggleTime}
-          >
-            {player.remaining() && state().duration_ms !== null
-              ? `−${time(Math.max(0, state().duration_ms! - position()))}`
-              : time(state().duration_ms)}
-          </button>
-        </div>
-      </div>
+        }
+      />
       <div class="player-options">
         <Show
           when={active()}

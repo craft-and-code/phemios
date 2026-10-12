@@ -548,16 +548,18 @@ legend {
   background: var(--accent);
 }
 
-/* Equal outer columns anchor the transport to the window centre, not title width. */
+/* Equal outer columns and fixed rows keep every transport on the same footer axes. */
 .player-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(300px, 39vw, 620px) minmax(0, 1fr);
+  height: 80px;
 }
 .player-bar .transport {
   display: grid;
   width: 100%;
   min-width: 0;
   justify-self: center;
+  grid-template-rows: 38px 28px;
 }
 .player-bar .player-options {
   justify-self: end;
@@ -687,4 +689,23 @@ legend {
 }
 .advanced-search-action:hover {
   color: var(--accent);
+}
+
+/* Errors remain accessible without changing the cover, title or transport positions. */
+.player-bar .now-playing > span {
+  position: relative;
+}
+.player-bar .playback-error {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-bar .now-playing > span > small:not(.playback-error) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
