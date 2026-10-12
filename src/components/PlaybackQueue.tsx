@@ -55,6 +55,15 @@ export function PlaybackQueue(props: { onClose: () => void }) {
         <button
           class="icon-button quiet"
           disabled={!reorderable() || player.queue().length < 2}
+          aria-label={t("Rétablir l’ordre initial de la liste de lecture")}
+          title={t("Rétablir l’ordre initial de la liste de lecture")}
+          onClick={() => reorder(originalQueueOrder(order()))}
+        >
+          <Icon name="ordered" />
+        </button>
+        <button
+          class="icon-button quiet"
+          disabled={!reorderable() || player.queue().length < 2}
           aria-label={t("Trier la liste de lecture par titre")}
           title={t("Trier la liste de lecture par titre")}
           onClick={() =>
@@ -77,15 +86,6 @@ export function PlaybackQueue(props: { onClose: () => void }) {
           <Icon name="reverse" />
         </button>
         <QueueLyrics feedbackHost={feedbackHost} />
-        <button
-          class="icon-button quiet"
-          disabled={!reorderable() || player.queue().length < 2}
-          aria-label={t("Rétablir l’ordre initial de la liste de lecture")}
-          title={t("Rétablir l’ordre initial de la liste de lecture")}
-          onClick={() => reorder(originalQueueOrder(order()))}
-        >
-          <Icon name="ordered" />
-        </button>
         <QueueSave />
       </div>
       <div class="queue-notices" ref={setFeedbackHost} />

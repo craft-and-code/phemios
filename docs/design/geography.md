@@ -12,3 +12,5 @@ D3 clips complete country polygons at the 90-degree horizon instead of joining o
 The globe and accessible country choices occupy a sticky left column, with results on the right. Below 700 px of usable catalogue width they stack, with a smaller 240 px globe above results. Its caption and optional instructions remain below the globe; zoom/reset controls have independent centred 32 px hit targets. Only the accessible Tous selector resets country selection. Changing result counts or an empty result cannot collapse the globe panel. Command/Control additive selection remains available.
 
 Browser acceptance covers rotation, controls, stable empty-result height and both responsive layouts. Native bundle launch succeeds; a computer-control failure prevented completion of authenticated native detail acceptance in this refinement. Other-platform native rendering remains separate acceptance.
+
+The shared globe panel suppresses text selection across its descendants. This does not disable country picking, explicit rotation, zoom or accessible controls.

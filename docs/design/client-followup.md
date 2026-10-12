@@ -58,7 +58,7 @@ CountryGlobe accepts an optional typed, readonly geometry loader, forwarded by C
 
 Favorites, rated albums, tags, moods, collections and history share the selection header boundary; account access notices follow that boundary with one common margin. A selected M3U uses non-suspending resource snapshots with explicit initial values, guarded by the captured source/account/selection. Its loading indicator belongs to the positioned content pane, leaving the file list mounted and scrollable.
 
-The globe panel has no border and its rectangular canvas has no focus outline. Canvas margins are inert for pointer picks/drags/zoom; keyboard focus is drawn on the sphere itself. Picking and interaction admission share the same radius computation.
+The globe panel and its descendants suppress text selection while retaining country selection, rotation and keyboard interaction. The globe panel has no border and its rectangular canvas has no focus outline. Canvas margins are inert for pointer picks/drags/zoom; keyboard focus is drawn on the sphere itself. Picking and interaction admission share the same radius computation.
 
 Queue lyric downloads distinguish a bulk operation from an individual reference from admission onward. Only the actual bulk operation animates the batch control; the individual action remains cancellable while waiting for task admission. Its number is aligned with the title, with the lyric glyph underneath. Retained words remain white and unavailable acquisition remains muted. The hover/focus Stop uses a shared glyph whose visibility must not be overridden by queue-specific layout selectors.
 
@@ -66,4 +66,8 @@ Radio visibility tracks the fixed owning SVG viewport, never the changing path b
 
 ## Reviewed imports and transport feedback (2026-10-12)
 
-Settings adds the [Roon album-export review](player-imports.md), with explicit private-field mapping and source/account capture. Unknown Audirvana/Tune personal export formats remain disabled. Podcast subscription uses the shared ActionButton activity in place; the radio failure explanation wraps in an overlay above the fixed footer, including narrow layouts, rather than truncating or shifting controls. Queue original-order restoration sorts stable logical occurrence indices; it preserves repeated track references, multiple album numbering and the active audio occurrence. Lyrics remains the third queue action.
+Settings adds the [Roon album-export review](player-imports.md), with explicit private-field mapping and source/account capture. Unknown Audirvana/Tune personal export formats remain disabled. Podcast subscription uses the shared ActionButton activity in place; the radio failure explanation wraps in an overlay above the fixed footer, including narrow layouts, rather than truncating or shifting controls. Queue original-order restoration sorts stable logical occurrence indices; it preserves repeated track references, multiple album numbering and the active audio occurrence. Original-order restoration is the first queue action, followed by alphabetical sort, reversal, lyrics and the save controls.
+
+## Shared controls and lyric presentation (2026-10-12)
+
+The props-only RSS form owns empty-input admission and shares ActionButton with the rest of the interface. Leading-icon actions compensate for internal SVG whitespace without changing their request-time geometry. Tags reuse the same personal-header bottom gap rather than adding another choice-row margin. Floating lyrics render only their foreground words: the duplicate shadow layer, inherited text shadows and word extrusion are removed while entry, drift and foreground depth remain. These presentation changes do not alter account storage, queue occurrence policy or audio playback.

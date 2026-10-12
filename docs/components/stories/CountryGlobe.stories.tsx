@@ -44,5 +44,7 @@ export const Interactive: Story = {
     const canvas = within(canvasElement);
     await waitFor(() => expect(canvas.getByRole("combobox", { name: t("Pays") })).toBeVisible());
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
+    expect(getComputedStyle(canvasElement.querySelector(".globe-panel")!).userSelect).toBe("none");
+    expect(getComputedStyle(canvas.getByRole("img", { name: /Globe/ })).userSelect).toBe("none");
   },
 };

@@ -547,3 +547,7 @@ button:is(:hover, :focus-visible) .activity-glyph > .activity-stop {
 .page-sticky-header .choices {
   margin-block: 0;
 }
+
+.page-sticky-header .tag-choices {
+  margin-block: 12px 0;
+}

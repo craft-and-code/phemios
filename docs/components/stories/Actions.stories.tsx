@@ -52,6 +52,13 @@ export const PodcastSubscribe: Story = {
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByRole("button", { name: "S’abonner" });
     const baseline = button.getBoundingClientRect();
+    const svg = button.querySelector("svg")!,
+      path = svg.querySelector("path")!;
+    const icon = svg.getBoundingClientRect(),
+      label = button.querySelector("span:not(.spinner)")!.getBoundingClientRect();
+    const left = icon.left + (path.getBBox().x * icon.width) / 24 - baseline.left;
+    const right = baseline.right - label.right;
+    expect(Math.abs(left - right)).toBeLessThan(1.2);
     await userEvent.click(button);
     await expect(button).toBeDisabled();
     await expect(button).toHaveAttribute("aria-busy", "true");

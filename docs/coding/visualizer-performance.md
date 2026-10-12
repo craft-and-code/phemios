@@ -21,3 +21,7 @@ A compiled browser fixture mounts the real components without accounts, provider
 During settled dense/floating draws, the former per-draw style read and two canvas-dimension reads become zero. Draw medians in this short browser sample change from 0.7/0.9/0.8/0.2 ms to 0.6/0.7/0.6/0.2 ms for sphere/waves/relief/floating. Paused and unmounted sampling records no new draws. Timings remain host-dependent, include canvas work and are not a production FPS guarantee or memory benchmark.
 
 The same browser fixture verifies a resize/theme refresh at 850 CSS pixels and a return at 900 CSS pixels (2× backing width 1,700 then 1,800), with the expected accent. Simulated hidden-state resize and ten preference notifications perform zero draws/style/dimension reads, then visibility return restores the actual dimensions. This exercises the component admission guard; native host visibility acceptance remains separate.
+
+## Shadow-free foreground follow-up (2026-10-12)
+
+Floating words now render once, without the duplicate blurred decorative layer or text shadows. Grouping, foreground depth, entry and drift are retained. The real component story verifies nonempty groups and computed shadow absence; this change makes no new RSS/FPS or native foreground-animation claim.

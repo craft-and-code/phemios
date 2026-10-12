@@ -156,14 +156,9 @@ export function PlaybackLyrics(props: {
             >
               <Show when={value.treatment} fallback={value.text}>
                 {(treatment) => (
-                  <>
-                    <span class="lyric-shadow" aria-hidden="true">
-                      <LyricWords treatment={treatment()} />
-                    </span>
-                    <span class="lyric-foreground">
-                      <LyricWords treatment={treatment()} />
-                    </span>
-                  </>
+                  <span class="lyric-foreground">
+                    <LyricWords treatment={treatment()} />
+                  </span>
                 )}
               </Show>
             </span>
@@ -174,7 +169,7 @@ export function PlaybackLyrics(props: {
   );
 }
 
-/** Foreground and decorative shadow share exact grouping and typography, without duplicate spoken words. */
+/** Render the bounded readable groups once, retaining their measured typography and depth. */
 function LyricWords(props: { treatment: ReturnType<typeof lyricTreatment> }) {
   return (
     <span class="lyric-words">

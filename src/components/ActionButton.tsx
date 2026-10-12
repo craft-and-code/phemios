@@ -8,7 +8,7 @@ export function ActionButton(
   return (
     <button
       {...rest}
-      class={`action-button ${own.class ?? ""}`}
+      class={`action-button ${own.icon ? "action-button-with-icon" : ""} ${own.class ?? ""}`}
       disabled={own.disabled || own.busy}
       aria-busy={own.busy || undefined}
     >

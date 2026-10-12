@@ -328,6 +328,11 @@
   overflow-y: auto;
   min-width: 0;
 }
+.globe-panel,
+.globe-panel * {
+  -webkit-user-select: none;
+  user-select: none;
+}
 .globe-panel {
   margin: 0 0 16px;
   border-radius: 12px;

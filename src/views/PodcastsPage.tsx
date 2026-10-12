@@ -1,4 +1,4 @@
-import { ActionButton } from "../components/ActionButton";
+import { PodcastSubscribeForm } from "../components/PodcastSubscribeForm";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
@@ -85,34 +85,13 @@ export function PodcastsPage(props: { query: string }) {
       <Show when={subscriptions.loading()}>
         <PageLoader />
       </Show>
-      <form
-        class="podcast-add"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void load(url());
-        }}
-      >
-        <label>
-          {t("Lien RSS du podcast")}
-          <input
-            type="url"
-            required
-            placeholder="https://example.org/podcast.xml"
-            value={url()}
-            onInput={(e) => setUrl(e.currentTarget.value)}
-            disabled={!!busy() || !subscriptions.writable()}
-          />
-        </label>
-        <ActionButton
-          type="submit"
-          class="primary"
-          icon="plus"
-          busy={busy() === "subscribe"}
-          disabled={!!busy() || !isNative() || !subscriptions.writable()}
-        >
-          {t("S’abonner")}
-        </ActionButton>
-      </form>
+      <PodcastSubscribeForm
+        url={url()}
+        busy={busy() === "subscribe"}
+        disabled={!!busy() || !isNative() || !subscriptions.writable()}
+        onInput={setUrl}
+        onSubscribe={() => void load(url())}
+      />
       <Show when={error() || subscriptions.error() || library.podcastListened.error()}>
         <Feedback
           error
