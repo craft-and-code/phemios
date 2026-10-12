@@ -6,6 +6,7 @@ npm run lint
 npm test
 npm run build
 npm run docs:ts
+npm run components:check
 npm run check:tauri
 node scripts/prepare-engine.mjs
 cargo fmt --all -- --check

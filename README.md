@@ -101,6 +101,10 @@ Podcasts: connect an account, add a public RSS feed in Music sources → Podcast
 
 Playback now includes a complete-track seekable waveform, native shuffle and an optional 3D particle workspace opened from the footer icon, with queue and local timed lyrics. Settings separates language and eight colours, supports portable theme import/export and synchronizes supported non-secret preferences per Aède account. Ambiances starts with transparent configurable tag/genre rules; automatic emotion inference is not implemented. Updated Aède is required for the additive waveform, preference, mood and exact-track lyrics contracts; rebuild and restart external servers after upgrading. See [native integration](docs/design/native-integration.md), [managed local engine](docs/design/local-engine.md) and [mood discovery](docs/design/mood-discovery.md).
 
+## Component explorer
+
+Run `npm run components:dev` to open the development-only Storybook at `http://127.0.0.1:6006`. Its eight real SolidJS components expose editable controls, documented states and five interaction scenarios. Fixtures use memory only and never connect Aède, access accounts or invoke native capabilities. Configuration and the extension guide live in [docs/components](docs/components/README.md); `npm run components:check` applies strict types and builds the isolated explorer as part of the complete gate. The desktop bundle does not contain Storybook.
+
 ## Website preview
 
 The separate bilingual project website lives in [`site/`](site/README.md). Preview it with `python3 -m http.server 1439 --bind 127.0.0.1 --directory site`. It uses local assets and system fonts, links Aède and FlacCompagnon, and introduces the application without inventing a public download URL. No deployment is performed by the desktop build.

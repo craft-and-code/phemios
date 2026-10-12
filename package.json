@@ -16,9 +16,12 @@
     "check": "bash tools/check.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "oxlint src scripts tests vite.config.ts vitest.config.ts",
+    "lint": "oxlint src scripts tests docs/components vite.config.ts vitest.config.ts",
     "build:native": "tauri build --bundles app",
-    "docs:ts": "node scripts/typescript-docs.mjs"
+    "docs:ts": "node scripts/typescript-docs.mjs",
+    "components:dev": "node scripts/component-explorer.mjs dev",
+    "components:build": "node scripts/component-explorer.mjs build",
+    "components:check": "tsc --noEmit -p docs/components/tsconfig.json && npm run components:build"
   },
   "dependencies": {
     "@milkdown/kit": "7.22.2",
@@ -27,11 +30,14 @@
     "solid-js": "1.9.17"
   },
   "devDependencies": {
+    "@storybook/addon-docs": "10.6.1",
     "@tauri-apps/cli": "2.12.1",
     "@types/d3-geo": "3.1.1",
     "@types/node": "26.6.4",
     "oxlint": "1.87.0",
     "prettier": "3.9.9",
+    "storybook": "10.6.1",
+    "storybook-solidjs-vite": "10.7.2",
     "typescript": "7.0.2",
     "vite": "8.3.3",
     "vite-plugin-solid": "2.11.14",
