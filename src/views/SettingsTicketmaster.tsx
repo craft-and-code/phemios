@@ -3,6 +3,7 @@ import { configureConcerts, isNative } from "../platform/desktop";
 import { t } from "../i18n";
 import { ActionButton } from "../components/ActionButton";
 import { Feedback } from "../components/Feedback";
+import { canRemoveConcertKey } from "../library/ticketmaster-config";
 /** The provider secret stays native; only presence is read into the settings form. */
 export function SettingsTicketmaster() {
   const [key, setKey] = createSignal(""),
@@ -62,7 +63,7 @@ export function SettingsTicketmaster() {
           <ActionButton
             type="button"
             icon="trash"
-            disabled={busy() || !configured()?.ready}
+            disabled={!canRemoveConcertKey(isNative(), busy(), configured())}
             onClick={() => void save(true)}
           >
             {t("Supprimer la clé")}

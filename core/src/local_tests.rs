@@ -102,6 +102,7 @@ fn concert_key_is_protected_separate_from_engine_fetch_keys_and_survives_restart
     assert!(engine.set_concert_key("bad?key", false).is_err());
     fs::write(engine.file(), b"broken").unwrap();
     assert!(engine.set_concert_key("abcdefghijklmnop", false).is_err());
+    assert!(engine.set_concert_key("", true).is_err());
     assert_eq!(fs::read(engine.file()).unwrap(), b"broken");
 }
 
@@ -124,4 +125,113 @@ fn dangling_private_config_link_is_refused_and_retained_on_key_update() {
         "A key update must preserve the unreadable config"
     );
     assert_eq!(fs::read_link(engine.file()).unwrap(), missing);
+}
+
+#[cfg(unix)]
+#[test]
+fn private_config_rejects_a_symlink_root_without_reading_or_writing_its_target() {
+    use std::os::unix::fs::symlink;
+    let data = Sandbox::new("symlink-root");
+    let target = data.0.join("target");
+    let mut original = Engine::new(target.clone(), PathBuf::from("missing-engine"));
+    original
+        .keys("fictional-retained-key", "", false, false)
+        .unwrap();
+    let before = fs::read(original.file()).unwrap();
+    let linked = data.0.join("linked");
+    symlink(&target, &linked).unwrap();
+    let mut engine = Engine::new(linked.clone(), PathBuf::from("missing-engine"));
+    assert!(engine.fetch_keys().is_err());
+    assert!(
+        engine
+            .keys("fictional-replacement", "", false, false)
+            .is_err()
+    );
+    assert_eq!(fs::read(original.file()).unwrap(), before);
+    assert_eq!(fs::read_link(linked).unwrap(), target);
+}
+
+#[cfg(unix)]
+#[test]
+fn private_config_rejects_existing_group_or_world_writable_roots_and_preserves_them() {
+    use std::os::unix::fs::PermissionsExt;
+    let data = Sandbox::new("writable-root");
+    for mode in [0o770, 0o707] {
+        let root = data.0.join(format!("root-{mode:o}"));
+        let mut engine = Engine::new(root.clone(), PathBuf::from("missing-engine"));
+        engine
+            .keys("fictional-retained-key", "", false, false)
+            .unwrap();
+        let before = fs::read(engine.file()).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(mode)).unwrap();
+        assert!(engine.fetch_keys().is_err());
+        assert!(
+            engine
+                .keys("fictional-replacement", "", false, false)
+                .is_err()
+        );
+        assert_eq!(fs::read(engine.file()).unwrap(), before);
+        assert_eq!(
+            fs::metadata(&root).unwrap().permissions().mode() & 0o777,
+            mode
+        );
+        assert!(!root.join("desktop.pending").exists());
+        fs::remove_file(engine.file()).unwrap();
+        assert!(
+            engine
+                .keys("fictional-replacement", "", false, false)
+                .is_err()
+        );
+        assert!(!engine.file().exists());
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn new_private_config_root_is_mode_700_without_changing_an_existing_safe_root() {
+    use std::os::unix::fs::PermissionsExt;
+    let data = Sandbox::new("private-root-mode");
+    let root = data.0.join("new");
+    let mut engine = Engine::new(root.clone(), PathBuf::from("missing-engine"));
+    engine
+        .keys("fictional-retained-key", "", false, false)
+        .unwrap();
+    assert_eq!(
+        fs::metadata(&root).unwrap().permissions().mode() & 0o777,
+        0o700
+    );
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o750)).unwrap();
+    engine
+        .keys("fictional-replacement", "", false, false)
+        .unwrap();
+    assert_eq!(
+        fs::metadata(&root).unwrap().permissions().mode() & 0o777,
+        0o750
+    );
+}
+
+#[test]
+fn invalid_retained_concert_key_can_be_explicitly_removed_without_losing_other_config() {
+    let data = Sandbox::new("remove-invalid-concert-key");
+    let mut engine = Engine::new(data.0.clone(), PathBuf::from("missing-engine"));
+    engine
+        .keys("fictional-fanart-key", "", false, false)
+        .unwrap();
+    for invalid in [json!("invalid?fixture"), json!(42)] {
+        let mut value = engine.config().unwrap();
+        value["ticketmaster"] = invalid;
+        value["future-setting"] = json!({"retained":true});
+        engine.save(&value).unwrap();
+        assert!(engine.concert_key().is_err());
+        engine.set_concert_key("", true).unwrap();
+        assert!(engine.concert_key().unwrap().is_none());
+        assert_eq!(
+            engine.fetch_keys().unwrap(),
+            json!({"fanart":"fictional-fanart-key"})
+        );
+        assert_eq!(
+            engine.config().unwrap()["future-setting"],
+            json!({"retained":true})
+        );
+    }
 }

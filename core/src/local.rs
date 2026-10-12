@@ -19,6 +19,8 @@ pub struct Engine {
 }
 impl Engine {
     /// Construct a manager for a fixed bundled executable and isolated app data.
+    /// Unix roots reject shared write access; Windows retains inherited ACLs.
+    /// Metadata admission does not provide race-proof filesystem confinement.
     pub fn new(root: PathBuf, executable: PathBuf) -> Self {
         Self {
             root,
@@ -31,7 +33,31 @@ impl Engine {
     fn file(&self) -> PathBuf {
         self.root.join("desktop.json")
     }
+    // Admit the root itself before private reads/publication. This metadata
+    // check does not provide race-proof confinement of ancestor directories.
+    fn validate_root(&self) -> Result<(), String> {
+        let meta = match fs::symlink_metadata(&self.root) {
+            Ok(meta) => meta,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(_) => return Err("Dossier local inaccessible.".into()),
+        };
+        if !meta.is_dir() {
+            return Err("Dossier local inaccessible.".into());
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if meta.permissions().mode() & 0o022 != 0 {
+                return Err(
+                    "Les permissions de la configuration locale ne protègent pas ses secrets."
+                        .into(),
+                );
+            }
+        }
+        Ok(())
+    }
     fn config(&self) -> Result<Value, String> {
+        self.validate_root()?;
         let path = self.file();
         let meta = match fs::symlink_metadata(&path) {
             Ok(meta) => meta,
@@ -71,7 +97,18 @@ impl Engine {
         Ok(value)
     }
     fn save(&self, value: &Value) -> Result<(), String> {
-        fs::create_dir_all(&self.root).map_err(|_| "Dossier local inaccessible.")?;
+        self.validate_root()?;
+        let mut directory = fs::DirBuilder::new();
+        directory.recursive(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            directory.mode(0o700);
+        }
+        directory
+            .create(&self.root)
+            .map_err(|_| "Dossier local inaccessible.")?;
+        self.validate_root()?;
         let tmp = self.root.join("desktop.pending");
         let mut options = fs::OpenOptions::new();
         options.write(true).create_new(true);
@@ -336,7 +373,9 @@ impl Engine {
     }
     /// Publish or explicitly remove the concert key without starting an engine or exposing it.
     pub fn set_concert_key(&self, key: &str, remove: bool) -> Result<(), String> {
-        self.concert_key()?;
+        if !remove {
+            self.concert_key()?;
+        }
         let mut value = self.config()?;
         if remove {
             value
