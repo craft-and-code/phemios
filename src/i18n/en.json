@@ -1536,5 +1536,6 @@
   "Ce fichier M3U doit être un texte UTF-8 sans caractère NUL.": "This M3U file must be UTF-8 text without NUL characters.",
   "Le chemin d’un fichier M3U n’est pas un texte UTF-8 valide ou est trop long.": "An M3U path is invalid UTF-8 or too long.",
   "L’inventaire M3U a pris trop de temps. Vérifiez vos disques et réessayez.": "The M3U inventory took too long. Check your drives and try again.",
-  "Ce fichier M3U est momentanément illisible. Réessayez.": "This M3U file is temporarily unreadable. Try again."
+  "Ce fichier M3U est momentanément illisible. Réessayez.": "This M3U file is temporarily unreadable. Try again.",
+  "Le son de réglage radio n’est pas disponible.": "Radio tuning sound is unavailable."
 }
