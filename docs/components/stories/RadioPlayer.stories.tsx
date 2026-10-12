@@ -106,6 +106,14 @@ export const StableGeometry: Story = {
     for (const name of ["Connecting", "Playing", "Error"]) {
       await userEvent.click(canvas.getByRole("button", { name }));
       const actual = geometry(radio);
+      if (name === "Error") {
+        const message = radio.querySelector<HTMLElement>(".playback-error")!;
+        expect(message.clientWidth).toBeGreaterThan(100);
+        expect(message.clientHeight).toBeGreaterThan(20);
+        expect(getComputedStyle(message).textOverflow).not.toBe("ellipsis");
+        expect(message.scrollWidth).toBeLessThanOrEqual(message.clientWidth + 1);
+        expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
+      }
       actual.forEach((center, index) =>
         expect(Math.abs(center - baseline[index]!)).toBeLessThan(0.6),
       );

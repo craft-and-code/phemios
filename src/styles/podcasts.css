@@ -75,10 +75,6 @@
   }
 }
 
-.podcast-add > .job-activity {
-  flex-basis: 100%;
-}
-
 .podcast-confirmation {
   display: flex;
   flex-wrap: wrap;

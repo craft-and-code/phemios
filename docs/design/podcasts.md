@@ -10,7 +10,7 @@ Subscriptions and retained episode metadata live in bounded native documents pri
 
 Podcast, radio and library playback are mutually exclusive. The footer exposes finite duration/position, pause/resume without rejoining or resetting, seek, mute/volume and attached Stop. Late starts cannot revive stopped media; stalled/unsupported streams fail visibly. Feed refresh and navigation never imply playback. Retained subscriptions remain browsable while their owner is connected; logout/source replacement immediately hides the old account’s state and stops its podcast playback. Episode audio requires its publisher’s availability. Physical sound, cross-platform codecs and other providers remain separate acceptance work.
 
-Subscription acquisition exposes activity beneath the input row. Refresh instead replaces its own glyph with an accessible spinner for the real request lifetime, restoring the glyph on success or failure; both actions prevent concurrent feed requests.
+Subscription acquisition replaces the glyph inside the shared Subscribe action for the request lifetime, without changing button dimensions. Refresh instead replaces its own glyph with an accessible spinner for the real request lifetime, restoring the glyph on success or failure; both actions prevent concurrent feed requests.
 
 ## Explicit episode downloads
 

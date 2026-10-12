@@ -709,3 +709,25 @@ legend {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* A failed live stream explains itself above the fixed footer, without moving controls. */
+.radio-player .now-playing .playback-error:not(:empty) {
+  display: block;
+  z-index: 2;
+  inset-inline: auto;
+  left: 0;
+  top: auto;
+  bottom: calc(100% + 22px);
+  width: min(440px, calc(100vw - 110px));
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid #efb6aa;
+  border-radius: 8px;
+  background: var(--player);
+  box-shadow: 0 8px 24px #0004;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.5;
+}

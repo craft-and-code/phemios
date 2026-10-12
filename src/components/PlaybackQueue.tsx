@@ -5,7 +5,7 @@ import { locale } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
-import { moveQueueOccurrence } from "../library/queue-order";
+import { originalQueueOrder, moveQueueOccurrence } from "../library/queue-order";
 import { Feedback } from "./Feedback";
 import { Icon } from "./Icon";
 /** Occurrence edits share the native queue generation and leave the current audio untouched. */
@@ -77,6 +77,15 @@ export function PlaybackQueue(props: { onClose: () => void }) {
           <Icon name="reverse" />
         </button>
         <QueueLyrics feedbackHost={feedbackHost} />
+        <button
+          class="icon-button quiet"
+          disabled={!reorderable() || player.queue().length < 2}
+          aria-label={t("Rétablir l’ordre initial de la liste de lecture")}
+          title={t("Rétablir l’ordre initial de la liste de lecture")}
+          onClick={() => reorder(originalQueueOrder(order()))}
+        >
+          <Icon name="ordered" />
+        </button>
         <QueueSave />
       </div>
       <div class="queue-notices" ref={setFeedbackHost} />

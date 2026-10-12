@@ -17,3 +17,10 @@ export function moveQueueOccurrence(order: readonly number[], from: number, to: 
   result.splice(target, 0, from);
   return result;
 }
+
+/** Restore original logical occurrence indices, including repeated references and multiple albums. */
+export function originalQueueOrder(order: readonly number[]): number[] {
+  if (!order.length) return [];
+  moveQueueOccurrence(order, order[0]!, order[0]!);
+  return [...order].sort((a, b) => a - b);
+}

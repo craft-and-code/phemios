@@ -1,3 +1,4 @@
+import { ActionButton } from "../components/ActionButton";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
@@ -102,12 +103,15 @@ export function PodcastsPage(props: { query: string }) {
             disabled={!!busy() || !subscriptions.writable()}
           />
         </label>
-        <button class="primary" disabled={!!busy() || !isNative() || !subscriptions.writable()}>
+        <ActionButton
+          type="submit"
+          class="primary"
+          icon="plus"
+          busy={busy() === "subscribe"}
+          disabled={!!busy() || !isNative() || !subscriptions.writable()}
+        >
           {t("S’abonner")}
-        </button>
-        <Show when={busy() === "subscribe"}>
-          <PageLoader inline label={t("Chargement du podcast…")} />
-        </Show>
+        </ActionButton>
       </form>
       <Show when={error() || subscriptions.error() || library.podcastListened.error()}>
         <Feedback
