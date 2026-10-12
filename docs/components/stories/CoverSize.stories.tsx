@@ -18,7 +18,7 @@ const meta = {
     return (
       <>
         <div class="component-size">
-          <CoverSize value={value()} disabled={args.disabled} onChange={change} />
+          <CoverSize {...args} value={value()} onChange={change} />
         </div>
         <output class="component-readout">{value()} px</output>
       </>
@@ -90,6 +90,21 @@ export const DisabledReset: Story = {
     await expect(canvas.getByRole("slider", { name: t("Taille des pochettes") })).toBeDisabled();
     await expect(canvas.getByRole("slider", { name: t("Taille des pochettes") })).toHaveValue(
       "260",
+    );
+  },
+};
+
+export const AccountDefaultReset: Story = {
+  args: { value: 240, resetValue: 190 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(
+      canvas.getByRole("button", {
+        name: t("Taille des pochettes · double-clic pour réinitialiser"),
+      }),
+    );
+    await expect(canvas.getByRole("slider", { name: t("Taille des pochettes") })).toHaveValue(
+      "190",
     );
   },
 };

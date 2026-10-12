@@ -1,4 +1,11 @@
-import { createMemo, createRoot, createSignal } from "solid-js";
+import {
+  createComponent,
+  createMemo,
+  createRoot,
+  createSignal,
+  Suspense,
+  type JSX,
+} from "solid-js";
 import { expect, it, vi } from "vitest";
 import { createM3UBrowser, type M3UScope } from "./m3u-browser";
 const id = `m3u-file-${"a".repeat(64)}`;
@@ -199,4 +206,45 @@ it("admits a download acknowledgement only for the same owner, category, query, 
   }
   dispose();
   expect(read.isCurrentFile(initial, id)).toBe(false);
+});
+
+it("keeps the workspace mounted while only the selected M3U content loads", async () => {
+  let reply!: (value: unknown) => void;
+  let dispose!: () => void;
+  let read!: ReturnType<typeof createM3UBrowser>;
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createComponent(Suspense, {
+      fallback: "whole-page-loader",
+      get children() {
+        read = createM3UBrowser(
+          () => initial,
+          async (path) =>
+            path.endsWith("status")
+              ? status
+              : path.endsWith(id)
+                ? new Promise((resolve) => {
+                    reply = resolve;
+                  })
+                : page,
+        );
+        return createMemo(
+          () => `${read.page()?.total ?? 0}:${read.detail()?.id ?? "content-loader"}`,
+        ) as unknown as JSX.Element;
+      },
+    });
+  });
+  const rendered = () => {
+    let value: unknown = view;
+    while (typeof value === "function") value = value();
+    return value;
+  };
+  await settle();
+  read.select(id);
+  await settle();
+  expect(rendered()).toBe("1:content-loader");
+  reply(file);
+  await settle();
+  expect(rendered()).toBe(`1:${id}`);
+  dispose();
 });

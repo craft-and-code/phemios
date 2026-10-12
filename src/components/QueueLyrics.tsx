@@ -28,7 +28,12 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
   createEffect(on(identity, () => feedback.reset()));
   createEffect(
     on(
-      () => !job.busy() && !job.failed() && !!job.message() && job.retained()?.complete === true,
+      () =>
+        job.bulkOperation() &&
+        !job.busy() &&
+        !job.failed() &&
+        !!job.message() &&
+        job.retained()?.complete === true,
       (complete, previous) => {
         if (complete && !previous) feedback.complete();
       },
@@ -40,26 +45,27 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
         class="icon-button quiet"
         classList={{ "download-complete": feedback.phase() === "complete" }}
         aria-label={
-          job.busy()
+          job.bulkBusy()
             ? t("Arrêter le téléchargement des paroles")
             : t("Télécharger les paroles de la liste")
         }
         title={
-          job.busy()
+          job.bulkBusy()
             ? t("Arrêter le téléchargement des paroles")
             : t("Télécharger les paroles de la liste")
         }
         disabled={
-          !job.busy() &&
-          (!job.eligible() || job.retainedLoading() || job.retained()?.complete === true)
+          (job.busy() && !job.bulkBusy()) ||
+          (!job.bulkBusy() &&
+            (!job.eligible() || job.retainedLoading() || job.retained()?.complete === true))
         }
         onClick={() => {
-          if (job.busy()) void job.cancel();
+          if (job.bulkBusy()) void job.cancel();
           else void job.acquire();
         }}
       >
         <Show
-          when={job.busy()}
+          when={job.bulkBusy()}
           fallback={<Icon name={feedback.phase() === "complete" ? "check" : "lyrics-download"} />}
         >
           <ActivityGlyph cancellable />

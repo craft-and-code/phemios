@@ -39,6 +39,7 @@ export function createQueueLyrics(library: {
       });
   const availability = createQueueLyricAvailability({ ...library, jobs: library.tasks.jobs });
   const [acquiring, setAcquiring] = createSignal("");
+  const [individual, setIndividual] = createSignal<string>();
   const feedbackCurrent = () => {
     const owners = feedbackOwners();
     return (
@@ -51,6 +52,7 @@ export function createQueueLyrics(library: {
   };
   async function acquire(reference?: string) {
     if (busy() || !eligible(reference)) return;
+    setIndividual(reference);
     setBusy(true);
     setFailed(false);
     setMessage("");
@@ -164,6 +166,12 @@ export function createQueueLyrics(library: {
   }
   return {
     busy,
+    bulkOperation: () => feedbackCurrent() && individual() === undefined,
+    bulkBusy: () => feedbackCurrent() && busy() && individual() === undefined,
+    trackBusy: (reference: string) =>
+      feedbackCurrent() &&
+      busy() &&
+      (individual() === reference || (individual() === undefined && acquiring() === reference)),
     message: () => (feedbackCurrent() ? message() : ""),
     failed: () => feedbackCurrent() && failed(),
     eligible,

@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
 import { batch, createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
@@ -82,33 +83,35 @@ export function M3UPage(props: { query: string }) {
   }
   return (
     <section class="page m3u-page">
-      <div class="m3u-toolbar">
-        <div class="choices" aria-label={t("Origine des listes M3U")}>
-          <button aria-pressed={kind() === "files"} onClick={() => choose("files")}>
-            {t("Fichiers de la bibliothèque")}
-          </button>
-          <button aria-pressed={kind() === "exports"} onClick={() => choose("exports")}>
-            {t("Exports enregistrés")}
+      <StickyHeader>
+        <div class="m3u-toolbar">
+          <div class="choices" aria-label={t("Origine des listes M3U")}>
+            <button aria-pressed={kind() === "files"} onClick={() => choose("files")}>
+              {t("Fichiers de la bibliothèque")}
+            </button>
+            <button aria-pressed={kind() === "exports"} onClick={() => choose("exports")}>
+              {t("Exports enregistrés")}
+            </button>
+          </div>
+          <Show when={reads.page()}>
+            {(page) => <span class="muted">{t("{0} liste(s)", page().total)}</span>}
+          </Show>
+          <button
+            class="icon-button"
+            aria-label={t("Actualiser les listes M3U")}
+            title={t("Actualiser les listes M3U")}
+            disabled={!library.session() || reads.refreshing()}
+            onClick={() => {
+              void reads.refetch();
+              if (reads.selected()) void reads.retryDetail();
+            }}
+          >
+            <Show when={reads.refreshing()} fallback={<Icon name="refresh" />}>
+              <span class="spinner" />
+            </Show>
           </button>
         </div>
-        <Show when={reads.page()}>
-          {(page) => <span class="muted">{t("{0} liste(s)", page().total)}</span>}
-        </Show>
-        <button
-          class="icon-button"
-          aria-label={t("Actualiser les listes M3U")}
-          title={t("Actualiser les listes M3U")}
-          disabled={!library.session() || reads.refreshing()}
-          onClick={() => {
-            void reads.refetch();
-            if (reads.selected()) void reads.retryDetail();
-          }}
-        >
-          <Show when={reads.refreshing()} fallback={<Icon name="refresh" />}>
-            <span class="spinner" />
-          </Show>
-        </button>
-      </div>
+      </StickyHeader>
       <AccountNotice />
       <Feedback error message={reads.error()} />
       <Show
@@ -164,9 +167,9 @@ export function M3UPage(props: { query: string }) {
               )}
             </For>
           </ul>
-          <section class="m3u-preview">
+          <section class="m3u-preview" aria-busy={reads.detailLoading()}>
             <Show when={reads.detailLoading()}>
-              <PageLoader inline />
+              <PageLoader />
             </Show>
             <Show when={reads.detailError()}>
               <div class="error-retry">

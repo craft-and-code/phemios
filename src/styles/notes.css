@@ -268,3 +268,14 @@
 .tag-pill:has(> .tag-remove) {
   padding-right: 3px;
 }
+
+.annotation-note-heading {
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+}
+.annotation-note-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}

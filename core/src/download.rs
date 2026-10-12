@@ -206,8 +206,12 @@ pub fn publish_wikipedia(
 
 /// Export only the exact owner's server-confirmed Markdown note with collision-safe publication.
 /// Caller titles and paths never choose the destination; unsaved UI drafts are not accepted.
-pub fn publish_note(folder: &Path, reference: &str, response: &Value) -> Result<PathBuf, String> {
-    use std::hash::{Hash, Hasher};
+pub fn publish_note(
+    folder: &Path,
+    reference: &str,
+    response: &Value,
+    detail: &Value,
+) -> Result<PathBuf, String> {
     if reference.len() > 4096
         || !["artist:", "release:", "track:"].iter().any(|prefix| {
             reference
@@ -216,6 +220,7 @@ pub fn publish_note(folder: &Path, reference: &str, response: &Value) -> Result<
         })
         || response["reference"].as_str() != Some(reference)
         || response["annotation"]["reference"].as_str() != Some(reference)
+        || detail["reference"].as_str() != Some(reference)
     {
         return Err("Identité de note personnelle invalide.".into());
     }
@@ -223,12 +228,33 @@ pub fn publish_note(folder: &Path, reference: &str, response: &Value) -> Result<
         .as_str()
         .filter(|text| !text.trim().is_empty() && text.len() <= 1024 * 1024 && !text.contains('\0'))
         .ok_or("Aucune note personnelle disponible à télécharger.")?;
-    let mut hash = std::collections::hash_map::DefaultHasher::new();
-    reference.hash(&mut hash);
-    publish_named(
-        folder,
-        &format!("phemios-note-{:016x}", hash.finish()),
-        "md",
-        note.as_bytes(),
-    )
+    let field = if reference.starts_with("artist:") {
+        "name"
+    } else {
+        "title"
+    };
+    let title = detail[field]
+        .as_str()
+        .filter(|title| !title.trim().is_empty() && title.len() <= 4096)
+        .ok_or("Nom de note personnelle invalide.")?;
+    // Bound UTF-8 bytes rather than characters, including non-Latin catalogue names.
+    let mut safe_title = String::new();
+    for character in title.chars() {
+        let character = if character.is_alphanumeric()
+            || matches!(character, ' ' | '-' | '_' | '(' | ')' | '\'')
+        {
+            character
+        } else {
+            '-'
+        };
+        if safe_title.len() + character.len_utf8() > 180 {
+            break;
+        }
+        safe_title.push(character);
+    }
+    let title = safe_title.trim_matches([' ', '-']);
+    if title.is_empty() {
+        return Err("Nom de note personnelle invalide.".into());
+    }
+    publish_named(folder, &format!("Note-{title}"), "md", note.as_bytes())
 }

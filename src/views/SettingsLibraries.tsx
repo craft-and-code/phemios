@@ -1,3 +1,4 @@
+import { CoverSize } from "../components/CoverSize";
 import { ServerRoots } from "../components/ServerRoots";
 import { scanRootSelection } from "../library/server-roots";
 import { Feedback } from "../components/Feedback";
@@ -82,6 +83,17 @@ export function SettingsLibraries() {
       </Show>
       <div class="settings-card">
         <h2>{t("Affichage de la bibliothèque")}</h2>
+        <p>{t("Taille générale des pochettes")}</p>
+        <CoverSize
+          value={prefs.value().coverSize}
+          disabled={false}
+          onChange={(coverSize) => prefs.update({ coverSize, coverSizes: {} })}
+        />
+        <p class="muted">
+          {t(
+            "Ce réglage s’applique à Albums, Compilations et Genres. Leurs réglettes permettent ensuite une taille différente par vue.",
+          )}
+        </p>
         <label class="check">
           <input
             type="checkbox"

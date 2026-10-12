@@ -1,4 +1,4 @@
-import { ActivityGlyph } from "./ActivityGlyph";
+import { QueueTrackLeading } from "./QueueTrackLeading";
 import { QueueLyrics } from "./QueueLyrics";
 import { QueueSave } from "./QueueSave";
 import { locale } from "../i18n";
@@ -203,51 +203,20 @@ export function PlaybackQueue(props: { onClose: () => void }) {
               >
                 <Icon name="grip" />
               </button>
-              <small class="queue-track-number">
-                {row.number}/{row.albumTotal}
-              </small>
-              <Show
-                when={lyrics.available(row.reference) === true}
-                fallback={
-                  <button
-                    class="icon-button quiet queue-lyrics-track"
-                    title={
-                      lyrics.acquiring() === row.reference
-                        ? t("Arrêter le téléchargement des paroles")
-                        : t("Télécharger les paroles")
-                    }
-                    aria-label={
-                      lyrics.acquiring() === row.reference
-                        ? t("Arrêter le téléchargement des paroles")
-                        : t("Télécharger les paroles")
-                    }
-                    disabled={
-                      (lyrics.busy() && lyrics.acquiring() !== row.reference) ||
-                      !lyrics.eligible(row.reference)
-                    }
-                    onClick={() => {
-                      if (lyrics.acquiring() === row.reference) void lyrics.cancel();
-                      else void lyrics.acquire(row.reference);
-                    }}
-                  >
-                    <Show
-                      when={lyrics.acquiring() === row.reference}
-                      fallback={<Icon name="lyrics-download" />}
-                    >
-                      <ActivityGlyph cancellable />
-                    </Show>
-                  </button>
+              <QueueTrackLeading
+                number={row.number}
+                albumTotal={row.albumTotal}
+                available={lyrics.available(row.reference) === true}
+                busy={lyrics.trackBusy(row.reference)}
+                disabled={
+                  (lyrics.busy() && !lyrics.trackBusy(row.reference)) ||
+                  !lyrics.eligible(row.reference)
                 }
-              >
-                <span
-                  class="queue-lyrics-track queue-lyrics-retained"
-                  title={t("Paroles disponibles")}
-                  role="img"
-                  aria-label={t("Paroles disponibles")}
-                >
-                  <Icon name="lyrics" />
-                </span>
-              </Show>
+                onAction={() => {
+                  if (lyrics.trackBusy(row.reference)) void lyrics.cancel();
+                  else void lyrics.acquire(row.reference);
+                }}
+              />
               <button
                 class="queue-track"
                 disabled={player.busy()}

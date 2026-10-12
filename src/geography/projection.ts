@@ -77,3 +77,16 @@ export function countryAt(point: Point, countries: readonly Country[]): Country 
     ),
   );
 }
+
+/** Canvas margins are inert; picking and dragging use the same visible sphere radius. */
+export function globePoint(
+  point: Point,
+  width: number,
+  height: number,
+  zoom: number,
+): Point | null {
+  const radius = Math.min(width, height) * 0.42 * zoom;
+  if (!Number.isFinite(radius) || radius <= 0) return null;
+  const normalized: Point = [(point[0] - width / 2) / radius, (point[1] - height / 2) / radius];
+  return normalized.every(Number.isFinite) && Math.hypot(...normalized) <= 1 ? normalized : null;
+}

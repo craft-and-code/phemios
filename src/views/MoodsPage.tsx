@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { createEffect, createResource, createSignal, For, Show } from "solid-js";
@@ -151,36 +152,38 @@ export function MoodsPage() {
   }
   return (
     <section class="page moods-page">
-      <div class="page-heading">
-        <p class="muted">
-          {t(
-            "Des ambiances fondées sur vos tags et genres, avec des critères que vous pouvez modifier.",
-          )}
-        </p>
-        <button
-          class="icon-button"
-          aria-label={t("Créer une ambiance")}
-          title={t("Créer une ambiance")}
-          disabled={!library.session() || library.session()?.account.role === "auditor"}
-          onClick={() => edit()}
-        >
-          <Icon name="plus" />
-        </button>
-      </div>
-      <Show when={library.origins().length > 1}>
-        <div class="choices">
-          <For each={library.origins()}>
-            {(source) => (
-              <button
-                aria-pressed={source === library.source()}
-                onClick={() => library.chooseSource(source)}
-              >
-                {source === "local" ? t("Local") : t("Serveur")}
-              </button>
+      <StickyHeader>
+        <div class="page-heading">
+          <p class="muted">
+            {t(
+              "Des ambiances fondées sur vos tags et genres, avec des critères que vous pouvez modifier.",
             )}
-          </For>
+          </p>
+          <button
+            class="icon-button"
+            aria-label={t("Créer une ambiance")}
+            title={t("Créer une ambiance")}
+            disabled={!library.session() || library.session()?.account.role === "auditor"}
+            onClick={() => edit()}
+          >
+            <Icon name="plus" />
+          </button>
         </div>
-      </Show>
+        <Show when={library.origins().length > 1}>
+          <div class="choices">
+            <For each={library.origins()}>
+              {(source) => (
+                <button
+                  aria-pressed={source === library.source()}
+                  onClick={() => library.chooseSource(source)}
+                >
+                  {source === "local" ? t("Local") : t("Serveur")}
+                </button>
+              )}
+            </For>
+          </div>
+        </Show>
+      </StickyHeader>
       <AccountNotice />
       <Show when={response.loading}>
         <PageLoader />

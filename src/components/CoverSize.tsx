@@ -4,6 +4,7 @@ import { ScrubRange } from "./ScrubRange";
 /** Explicit pixel size; pointer double-click or keyboard activation restores the default. */
 export function CoverSize(props: {
   value: number;
+  resetValue?: number;
   disabled: boolean;
   onChange: (value: number) => void;
 }) {
@@ -22,10 +23,10 @@ export function CoverSize(props: {
         title={t("Taille des pochettes · double-clic pour réinitialiser")}
         disabled={props.disabled}
         onDblClick={() => {
-          if (!props.disabled) props.onChange(150);
+          if (!props.disabled) props.onChange(props.resetValue ?? 150);
         }}
         onClick={(event) => {
-          if (!props.disabled && event.detail === 0) props.onChange(150);
+          if (!props.disabled && event.detail === 0) props.onChange(props.resetValue ?? 150);
         }}
       >
         <Icon name="cover-size" />
@@ -41,7 +42,7 @@ export function CoverSize(props: {
         disabled={props.disabled}
         onInput={(e) => props.onChange(Number(e.currentTarget.value))}
         onDblClick={() => {
-          if (!props.disabled) props.onChange(150);
+          if (!props.disabled) props.onChange(props.resetValue ?? 150);
         }}
       />
       <output class="cover-size-value">{props.value} px</output>

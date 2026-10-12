@@ -157,23 +157,52 @@ fn personal_note_exports_exact_markdown_and_never_overwrites() {
     let folder = std::env::temp_dir().join(format!("phemios-note-test-{}", std::process::id()));
     std::fs::create_dir_all(&folder).unwrap();
     let response = serde_json::json!({"reference":"release:fixture","annotation":{"reference":"release:fixture","note":"**Échos**\n- live\n"}});
-    let first = super::publish_note(&folder, "release:fixture", &response).unwrap();
-    let second = super::publish_note(&folder, "release:fixture", &response).unwrap();
+    let first = super::publish_note(
+        &folder,
+        "release:fixture",
+        &response,
+        &serde_json::json!({"reference":"release:fixture", "title":"Échos"}),
+    )
+    .unwrap();
+    let second = super::publish_note(
+        &folder,
+        "release:fixture",
+        &response,
+        &serde_json::json!({"reference":"release:fixture", "title":"Échos"}),
+    )
+    .unwrap();
     assert_ne!(first, second);
     assert_eq!(
         std::fs::read_to_string(&first).unwrap(),
         "**Échos**\n- live\n"
     );
     assert_eq!(first.extension().unwrap(), "md");
+    assert_eq!(first.file_name().unwrap(), "Note-Échos.md");
     std::fs::remove_dir_all(folder).unwrap();
 }
 #[test]
 fn personal_note_refuses_wrong_targets_empty_notes_and_unbounded_documents() {
     let folder = std::env::temp_dir().join(format!("phemios-note-refusal-{}", std::process::id()));
     let mut response = serde_json::json!({"reference":"release:fixture","annotation":{"reference":"release:fixture","note":"saved"}});
-    assert!(super::publish_note(&folder, "release:other", &response).is_err());
+    assert!(
+        super::publish_note(
+            &folder,
+            "release:other",
+            &response,
+            &serde_json::json!({"reference":"release:fixture", "title":"Échos"})
+        )
+        .is_err()
+    );
     response["annotation"]["reference"] = serde_json::json!("release:other");
-    assert!(super::publish_note(&folder, "release:fixture", &response).is_err());
+    assert!(
+        super::publish_note(
+            &folder,
+            "release:fixture",
+            &response,
+            &serde_json::json!({"reference":"release:fixture", "title":"Échos"})
+        )
+        .is_err()
+    );
     response["annotation"]["reference"] = serde_json::json!("release:fixture");
     for note in [
         " ".to_string(),
@@ -181,7 +210,51 @@ fn personal_note_refuses_wrong_targets_empty_notes_and_unbounded_documents() {
         "bad\0note".into(),
     ] {
         response["annotation"]["note"] = serde_json::json!(note);
-        assert!(super::publish_note(&folder, "release:fixture", &response).is_err());
+        assert!(
+            super::publish_note(
+                &folder,
+                "release:fixture",
+                &response,
+                &serde_json::json!({"reference":"release:fixture", "title":"Échos"})
+            )
+            .is_err()
+        );
     }
     assert!(!folder.exists());
+}
+
+#[test]
+fn personal_note_title_is_catalogue_bound_and_cannot_escape_downloads() {
+    let folder = std::env::temp_dir().join(format!("phemios-note-title-{}", std::process::id()));
+    let response = serde_json::json!({"reference":"artist:fixture", "annotation":{"reference":"artist:fixture", "note":"saved"}});
+    assert!(
+        super::publish_note(
+            &folder,
+            "artist:fixture",
+            &response,
+            &serde_json::json!({"reference":"artist:other", "name":"Wrong owner target"})
+        )
+        .is_err()
+    );
+    let detail =
+        serde_json::json!({"reference":"artist:fixture", "name":"../../Escaped\\Artist:*?"});
+    let path = super::publish_note(&folder, "artist:fixture", &response, &detail).unwrap();
+    assert_eq!(path.parent().unwrap(), folder);
+    assert!(
+        path.file_name()
+            .unwrap()
+            .to_string_lossy()
+            .starts_with("Note-")
+    );
+    assert!(
+        !path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .contains(['/', '\\', ':', '*', '?'])
+    );
+    let unicode = serde_json::json!({"reference":"artist:fixture", "name":"音楽".repeat(200)});
+    let unicode_path = super::publish_note(&folder, "artist:fixture", &response, &unicode).unwrap();
+    assert!(unicode_path.file_name().unwrap().len() <= 200);
+    std::fs::remove_dir_all(folder).unwrap();
 }

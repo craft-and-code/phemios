@@ -422,3 +422,24 @@ it("cancels the captured server task even when Stop precedes its submission ackn
   expect(controller.busy()).toBe(false);
   dispose();
 });
+
+it("keeps an individual operation distinct from the bulk control and cancellable before admission", async () => {
+  vi.mocked(requestAede).mockReturnValue(new Promise(() => {}));
+  let dispose!: () => void;
+  const job = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createQueueLyrics({
+      queue: () => [{ reference: "track:first", title: "First" }],
+      sessionFor: () => owner,
+      tasks: { start: vi.fn(), jobs: () => [] },
+    });
+  });
+  void job.acquire("track:first");
+  expect(job.busy()).toBe(true);
+  expect(job.bulkBusy()).toBe(false);
+  expect(job.trackBusy("track:first")).toBe(true);
+  expect(job.trackBusy("track:other")).toBe(false);
+  expect(job.bulkOperation()).toBe(false);
+  await job.cancel();
+  dispose();
+});

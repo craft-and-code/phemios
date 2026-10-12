@@ -1,5 +1,5 @@
 import { onMount, onCleanup } from "solid-js";
-import { radioWaveform } from "../radio/waveform";
+import { radioWaveform, sampleRadioWave } from "../radio/waveform";
 /** One resident 8 KiB sample buffer, 30 Hz drawing only while the dial is visible; no sound generation. */
 export function RadioWave(props: { sample: (target: Float32Array<ArrayBuffer>) => boolean }) {
   let element!: SVGPathElement,
@@ -9,11 +9,10 @@ export function RadioWave(props: { sample: (target: Float32Array<ArrayBuffer>) =
     alive = true;
   const samples = new Float32Array(2048);
   function draw(time: number) {
-    if (!alive) return;
+    if (!alive || !visible || document.hidden) return;
     if (time - last >= 33) {
       last = time;
-      samples.fill(0);
-      if (!props.sample(samples)) samples.fill(0);
+      sampleRadioWave(samples, props.sample);
       const result = radioWaveform(samples, time / 1400);
       element.setAttribute("d", result.path);
       element.dataset.signal = result.measured ? "measured" : "idle";
@@ -29,7 +28,8 @@ export function RadioWave(props: { sample: (target: Float32Array<ArrayBuffer>) =
       visible = entry?.isIntersecting ?? false;
       schedule();
     });
-    observer.observe(element);
+    // A changing path bounding box is not a stable visibility target.
+    if (element.ownerSVGElement) observer.observe(element.ownerSVGElement);
     document.addEventListener("visibilitychange", schedule);
     schedule();
     onCleanup(() => {

@@ -53,3 +53,12 @@ describe("globe coordinates", () => {
     expect(countryAt([0, 0], [country])).toBeUndefined();
   });
 });
+
+it("does not admit canvas margins as globe interactions, including narrow views and zoom", async () => {
+  const { globePoint } = await import("./projection");
+  expect(globePoint([10, 10], 500, 300, 1)).toBeNull();
+  expect(globePoint([250, 150], 500, 300, 1)).toEqual([0, 0]);
+  expect(globePoint([120, 150], 240, 300, 1)).toEqual([0, 0]);
+  expect(globePoint([250, 25], 500, 300, 0.8)).toBeNull();
+  expect(globePoint([250, 25], 500, 300, 1)).not.toBeNull();
+});

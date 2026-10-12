@@ -21,3 +21,22 @@ it("keeps silence moving but maps real PCM independently of its idle phase", () 
     ),
   ).toBe(true);
 });
+
+it("falls back after a transient sampler error and resumes real measurements on the next frame", async () => {
+  const { sampleRadioWave } = await import("./waveform");
+  const samples = new Float32Array(8);
+  expect(
+    sampleRadioWave(samples, (buffer) => {
+      buffer.fill(1);
+      throw Error("Interrupted analyser");
+    }),
+  ).toBe(false);
+  expect([...samples]).toEqual(Array(8).fill(0));
+  expect(
+    sampleRadioWave(samples, (buffer) => {
+      buffer.fill(0.25);
+      return true;
+    }),
+  ).toBe(true);
+  expect([...samples]).toEqual(Array(8).fill(0.25));
+});

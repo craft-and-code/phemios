@@ -1,3 +1,4 @@
+import { AccountNotice } from "../components/AccountNotice";
 import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { SelectionCollection } from "../components/SelectionCollection";
@@ -70,12 +71,8 @@ export function RatedPage(props: { query: string }) {
           </div>
         </div>
       </StickyHeader>
-      <Show
-        when={library.session()}
-        fallback={
-          <p class="notice">{t("Connectez-vous pour accéder aux données de votre compte.")}</p>
-        }
-      >
+      <AccountNotice />
+      <Show when={library.session()}>
         <Show
           when={albums().length}
           fallback={

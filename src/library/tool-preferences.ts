@@ -15,6 +15,8 @@ export interface ToolPreferences {
   excluded: ("local" | "server")[];
   trackPageSize: number;
   showMissingAlbums: boolean;
+  coverSize: number;
+  coverSizes: Partial<Record<"albums" | "compilations" | "genres", number>>;
 }
 export const defaultToolPreferences: ToolPreferences = {
   full: false,
@@ -27,7 +29,29 @@ export const defaultToolPreferences: ToolPreferences = {
   excluded: [],
   trackPageSize: 50,
   showMissingAlbums: true,
+  coverSize: 150,
+  coverSizes: {},
 };
+/** Cover rails use bounded pixel steps; only catalogue sections may override the default. */
+function validCoverSize(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 100 &&
+    value <= 280 &&
+    value % 10 === 0
+  );
+}
+function validCoverOverrides(value: unknown): boolean {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.entries(value).every(
+      ([key, size]) => ["albums", "compilations", "genres"].includes(key) && validCoverSize(size),
+    )
+  );
+}
 const key = "phemios.tools.v1";
 type Store = Pick<Storage, "getItem" | "setItem">;
 function validate(raw: unknown): ToolPreferences {
@@ -45,6 +69,8 @@ function validate(raw: unknown): ToolPreferences {
       row.lyrics,
       row.discogs === undefined ? false : row.discogs,
     ].every((v) => typeof v === "boolean") ||
+    !validCoverSize(row.coverSize === undefined ? 150 : row.coverSize) ||
+    !validCoverOverrides(row.coverSizes === undefined ? {} : row.coverSizes) ||
     !Number.isInteger(row.threads) ||
     row.threads < 0 ||
     row.threads > 64 ||
@@ -56,6 +82,8 @@ function validate(raw: unknown): ToolPreferences {
     throw new Error(t("Options enregistrées illisibles."));
   return {
     ...row,
+    coverSize: row.coverSize === undefined ? 150 : row.coverSize,
+    coverSizes: row.coverSizes === undefined ? {} : row.coverSizes,
     discogs: row.discogs === undefined ? false : row.discogs,
     showMissingAlbums: row.showMissingAlbums === undefined ? true : row.showMissingAlbums,
   };
@@ -75,6 +103,7 @@ export function saveToolPreferences(
   const next = validate({ ...readToolPreferences(storage), ...patch });
   storage.setItem(key, JSON.stringify(next));
   announceSetting(key, JSON.stringify(next));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("phemios-tools-saved"));
   return next;
 }
 /** Reactive settings update only after persistence; callers display the returned error. */
@@ -98,8 +127,12 @@ export function createToolPreferences(storage: Store = interfacePreferences) {
         setError(String(failure));
       }
     };
+    window.addEventListener("phemios-tools-saved", reload);
     window.addEventListener("phemios-settings-loaded", reload);
-    onCleanup(() => window.removeEventListener("phemios-settings-loaded", reload));
+    onCleanup(() => {
+      window.removeEventListener("phemios-tools-saved", reload);
+      window.removeEventListener("phemios-settings-loaded", reload);
+    });
   }
   return {
     value,

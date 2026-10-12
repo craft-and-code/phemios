@@ -18,3 +18,18 @@ export function radioWaveform(
   }
   return { path, measured };
 }
+
+/** Visual sampling is optional: a transient Web Audio failure must not stop the draw loop. */
+export function sampleRadioWave(
+  samples: Float32Array<ArrayBuffer>,
+  sample: (target: Float32Array<ArrayBuffer>) => boolean,
+): boolean {
+  samples.fill(0);
+  try {
+    if (sample(samples)) return true;
+  } catch {
+    /* An interrupted analyser can recover on the next frame. */
+  }
+  samples.fill(0);
+  return false;
+}

@@ -1,3 +1,4 @@
+import { saveToolPreferences, readToolPreferences } from "./tool-preferences";
 import { expect, it } from "vitest";
 import {
   exportPreferenceBackup,
@@ -75,4 +76,15 @@ it("restores earlier values if one write fails and keeps unrelated data intact",
     applyPreferenceBackup(target, parsePreferenceBackup(exportPreferenceBackup(store()))),
   ).toThrow("No space");
   expect([...destination.values]).toEqual(previous);
+});
+
+it("round-trips default and per-view cover sizes in the account-safe backup", () => {
+  const from = store(),
+    to = store();
+  saveToolPreferences(from, { coverSize: 180, coverSizes: { albums: 240, genres: 120 } });
+  applyPreferenceBackup(to, parsePreferenceBackup(exportPreferenceBackup(from)));
+  expect(readToolPreferences(to)).toMatchObject({
+    coverSize: 180,
+    coverSizes: { albums: 240, genres: 120 },
+  });
 });

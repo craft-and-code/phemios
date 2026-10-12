@@ -172,6 +172,19 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     note() !== savedNote() ||
     pendingTag() ||
     JSON.stringify(tags()) !== JSON.stringify(savedTags());
+  const NoteHeading = () => (
+    <div class="section-heading annotation-note-heading">
+      <h3>{t("Notes personnelles")}</h3>
+      <Show when={savedNote().trim()}>
+        <DownloadButton
+          label={t("Télécharger la note personnelle")}
+          identity={scope()}
+          disabled={!scope().session || read.loading() || !!read.error()}
+          onClick={() => downloadNoteAede(props.reference)}
+        />
+      </Show>
+    </div>
+  );
   return (
     <section class="annotation-panel">
       <h2>
@@ -219,12 +232,6 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
       </div>
       <div class="section-heading annotation-text-heading">
         <h3>{t("Tags et notes personnelles")}</h3>
-        <DownloadButton
-          label={t("Télécharger la note personnelle")}
-          identity={scope()}
-          disabled={!savedNote().trim() || !scope().session || read.loading() || !!read.error()}
-          onClick={() => downloadNoteAede(props.reference)}
-        />
         <Show when={!editing()}>
           <button
             class="icon-button quiet"
@@ -253,6 +260,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
                 <For each={savedTags()}>{(tag) => <span class="tag-pill">{tag}</span>}</For>
               </Show>
             </div>
+            <NoteHeading />
             <Show
               when={savedNote()}
               fallback={<p class="muted">{t("Aucune note personnelle.")}</p>}
@@ -297,7 +305,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
           }}
         />
         <div class="annotation-note">
-          <p>{t("Notes personnelles")}</p>
+          <NoteHeading />
           <NoteEditor
             value={note()}
             disabled={blocked()}

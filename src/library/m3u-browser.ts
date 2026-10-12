@@ -47,49 +47,61 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
     return capability.promise;
   }
   const path = (kind: M3UKind) => (kind === "files" ? "/api/me/v1/m3u-files" : "/api/me/v1/m3u");
-  const [pages, { refetch }] = createResource(scope, async (input) => {
-    try {
-      const modern = await supported(input);
-      if (disposed || !same(input, scope())) return { input };
-      if (!modern && (input.kind === "files" || input.query))
-        throw Error(
-          t("Mettez à jour puis redémarrez Aède pour parcourir les fichiers M3U de vos dossiers."),
+  const [pages, { refetch }] = createResource(
+    scope,
+    async (input) => {
+      try {
+        const modern = await supported(input);
+        if (disposed || !same(input, scope())) return { input };
+        if (!modern && (input.kind === "files" || input.query))
+          throw Error(
+            t(
+              "Mettez à jour puis redémarrez Aède pour parcourir les fichiers M3U de vos dossiers.",
+            ),
+          );
+        const data = parseM3UPage(
+          await request(
+            path(input.kind),
+            {
+              offset: String(input.offset),
+              limit: "50",
+              ...(input.query ? { q: input.query } : {}),
+            },
+            input.source,
+          ),
+          input.offset,
+          input.kind,
         );
-      const data = parseM3UPage(
-        await request(
-          path(input.kind),
-          {
-            offset: String(input.offset),
-            limit: "50",
-            ...(input.query ? { q: input.query } : {}),
-          },
-          input.source,
-        ),
-        input.offset,
-        input.kind,
-      );
-      return { input, data };
-    } catch (failure) {
-      return { input, error: String(failure) };
-    }
-  });
-  const currentPage = () => (!disposed && same(pages()?.input, scope()) ? pages() : undefined);
+        return { input, data };
+      } catch (failure) {
+        return { input, error: String(failure) };
+      }
+    },
+    { initialValue: undefined },
+  );
+  const currentPage = () =>
+    !disposed && same(pages.latest?.input, scope()) ? pages.latest : undefined;
   createEffect(on(scope, () => setSelection(undefined), { defer: true }));
   const activeSelection = () =>
     !disposed && same(selection()?.scope, scope()) ? selection() : undefined;
-  const [details, { refetch: retryDetail }] = createResource(activeSelection, async (input) => {
-    try {
-      const file = parseM3UDetail(
-        await request(`${path(input.scope.kind)}/${input.id}`, {}, input.scope.source),
-        input.id,
-        input.scope.kind,
-      );
-      return { input, file: { ...file, source: input.scope.source } };
-    } catch (failure) {
-      return { input, error: String(failure) };
-    }
-  });
-  const currentDetail = () => (details()?.input === activeSelection() ? details() : undefined);
+  const [details, { refetch: retryDetail }] = createResource(
+    activeSelection,
+    async (input) => {
+      try {
+        const file = parseM3UDetail(
+          await request(`${path(input.scope.kind)}/${input.id}`, {}, input.scope.source),
+          input.id,
+          input.scope.kind,
+        );
+        return { input, file: { ...file, source: input.scope.source } };
+      } catch (failure) {
+        return { input, error: String(failure) };
+      }
+    },
+    { initialValue: undefined },
+  );
+  const currentDetail = () =>
+    details.latest?.input === activeSelection() ? details.latest : undefined;
   return {
     page: () => currentPage()?.data,
     error: () => currentPage()?.error ?? "",

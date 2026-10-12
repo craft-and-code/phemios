@@ -295,6 +295,7 @@ main:has(.m3u-page) > .library-source {
   white-space: nowrap;
 }
 .m3u-preview {
+  position: relative;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -417,7 +418,7 @@ main > .playback-page {
 }
 .playback-page .playback-queue li {
   display: grid;
-  grid-template-columns: 20px 30px 26px minmax(0, 1fr);
+  grid-template-columns: 20px 34px minmax(0, 1fr);
   gap: 4px;
 }
 .playback-page .playback-queue li .queue-grip {
@@ -425,7 +426,7 @@ main > .playback-page {
   padding-inline: 2px;
 }
 .playback-page .playback-queue .queue-track-number {
-  width: 30px;
+  width: 34px;
   justify-content: center;
   cursor: pointer;
 }
@@ -500,6 +501,8 @@ main > .playback-page {
   place-items: center;
   position: absolute;
   inset: 0;
+}
+.activity-glyph > .activity-stop {
   opacity: 0;
 }
 button:is(:hover, :focus-visible) .activity-glyph:has(.activity-stop) > .spinner {
@@ -507,4 +510,40 @@ button:is(:hover, :focus-visible) .activity-glyph:has(.activity-stop) > .spinner
 }
 button:is(:hover, :focus-visible) .activity-glyph > .activity-stop {
   opacity: 1;
+}
+
+.playback-page .queue-track-leading {
+  display: grid;
+  grid-template-rows: 20px 20px;
+  justify-items: center;
+  padding-top: 8px;
+}
+.playback-page .playback-queue .queue-track-leading .queue-lyrics-track {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+}
+.account-notice {
+  margin: 0 0 20px;
+}
+
+.personal-page .page-sticky-header .personal-selection-actions {
+  min-height: 36px;
+}
+.page-sticky-header .m3u-toolbar,
+.page-sticky-header .history-reset {
+  margin-block: 0;
+}
+
+.playback-page .playback-queue .activity-stop > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.page-sticky-header > .page-heading > p {
+  margin-block: 0;
+}
+
+.page-sticky-header .choices {
+  margin-block: 0;
 }

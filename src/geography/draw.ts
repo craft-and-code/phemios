@@ -9,6 +9,7 @@ export function drawGlobe(
   zoom: number,
   selected: ReadonlySet<string>,
   available: ReadonlySet<string>,
+  keyboardFocus = false,
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -74,8 +75,8 @@ export function drawGlobe(
   for (let longitude = -180; longitude < 180; longitude += 30)
     line(Array.from({ length: 91 }, (_, i) => [longitude, i * 2 - 90]));
   ctx.restore();
-  ctx.strokeStyle = "#74dce488";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = keyboardFocus ? "#d8f36a" : "#74dce488";
+  ctx.lineWidth = keyboardFocus ? 3 : 1;
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();

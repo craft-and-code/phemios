@@ -8,6 +8,11 @@ import {
   accountPreferenceOwner,
   createAccountPreferenceProfiles,
 } from "./account-preferences";
+import {
+  defaultToolPreferences,
+  saveToolPreferences,
+  readToolPreferences,
+} from "./tool-preferences";
 import { readPreferences, defaultPreferences } from "./preferences";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 let values: Map<string, string>;
@@ -266,4 +271,40 @@ it("does not expose Alice's interface profile to logout or Bob's partial prefere
   } finally {
     dispose();
   }
+});
+
+it("synchronizes cover sizes to the captured Aède account and restores them in the interface projection", async () => {
+  const session = account("cover-owner");
+  const stored = { ...defaultToolPreferences, coverSize: 180, coverSizes: { albums: 220 } };
+  vi.mocked(requestAede).mockImplementation(async (path, _query, method) =>
+    path.endsWith("status")
+      ? { capabilities: ["account_preferences"] }
+      : method === "PATCH"
+        ? {}
+        : { values: { "phemios.tools.v1": stored } },
+  );
+  let dispose!: () => void;
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    createSavedSettings(
+      () => session,
+      () => "server",
+    );
+  });
+  await settle();
+  expect(readToolPreferences(interfacePreferences)).toMatchObject({
+    coverSize: 180,
+    coverSizes: { albums: 220 },
+  });
+  saveToolPreferences(interfacePreferences, { coverSizes: { albums: 240 } });
+  await settle();
+  expect(requestAede).toHaveBeenCalledWith(
+    "/api/me/v1/preferences",
+    {},
+    "PATCH",
+    { values: { "phemios.tools.v1": { ...stored, coverSizes: { albums: 240 } } } },
+    "server",
+    session,
+  );
+  dispose();
 });

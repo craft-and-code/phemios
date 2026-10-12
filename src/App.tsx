@@ -58,7 +58,6 @@ import { WorkspacePage } from "./views/WorkspacePage";
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
   const library = useLibrary();
-  const [coverSizes, setCoverSizes] = createSignal<Record<string, number>>({});
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
   const shortcuts = createShortcuts();
@@ -369,6 +368,7 @@ export function App() {
       </Show>
       <main id="content">
         <Feedback message={externalError()} error onClose={() => setExternalError("")} />
+        <Feedback message={browsing.error()} error />
         <Show when={library.error()}>
           <p class="notice" role="alert">
             {library.error()}
@@ -437,9 +437,18 @@ export function App() {
               </Show>
               <Show when={hasFilters() && ["albums", "compilations", "genres"].includes(section())}>
                 <CoverSize
-                  value={coverSizes()[section()] ?? 150}
+                  value={
+                    browsing.value().coverSizes[
+                      section() as "albums" | "compilations" | "genres"
+                    ] ?? browsing.value().coverSize
+                  }
+                  resetValue={browsing.value().coverSize}
                   disabled={section() === "albums" && coverFlow()}
-                  onChange={(value) => setCoverSizes((old) => ({ ...old, [section()]: value }))}
+                  onChange={(value) =>
+                    browsing.update({
+                      coverSizes: { ...browsing.value().coverSizes, [section()]: value },
+                    })
+                  }
                 />
               </Show>
               <span>{library.busy() ? t("Synchronisation…") : ""}</span>
@@ -598,7 +607,11 @@ export function App() {
                   }
                 >
                   <LibraryPage
-                    coverSize={coverSizes()[section()] ?? 150}
+                    coverSize={
+                      browsing.value().coverSizes[
+                        section() as "albums" | "compilations" | "genres"
+                      ] ?? browsing.value().coverSize
+                    }
                     section={section()}
                     filters={filters()}
                     setFilters={setFilters}

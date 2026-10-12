@@ -330,7 +330,6 @@
 }
 .globe-panel {
   margin: 0 0 16px;
-  border: 1px solid #28525a;
   border-radius: 12px;
   background: radial-gradient(ellipse at 30% 35%, #0a2730, #111619 70%);
   overflow: hidden;
@@ -342,11 +341,12 @@
   display: block;
   width: 100%;
   height: 300px;
-  cursor: grab;
+  cursor: default;
   touch-action: none;
+  outline: none;
 }
-.globe-display canvas:active {
-  cursor: grabbing;
+.globe-display canvas:focus-visible {
+  outline: none; /* Keyboard focus is drawn around the sphere, never the rectangular canvas. */
 }
 .globe-zoom {
   position: absolute;

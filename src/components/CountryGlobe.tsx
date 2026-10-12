@@ -13,6 +13,7 @@ import {
 } from "solid-js";
 import {
   countryAt,
+  globePoint,
   unproject,
   wrapLongitude,
   type Country,
@@ -46,6 +47,7 @@ export function CountryGlobe(props: {
     [hover, setHover] = createSignal<Country | undefined>();
   let canvas: HTMLCanvasElement | undefined;
   let frame = 0;
+  let keyboardFocus = false;
   let drag: { x: number; y: number; center: Point; moved: boolean } | undefined;
   const codeFor = (artist: Artist) =>
     artist.countryCode ??
@@ -98,7 +100,15 @@ export function CountryGlobe(props: {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => {
       if (canvas)
-        drawGlobe(canvas, countries() ?? [], center(), zoom(), selectedCodes(), available());
+        drawGlobe(
+          canvas,
+          countries() ?? [],
+          center(),
+          zoom(),
+          selectedCodes(),
+          available(),
+          keyboardFocus,
+        );
     });
   };
   createEffect(() => {
@@ -118,20 +128,23 @@ export function CountryGlobe(props: {
     });
   });
   const zoomBy = (delta: number) => setZoom((value) => Math.min(2.4, Math.max(0.8, value + delta)));
-  const pick = (event: PointerEvent) => {
-    if (!canvas) return;
-    const box = canvas.getBoundingClientRect(),
-      radius = Math.min(box.width, box.height) * 0.42 * zoom();
-    const point = unproject(
-      [
-        (event.clientX - box.left - box.width / 2) / radius,
-        (event.clientY - box.top - box.height / 2) / radius,
-      ],
-      center(),
+  const pointAt = (event: MouseEvent) => {
+    if (!canvas) return null;
+    const box = canvas.getBoundingClientRect();
+    return globePoint(
+      [event.clientX - box.left, event.clientY - box.top],
+      box.width,
+      box.height,
+      zoom(),
     );
+  };
+  const pick = (event: PointerEvent) => {
+    const hit = pointAt(event);
+    const point = hit ? unproject(hit, center()) : null;
     return point ? countryAt(point, countries() ?? []) : undefined;
   };
   function move(event: PointerEvent) {
+    if (canvas) canvas.style.cursor = drag ? "grabbing" : pointAt(event) ? "grab" : "default";
     if (drag) {
       if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 4) drag.moved = true;
       if (drag.moved)
@@ -192,10 +205,20 @@ export function CountryGlobe(props: {
             "Globe des pays. Glissez pour tourner, molette pour zoomer. Flèches au clavier, plus et moins pour le zoom. Command-clic sur Mac, Control-clic ailleurs pour sélectionner plusieurs pays. Les boutons Pays offrent la sélection au clavier.",
           )}
           onPointerDown={(event) => {
-            if (event.button !== 0) return;
-            event.currentTarget.focus();
+            event.preventDefault();
+            if (event.button !== 0 || !pointAt(event)) return;
+            keyboardFocus = false;
+            redraw();
             event.currentTarget.setPointerCapture(event.pointerId);
             drag = { x: event.clientX, y: event.clientY, center: center(), moved: false };
+          }}
+          onFocus={(event) => {
+            keyboardFocus = event.currentTarget.matches(":focus-visible");
+            redraw();
+          }}
+          onBlur={() => {
+            keyboardFocus = false;
+            redraw();
           }}
           onPointerMove={move}
           onPointerUp={finish}
@@ -206,6 +229,7 @@ export function CountryGlobe(props: {
             drag = undefined;
           }}
           onWheel={(event) => {
+            if (!pointAt(event)) return;
             event.preventDefault();
             zoomBy(event.deltaY < 0 ? 0.1 : -0.1);
           }}

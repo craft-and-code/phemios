@@ -169,24 +169,26 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
-        <div class="personal-selection-actions">
-          <button
-            class="icon-button collection-create"
-            title={t("Créer une collection")}
-            aria-label={t("Créer une collection")}
-            aria-expanded={editingCollection()}
-            aria-controls="collection-editor"
-            disabled={!library.session() || library.session()?.account.role === "auditor"}
-            onClick={() => {
-              if (saving()) return;
-              const open = !editingCollection();
-              setEditingCollection(open);
-              if (open) queueMicrotask(() => nameInput?.focus());
-            }}
-          >
-            <Icon name="library" />
-          </button>
-        </div>
+        <StickyHeader>
+          <div class="personal-selection-actions">
+            <button
+              class="icon-button collection-create"
+              title={t("Créer une collection")}
+              aria-label={t("Créer une collection")}
+              aria-expanded={editingCollection()}
+              aria-controls="collection-editor"
+              disabled={!library.session() || library.session()?.account.role === "auditor"}
+              onClick={() => {
+                if (saving()) return;
+                const open = !editingCollection();
+                setEditingCollection(open);
+                if (open) queueMicrotask(() => nameInput?.focus());
+              }}
+            >
+              <Icon name="library" />
+            </button>
+          </div>
+        </StickyHeader>
         <AccountNotice connected={!!library.session() || library.demo} />
         <Show when={editingCollection()}>
           <form
@@ -327,6 +329,20 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
+        <StickyHeader>
+          <div class="personal-selection-actions">
+            <Show when={(page()?.total ?? 0) > 0}>
+              <div class="history-reset">
+                <HistoryReset
+                  onReset={() => {
+                    setOffset(0);
+                    void refetch();
+                  }}
+                />
+              </div>
+            </Show>
+          </div>
+        </StickyHeader>
         <AccountNotice connected={!!library.session() || library.demo} />
         <Show when={listening()}>
           {(row) => (
@@ -342,16 +358,6 @@ export function PersonalPage(props: { section: Section; query: string }) {
               <CoverPlay reference={row().reference} title={row().title} class="history-play" />
             </div>
           )}
-        </Show>
-        <Show when={(page()?.total ?? 0) > 0}>
-          <div class="history-reset">
-            <HistoryReset
-              onReset={() => {
-                setOffset(0);
-                void refetch();
-              }}
-            />
-          </div>
         </Show>
         <ul class="personal-list">
           <For

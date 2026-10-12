@@ -1581,5 +1581,7 @@
   "Identité de note personnelle invalide.": "Invalid personal note identity.",
   "Aucune note personnelle disponible à télécharger.": "No personal note is available to download.",
   "Restauration interrompue. Les données existantes sont conservées ; réessayez l’import pour terminer.": "Restore interrupted. Existing data is retained; retry the import to complete it.",
-  "Conservez vos menus, raccourcis, couleurs, langue et options de lecture, ainsi que les abonnements podcasts, épisodes écoutés et articles enregistrés du compte connecté. Cette sauvegarde contient des données personnelles. Les identifiants Aède et les clés API configurées sont exclus.": "Save your menus, shortcuts, colours, language and playback options, together with podcast subscriptions, listened episodes and saved articles for the connected account. This backup contains personal data. Aède credentials and configured API keys are excluded."
+  "Conservez vos menus, raccourcis, couleurs, langue et options de lecture, ainsi que les abonnements podcasts, épisodes écoutés et articles enregistrés du compte connecté. Cette sauvegarde contient des données personnelles. Les identifiants Aède et les clés API configurées sont exclus.": "Save your menus, shortcuts, colours, language and playback options, together with podcast subscriptions, listened episodes and saved articles for the connected account. This backup contains personal data. Aède credentials and configured API keys are excluded.",
+  "Taille générale des pochettes": "Default cover size",
+  "Ce réglage s’applique à Albums, Compilations et Genres. Leurs réglettes permettent ensuite une taille différente par vue.": "This setting applies to Albums, Compilations and Genres. Each view can then use its own cover size."
 }
