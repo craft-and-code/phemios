@@ -18,13 +18,39 @@ function setup(initial = "playing") {
       initial === "idle" ? undefined : rows[0],
     ),
     [status, setStatus] = createSignal(initial),
-    [selected, setSelected] = createSignal(0);
+    [selected, setSelected] = createSignal(0),
+    [revision, setRevision] = createSignal(0);
   const start = vi.fn(async (next: Station) => {
+    setRevision((value) => value + 1);
     setStation(next);
     setStatus("connecting");
   });
-  const tuner = createRadioTuner({ stations, station, status, select: setSelected, start });
-  return { tuner, stations, setStations, station, setStation, status, setStatus, selected, start };
+  const pause = vi.fn(() => {
+    setRevision((value) => value + 1);
+    setStatus("paused");
+  });
+  const tuner = createRadioTuner({
+    stations,
+    selected,
+    station,
+    status,
+    revision,
+    pause,
+    select: setSelected,
+    start,
+  });
+  return {
+    tuner,
+    stations,
+    setStations,
+    station,
+    setStation,
+    status,
+    setStatus,
+    selected,
+    start,
+    pause,
+  };
 }
 it("retunes once to the final dragged station while an account-independent radio is playing", async () => {
   await createRoot(async (dispose) => {
@@ -67,7 +93,7 @@ it("coalesces held range keys until release and lets a click retune a connecting
     }
   });
 });
-it("never autoplays an idle paused or failed transport on a dial or list selection", async () => {
+it("starts the final dial and row choice from idle paused or failed playback", async () => {
   for (const state of ["idle", "paused", "error"])
     await createRoot(async (dispose) => {
       const view = setup(state);
@@ -78,7 +104,9 @@ it("never autoplays an idle paused or failed transport on a dial or list selecti
         view.tuner.finish();
         view.tuner.choose(3);
         expect(view.selected()).toBe(3);
-        expect(view.start).not.toHaveBeenCalled();
+        expect(view.start).toHaveBeenCalledTimes(2);
+        expect(view.start).toHaveBeenNthCalledWith(1, rows[2]);
+        expect(view.start).toHaveBeenLastCalledWith(rows[3]);
       } finally {
         dispose();
       }
@@ -195,10 +223,13 @@ it("hands only the final dial choice to the real stream controller after explici
     );
     const tuner = createRadioTuner({
       stations: () => rows,
+      selected: () => 0,
       select: () => {},
       station: radio.station,
       status: radio.status,
       start: radio.start,
+      pause: radio.pause,
+      revision: radio.revision,
     });
     try {
       await radio.start(rows[0]!);
@@ -207,6 +238,8 @@ it("hands only the final dial choice to the real stream controller after explici
       for (const index of [1, 2, 3]) tuner.preview(index);
       expect(resolve).toHaveBeenCalledOnce();
       expect(released).not.toHaveBeenCalled();
+      tuner.interrupt();
+      expect(released).toHaveBeenCalledOnce();
       tuner.finish();
       for (let step = 0; step < 8; step++) await Promise.resolve();
       expect(resolve).toHaveBeenCalledTimes(2);
@@ -214,6 +247,90 @@ it("hands only the final dial choice to the real stream controller after explici
       expect(released).toHaveBeenCalledOnce();
       expect(radio.station()).toBe(rows[3]);
       expect(radio.status()).toBe("playing");
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it("silences an engaged stream once during drag and starts only the final station on release", async () => {
+  await createRoot(async (dispose) => {
+    const view = setup();
+    try {
+      await Promise.resolve();
+      view.tuner.begin();
+      view.tuner.preview(1);
+      view.tuner.interrupt();
+      view.tuner.interrupt();
+      view.tuner.preview(3);
+      expect(view.pause).toHaveBeenCalledOnce();
+      expect(view.status()).toBe("paused");
+      expect(view.start).not.toHaveBeenCalled();
+      view.tuner.finish();
+      expect(view.start).toHaveBeenCalledExactlyOnceWith(rows[3]);
+    } finally {
+      dispose();
+    }
+  });
+});
+it("does not resume an interrupted gesture after cancellation or a later transport action", async () => {
+  await createRoot(async (dispose) => {
+    const view = setup();
+    try {
+      await Promise.resolve();
+      view.tuner.begin();
+      view.tuner.preview(2);
+      view.tuner.interrupt();
+      view.tuner.cancel();
+      view.tuner.finish();
+      expect(view.status()).toBe("paused");
+      expect(view.start).not.toHaveBeenCalled();
+      view.tuner.begin();
+      view.tuner.preview(3);
+      view.pause(); // Even a second pause of an already paused stream replaces the gesture.
+      view.tuner.finish();
+      expect(view.start).not.toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+  });
+});
+it("restarts the same station after an actual tuning interruption but not a stationary click", async () => {
+  await createRoot(async (dispose) => {
+    const view = setup();
+    try {
+      await Promise.resolve();
+      view.tuner.choose(0);
+      expect(view.start).not.toHaveBeenCalled();
+      view.tuner.begin();
+      view.tuner.preview(0);
+      view.tuner.interrupt();
+      view.tuner.finish();
+      expect(view.start).toHaveBeenCalledExactlyOnceWith(rows[0]);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it("refuses continued pointer input after a replacing action until the canceled gesture ends", async () => {
+  await createRoot(async (dispose) => {
+    const view = setup();
+    try {
+      await Promise.resolve();
+      view.tuner.begin();
+      view.tuner.preview(2);
+      view.tuner.interrupt();
+      view.pause();
+      view.tuner.preview(3);
+      view.tuner.change();
+      view.tuner.finish();
+      expect(view.start).not.toHaveBeenCalled();
+      expect(view.selected()).toBe(2);
+      view.tuner.begin();
+      view.tuner.preview(1);
+      view.tuner.finish();
+      expect(view.start).toHaveBeenCalledExactlyOnceWith(rows[1]);
     } finally {
       dispose();
     }

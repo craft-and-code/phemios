@@ -155,3 +155,63 @@ it("retains the current confirmed page if only pagination fails", async () => {
     }
   });
 });
+
+it("restores a departed view's public result page and selected dial position without a new read", async () => {
+  let saved!: ReturnType<ReturnType<typeof createDirectorySearch>["snapshot"]>;
+  await createRoot(async (dispose) => {
+    const directory = createDirectorySearch(
+      () => france,
+      async () => [station, { ...station, name: "Second station" }],
+      () => {},
+      () => {},
+    );
+    await directory.search(50, true);
+    directory.setSelected(1);
+    saved = directory.snapshot();
+    dispose();
+  });
+  createRoot((dispose) => {
+    const fetch = vi.fn(async () => []);
+    const directory = createDirectorySearch(
+      () => france,
+      fetch,
+      () => {},
+      () => {},
+      saved,
+    );
+    expect(directory.loaded()).toBe(true);
+    expect(directory.offset()).toBe(50);
+    expect(directory.selected()).toBe(1);
+    expect(directory.stations()[1]?.name).toBe("Second station");
+    expect(fetch).not.toHaveBeenCalled();
+    dispose();
+  });
+});
+it("retains submitted search criteria independently of unsent drafts on restored pagination", async () => {
+  let saved!: ReturnType<ReturnType<typeof createDirectorySearch>["snapshot"]>;
+  await createRoot(async (dispose) => {
+    const directory = createDirectorySearch(
+      () => france,
+      async () => [station],
+      () => {},
+      () => {},
+    );
+    await directory.search(0, true);
+    saved = directory.snapshot();
+    dispose();
+  });
+  await createRoot(async (dispose) => {
+    const fetch = vi.fn(async () => []);
+    const draft = { ...france, name: "unsent edit" };
+    const directory = createDirectorySearch(
+      () => draft,
+      fetch,
+      () => {},
+      () => {},
+      saved,
+    );
+    await directory.search(50);
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(france, 50);
+    dispose();
+  });
+});

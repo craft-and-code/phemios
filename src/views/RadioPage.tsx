@@ -1,3 +1,4 @@
+import { radioBrowseSession } from "../radio/browse-session";
 import { createRadioTuner, radioTuningKey } from "../radio/tuner";
 import { createRadioTuningSound } from "../radio/tuning-sound";
 import { createRadioTuningAudio } from "../radio/tuning-audio";
@@ -27,6 +28,7 @@ import { isNative, radioStatistics, searchRadio, requestAede } from "../platform
 export function RadioPage(props: { query: string }) {
   const library = useLibrary(),
     radio = library.radio;
+  const retained = radioBrowseSession.read();
   const favourites = createAccountRadioFavourites(
     () => radioFavouriteOwner(library.source(), library.session()),
     (owner, method, body) =>
@@ -47,10 +49,10 @@ export function RadioPage(props: { query: string }) {
   };
   const writable = () =>
     favourites.available() && library.session()?.account.role !== "auditor" && !favourites.busy();
-  const [name, setName] = createSignal(props.query),
-    [country, setCountry] = createSignal(""),
-    [tag, setTag] = createSignal("");
-  const [secureOnly, setSecureOnly] = createSignal(true);
+  const [name, setName] = createSignal(retained?.draft.name ?? props.query),
+    [country, setCountry] = createSignal(retained?.draft.country ?? ""),
+    [tag, setTag] = createSignal(retained?.draft.tag ?? "");
+  const [secureOnly, setSecureOnly] = createSignal(retained?.draft.secureOnly ?? true);
   const [preferenceError, setPreferenceError] = createSignal("");
   const counter = createDirectoryCount(radioStatistics),
     count = counter.value,
@@ -68,14 +70,19 @@ export function RadioPage(props: { query: string }) {
         setPreferenceError(String(failure));
       }
     },
+    retained?.directory,
   );
   const { stations, more, offset, selected, busy, error, loaded, search, setSelected } = directory;
   const chosen = () => stations()[selected()];
   const tuner = createRadioTuner({
     stations,
+    selected,
     select: setSelected,
     station: radio.station,
     status: radio.status,
+    revision: radio.revision,
+    pause: radio.pause,
+    cancelled: () => tuningSound.finish(),
     start: radio.start,
   });
   const tuningVolume = () =>
@@ -86,13 +93,25 @@ export function RadioPage(props: { query: string }) {
         : library.player.state().volume;
   const tuningSound = createRadioTuningSound({
     audio: createRadioTuningAudio(),
+    preset: "whistle",
     volume: tuningVolume,
     error: () => setPreferenceError(t("Le son de réglage radio n’est pas disponible.")),
   });
-  const moveSound = (event: PointerEvent) =>
-    tuningSound.move({ id: event.pointerId, x: event.clientX });
-  const releaseSound = (event: PointerEvent) => tuningSound.finish(event.pointerId);
+  let tuningPointer: number | undefined;
+  const moveSound = (event: PointerEvent) => {
+    if (tuningSound.move({ id: event.pointerId, x: event.clientX })) tuner.interrupt();
+  };
+  const releaseSound = (event: PointerEvent) => {
+    if (tuningPointer !== event.pointerId) return;
+    tuningPointer = undefined;
+    tuningSound.finish(event.pointerId);
+    tuner.finish();
+  };
+  const cancelPointer = (event: PointerEvent) => {
+    if (tuningPointer === event.pointerId) cancelTuning();
+  };
   const cancelTuning = () => {
+    tuningPointer = undefined;
     tuningSound.finish();
     tuner.cancel();
   };
@@ -101,6 +120,19 @@ export function RadioPage(props: { query: string }) {
   };
   createEffect(() => tuningSound.volume(tuningVolume()));
   createEffect(() => {
+    const playing = radio.station(),
+      rows = stations();
+    if (!playing) return;
+    const index = rows.findIndex((station) => station.uuid === playing.uuid);
+    if (index >= 0) setSelected(index);
+  });
+  onCleanup(() =>
+    radioBrowseSession.remember(
+      { name: name(), country: country(), tag: tag(), secureOnly: secureOnly() },
+      directory.snapshot(),
+    ),
+  );
+  createEffect(() => {
     stations();
     tuningSound.finish();
   });
@@ -108,16 +140,17 @@ export function RadioPage(props: { query: string }) {
   onMount(() => {
     window.addEventListener("pointermove", moveSound);
     window.addEventListener("pointerup", releaseSound);
-    window.addEventListener("pointercancel", releaseSound);
+    window.addEventListener("pointercancel", cancelPointer);
     window.addEventListener("blur", cancelTuning);
     document.addEventListener("visibilitychange", hideTuning);
     onCleanup(() => {
       window.removeEventListener("pointermove", moveSound);
       window.removeEventListener("pointerup", releaseSound);
-      window.removeEventListener("pointercancel", releaseSound);
+      window.removeEventListener("pointercancel", cancelPointer);
       window.removeEventListener("blur", cancelTuning);
       document.removeEventListener("visibilitychange", hideTuning);
     });
+    if (retained) return;
     try {
       setCountry(radioCountryPreference(localStorage, navigator.languages));
     } catch (failure) {
@@ -285,33 +318,28 @@ export function RadioPage(props: { query: string }) {
                 aria-valuetext={chosen()?.name ?? ""}
                 onPointerDown={(event) => {
                   if (event.button !== 0 || !event.isPrimary) return;
+                  tuningPointer = event.pointerId;
                   tuner.begin();
                   if (stations().length > 1)
                     tuningSound.begin({ id: event.pointerId, x: event.clientX });
                 }}
                 onInput={(e) => tuner.preview(Number(e.currentTarget.value))}
                 onChange={() => tuner.change()}
-                onPointerUp={(event) => {
-                  tuningSound.finish(event.pointerId);
-                  tuner.finish();
-                }}
-                onPointerCancel={cancelTuning}
-                onLostPointerCapture={cancelTuning}
+                onPointerUp={releaseSound}
+                onPointerCancel={cancelPointer}
+                onLostPointerCapture={cancelPointer}
                 onKeyDown={(event) => {
                   if (radioTuningKey(event.key)) tuner.begin();
                 }}
                 onKeyUp={(event) => {
                   if (radioTuningKey(event.key)) tuner.finish();
                 }}
-                onBlur={() => {
-                  tuningSound.finish();
-                  tuner.finish();
-                }}
+                onBlur={cancelTuning}
               />
             </div>
             <p class="muted">
               {t(
-                "Glissez le cadran ou utilisez les flèches pour changer de station pendant l’écoute. Sinon, sélectionnez une station puis lancez l’écoute.",
+                "Glissez le cadran : l’écoute démarre sur la station choisie quand vous relâchez. Un clic sur une station lance aussi l’écoute.",
               )}{" "}
             </p>
           </div>

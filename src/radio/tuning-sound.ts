@@ -22,6 +22,8 @@ export function createRadioTuningSound(options: {
   volume: () => number;
   audio: RadioTuningAudio;
   random?: () => number;
+  /** An explicit choice bypasses random selection and caches only its own buffer. */
+  preset?: RadioTuningPreset;
   error?: (failure: unknown) => void;
 }) {
   let alive = true,
@@ -84,11 +86,12 @@ export function createRadioTuningSound(options: {
         !Number.isFinite(pointer.x) ||
         Math.abs(pointer.x - held.pointer.x) <= 4
       )
-        return;
+        return false;
       held.moved = true;
-      const value = (options.random ?? Math.random)();
+      const value = options.preset ? 0 : (options.random ?? Math.random)();
       const index = Number.isFinite(value) ? Math.max(0, Math.min(2, Math.floor(value * 3))) : 0;
-      void activate(held, radioTuningPresets[index]!);
+      void activate(held, options.preset ?? radioTuningPresets[index]!);
+      return true;
     },
     finish,
     volume(value: number) {

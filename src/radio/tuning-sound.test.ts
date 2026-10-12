@@ -1,19 +1,25 @@
 import { expect, it, vi } from "vitest";
 import { createRadioTuningSound } from "./tuning-sound";
-import { radioTuningLoop, radioTuningPresets } from "./tuning-loop";
-function setup(ready = Promise.resolve()) {
+import { radioTuningLoop, radioTuningPresets, type RadioTuningPreset } from "./tuning-loop";
+function setup(ready = Promise.resolve(), preset?: RadioTuningPreset) {
   let gain = 0.6;
   const voice = { stop: vi.fn() };
   const audio = {
     ready: vi.fn(() => ready),
-    loop: vi.fn(() => voice),
+    loop: vi.fn((_preset: RadioTuningPreset, _volume: number) => voice),
     volume: vi.fn(),
     dispose: vi.fn(),
     idle: vi.fn(),
   };
   const random = vi.fn(() => 0.45),
     error = vi.fn();
-  const sound = createRadioTuningSound({ audio, random, error, volume: () => gain });
+  const sound = createRadioTuningSound({
+    audio,
+    random,
+    error,
+    volume: () => gain,
+    ...(preset ? { preset } : {}),
+  });
   return {
     sound,
     audio,
@@ -148,5 +154,19 @@ it("ignores a rejected resume after the gesture was cancelled", async () => {
   await settle();
   expect(view.audio.loop).not.toHaveBeenCalled();
   expect(view.error).not.toHaveBeenCalled();
+  view.sound.dispose();
+});
+
+it("uses the user's fixed whistle texture on every drag without sampling a random preset", async () => {
+  const view = setup(Promise.resolve(), "whistle");
+  view.random.mockReturnValue(0);
+  for (const id of [1, 2]) {
+    view.sound.begin({ id, x: 0 });
+    view.sound.move({ id, x: 10 });
+    await settle();
+    view.sound.finish(id);
+  }
+  expect(view.audio.loop.mock.calls.map(([preset]) => preset)).toEqual(["whistle", "whistle"]);
+  expect(view.random).not.toHaveBeenCalled();
   view.sound.dispose();
 });

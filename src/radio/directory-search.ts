@@ -2,6 +2,16 @@ import { batch, createSignal, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { parseStations, type Station } from "./directory";
 import type { RadioCriteria } from "./search";
+/** One already-validated public page retained in process memory, without owner data or media URLs. */
+export interface DirectorySnapshot {
+  criteria: RadioCriteria;
+  stations: readonly Station[];
+  more: boolean;
+  offset: number;
+  selected: number;
+  loaded: boolean;
+  error: string;
+}
 interface SearchRequest {
   criteria: RadioCriteria;
   offset: number;
@@ -16,15 +26,18 @@ export function createDirectorySearch(
   fetch: (criteria: RadioCriteria, offset: number) => Promise<unknown>,
   completed: () => void,
   remember: (country: string) => void,
+  retained?: DirectorySnapshot,
 ) {
-  const [stations, setStations] = createSignal<Station[]>([]),
-    [more, setMore] = createSignal(false),
-    [offset, setOffset] = createSignal(0),
-    [selected, setSelected] = createSignal(0),
+  const [stations, setStations] = createSignal<Station[]>([...(retained?.stations ?? [])]),
+    [more, setMore] = createSignal(retained?.more ?? false),
+    [offset, setOffset] = createSignal(retained?.offset ?? 0),
+    [selected, setSelected] = createSignal(retained?.selected ?? 0),
     [busy, setBusy] = createSignal(false),
-    [error, setError] = createSignal(""),
-    [loaded, setLoaded] = createSignal(false);
-  let criteria: RadioCriteria = { name: "", country: "", tag: "", secureOnly: true },
+    [error, setError] = createSignal(retained?.error ?? ""),
+    [loaded, setLoaded] = createSignal(retained?.loaded ?? false);
+  let criteria: RadioCriteria = {
+      ...(retained?.criteria ?? { name: "", country: "", tag: "", secureOnly: true }),
+    },
     alive = true,
     pending: SearchRequest | undefined,
     searchEpoch = 0;
@@ -88,6 +101,15 @@ export function createDirectorySearch(
     await run(request);
   }
   return {
+    snapshot: (): DirectorySnapshot => ({
+      criteria: { ...criteria },
+      stations: [...stations()],
+      more: more(),
+      offset: offset(),
+      selected: selected(),
+      loaded: loaded(),
+      error: error(),
+    }),
     stations,
     more,
     offset,

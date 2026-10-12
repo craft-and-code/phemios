@@ -1556,5 +1556,6 @@
   "Action podcast invalide.": "Invalid podcast action.",
   "Ce compte ne peut pas modifier ses podcasts.": "This account cannot modify its podcasts.",
   "Données podcasts illisibles.": "Podcast data cannot be read.",
-  "Données podcasts occupées.": "Podcast storage is busy."
+  "Données podcasts occupées.": "Podcast storage is busy.",
+  "Glissez le cadran : l’écoute démarre sur la station choisie quand vous relâchez. Un clic sur une station lance aussi l’écoute.": "Drag the dial: playback starts on the selected station when you release it. Clicking a station also starts playback."
 }

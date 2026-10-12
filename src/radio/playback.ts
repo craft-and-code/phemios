@@ -47,7 +47,8 @@ export function createRadioPlayback(
       "idle",
     ),
     [error, setError] = createSignal(""),
-    [volume, setVolume] = createSignal(0.5);
+    [volume, setVolume] = createSignal(0.5),
+    [revision, setRevision] = createSignal(0);
   let alive = true,
     media: RadioMedia | undefined,
     epoch = 0,
@@ -61,6 +62,7 @@ export function createRadioPlayback(
     media = undefined;
   }
   function stop() {
+    setRevision((value) => value + 1);
     release();
     setStation(undefined);
     setStatus("idle");
@@ -68,11 +70,13 @@ export function createRadioPlayback(
   }
   function pause() {
     if (!station()) return;
+    setRevision((value) => value + 1);
     release();
     setStatus("paused");
   }
   async function start(selected: Station) {
     if (!alive) return;
+    setRevision((value) => value + 1);
     if (status() === "idle" && initialVolume) changeVolume(initialVolume());
     release();
     const held = epoch;
@@ -162,6 +166,7 @@ export function createRadioPlayback(
   return {
     station,
     status,
+    revision,
     error,
     volume,
     start,
