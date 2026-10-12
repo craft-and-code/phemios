@@ -1667,3 +1667,27 @@ button.metadata-link:hover {
   display: grid;
   gap: 6px;
 }
+
+/* Keep cover density at the leading edge, apart from trailing catalog actions. */
+.cover-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 0 1 164px;
+  color: var(--muted);
+}
+.cover-size-control > svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.cover-size-control .cover-size-range {
+  flex: 1 1 140px;
+  width: clamp(64px, 10vw, 140px);
+  min-width: 0;
+  margin: 0;
+}
+.cover-size-disabled > svg {
+  opacity: 0.35;
+}

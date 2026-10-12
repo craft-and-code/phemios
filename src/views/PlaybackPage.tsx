@@ -15,7 +15,7 @@ import { useLibrary } from "../library/context";
 import { createTrackLyrics } from "../library/track-lyrics";
 import { announceSetting } from "../library/saved-settings";
 import { currentLyricText, activeLyricTime } from "../library/lyrics";
-import { playbackLayers } from "../visualizer/layers";
+import { playbackLayers, playbackWords } from "../visualizer/layers";
 import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
@@ -30,6 +30,7 @@ export function PlaybackPage() {
     player = library.player,
     [queue, setQueue] = createSignal(false),
     [spectrum, setSpectrum] = createSignal(false),
+    [ordinaryLyrics, setOrdinaryLyrics] = createSignal(true),
     [barStyle, setBarStyle] = createSignal<"gradient" | "terminal">("gradient"),
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
@@ -39,6 +40,7 @@ export function PlaybackPage() {
     onCleanup(() => window.removeEventListener("phemios-queue-toggle", toggleQueue));
     function restore() {
       setSpectrum(false);
+      setOrdinaryLyrics(true);
       setBarStyle("gradient");
       setScene("sphere");
       setError("");
@@ -183,6 +185,15 @@ export function PlaybackPage() {
               </For>
               <button
                 class="icon-button quiet"
+                title={t("Afficher ou masquer les paroles normales")}
+                aria-label={t("Afficher ou masquer les paroles normales")}
+                aria-pressed={ordinaryLyrics()}
+                onClick={() => setOrdinaryLyrics(!ordinaryLyrics())}
+              >
+                <Icon name="lyrics" />
+              </button>
+              <button
+                class="icon-button quiet"
                 title={t("Afficher les fréquences")}
                 aria-label={t("Afficher les fréquences")}
                 aria-pressed={spectrum()}
@@ -248,7 +259,7 @@ export function PlaybackPage() {
                 levels={player.state().levels}
               />
             </Show>
-            <Show when={plain().length}>
+            <Show when={plain().length && playbackWords(scene(), ordinaryLyrics())}>
               <div class="untimed-lyrics-controls">
                 <button
                   class="icon-button quiet"
@@ -272,6 +283,7 @@ export function PlaybackPage() {
               </div>
             </Show>
             <PlaybackLyrics
+              hidden={!playbackWords(scene(), ordinaryLyrics())}
               floating={scene() === "floating"}
               typography={{
                 track: player.current()?.reference ?? "",

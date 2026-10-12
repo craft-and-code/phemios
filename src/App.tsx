@@ -435,15 +435,15 @@ export function App() {
                   </a>
                 )}
               </Show>
+              <Show when={hasFilters() && ["albums", "compilations", "genres"].includes(section())}>
+                <CoverSize
+                  value={coverSizes()[section()] ?? 150}
+                  disabled={section() === "albums" && coverFlow()}
+                  onChange={(value) => setCoverSizes((old) => ({ ...old, [section()]: value }))}
+                />
+              </Show>
               <span>{library.busy() ? t("Synchronisation…") : ""}</span>
               <Show when={hasFilters()}>
-                <Show when={["albums", "compilations", "genres"].includes(section())}>
-                  <CoverSize
-                    value={coverSizes()[section()] ?? 150}
-                    disabled={section() === "albums" && coverFlow()}
-                    onChange={(value) => setCoverSizes((old) => ({ ...old, [section()]: value }))}
-                  />
-                </Show>
                 <button
                   class="icon-button"
                   title={t("Inverser l’ordre alphabétique")}

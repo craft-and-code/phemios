@@ -390,3 +390,73 @@ main:has(.m3u-page) > .library-source {
 .download-complete:hover {
   color: var(--accent);
 }
+
+/* Match the drawer's top, right and bottom margins to the scene's available grid row. */
+main > .playback-page {
+  padding: 24px;
+}
+.playback-page > .playback-queue {
+  position: relative;
+  top: auto;
+  align-self: stretch;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.playback-queue > :not(ol) {
+  flex-shrink: 0;
+}
+.playback-page .playback-queue > ol {
+  flex: 1;
+  min-height: 0;
+  margin: 8px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.playback-page .playback-queue li {
+  display: grid;
+  grid-template-columns: 20px 30px 26px minmax(0, 1fr);
+  gap: 4px;
+}
+.playback-page .playback-queue li .queue-grip {
+  width: 20px;
+  padding-inline: 2px;
+}
+.playback-page .playback-queue .queue-track-number {
+  width: 30px;
+  justify-content: center;
+  cursor: pointer;
+}
+.playback-page .playback-queue .queue-track {
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 4px;
+  padding: 8px 2px;
+}
+.playback-page .playback-queue .queue-track-description {
+  gap: 2px;
+}
+.playback-page .playback-queue .queue-lyrics-track {
+  width: 26px;
+  height: 28px;
+  padding: 3px;
+  color: var(--muted);
+}
+.playback-page .playback-queue .queue-lyrics-track svg {
+  width: 20px;
+  height: 20px;
+}
+.playback-page .playback-queue .queue-lyrics-retained {
+  color: var(--text);
+}
+.playback-page .playback-queue button.queue-lyrics-track:not(:disabled):hover {
+  color: var(--accent);
+}
+@media (max-width: 850px) {
+  .playback-page > .playback-queue {
+    position: absolute;
+    inset: 24px 24px 24px auto;
+    width: min(290px, calc(100% - 48px));
+  }
+}

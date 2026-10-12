@@ -94,6 +94,14 @@ export function PlaybackQueue(props: { onClose: () => void }) {
                 "queue-drop-target": dropTarget() === row.index,
               }}
               draggable={reorderable()}
+              onClick={(event) => {
+                if (
+                  !(event.target instanceof Element) ||
+                  event.target.closest("button, .queue-lyrics-track")
+                )
+                  return;
+                if (!player.busy()) void player.playQueueOccurrence(row.index);
+              }}
               onDragStart={(event) => {
                 if (!reorderable()) {
                   event.preventDefault();
@@ -194,6 +202,9 @@ export function PlaybackQueue(props: { onClose: () => void }) {
               >
                 <Icon name="grip" />
               </button>
+              <small class="queue-track-number">
+                {row.number}/{row.albumTotal}
+              </small>
               <Show
                 when={lyrics.available(row.reference) === true}
                 fallback={
@@ -227,10 +238,7 @@ export function PlaybackQueue(props: { onClose: () => void }) {
                 disabled={player.busy()}
                 onClick={() => void player.playQueueOccurrence(row.index)}
               >
-                <small class="queue-track-number">
-                  {row.number}/{row.albumTotal}
-                </small>
-                <span>
+                <span class="queue-track-description">
                   <strong>{row.title}</strong>
                   <small>
                     {row.artist} · {row.album?.title}

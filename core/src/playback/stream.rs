@@ -36,7 +36,7 @@ fn stop(
                     update(state, |s| s.confirmed = true)?;
                 }
                 if value["type"] == "error" {
-                    return Err("Aède n’a pas confirmé l’enregistrement de cette écoute.".into());
+                    return Err(protocol::failure(&value));
                 }
             }
             Ok(Message::Close(_)) | Err(tungstenite::Error::ConnectionClosed) => break,
@@ -271,3 +271,7 @@ pub(super) fn stream(
         }
     }
 }
+
+#[cfg(test)]
+#[path = "stream_tests.rs"]
+mod tests;

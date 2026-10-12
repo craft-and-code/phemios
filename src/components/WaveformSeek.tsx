@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { createWaveformPresentation } from "../library/waveform-presentation";
+import { createWaveformHover } from "../library/waveform-hover";
 import { parseWaveform, waveformPosition } from "../library/waveform";
 /** Retains the full envelope on pause; an ordinary keyboard range supplies accessible seeking. */
 export function WaveformSeek() {
@@ -36,6 +37,12 @@ export function WaveformSeek() {
   const path = createMemo(() => display().path);
   const disabled = () =>
     !["playing", "paused"].includes(player.state().status) || player.busy() || !duration();
+  const hover = createWaveformHover(() => player.state().reference ?? "", disabled);
+  function hoverPosition(event: PointerEvent & { currentTarget: HTMLInputElement }) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (event.clientY < rect.top || event.clientY > rect.bottom) hover.clear();
+    else hover.move(event.clientX, rect.left, rect.width, duration());
+  }
   const progress = () =>
     Math.max(0, Math.min(100, (player.seekPosition() / (duration() || 1)) * 100));
   return (
@@ -70,6 +77,22 @@ export function WaveformSeek() {
       >
         <path class="waveform-played" d={path()} />
       </svg>
+      <svg
+        class="waveform-hover-layer"
+        viewBox="0 0 1000 40"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <line
+          class="waveform-hover-cursor"
+          visibility={hover.position() === undefined ? "hidden" : "visible"}
+          x1={((hover.position() ?? 0) / (duration() || 1)) * 1000}
+          x2={((hover.position() ?? 0) / (duration() || 1)) * 1000}
+          y1="0"
+          y2="40"
+          vector-effect="non-scaling-stroke"
+        />
+      </svg>
       <input
         type="range"
         min="0"
@@ -86,9 +109,11 @@ export function WaveformSeek() {
           event.currentTarget.focus();
           pointer = event.pointerId;
           event.currentTarget.setPointerCapture(event.pointerId);
+          hoverPosition(event);
           player.previewSeek(position(event));
         }}
         onPointerMove={(event) => {
+          hoverPosition(event);
           if (pointer === event.pointerId) player.previewSeek(position(event));
         }}
         onPointerUp={(event) => {
@@ -97,11 +122,16 @@ export function WaveformSeek() {
           event.currentTarget.releasePointerCapture(event.pointerId);
           void player.seek(position(event));
         }}
+        onPointerLeave={hover.clear}
         onPointerCancel={() => {
           pointer = undefined;
+          hover.clear();
           player.clearSeekPreview();
         }}
-        onBlur={player.clearSeekPreview}
+        onBlur={() => {
+          hover.clear();
+          player.clearSeekPreview();
+        }}
       />
       <Show when={result.loading}>
         <span class="spinner waveform-loader" aria-label={t("Calcul de la forme d’onde…")} />

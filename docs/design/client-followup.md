@@ -27,3 +27,13 @@ The queue drawer stays open after Stop, with the idle icon centered in the remai
 Portable preferences V2 include the selected account's private podcast subscriptions/listened evidence and saved articles. An explicit import preview identifies provenance, destination and counts. Restore adds absent identities, retains existing records and validates both stores' complete publication budgets before starting. V1 anonymous preference files remain valid; unassigned legacy device records are untouched. See [managed local engine](local-engine.md) for file limits, native session admission and the two-file IO publication limit.
 
 The import feasibility discussion for other applications does not introduce an importer in this milestone.
+
+## Playback presentation controls
+
+The queue reserves equal 24-pixel top/right/bottom margins and fills its available grid row. Only its ordered entries scroll. The compact row places the drag grip, album-relative track number, 20-pixel lyrics glyph and title in that order. A retained lyrics glyph is white and non-interactive; an unavailable glyph is muted and retains the existing explicit acquisition action. Clicking a number or the rest of the row starts that exact occurrence; action and readonly lyrics clicks never bubble into playback.
+
+The ordinary lyrics control is a view-session switch. Hiding it preserves the resident paragraph and its dragged position, skips hidden fitting work and hides untimed-text controls. The floating scene remains independently selectable and can still render its words. Account/settings replacement restores the ordinary visible default. No new account preference or portable-backup field is introduced.
+
+A separate resident SVG layer follows the pointer over the complete-track waveform and maps the same full-width coordinates as click seeking. Consumed-clock updates do not invalidate the pointer target. Leaving, canceling, blurring, replacing the track or disabling seek clears it. It never moves the consumed clock or refetches the retained envelope. Idle timelines remain unavailable. Shared notification dismissal explicitly overrides margins from surrounding forms and centers its close glyph beside wrapped text.
+
+The cover-size control precedes the catalogue toolbar spacer at its far left, with a disc glyph and accessible size/reset tooltip. Its bounds, session state, double-click restoration and Cover Flow disabling remain unchanged; no Cover Flow renderer or transition code changes in this refinement.

@@ -44,7 +44,7 @@ export function Feedback(props: {
         <span>{props.message}</span>
         <button
           type="button"
-          class="icon-button quiet icon-close"
+          class="icon-button quiet icon-close feedback-close"
           aria-label={t("Masquer la notification")}
           title={t("Masquer la notification")}
           onClick={() => {

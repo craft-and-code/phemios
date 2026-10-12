@@ -9,6 +9,7 @@ export function PlaybackLyrics(props: {
   text: string;
   cue?: string | number;
   floating?: boolean;
+  hidden?: boolean;
   typography?: LyricTypography;
 }) {
   const [position, setPosition] = createSignal({ x: 50, y: 50 }),
@@ -29,7 +30,7 @@ export function PlaybackLyrics(props: {
   function measure() {
     const span = element?.firstElementChild as HTMLElement | null,
       stage = element?.parentElement;
-    if (!span || !stage || disposed) return;
+    if (!span || !stage || disposed || props.hidden) return;
     const fittedPhrase = phrase();
     setScale(
       lyricFit({
@@ -59,6 +60,7 @@ export function PlaybackLyrics(props: {
   createEffect(() => {
     void phrase();
     void position();
+    void props.hidden;
     schedule();
   });
   onMount(() => {
@@ -94,6 +96,7 @@ export function PlaybackLyrics(props: {
         element = node;
       }}
       class="playback-current-lyrics"
+      hidden={props.hidden}
       classList={{
         "lyrics-dragging": dragging(),
         "floating-lyrics": !!props.floating,

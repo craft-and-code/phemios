@@ -197,6 +197,13 @@ button.icon-close:focus-visible {
   box-shadow: none;
 }
 
+/* Shared dismissal is centred even inside forms that add margins to their action buttons. */
+.feedback > button.feedback-close {
+  align-self: center;
+  flex: 0 0 28px;
+  margin: 0 0 0 auto;
+}
+
 /* Result views reserve remaining space, rather than leaving an empty message in a corner. */
 main:has(> .page > .empty-state),
 main:has(> .library-page:not(.country-library) .library-results > .empty-state) {
@@ -304,8 +311,14 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 .waveform-seek path {
   fill: none;
 }
-.waveform-played-layer {
+.waveform-played-layer,
+.waveform-hover-layer {
   pointer-events: none;
+}
+.waveform-hover-cursor {
+  stroke: var(--text);
+  stroke-width: 1;
+  opacity: 0.8;
 }
 .waveform-envelope {
   stroke: var(--muted);
