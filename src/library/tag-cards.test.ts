@@ -23,3 +23,13 @@ it("keeps every tagged artist album and track in the same result window, includi
     parseTagCard({ reference: "artist:other", name: "Other" }, rows[0]!.reference),
   ).toThrow();
 });
+
+it("does not fabricate artist album or track cards for other valid annotated entity kinds", () => {
+  for (const kind of ["recording", "work", "release_group", "label", "genre"]) {
+    const reference = `${kind}:@phemios/local/fixture`;
+    expect(cachedTagCard(reference, [], [])).toBeUndefined();
+    expect(() => parseTagCard({ reference, name: "Retained target" }, reference)).toThrow(
+      "Élément tagué indisponible.",
+    );
+  }
+});

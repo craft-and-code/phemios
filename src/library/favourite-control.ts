@@ -1,5 +1,6 @@
 import { createMemo, createSignal, onCleanup } from "solid-js";
 import { requestAede } from "../platform/desktop";
+import { parseAnnotationResponse } from "./annotation-loading";
 import { referenceSource } from "./sources";
 import type { AccountSession, Annotation } from "./server";
 /** A footer heart writes only the captured track, never the current page or a later account. */
@@ -28,14 +29,14 @@ export function createFavouriteControl(
     held.setBusy(true);
     held.setError("");
     try {
-      const answer = await requestAede<{ annotation: Annotation | null }>(
+      const answer = await requestAede<unknown>(
         "/api/me/v1/annotation",
         { ref: held.ref },
         "PUT",
         { loved: !loved() },
         referenceSource(held.ref),
       );
-      if (alive && scope() === held) publish(held.ref, answer.annotation);
+      if (alive && scope() === held) publish(held.ref, parseAnnotationResponse(answer, held.ref));
     } catch (e) {
       if (alive && scope() === held) held.setError(e instanceof Error ? e.message : String(e));
     } finally {

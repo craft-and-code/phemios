@@ -1,5 +1,10 @@
 import { expect, it, vi } from "vitest";
-import { createAnnotationLoader } from "./annotation-loading";
+import { translate } from "../i18n";
+import {
+  createAnnotationLoader,
+  parseAnnotation,
+  parseAnnotationResponse,
+} from "./annotation-loading";
 import { referenceSource, type SourceId } from "./sources";
 import type { AccountSession, Annotation } from "./server";
 const owner = (server: string): AccountSession => ({
@@ -85,6 +90,13 @@ it("retains the old projection and reports malformed cross-source or duplicate p
     page([annotation("artist:@phemios/local/wrong", "foreign")]),
     page([annotation("artist:same", "one"), annotation("artist:same", "two")]),
     { ...page([]), total: -1 },
+    { ...page([]), total: 1000001 },
+    page([annotation("unknown:fixture", "invalid kind")]),
+    {
+      ...page([]),
+      items: [{ ...annotation("label:fixture", "invalid value"), note: 7 }],
+      total: 1,
+    },
   ]) {
     const target = setup(async () => malformed);
     target.rows.set("artist:previous", annotation("artist:previous", "keep"));
@@ -144,4 +156,130 @@ it("keeps a newer snapshot when an older read completes or fails afterwards", as
     expect([...target.rows.keys()]).toEqual(["artist:new"]);
     expect(target.error).not.toHaveBeenCalled();
   }
+});
+
+it("accepts every valid Aède annotation kind while preserving private values and exact identities", () => {
+  for (const kind of [
+    "artist",
+    "release",
+    "track",
+    "recording",
+    "work",
+    "release_group",
+    "label",
+    "genre",
+  ])
+    for (const owner of ["local", "server"]) {
+      const reference = `${kind}:@phemios/${owner}/fixture`,
+        row = {
+          ...annotation(reference, "artist:literal tag"),
+          note: "work:literal note",
+          rating: 4,
+          loved: true,
+        };
+      expect(parseAnnotation(row, reference)).toEqual(row);
+    }
+});
+it("publishes valid mixed-kind owner annotations without discarding the private snapshot", async () => {
+  for (const source of ["local", "server"] as const) {
+    const rows = [
+      "artist",
+      "release",
+      "track",
+      "recording",
+      "work",
+      "release_group",
+      "label",
+      "genre",
+    ].map((kind) => annotation(`${kind}:@phemios/${source}/fixture`, `${kind} private tag`));
+    const target = setup(async () => page(rows));
+    await target.loader.load(source);
+    expect([...target.rows.values()]).toEqual(rows);
+    expect(target.error).not.toHaveBeenCalled();
+  }
+});
+it("explains malformed annotations and still refuses foreign targets and invalid values", () => {
+  const row = annotation("artist:fixture", "private");
+  expect(() => parseAnnotation(undefined)).toThrow("Réponse d’annotation Aède invalide.");
+  for (const reference of ["unknown:fixture", "artist:", "release_group:", "genre:"])
+    expect(() => parseAnnotation({ ...row, reference })).toThrow(
+      "Référence d’annotation Aède invalide.",
+    );
+  expect(() => parseAnnotation(row, "artist:other")).toThrow(
+    "L’annotation reçue ne correspond pas à l’élément demandé.",
+  );
+  for (const invalid of [{ rating: 0 }, { rating: 6 }, { loved: null }, { note: 7 }, { tags: [7] }])
+    expect(() => parseAnnotation({ ...row, ...invalid })).toThrow(
+      "Les valeurs d’annotation Aède sont invalides.",
+    );
+});
+
+it("retains valid remote annotation keys containing literal local-marker text", async () => {
+  const row = annotation(
+    "track:@phemios/server/music/artist:@phemios/local/unrelated/fixture.flac",
+    "retained",
+  );
+  const target = setup(async () => page([row]));
+  await target.loader.load("server");
+  expect([...target.rows.values()]).toEqual([row]);
+  expect(target.error).not.toHaveBeenCalled();
+});
+
+it("provides bilingual validation details without repeating the unreadable-panel heading", () => {
+  for (const [message, english] of [
+    ["Réponse d’annotation Aède invalide.", "Invalid Aède annotation response."],
+    ["Référence d’annotation Aède invalide.", "Invalid Aède annotation reference."],
+    [
+      "L’annotation reçue ne correspond pas à l’élément demandé.",
+      "The received annotation does not match the requested item.",
+    ],
+    ["Les valeurs d’annotation Aède sont invalides.", "The Aède annotation values are invalid."],
+    [
+      "Les annotations dépassent la limite de lecture de 100 Mio.",
+      "The annotations exceed the 100 MiB read limit.",
+    ],
+  ]) {
+    expect(translate("fr", message!)).toBe(message);
+    expect(translate("en", message!)).toBe(english);
+    expect(message).not.toContain("Annotations illisibles");
+  }
+});
+
+it("validates the whole Aède response identity for every canonical kind including empty annotations", () => {
+  for (const kind of [
+    "artist",
+    "release",
+    "track",
+    "recording",
+    "work",
+    "release_group",
+    "label",
+    "genre",
+  ])
+    for (const source of ["local", "server"]) {
+      const reference = `${kind}:@phemios/${source}/fixture`,
+        row = annotation(reference, "retained tag");
+      expect(parseAnnotationResponse({ reference, annotation: row }, reference)).toBe(row);
+      expect(parseAnnotationResponse({ reference, annotation: null }, reference)).toBeNull();
+    }
+  const reference = "artist:fixture",
+    row = annotation(reference, "retained tag");
+  for (const raw of [undefined, null, [], {}, { reference }])
+    expect(() => parseAnnotationResponse(raw, reference)).toThrow(
+      "Réponse d’annotation Aède invalide.",
+    );
+  for (const target of [undefined, null, 7, "artist:", "unknown:fixture"])
+    expect(() =>
+      parseAnnotationResponse({ reference: target, annotation: null }, reference),
+    ).toThrow("Référence d’annotation Aède invalide.");
+  for (const nested of [null, row])
+    expect(() =>
+      parseAnnotationResponse({ reference: "artist:other", annotation: nested }, reference),
+    ).toThrow("L’annotation reçue ne correspond pas à l’élément demandé.");
+  expect(() =>
+    parseAnnotationResponse(
+      { reference, annotation: { ...row, reference: "artist:other" } },
+      reference,
+    ),
+  ).toThrow("L’annotation reçue ne correspond pas à l’élément demandé.");
 });

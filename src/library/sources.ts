@@ -1,8 +1,10 @@
 import { t } from "../i18n";
 /** Application references retain catalog ownership without changing Aède identities. */
 export type SourceId = "local" | "server";
+/** Only the qualifier after the entity kind chooses an owner; engine keys remain literal. */
 export function referenceSource(reference: string): SourceId {
-  return reference.includes(":@phemios/local/") ? "local" : "server";
+  const colon = reference.indexOf(":");
+  return colon > 0 && reference.startsWith("@phemios/local/", colon + 1) ? "local" : "server";
 }
 export const sourceLabel = (source: SourceId) => (source === "local" ? t("Local") : t("Serveur"));
 

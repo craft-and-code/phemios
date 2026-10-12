@@ -7,7 +7,6 @@ import { t } from "../i18n";
 import { createEffect, createMemo, createSignal, For, Show, on, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
 import { createAnnotationRead } from "../library/annotation-read";
-import { parseAnnotation } from "../library/annotation-loading";
 import { annotationWriter, type AnnotationPatch } from "../library/annotation-writes";
 import { requestAede } from "../platform/desktop";
 import { TagInput } from "./TagInput";
@@ -48,16 +47,9 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
     const { session, reference } = scope();
     const current = () => !disposed && writer() === controller;
     const controller = annotationWriter({
+      reference,
       active: () => !!session && session === library.sessionFor(props.reference),
-      request: async (patch) => {
-        const answer = await requestAede<{ annotation: unknown }>(
-          "/api/me/v1/annotation",
-          { ref: reference },
-          "PUT",
-          patch,
-        );
-        return answer.annotation === null ? null : parseAnnotation(answer.annotation, reference);
-      },
+      request: (patch) => requestAede("/api/me/v1/annotation", { ref: reference }, "PUT", patch),
       publish: (saved) => library.updateAnnotation(reference, saved),
       pending: (count) => {
         if (current()) setPending(count);

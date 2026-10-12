@@ -1,7 +1,6 @@
 import { createMemo, createResource, onCleanup } from "solid-js";
-import { t } from "../i18n";
 import { annotationScope } from "./annotation-scope";
-import { parseAnnotation } from "./annotation-loading";
+import { parseAnnotationResponse } from "./annotation-loading";
 import type { AccountSession } from "./server";
 /** Detail reads expose only their exact reference/session scope, including after logout.
  * Solid resources may retain a previous value while disabled or loading; this facade hides it.
@@ -21,17 +20,18 @@ export function createAnnotationRead(
     () => (scope().session ? scope() : false),
     async (held) => {
       try {
-        const raw = (await request(held.reference)) as { annotation: unknown };
-        if (!raw || typeof raw !== "object" || !("annotation" in raw))
-          throw new Error(t("Annotations illisibles :"));
+        const raw = await request(held.reference);
         return {
           scope: held,
-          annotation:
-            raw.annotation === null ? null : parseAnnotation(raw.annotation, held.reference),
+          annotation: parseAnnotationResponse(raw, held.reference),
           error: "",
         };
       } catch (failure) {
-        return { scope: held, annotation: undefined, error: String(failure) };
+        return {
+          scope: held,
+          annotation: undefined,
+          error: failure instanceof Error ? failure.message : String(failure),
+        };
       }
     },
   );

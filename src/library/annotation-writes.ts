@@ -1,9 +1,11 @@
+import { parseAnnotationResponse } from "./annotation-loading";
 import type { Annotation } from "./server";
 export type AnnotationPatch = Partial<Pick<Annotation, "rating" | "loved" | "note" | "tags">>;
-/** Serialize explicit field patches; never publish a response into another session. */
+/** Serialize explicit field patches; validate exact targets only while the captured session is active. */
 export function annotationWriter(options: {
+  reference: string;
   active: () => boolean;
-  request: (patch: AnnotationPatch) => Promise<Annotation | null>;
+  request: (patch: AnnotationPatch) => Promise<unknown>;
   publish: (annotation: Annotation | null) => void;
   pending: (count: number) => void;
 }) {
@@ -16,8 +18,10 @@ export function annotationWriter(options: {
         .then(async () => {
           if (!options.active()) return undefined;
           const answer = await options.request(patch);
-          if (options.active()) options.publish(answer);
-          return answer;
+          if (!options.active()) return undefined;
+          const saved = parseAnnotationResponse(answer, options.reference);
+          options.publish(saved);
+          return saved;
         })
         .finally(() => {
           count--;

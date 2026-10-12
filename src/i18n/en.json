@@ -1512,5 +1512,10 @@
   "Retour à {0}": "Back to {0}",
   "Radio Browser a interrompu la connexion. Réessayez plus tard.": "Radio Browser interrupted the connection. Try again later.",
   "Synchronisation annulée : la session a changé.": "Synchronization cancelled: the session changed.",
-  "Le lecteur système a interrompu le démarrage de cette radio. Réessayez ou choisissez une autre station.": "The system player interrupted this station's startup. Retry or choose another station."
+  "Le lecteur système a interrompu le démarrage de cette radio. Réessayez ou choisissez une autre station.": "The system player interrupted this station's startup. Retry or choose another station.",
+  "Réponse d’annotation Aède invalide.": "Invalid Aède annotation response.",
+  "Référence d’annotation Aède invalide.": "Invalid Aède annotation reference.",
+  "L’annotation reçue ne correspond pas à l’élément demandé.": "The received annotation does not match the requested item.",
+  "Les valeurs d’annotation Aède sont invalides.": "The Aède annotation values are invalid.",
+  "Les annotations dépassent la limite de lecture de 100 Mio.": "The annotations exceed the 100 MiB read limit."
 }

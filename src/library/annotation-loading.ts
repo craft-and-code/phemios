@@ -1,6 +1,8 @@
 import { t } from "../i18n";
 import type { AccountSession, Annotation } from "./server";
 import { referenceSource, type SourceId } from "./sources";
+const annotationReference =
+  /^(artist|release|track|recording|work|release_group|label|genre):[\s\S]+$/;
 interface Options {
   session: (source: SourceId) => AccountSession | undefined;
   request: (source: SourceId, offset: number) => Promise<unknown>;
@@ -8,16 +10,18 @@ interface Options {
   publish: (source: SourceId, rows: readonly Annotation[]) => void;
   error: (failure: string) => void;
 }
-/** Validate private rows without interpreting note markup or fabricating absent ratings. */
+/** Accept all canonical Aède entity kinds, even without a dedicated detail view.
+ * Validate private values without interpreting note markup or fabricating absent ratings.
+ */
 export function parseAnnotation(raw: unknown, reference?: string): Annotation {
   const row = raw as Annotation;
+  if (!row || typeof row !== "object" || Array.isArray(row))
+    throw new Error(t("Réponse d’annotation Aède invalide."));
+  if (typeof row.reference !== "string" || !annotationReference.test(row.reference))
+    throw new Error(t("Référence d’annotation Aède invalide."));
+  if (reference !== undefined && row.reference !== reference)
+    throw new Error(t("L’annotation reçue ne correspond pas à l’élément demandé."));
   if (
-    !row ||
-    typeof row !== "object" ||
-    Array.isArray(row) ||
-    typeof row.reference !== "string" ||
-    !/^(artist|release|track):.+/.test(row.reference) ||
-    (reference !== undefined && row.reference !== reference) ||
     typeof row.loved !== "boolean" ||
     !(
       row.rating === null ||
@@ -27,8 +31,25 @@ export function parseAnnotation(raw: unknown, reference?: string): Annotation {
     !Array.isArray(row.tags) ||
     row.tags.some((tag) => typeof tag !== "string")
   )
-    throw new Error(t("Annotations illisibles :"));
+    throw new Error(t("Les valeurs d’annotation Aède sont invalides."));
   return row;
+}
+/** Aède always identifies the requested target outside the nullable annotation.
+ * Validate that identity even for an empty response; a nested annotation must agree too.
+ */
+export function parseAnnotationResponse(raw: unknown, reference: string): Annotation | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) || !Object.hasOwn(raw, "annotation"))
+    throw new Error(t("Réponse d’annotation Aède invalide."));
+  const answer = raw as { reference: unknown; annotation: unknown };
+  if (
+    !Object.hasOwn(answer, "reference") ||
+    typeof answer.reference !== "string" ||
+    !annotationReference.test(answer.reference)
+  )
+    throw new Error(t("Référence d’annotation Aède invalide."));
+  if (answer.reference !== reference)
+    throw new Error(t("L’annotation reçue ne correspond pas à l’élément demandé."));
+  return answer.annotation === null ? null : parseAnnotation(answer.annotation, reference);
 }
 /** Complete source snapshots are published only for the captured session/read generation.
  * Reset clears that source immediately; another source's private rows remain untouched.
@@ -82,7 +103,8 @@ export function createAnnotationLoader(options: Options) {
         total = page.total;
         scannedAt = page.scanned_at;
         bytes += new TextEncoder().encode(JSON.stringify(page.items)).byteLength;
-        if (bytes > 100 * 1024 * 1024) throw new Error(t("Annotations illisibles :"));
+        if (bytes > 100 * 1024 * 1024)
+          throw new Error(t("Les annotations dépassent la limite de lecture de 100 Mio."));
         for (const value of page.items) {
           const row = parseAnnotation(value);
           if (referenceSource(row.reference) !== source || rows.has(row.reference))

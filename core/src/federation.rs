@@ -25,23 +25,28 @@ impl Source {
         }
     }
 }
+fn entity_kind(kind: &str) -> bool {
+    matches!(
+        kind,
+        "artist" | "release" | "track" | "recording" | "work" | "release_group" | "label" | "genre"
+    )
+}
 /// Qualify only an engine identity, preserving its entity kind.
 pub fn qualify(reference: &str, source: Source) -> String {
     match reference.split_once(':') {
-        Some((kind, suffix))
-            if matches!(
-                kind,
-                "artist" | "release" | "track" | "recording" | "work" | "label"
-            ) =>
-        {
+        Some((kind, suffix)) if entity_kind(kind) => {
             format!("{kind}:@phemios/{}/{suffix}", source.name())
         }
         _ => reference.into(),
     }
 }
 /// Unwrap an application identity. Legacy raw references belong to the remote server.
+/// Only a marker immediately after the entity kind is structural; keys remain literal.
 pub fn resolve(reference: &str) -> Result<(Source, String), String> {
-    let Some((kind, rest)) = reference.split_once(":@phemios/") else {
+    let Some((kind, key)) = reference.split_once(':') else {
+        return Ok((Source::Server, reference.into()));
+    };
+    let Some(rest) = key.strip_prefix("@phemios/") else {
         return Ok((Source::Server, reference.into()));
     };
     let (source, suffix) = rest
@@ -89,12 +94,9 @@ pub fn map(value: &mut Value, source: Source, incoming: bool) -> Result<(), Stri
             }
             Value::String(text)
                 if identity_key(key)
-                    && text.split_once(':').is_some_and(|(kind, _)| {
-                        matches!(
-                            kind,
-                            "artist" | "release" | "track" | "recording" | "work" | "label"
-                        )
-                    }) =>
+                    && text
+                        .split_once(':')
+                        .is_some_and(|(kind, _)| entity_kind(kind)) =>
             {
                 if incoming {
                     *text = qualify(text, source);
