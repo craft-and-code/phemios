@@ -248,3 +248,36 @@ it("keeps the workspace mounted while only the selected M3U content loads", asyn
   expect(rendered()).toBe(`1:${id}`);
   dispose();
 });
+
+it("cancels a refresh without publishing its late response or losing retained selection", async () => {
+  let finish!: (value: unknown) => void,
+    delayed = false;
+  const { read, dispose } = mount(async (path) =>
+    path.endsWith("status")
+      ? status
+      : path.endsWith(id)
+        ? file
+        : delayed
+          ? new Promise((resolve) => {
+              finish = resolve;
+            })
+          : page,
+  );
+  await settle();
+  read.select(id);
+  await settle();
+  delayed = true;
+  const pending = read.refetch();
+  await settle();
+  expect(read.refreshing()).toBe(true);
+  read.cancel();
+  expect(read.refreshing()).toBe(false);
+  expect(read.page()?.total).toBe(1);
+  expect(read.selected()).toBe(id);
+  finish({ ...page, total: 0, items: [] });
+  await pending;
+  await settle();
+  expect(read.page()?.total).toBe(1);
+  expect(read.selected()).toBe(id);
+  dispose();
+});

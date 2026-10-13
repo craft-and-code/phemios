@@ -1,4 +1,4 @@
-import { Show } from "solid-js";
+import { createEffect, Show } from "solid-js";
 import { t } from "../i18n";
 import { createFeedback } from "../library/feedback";
 import { Icon } from "./Icon";
@@ -8,6 +8,7 @@ export function Feedback(props: {
   error?: boolean;
   onClose?: () => void;
   class?: string;
+  persistent?: boolean;
 }) {
   const state = createFeedback(
     () => props.message,
@@ -15,7 +16,11 @@ export function Feedback(props: {
   );
   let hovered = false,
     focused = false;
-  const pause = () => state.pause(hovered || focused);
+  const pause = () => state.pause(!!props.persistent || hovered || focused);
+  createEffect(() => {
+    void props.message;
+    pause();
+  });
   return (
     <Show when={state.visible()}>
       <span

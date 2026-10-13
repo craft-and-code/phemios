@@ -23,6 +23,9 @@
   --border: #303234;
   --surface: #1a1c1d;
   --form-control-height: 38px;
+  --control-gap: 8px;
+  --error: #d47777;
+  --compact-control-gap: 4px;
   --sidebar: #151718;
   --player: #1a1c1d;
   font-synthesis: none;
@@ -2245,4 +2248,73 @@ main:has(> .result-page) > * {
 .choice-chip-marker > svg {
   width: 14px;
   height: 14px;
+}
+
+.catalog-actions,
+.statistics-heading .settings-actions,
+.catalog-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.collection-row {
+  gap: var(--compact-control-gap) !important;
+}
+.collection-duration {
+  white-space: nowrap;
+  color: var(--muted);
+  margin-inline: 8px;
+}
+.analysis-page > .page-controls,
+.analysis-page .page-controls {
+  padding-bottom: 24px;
+  gap: var(--control-gap);
+}
+.personal-page:has(.cover-flow) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.collection-row > .icon-button {
+  font-size: inherit;
+}
+.personal-albums.personal-flow {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 1 !important;
+}
+.personal-selection-actions > .catalog-actions {
+  margin-left: auto;
+}
+.track-recovery-row {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+  margin-block: 12px;
+}
+.track-recovery-row .feedback {
+  flex: 1;
+  min-width: 0;
+}
+.density-compact .tagged-card {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.density-compact .tagged-playable {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-actions {
+  gap: var(--compact-control-gap);
+}
+.collection-row > .icon-button,
+.collection-row .collection-delete .icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
 }

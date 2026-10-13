@@ -1,10 +1,11 @@
+import { CatalogActions } from "../components/CatalogActions";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
-import { createMemo, createResource, For, Show } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { normalizeName } from "../library/filtering";
@@ -27,8 +28,13 @@ export function TagsPage(props: {
 }) {
   const library = useLibrary(),
     annotations = () => Object.values(library.annotations);
+  const [reverse, setReverse] = createSignal(false),
+    [compact, setCompact] = createSignal(false);
   const vocabulary = createMemo(() => tagCatalog(annotations()));
-  const entries = createMemo(() => taggedEntries(annotations(), props.selected, props.query));
+  const entries = createMemo(() => {
+    const rows = taggedEntries(annotations(), props.selected, props.query);
+    return reverse() ? rows.reverse() : rows;
+  });
   const offset = () =>
     Math.min(props.offset, Math.max(0, Math.ceil(entries().length / 10) - 1) * 10);
   const targets = () => entries().slice(offset(), offset() + 10);
@@ -71,7 +77,7 @@ export function TagsPage(props: {
     return cached(reference) ?? (row && "track" in row ? row.track : undefined);
   };
   return (
-    <section class="page result-page tags-page">
+    <section class="page result-page tags-page" classList={{ "density-compact": compact() }}>
       <StickyHeader>
         <div class="selection-filter-row">
           <ResultCount value={entries().length} />
@@ -107,12 +113,23 @@ export function TagsPage(props: {
             </div>
           </Show>
           <div class="selection-create-action">
-            <SelectionCollection
-              disabled={
-                !entries().some((row) => referenceSource(row.reference) === library.source())
-              }
-              expression={tagCollectionExpression(props.selected, props.query)}
-            />
+            <CatalogActions
+              reverseLabel={t("Inverser le tri")}
+              reverse={reverse()}
+              compact={compact()}
+              onReverse={() => {
+                props.setOffset(0);
+                setReverse(!reverse());
+              }}
+              onCompact={() => setCompact(!compact())}
+            >
+              <SelectionCollection
+                disabled={
+                  !entries().some((row) => referenceSource(row.reference) === library.source())
+                }
+                expression={tagCollectionExpression(props.selected, props.query)}
+              />
+            </CatalogActions>
           </div>
         </div>
       </StickyHeader>

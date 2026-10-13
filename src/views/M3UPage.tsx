@@ -1,3 +1,4 @@
+import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
@@ -96,20 +97,19 @@ export function M3UPage(props: { query: string }) {
           <Show when={reads.page()}>
             {(page) => <span class="muted">{t("{0} liste(s)", page().total)}</span>}
           </Show>
-          <button
-            class="icon-button"
-            aria-label={t("Actualiser les listes M3U")}
-            title={t("Actualiser les listes M3U")}
-            disabled={!library.session() || reads.refreshing()}
-            onClick={() => {
+          <RefreshButton
+            label={t("Actualiser les listes M3U")}
+            busy={reads.refreshing() || reads.detailLoading()}
+            disabled={
+              !library.session() ||
+              (reads.pending() && !reads.refreshing() && !reads.detailLoading())
+            }
+            onCancel={reads.cancel}
+            onRefresh={() => {
               void reads.refetch();
               if (reads.selected()) void reads.retryDetail();
             }}
-          >
-            <Show when={reads.refreshing()} fallback={<Icon name="refresh" />}>
-              <span class="spinner" />
-            </Show>
-          </button>
+          />
         </div>
       </StickyHeader>
       <AccountNotice />
@@ -129,7 +129,7 @@ export function M3UPage(props: { query: string }) {
         />
       </Show>
       <Show when={reads.loading()}>
-        <PageLoader />
+        <PageLoader inline />
       </Show>
       <Show
         when={reads.page()?.items.length}
@@ -174,15 +174,12 @@ export function M3UPage(props: { query: string }) {
             <Show when={reads.detailError()}>
               <div class="error-retry">
                 <Feedback error message={reads.detailError()} />
-                <button
-                  class="icon-button"
-                  aria-label={t("Réessayer")}
-                  title={t("Réessayer")}
-                  disabled={reads.detailLoading()}
-                  onClick={() => void reads.retryDetail()}
-                >
-                  <Icon name="refresh" />
-                </button>
+                <RefreshButton
+                  busy={reads.detailLoading()}
+                  disabled={reads.pending() && !reads.detailLoading()}
+                  onCancel={reads.cancel}
+                  onRefresh={reads.retryDetail}
+                />
               </div>
             </Show>
             <Show

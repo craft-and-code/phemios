@@ -31,7 +31,7 @@
 }
 
 .feedback-error {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-color: var(--error);
 }
 .settings-page #settings-panel > .feedback {
   margin-inline: 24px;

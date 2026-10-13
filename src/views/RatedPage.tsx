@@ -1,3 +1,4 @@
+import { CatalogActions } from "../components/CatalogActions";
 import { AccountNotice } from "../components/AccountNotice";
 import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
@@ -16,6 +17,8 @@ import { AlbumGrid } from "../components/AlbumGrid";
 export function RatedPage(props: { query: string }) {
   const library = useLibrary(),
     [minimum, setMinimum] = createSignal(1),
+    [reverse, setReverse] = createSignal(false),
+    [compact, setCompact] = createSignal(false),
     [maximum, setMaximum] = createSignal(5);
   const albums = () =>
     ratedAlbums(
@@ -33,11 +36,11 @@ export function RatedPage(props: { query: string }) {
       )
       .sort(
         (a, b) =>
-          albumRating(b, library.annotations) - albumRating(a, library.annotations) ||
-          normalizeName(a.title).localeCompare(normalizeName(b.title)),
+          (albumRating(b, library.annotations) - albumRating(a, library.annotations) ||
+            normalizeName(a.title).localeCompare(normalizeName(b.title))) * (reverse() ? -1 : 1),
       );
   return (
-    <section class="page result-page rated-page">
+    <section class="page result-page rated-page" classList={{ "density-compact": compact() }}>
       <StickyHeader>
         <div class="selection-filter-row">
           <ResultCount value={albums().length} />
@@ -64,10 +67,23 @@ export function RatedPage(props: { query: string }) {
             }}
           />
           <div class="selection-create-action">
-            <SelectionCollection
-              disabled={!albums().length}
-              expression={personalCollectionExpression("rated", props.query, minimum(), maximum())}
-            />
+            <CatalogActions
+              reverseLabel={t("Inverser le tri")}
+              reverse={reverse()}
+              compact={compact()}
+              onReverse={() => setReverse(!reverse())}
+              onCompact={() => setCompact(!compact())}
+            >
+              <SelectionCollection
+                disabled={!albums().length}
+                expression={personalCollectionExpression(
+                  "rated",
+                  props.query,
+                  minimum(),
+                  maximum(),
+                )}
+              />
+            </CatalogActions>
           </div>
         </div>
       </StickyHeader>

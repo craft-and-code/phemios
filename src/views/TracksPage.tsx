@@ -1,3 +1,6 @@
+import { Feedback } from "../components/Feedback";
+import { restoreTrackCache } from "../library/track-recovery";
+import type { SourceId } from "../library/sources";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { RefreshButton } from "../components/RefreshButton";
 import { PageLoader } from "../components/PageLoader";
@@ -5,7 +8,7 @@ import { StickyHeader } from "../components/StickyHeader";
 import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
 import { t } from "../i18n";
-import { createMemo, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { publicCatalogSources, cachedTrackPage } from "../library/offline-catalog";
@@ -27,7 +30,24 @@ export function TracksPage(props: {
   const sources = createMemo(() =>
     publicCatalogSources(library.publicSnapshot, library.trackSources()),
   );
+  const [revision, setRevision] = createSignal(0),
+    [retry, setRetry] = createSignal<{ source: SourceId } | false>(false);
+  const recovery = createDiagnosticRead(retry, async (key, admission) => {
+    const restored = await restoreTrackCache(
+      key.source,
+      {
+        connected: !!(key.source === "local" ? library.localSession() : library.serverSession()),
+        connectLocal: library.enableLocal,
+        sync: library.sync,
+        hasTracks: (source) => !!library.publicSnapshot(source)?.tracks,
+        failure: library.error,
+      },
+      admission.current,
+    );
+    if (restored && admission.current()) setRevision((value) => value + 1);
+  });
   const reader = createMemo(() => {
+    revision();
     const choices = sources(),
       query = props.query;
     if (!choices.length) return undefined;
@@ -78,6 +98,21 @@ export function TracksPage(props: {
             {Math.min(offset() + props.size, page()?.total ?? 0)}
           </p>
           <div class="page-controls">
+            <RefreshButton
+              busy={recovery.loading() || read.loading()}
+              disabled={
+                (recovery.pending() || read.pending()) && !recovery.loading() && !read.loading()
+              }
+              onCancel={() => {
+                recovery.cancel();
+                read.cancel();
+              }}
+              onRefresh={() => {
+                const missing = page()?.unavailable[0];
+                if (missing) setRetry({ source: missing.source });
+                else setRevision((value) => value + 1);
+              }}
+            />
             <button
               disabled={!offset() || read.loading()}
               onClick={() => setOffset(Math.max(0, offset() - props.size))}
@@ -99,11 +134,7 @@ export function TracksPage(props: {
       <Show when={!reader()}>
         <EmptyState icon="list">{t("Aucune piste dans cette recherche.")}</EmptyState>
       </Show>
-      <Show when={read.error()}>
-        <p role="alert">
-          {t("Pistes indisponibles :")} {String(read.error())}
-        </p>
-      </Show>
+      <Feedback error persistent message={recovery.error() || read.error()} />
       <Show when={read.loading() && !page()}>
         <PageLoader inline label={t("Chargement des pistes…")} />
       </Show>
@@ -112,15 +143,23 @@ export function TracksPage(props: {
           <>
             <For each={value().unavailable}>
               {(issue) => (
-                <p role="alert">
-                  {sourceLabel(issue.source)} · {issue.error}{" "}
-                  <RefreshButton
-                    busy={read.loading()}
-                    disabled={read.pending() && !read.loading()}
-                    onCancel={read.cancel}
-                    onRefresh={read.refetch}
+                <div class="track-recovery-row">
+                  <Feedback
+                    error
+                    persistent
+                    message={`${sourceLabel(issue.source)} · ${issue.error.replace(/^Error: /, "")}`}
                   />
-                </p>
+                  <RefreshButton
+                    label={t("Synchroniser la bibliothèque")}
+                    busy={recovery.loading()}
+                    disabled={
+                      (library.busy() && !recovery.loading()) ||
+                      (recovery.pending() && !recovery.loading())
+                    }
+                    onCancel={recovery.cancel}
+                    onRefresh={() => setRetry({ source: issue.source })}
+                  />
+                </div>
               )}
             </For>
             <Show when={props.query.trim() && value().cached.length}>

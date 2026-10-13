@@ -312,19 +312,25 @@ export function AnalysisPage(props: { query: string }) {
             <Show when={value().total > 50}>
               <div class="page-controls">
                 <button
+                  class="icon-button"
+                  aria-label={t("Précédent")}
+                  title={t("Précédent")}
                   disabled={!offset()}
                   onClick={() => setOffset((value) => Math.max(0, value - 50))}
                 >
-                  {t("Précédent")}
+                  <Icon name="back" />
                 </button>
                 <span>
                   {offset() + 1}–{offset() + value().items.length} / {value().total}
                 </span>
                 <button
+                  class="icon-button"
+                  aria-label={t("Suivant")}
+                  title={t("Suivant")}
                   disabled={offset() + 50 >= value().total}
                   onClick={() => setOffset((value) => value + 50)}
                 >
-                  {t("Suivant")}
+                  <Icon name="forward" />
                 </button>
               </div>
             </Show>

@@ -1625,5 +1625,6 @@
   "Note : {0}": "Note: {0}",
   "Playlists M3U documentées ; export des annotations Audirvana non confirmé.": "M3U playlists documented; Audirvana annotation export not confirmed.",
   "Format d’export des annotations Tune non confirmé ; import prévu ultérieurement.": "Tune annotation export format not confirmed; import planned for a future version.",
-  "Favori": "Favourite"
+  "Favori": "Favourite",
+  "Masquer les albums": "Hide albums"
 }

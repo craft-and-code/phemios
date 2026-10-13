@@ -1,3 +1,6 @@
+import { CatalogActions } from "../components/CatalogActions";
+import { CoverFlow } from "../components/CoverFlow";
+import { createCoverPosition } from "../visualizer/cover-position";
 import { readCollectionPlayback } from "../library/collection-playback";
 import { ActivityGlyph } from "../components/ActivityGlyph";
 import { PageLoader } from "../components/PageLoader";
@@ -35,6 +38,7 @@ import { sectionIcon, type Section } from "../navigation/routes";
 interface Collection {
   name: string;
   expression: string;
+  duration_ms?: number;
 }
 interface Playlist {
   id: string;
@@ -47,6 +51,9 @@ export function PersonalPage(props: { section: Section; query: string }) {
   const library = useLibrary(),
     [editingCollection, setEditingCollection] = createSignal(false),
     [name, setName] = createSignal(""),
+    [reverse, setReverse] = createSignal(false),
+    [compact, setCompact] = createSignal(false),
+    [flow, setFlow] = createSignal(false),
     [expression, setExpression] = createSignal(""),
     [selected, setSelected] = createSignal(""),
     [message, setMessage] = createSignal(""),
@@ -54,6 +61,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
     [playingCollection, setPlayingCollection] = createSignal(""),
     [openedCollection, setOpenedCollection] = createSignal(""),
     [offset, setOffset] = createSignal(0);
+  const position = createCoverPosition();
   let nameInput: HTMLInputElement | undefined;
   const actions = createPersonalActions(
     () => props.section,
@@ -181,6 +189,8 @@ export function PersonalPage(props: { section: Section; query: string }) {
         includeUnknownYear: true,
         query: props.query,
       },
+    ).sort(
+      (a, b) => normalizeName(a.title).localeCompare(normalizeName(b.title)) * (reverse() ? -1 : 1),
     );
   return (
     <section class="page result-page personal-page">
@@ -188,10 +198,25 @@ export function PersonalPage(props: { section: Section; query: string }) {
         <StickyHeader>
           <div class="personal-selection-actions">
             <ResultCount value={favourites().length} />
-            <SelectionCollection
-              disabled={!favourites().length}
-              expression={personalCollectionExpression("favourites", props.query)}
-            />
+            <CatalogActions
+              reverse={reverse()}
+              compact={compact()}
+              coverFlow={flow()}
+              onReverse={() => setReverse(!reverse())}
+              onCompact={() => {
+                setFlow(false);
+                setCompact(!compact());
+              }}
+              onCoverFlow={() => {
+                setCompact(false);
+                setFlow(!flow());
+              }}
+            >
+              <SelectionCollection
+                disabled={!favourites().length}
+                expression={personalCollectionExpression("favourites", props.query)}
+              />
+            </CatalogActions>
           </div>
         </StickyHeader>
         <AccountNotice connected={!!library.session() || library.demo} />
@@ -203,7 +228,14 @@ export function PersonalPage(props: { section: Section; query: string }) {
             </EmptyState>
           }
         >
-          <AlbumGrid albums={favourites()} />
+          <div
+            class="personal-albums"
+            classList={{ "density-compact": compact(), "personal-flow": flow() }}
+          >
+            <Show when={flow()} fallback={<AlbumGrid albums={favourites()} />}>
+              <CoverFlow albums={favourites()} position={position} reverse={reverse()} />
+            </Show>
+          </div>
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
@@ -285,7 +317,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             )}
           >
             {(row) => (
-              <li>
+              <li class="collection-row">
                 <RenameCollection
                   name={row.name}
                   onRenamed={(name) => {
@@ -293,8 +325,26 @@ export function PersonalPage(props: { section: Section; query: string }) {
                     void refetch();
                   }}
                 />
-                <button onClick={() => setOpenedCollection(row.name)}>
-                  {t("Voir les albums")}
+                <span class="collection-duration" title={t("Durée totale")}>
+                  {Number.isSafeInteger(row.duration_ms) && (row.duration_ms ?? -1) >= 0
+                    ? `${Math.floor(row.duration_ms! / 60000)}:${String(Math.floor(row.duration_ms! / 1000) % 60).padStart(2, "0")}`
+                    : "—"}
+                </span>
+                <button
+                  type="button"
+                  class="icon-button quiet"
+                  aria-label={
+                    openedCollection() === row.name ? t("Masquer les albums") : t("Voir les albums")
+                  }
+                  title={
+                    openedCollection() === row.name ? t("Masquer les albums") : t("Voir les albums")
+                  }
+                  aria-pressed={openedCollection() === row.name}
+                  onClick={() =>
+                    setOpenedCollection(openedCollection() === row.name ? "" : row.name)
+                  }
+                >
+                  <Icon name={openedCollection() === row.name ? "eye" : "eye-off"} />
                 </button>
                 <DeleteCollection
                   name={row.name}

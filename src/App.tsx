@@ -1,3 +1,4 @@
+import { CatalogActions } from "./components/CatalogActions";
 import { CoverSize } from "./components/CoverSize";
 import { StickyHeader } from "./components/StickyHeader";
 import { createCoverPosition } from "./visualizer/cover-position";
@@ -221,7 +222,10 @@ export function App() {
   return (
     <div
       class="app"
-      classList={{ "sidebar-hidden": !sidebar(), "density-compact": compact() }}
+      classList={{
+        "sidebar-hidden": !sidebar(),
+        "density-compact": compact() && !["favourites", "rated", "tags"].includes(section()),
+      }}
       onContextMenu={(event) => event.preventDefault()}
       onAuxClick={externalClick}
       onClick={(event) => {
@@ -453,45 +457,29 @@ export function App() {
               </Show>
               <span>{library.busy() ? t("Synchronisation…") : ""}</span>
               <Show when={hasFilters()}>
-                <button
-                  class="icon-button"
-                  title={t("Inverser l’ordre alphabétique")}
-                  aria-label={t("Inverser l’ordre alphabétique")}
-                  aria-pressed={reverse()}
-                  onClick={() => setReverse(!reverse())}
-                >
-                  <Icon name="sort" />
-                </button>
-                <button
-                  class="icon-button"
-                  title={t("Vue compacte")}
-                  aria-label={t("Vue compacte")}
-                  aria-pressed={compact()}
-                  onClick={() => {
+                <CatalogActions
+                  reverse={reverse()}
+                  compact={compact()}
+                  coverFlow={coverFlow()}
+                  onReverse={() => setReverse(!reverse())}
+                  onCompact={() => {
                     setCoverFlow(false);
                     setCompact(!compact());
                   }}
+                  onCoverFlow={
+                    current().kind === "section" && section() === "albums"
+                      ? () => {
+                          setCompact(false);
+                          setCoverFlow(!coverFlow());
+                        }
+                      : undefined
+                  }
                 >
-                  <Icon name="layers" />
-                </button>
-                <Show when={current().kind === "section" && section() === "albums"}>
-                  <button
-                    class="icon-button"
-                    title={t("Cover Flow")}
-                    aria-label={t("Cover Flow")}
-                    aria-pressed={coverFlow()}
-                    onClick={() => {
-                      setCompact(false);
-                      setCoverFlow(!coverFlow());
-                    }}
-                  >
-                    <Icon name="cover-flow" />
-                  </button>
-                </Show>
-                <SelectionCollection
-                  section={section() === "genres" ? "albums" : section()}
-                  filters={filters()}
-                />
+                  <SelectionCollection
+                    section={section() === "genres" ? "albums" : section()}
+                    filters={filters()}
+                  />
+                </CatalogActions>
               </Show>
             </div>
           </Show>

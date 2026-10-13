@@ -1,4 +1,5 @@
-import { createEffect, createResource, createSignal, on, onCleanup, type Accessor } from "solid-js";
+import { createDiagnosticRead } from "./diagnostic-read";
+import { createEffect, createSignal, on, onCleanup, type Accessor } from "solid-js";
 import { t } from "../i18n";
 import type { AccountSession } from "./server";
 import type { SourceId } from "./sources";
@@ -47,12 +48,12 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
     return capability.promise;
   }
   const path = (kind: M3UKind) => (kind === "files" ? "/api/me/v1/m3u-files" : "/api/me/v1/m3u");
-  const [pages, { refetch }] = createResource(
-    scope,
-    async (input) => {
+  const pages = createDiagnosticRead(
+    () => scope() ?? false,
+    async (input, admission) => {
       try {
         const modern = await supported(input);
-        if (disposed || !same(input, scope())) return { input };
+        if (disposed || !admission.current() || !same(input, scope())) return { input };
         if (!modern && (input.kind === "files" || input.query))
           throw Error(
             t(
@@ -77,15 +78,14 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
         return { input, error: String(failure) };
       }
     },
-    { initialValue: undefined },
   );
   const currentPage = () =>
-    !disposed && same(pages.latest?.input, scope()) ? pages.latest : undefined;
+    !disposed && same(pages.current()?.input, scope()) ? pages.current() : undefined;
   createEffect(on(scope, () => setSelection(undefined), { defer: true }));
   const activeSelection = () =>
     !disposed && same(selection()?.scope, scope()) ? selection() : undefined;
-  const [details, { refetch: retryDetail }] = createResource(
-    activeSelection,
+  const details = createDiagnosticRead(
+    () => activeSelection() ?? false,
     async (input) => {
       try {
         const file = parseM3UDetail(
@@ -98,15 +98,14 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
         return { input, error: String(failure) };
       }
     },
-    { initialValue: undefined },
   );
   const currentDetail = () =>
-    details.latest?.input === activeSelection() ? details.latest : undefined;
+    details.current()?.input === activeSelection() ? details.current() : undefined;
   return {
     page: () => currentPage()?.data,
     error: () => currentPage()?.error ?? "",
-    loading: () => !disposed && !!scope() && pages.loading && !currentPage()?.data,
-    refreshing: () => !disposed && !!scope() && pages.loading,
+    loading: () => !disposed && !!scope() && pages.loading() && !currentPage()?.data,
+    refreshing: () => !disposed && !!scope() && pages.loading(),
     selected: () => activeSelection()?.id ?? "",
     select: (id: string) => {
       const input = scope();
@@ -115,13 +114,18 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
     },
     detail: () => currentDetail()?.file,
     detailError: () => currentDetail()?.error ?? "",
-    detailLoading: () => !!activeSelection() && details.loading,
+    detailLoading: () => !!activeSelection() && details.loading(),
     isCurrentFile: (input: M3UScope, id: string) =>
       !disposed && same(input, scope()) && activeSelection()?.id === id,
     refetch: () => {
       capability = undefined;
-      return refetch();
+      return pages.refetch();
     },
-    retryDetail,
+    retryDetail: details.refetch,
+    pending: () => pages.pending() || details.pending(),
+    cancel() {
+      pages.cancel();
+      details.cancel();
+    },
   };
 }
