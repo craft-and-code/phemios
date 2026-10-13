@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { ConcertResults } from "../components/ConcertResults";
 import { createMemo, createResource, createSignal, onCleanup, For, Show } from "solid-js";
@@ -114,25 +115,27 @@ export function ConcertsPage(props: { query: string }) {
     }
   }
   return (
-    <section class="page concerts-page">
-      <div class="concerts-toolbar">
-        <span>
-          {t("{0} artistes de votre CDthèque", artists().length)} ·{" "}
-          {t("{0} concerts", rows().length)}
-        </span>
-        <div>
-          <a class="metadata-link" href="#/settings/services">
-            {t("Configurer Ticketmaster")}
-          </a>
-          <ActionButton
-            icon={busy() ? "stop" : "refresh"}
-            disabled={!configured()?.ready || !artists().length || configured.loading}
-            onClick={() => void refresh()}
-          >
-            {busy() ? t("Arrêter") : t("Rechercher les concerts")}
-          </ActionButton>
+    <section class="page result-page concerts-page">
+      <StickyHeader>
+        <div class="concerts-toolbar">
+          <span>
+            {t("{0} artistes de votre CDthèque", artists().length)} ·{" "}
+            {t("{0} concerts", rows().length)}
+          </span>
+          <div>
+            <a class="metadata-link" href="#/settings/services">
+              {t("Configurer Ticketmaster")}
+            </a>
+            <ActionButton
+              icon={busy() ? "stop" : "refresh"}
+              disabled={!configured()?.ready || !artists().length || configured.loading}
+              onClick={() => void refresh()}
+            >
+              {busy() ? t("Arrêter") : t("Rechercher les concerts")}
+            </ActionButton>
+          </div>
         </div>
-      </div>
+      </StickyHeader>
       <AccountNotice />
       <Show when={busy()}>
         <p class="concerts-progress" role="status">

@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { PodcastSubscribeForm } from "../components/PodcastSubscribeForm";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
@@ -80,18 +81,20 @@ export function PodcastsPage(props: { query: string }) {
     }
   }
   return (
-    <section class="page podcasts-page">
-      <AccountNotice />
+    <section class="page result-page podcasts-page">
       <Show when={subscriptions.loading()}>
         <PageLoader />
       </Show>
-      <PodcastSubscribeForm
-        url={url()}
-        busy={busy() === "subscribe"}
-        disabled={!!busy() || !isNative() || !subscriptions.writable()}
-        onInput={setUrl}
-        onSubscribe={() => void load(url())}
-      />
+      <StickyHeader>
+        <PodcastSubscribeForm
+          url={url()}
+          busy={busy() === "subscribe"}
+          disabled={!!busy() || !isNative() || !subscriptions.writable()}
+          onInput={setUrl}
+          onSubscribe={() => void load(url())}
+        />
+      </StickyHeader>
+      <AccountNotice />
       <Show when={error() || subscriptions.error() || library.podcastListened.error()}>
         <Feedback
           error

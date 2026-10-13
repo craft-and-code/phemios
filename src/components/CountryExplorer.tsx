@@ -1,6 +1,5 @@
-import { For } from "solid-js";
+import { ChoiceChips } from "./ChoiceChips";
 import { t, countryName } from "../i18n";
-import { additiveCountrySelection, isMac } from "../library/selection";
 import type { Country } from "../geography/projection";
 import type { Artist } from "../library/types";
 import { CountryGlobe } from "./CountryGlobe";
@@ -21,24 +20,18 @@ export function CountryExplorer(props: {
         selected={props.selected}
         onSelect={props.onSelect}
       />
-      <div class="choices" aria-label={t("Pays d’origine")}>
-        <button aria-pressed={!props.selected.length} onClick={() => props.onSelect(undefined)}>
-          {t("Tous")}
-        </button>
-        <For each={[...new Set(props.artists.map((artist) => artist.country))]}>
-          {(country) => (
-            <button
-              aria-pressed={props.selected.includes(country)}
-              onClick={(event) => props.onSelect(country, additiveCountrySelection(event, isMac()))}
-            >
-              {countryName(
-                props.artists.find((artist) => artist.country === country)?.countryCode,
-                country,
-              )}
-            </button>
-          )}
-        </For>
-      </div>
+      <ChoiceChips
+        label={t("Pays d’origine")}
+        selected={props.selected}
+        onSelect={props.onSelect}
+        choices={[...new Set(props.artists.map((artist) => artist.country))].map((country) => ({
+          id: country,
+          label: countryName(
+            props.artists.find((artist) => artist.country === country)?.countryCode,
+            country,
+          ),
+        }))}
+      />
     </aside>
   );
 }

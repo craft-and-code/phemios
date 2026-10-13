@@ -71,7 +71,7 @@ export function TagsPage(props: {
     return cached(reference) ?? (row && "track" in row ? row.track : undefined);
   };
   return (
-    <section class="page tags-page">
+    <section class="page result-page tags-page">
       <StickyHeader>
         <div class="selection-filter-row">
           <ResultCount value={entries().length} />

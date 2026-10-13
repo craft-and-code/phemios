@@ -1,3 +1,6 @@
+import { RefreshButton } from "../components/RefreshButton";
+import { createDiagnosticRead } from "../library/diagnostic-read";
+import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { IntegrityStatus } from "../components/IntegrityStatus";
@@ -8,7 +11,7 @@ import {
   type CoverageColumn,
 } from "../library/coverage-sort";
 import { activeReleaseJob } from "../library/jobs";
-import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -24,7 +27,6 @@ export function AnalysisPage(props: { query: string }) {
   const library = useLibrary(),
     [sort, setSort] = createSignal(initialCoverageSort),
     [offset, setOffset] = createSignal(0),
-    [revision, setRevision] = createSignal(0),
     [selected, setSelected] = createSignal(""),
     [notice, setNotice] = createSignal({ message: "", failure: false });
   createEffect(() => {
@@ -35,23 +37,24 @@ export function AnalysisPage(props: { query: string }) {
     setSelected("");
     setNotice({ message: "", failure: false });
   });
-  const [report, { refetch }] = createResource(
+  const read = createDiagnosticRead(
     () =>
-      library.session() && {
-        session: library.session(),
-        source: library.source(),
-        offset: offset(),
-        sort: sort(),
-        query: props.query,
-        revision: revision(),
-        completed: library.tasks
-          .jobs()
-          .filter((job) => job.status === "completed")
-          .map((job) => job.task_id)
-          .join(","),
-        epoch: library.trackSources().find((row) => row.source === library.source())?.scannedAt,
-      },
-    async (key) => {
+      library.session()
+        ? {
+            session: library.session(),
+            source: library.source(),
+            offset: offset(),
+            sort: sort(),
+            query: props.query,
+            completed: library.tasks
+              .jobs()
+              .filter((job) => job.status === "completed")
+              .map((job) => job.task_id)
+              .join(","),
+            epoch: library.trackSources().find((row) => row.source === library.source())?.scannedAt,
+          }
+        : false,
+    async (key, admission) => {
       const status = await requestAede<{ capabilities?: string[] }>(
         "/api/v1/status",
         {},
@@ -59,6 +62,7 @@ export function AnalysisPage(props: { query: string }) {
         null,
         key.source,
       );
+      if (!admission.current()) return undefined;
       if (!status.capabilities?.includes("analysis_coverage"))
         throw Error(
           t("Mettez à jour puis redémarrez Aède pour afficher la couverture des analyses."),
@@ -87,21 +91,25 @@ export function AnalysisPage(props: { query: string }) {
       return { ...key, data };
     },
   );
+  const report = read.current,
+    refetch = read.refetch;
   const page = () =>
     report()?.session === library.session() && report()?.source === library.source()
       ? report()?.data
       : undefined;
   return (
-    <section class="page analysis-page">
-      <div class="page-heading">
-        <span>{t("Résultats enregistrés · état du dernier catalogue")}</span>
-        <button
-          disabled={!library.session() || report.loading}
-          onClick={() => setRevision((value) => value + 1)}
-        >
-          {t("Actualiser")}
-        </button>
-      </div>
+    <section class="page result-page analysis-page">
+      <StickyHeader>
+        <div class="page-heading">
+          <span>{t("Résultats enregistrés · état du dernier catalogue")}</span>
+          <RefreshButton
+            busy={read.loading()}
+            disabled={!library.session() || (read.pending() && !read.loading())}
+            onCancel={read.cancel}
+            onRefresh={read.refetch}
+          />
+        </div>
+      </StickyHeader>
       <Show when={notice().message}>
         <Feedback
           message={notice().message}
@@ -110,13 +118,21 @@ export function AnalysisPage(props: { query: string }) {
         />
       </Show>
       <AccountNotice administrator />
-      <Show when={report.loading}>
-        <PageLoader />
+      <Show when={!library.session()}>
+        <EmptyState icon="wave">{t("Aucun élément enregistré dans cette rubrique.")}</EmptyState>
       </Show>
-      <Show when={report.error}>
+      <Show when={read.loading() && !page()}>
+        <PageLoader inline />
+      </Show>
+      <Show when={read.error()}>
         <p class="notice missing-notice" role="alert">
-          <span>{String(report.error)}</span>
-          <button onClick={() => void refetch()}>{t("Réessayer")}</button>
+          <span>{String(read.error())}</span>
+          <RefreshButton
+            busy={read.loading()}
+            disabled={read.pending() && !read.loading()}
+            onCancel={read.cancel}
+            onRefresh={refetch}
+          />
         </p>
       </Show>
       <Show when={page()}>

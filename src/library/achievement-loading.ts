@@ -18,8 +18,8 @@ export function createAchievementLoading(
     const account = session();
     return account ? { session: account, source: source() } : false;
   });
-  return createDiagnosticRead(scope, async (key) => {
-    const current = () => alive && scope() === key;
+  return createDiagnosticRead(scope, async (key, admission) => {
+    const current = () => alive && scope() === key && admission.current();
     const info = await requestAede<{ capabilities: string[] }>(
       "/api/v1/status",
       {},

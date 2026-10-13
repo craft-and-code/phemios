@@ -110,7 +110,6 @@ export function AlbumPage(props: {
       <section>
         <div class="section-heading">
           <h2>{t("Pistes")}</h2>
-          <M3UExport release={props.album.reference} title={props.album.title} />
         </div>
         <Show when={tracks.error}>
           <p role="alert">
@@ -157,11 +156,14 @@ export function AlbumPage(props: {
       <section class="album-analysis-jobs">
         <div class="section-heading">
           <h2>{t("Analyse de l’album")}</h2>
-          <AnalysisDownload
-            reference={props.album.reference}
-            album
-            available={!!tracks()?.length && tracks()!.every((track) => track.analysis_available)}
-          />
+          <div class="detail-export-actions">
+            <AnalysisDownload
+              reference={props.album.reference}
+              album
+              available={!!tracks()?.length && tracks()!.every((track) => track.analysis_available)}
+            />
+            <M3UExport release={props.album.reference} title={props.album.title} />
+          </div>
         </div>
         <JobControls release={props.album.reference} />
       </section>

@@ -151,6 +151,9 @@ export function AdvancedSearchPage() {
   );
   return (
     <section class="page advanced-search-page" aria-label={t("Recherche avancée")}>
+      <Show when={!library.trackSources().length}>
+        <p class="notice account-notice">{t("Connectez Aède pour consulter toutes les pistes.")}</p>
+      </Show>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -281,9 +284,7 @@ export function AdvancedSearchPage() {
         </div>
       </form>
       <Feedback error message={error()} onClose={() => setError("")} />
-      <Show when={!library.trackSources().length}>
-        <Feedback message={t("Connectez Aède pour consulter toutes les pistes.")} />
-      </Show>
+
       <Show when={results.error}>
         <Feedback error message={String(results.error)} />
       </Show>

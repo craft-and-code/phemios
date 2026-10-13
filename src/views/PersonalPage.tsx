@@ -145,7 +145,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
       },
     );
   return (
-    <section class="page personal-page">
+    <section class="page result-page personal-page">
       <Show when={props.section === "favourites"}>
         <StickyHeader>
           <div class="personal-selection-actions">
@@ -329,8 +329,8 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "history"}>
-        <StickyHeader>
-          <div class="personal-selection-actions">
+        <StickyHeader separator={(page()?.total ?? 0) > 0 || !!listening()}>
+          <div class="personal-selection-actions history-selection-actions">
             <Show when={(page()?.total ?? 0) > 0}>
               <div class="history-reset">
                 <HistoryReset
@@ -398,7 +398,14 @@ export function PersonalPage(props: { section: Section; query: string }) {
       <Show when={reads.page()?.error}>
         <p role="alert">{reads.page()?.error}</p>
       </Show>
-      <Show when={page() && !page()?.items.length && (props.section !== "history" || !listening())}>
+      <Show
+        when={
+          (!library.session() &&
+            !library.demo &&
+            ["collections", "history"].includes(props.section)) ||
+          (page() && !page()?.items.length && (props.section !== "history" || !listening()))
+        }
+      >
         <EmptyState icon={sectionIcon(props.section)}>
           {t("Aucun élément enregistré dans cette rubrique.")}
         </EmptyState>

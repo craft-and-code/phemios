@@ -37,7 +37,7 @@ export function RatedPage(props: { query: string }) {
           normalizeName(a.title).localeCompare(normalizeName(b.title)),
       );
   return (
-    <section class="page rated-page">
+    <section class="page result-page rated-page">
       <StickyHeader>
         <div class="selection-filter-row">
           <ResultCount value={albums().length} />
@@ -72,7 +72,12 @@ export function RatedPage(props: { query: string }) {
         </div>
       </StickyHeader>
       <AccountNotice />
-      <Show when={library.session()}>
+      <Show
+        when={library.session()}
+        fallback={
+          <EmptyState icon="star">{t("Aucun album noté dans cette sélection.")}</EmptyState>
+        }
+      >
         <Show
           when={albums().length}
           fallback={

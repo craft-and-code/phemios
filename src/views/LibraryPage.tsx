@@ -1,3 +1,4 @@
+import { ChoiceChips } from "../components/ChoiceChips";
 import type { CoverPosition } from "../visualizer/cover-position";
 import { CoverFlow } from "../components/CoverFlow";
 import { EmptyState } from "../components/EmptyState";
@@ -71,22 +72,14 @@ export function LibraryPage(props: {
         </Show>
         <div class="library-results">
           <Show when={props.section === "genres"}>
-            <div class="choices" aria-label={t("Genres")}>
-              <button aria-pressed={!genres().length} onClick={() => setGenre(undefined)}>
-                {t("Tous")}{" "}
-              </button>
-              <For
-                each={[
-                  ...new Set(principals().flatMap((item) => item.genres ?? [item.genre])),
-                ].filter(Boolean)}
-              >
-                {(value) => (
-                  <button aria-pressed={genres().includes(value)} onClick={() => setGenre(value)}>
-                    {value}
-                  </button>
-                )}
-              </For>
-            </div>
+            <ChoiceChips
+              label={t("Genres")}
+              selected={genres()}
+              onSelect={(value) => setGenre(value ?? undefined)}
+              choices={[...new Set(principals().flatMap((item) => item.genres ?? [item.genre]))]
+                .filter(Boolean)
+                .map((value) => ({ id: value, label: value }))}
+            />
           </Show>
           <Show
             when={artistView()}

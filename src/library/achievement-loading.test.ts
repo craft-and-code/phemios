@@ -109,3 +109,36 @@ it("does not start an unlock write after the view is disposed during status", as
   expect(vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "POST")).toHaveLength(0);
   expect(loaded.current()).toBeUndefined();
 });
+
+it("cancels pending status before the unlock write and admits a later refresh", async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(requestAede)
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockImplementation(async (path) => (path === "/api/v1/status" ? capability : trophies));
+  let dispose!: () => void;
+  const loaded = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createAchievementLoading(account, () => "server");
+  });
+  try {
+    await settle();
+    loaded.cancel();
+    await loaded.refetch();
+    expect(vi.mocked(requestAede)).toHaveBeenCalledTimes(1);
+    finish(capability);
+    await settle();
+    expect(vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "POST")).toHaveLength(0);
+    expect(loaded.current()).toBeUndefined();
+    await loaded.refetch();
+    await settle();
+    expect(loaded.current()).toEqual(trophies);
+    expect(vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "POST")).toHaveLength(1);
+  } finally {
+    dispose();
+  }
+});

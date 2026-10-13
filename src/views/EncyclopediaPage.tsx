@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { Icon } from "../components/Icon";
 import { ReferenceCategories } from "../encyclopedia/ReferenceCategories";
 import { createMemo, createSignal, createEffect, on, For, Show } from "solid-js";
@@ -14,40 +15,42 @@ export function EncyclopediaPage(props: { query: string }) {
   const [category, setCategory] = createSignal("");
   const rows = createMemo(() => encyclopediaRows(props.query, category(), locale()));
   return (
-    <section class="page encyclopedia-page">
-      <div class="choices encyclopedia-tabs">
-        <button aria-pressed={mode() === "reference"} onClick={() => setMode("reference")}>
-          {t("Fiches de référence")}
-        </button>
-        <button aria-pressed={mode() === "search"} onClick={() => setMode("search")}>
-          {t("Wikipédia")}
-        </button>
-        <button aria-pressed={mode() === "saved"} onClick={() => setMode("saved")}>
-          <Icon name="heart" />
-          {t("Articles enregistrés")}
-        </button>
-        <Show when={mode() !== "reference"}>
-          <button
-            class="edition-switch"
-            type="button"
-            role="switch"
-            disabled={editionBusy()}
-            aria-checked={language() === "en"}
-            aria-label={t("Articles en anglais")}
-            title={t("Langue des articles")}
-            onClick={() => setLanguage(language() === "fr" ? "en" : "fr")}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                event.preventDefault();
-                setLanguage(event.key === "ArrowLeft" ? "fr" : "en");
-              }
-            }}
-          >
-            <span aria-hidden="true">FR</span>
-            <span aria-hidden="true">EN</span>
+    <section class="page result-page encyclopedia-page">
+      <StickyHeader>
+        <div class="choices encyclopedia-tabs">
+          <button aria-pressed={mode() === "reference"} onClick={() => setMode("reference")}>
+            {t("Fiches de référence")}
           </button>
-        </Show>
-      </div>
+          <button aria-pressed={mode() === "search"} onClick={() => setMode("search")}>
+            {t("Wikipédia")}
+          </button>
+          <button aria-pressed={mode() === "saved"} onClick={() => setMode("saved")}>
+            <Icon name="heart" />
+            {t("Articles enregistrés")}
+          </button>
+          <Show when={mode() !== "reference"}>
+            <button
+              class="edition-switch"
+              type="button"
+              role="switch"
+              disabled={editionBusy()}
+              aria-checked={language() === "en"}
+              aria-label={t("Articles en anglais")}
+              title={t("Langue des articles")}
+              onClick={() => setLanguage(language() === "fr" ? "en" : "fr")}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                  event.preventDefault();
+                  setLanguage(event.key === "ArrowLeft" ? "fr" : "en");
+                }
+              }}
+            >
+              <span aria-hidden="true">FR</span>
+              <span aria-hidden="true">EN</span>
+            </button>
+          </Show>
+        </div>
+      </StickyHeader>
       <Show
         when={mode() === "reference"}
         fallback={

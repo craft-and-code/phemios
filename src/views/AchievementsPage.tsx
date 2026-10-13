@@ -1,3 +1,5 @@
+import { RefreshButton } from "../components/RefreshButton";
+import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { For, Show } from "solid-js";
 import { locale, t } from "../i18n";
@@ -12,20 +14,18 @@ export function AchievementsPage() {
   const loaded = createAchievementLoading(library.session, library.source);
   const rows = loaded.current;
   return (
-    <section class="page achievements-page">
-      <div class="section-heading">
-        <p>{rows() ? t("{0} / {1} dévoilés", rows()!.unlocked, rows()!.total) : ""}</p>
-        <button
-          class="icon-button quiet"
-          aria-label={t("Actualiser")}
-          disabled={!library.session() || loaded.loading()}
-          onClick={() => void loaded.refetch()}
-        >
-          <Show when={loaded.loading()} fallback={<Icon name="refresh" />}>
-            <span class="spinner" />
-          </Show>
-        </button>
-      </div>
+    <section class="page result-page achievements-page">
+      <StickyHeader>
+        <div class="section-heading">
+          <p>{rows() ? t("{0} / {1} dévoilés", rows()!.unlocked, rows()!.total) : ""}</p>
+          <RefreshButton
+            busy={loaded.loading()}
+            disabled={!library.session() || (loaded.pending() && !loaded.loading())}
+            onCancel={loaded.cancel}
+            onRefresh={loaded.refetch}
+          />
+        </div>
+      </StickyHeader>
       <AccountNotice />
       <Feedback error message={loaded.error()} />
       <Show

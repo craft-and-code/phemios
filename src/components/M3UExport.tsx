@@ -92,7 +92,7 @@ export function M3UExport(props: { release: string; title: string }) {
         }
         onClick={save}
       >
-        <Icon name="list" />
+        <Icon name="playlist" />
       </button>
       <Show when={file()}>
         {(value) => (

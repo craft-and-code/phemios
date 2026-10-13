@@ -1,3 +1,5 @@
+import { RefreshButton } from "../components/RefreshButton";
+import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
 import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
@@ -151,28 +153,36 @@ export function StatisticsPage() {
       }}
       class="page statistics-page"
     >
-      <div class="statistics-heading">
-        <p>
-          {t(
-            "Ensemble de la bibliothèque · les filtres du catalogue ne modifient pas ces chiffres.",
-          )}
-        </p>
-        <div class="settings-actions">
-          <DownloadButton
-            label={t("Télécharger toutes les statistiques en CSV")}
-            identity={exportScope()}
-            disabled={report.loading() || doctor.loading() || !isNative()}
-            busy={exporting()}
-            onClick={downloadCsv}
-          />
-          <button
-            disabled={!library.session() || report.loading()}
-            onClick={() => setRefresh((value) => value + 1)}
-          >
-            {t("Actualiser")}{" "}
-          </button>
+      <StickyHeader>
+        <div class="statistics-heading">
+          <p>
+            {t(
+              "Ensemble de la bibliothèque · les filtres du catalogue ne modifient pas ces chiffres.",
+            )}
+          </p>
+          <div class="settings-actions">
+            <DownloadButton
+              label={t("Télécharger toutes les statistiques en CSV")}
+              identity={exportScope()}
+              disabled={report.loading() || doctor.loading() || !isNative()}
+              busy={exporting()}
+              onClick={downloadCsv}
+            />
+            <RefreshButton
+              busy={report.loading() || doctor.loading()}
+              disabled={
+                !library.session() ||
+                ((report.pending() || doctor.pending()) && !report.loading() && !doctor.loading())
+              }
+              onCancel={() => {
+                report.cancel();
+                doctor.cancel();
+              }}
+              onRefresh={() => setRefresh((value) => value + 1)}
+            />
+          </div>
         </div>
-      </div>
+      </StickyHeader>
       <Show when={exportStatus()}>
         <Feedback message={exportStatus()} onClose={() => setExportStatus("")} />
       </Show>
@@ -180,14 +190,14 @@ export function StatisticsPage() {
         <Feedback error message={exportError()} onClose={() => setExportError("")} />
       </Show>
       <Show when={!library.session()}>
-        <p class="notice">
+        <p class="notice account-notice">
           {t(
             "Vue du cache public. Connectez Aède pour consulter les mesures détaillées, la durée et l’espace disque.",
           )}{" "}
         </p>
       </Show>
-      <Show when={report.loading()}>
-        <PageLoader label={t("Chargement des statistiques Aède…")} />
+      <Show when={report.loading() && !report.current()}>
+        <PageLoader inline label={t("Chargement des statistiques Aède…")} />
       </Show>
       <Show when={report.error()}>
         <p role="alert">

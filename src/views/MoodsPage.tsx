@@ -1,3 +1,4 @@
+import { ResultCount } from "../components/ResultCount";
 import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
@@ -151,14 +152,10 @@ export function MoodsPage() {
     }
   }
   return (
-    <section class="page moods-page">
+    <section class="page result-page moods-page">
       <StickyHeader>
         <div class="page-heading">
-          <p class="muted">
-            {t(
-              "Des ambiances fondées sur vos tags et genres, avec des critères que vous pouvez modifier.",
-            )}
-          </p>
+          <ResultCount value={current()?.moods.length ?? 0} />
           <button
             class="icon-button"
             aria-label={t("Créer une ambiance")}

@@ -1,5 +1,8 @@
+import { createDiagnosticRead } from "../library/diagnostic-read";
+import { RefreshButton } from "../components/RefreshButton";
+import { StickyHeader } from "../components/StickyHeader";
 import { PageLoader } from "../components/PageLoader";
-import { createResource, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { discoverPlayers, isNative } from "../platform/desktop";
 import { parsePlayers } from "../library/players";
@@ -8,30 +11,36 @@ import { Icon } from "../components/Icon";
 /** OS-mounted destinations are discovered independently from Aède's local or remote library. */
 export function PlayersPage() {
   const [selected, setSelected] = createSignal("");
-  const [volumes, { refetch }] = createResource(
-    () => isNative(),
+  const read = createDiagnosticRead(
+    () => (isNative() ? { native: true } : false),
     async () => parsePlayers(await discoverPlayers()),
   );
+  const volumes = read.current;
   return (
-    <section class="page players-page">
-      <div class="page-heading">
-        <span>{t("Lecteurs, cartes et volumes montés")}</span>
-        <button disabled={!isNative() || volumes.loading} onClick={() => void refetch()}>
-          {t("Actualiser")}
-        </button>
-      </div>
+    <section class="page result-page players-page">
+      <StickyHeader>
+        <div class="page-heading">
+          <span>{t("Lecteurs, cartes et volumes montés")}</span>
+          <RefreshButton
+            busy={read.loading()}
+            disabled={!isNative() || (read.pending() && !read.loading())}
+            onCancel={read.cancel}
+            onRefresh={read.refetch}
+          />
+        </div>
+      </StickyHeader>
       <p class="muted">
         {t(
           "Branchez et montez le lecteur dans votre système, puis actualisez. Les partages réseau montés apparaissent aussi.",
         )}
       </p>
-      <Show when={volumes.loading}>
-        <PageLoader label={t("Détection des lecteurs…")} />
+      <Show when={read.loading() && !volumes()}>
+        <PageLoader inline label={t("Détection des lecteurs…")} />
       </Show>
-      <Show when={volumes.error}>
-        <p role="alert">{String(volumes.error)}</p>
+      <Show when={read.error()}>
+        <p role="alert">{String(read.error())}</p>
       </Show>
-      <Show when={!volumes.loading && !volumes.error && !volumes()?.length}>
+      <Show when={!read.loading() && !read.error() && !volumes()?.length}>
         <EmptyState icon="drive">{t("Aucun lecteur monté détecté.")}</EmptyState>
       </Show>
       <ul class="personal-list">

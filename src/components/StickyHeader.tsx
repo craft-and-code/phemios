@@ -1,6 +1,8 @@
 import { onMount, onCleanup, type ParentProps } from "solid-js";
 /** Shared selection headers stay in the content scroller; measured shell rails reserve the next sticky offset. */
-export function StickyHeader(props: ParentProps<{ shell?: boolean; class?: string }>) {
+export function StickyHeader(
+  props: ParentProps<{ shell?: boolean; class?: string; separator?: boolean }>,
+) {
   let header!: HTMLElement;
   onMount(() => {
     if (!props.shell) return;
@@ -27,6 +29,7 @@ export function StickyHeader(props: ParentProps<{ shell?: boolean; class?: strin
       ref={(element) => {
         header = element;
       }}
+      data-separator={props.separator === false ? "hidden" : undefined}
       class={`sticky-header ${props.shell ? "catalog-header" : "page-sticky-header"} ${props.class ?? ""}`}
     >
       {props.children}

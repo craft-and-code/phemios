@@ -1,9 +1,11 @@
+import { createDiagnosticRead } from "../library/diagnostic-read";
+import { RefreshButton } from "../components/RefreshButton";
 import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
 import { t } from "../i18n";
-import { createMemo, createResource, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { publicCatalogSources, cachedTrackPage } from "../library/offline-catalog";
@@ -53,10 +55,11 @@ export function TracksPage(props: {
       cached: [...cached],
     });
   });
-  const [page, { refetch }] = createResource(
-    () => reader() && { read: reader()!, offset: offset(), size: props.size },
+  const read = createDiagnosticRead(
+    () => (reader() ? { read: reader()!, offset: offset(), size: props.size } : false),
     (key) => key.read(key.offset, key.size),
   );
+  const page = read.current;
   return (
     <section class="page tracks-page">
       <StickyHeader>
@@ -76,13 +79,13 @@ export function TracksPage(props: {
           </p>
           <div class="page-controls">
             <button
-              disabled={!offset() || page.loading}
+              disabled={!offset() || read.loading()}
               onClick={() => setOffset(Math.max(0, offset() - props.size))}
             >
               {t("Précédentes")}
             </button>
             <button
-              disabled={page.loading || offset() + props.size >= (page()?.total ?? 0)}
+              disabled={read.loading() || offset() + props.size >= (page()?.total ?? 0)}
               onClick={() => setOffset(offset() + props.size)}
             >
               {t("Suivantes")}
@@ -96,22 +99,27 @@ export function TracksPage(props: {
       <Show when={!reader()}>
         <EmptyState icon="list">{t("Aucune piste dans cette recherche.")}</EmptyState>
       </Show>
-      <Show when={page.error}>
+      <Show when={read.error()}>
         <p role="alert">
-          {t("Pistes indisponibles :")} {String(page.error)}
+          {t("Pistes indisponibles :")} {String(read.error())}
         </p>
       </Show>
-      <Show when={page.loading}>
-        <PageLoader label={t("Chargement des pistes…")} />
+      <Show when={read.loading() && !page()}>
+        <PageLoader inline label={t("Chargement des pistes…")} />
       </Show>
-      <Show when={!page.loading && !page.error && page()}>
+      <Show when={!read.error() && page()}>
         {(value) => (
           <>
             <For each={value().unavailable}>
               {(issue) => (
                 <p role="alert">
                   {sourceLabel(issue.source)} · {issue.error}{" "}
-                  <button onClick={() => refetch()}>{t("Réessayer")}</button>
+                  <RefreshButton
+                    busy={read.loading()}
+                    disabled={read.pending() && !read.loading()}
+                    onCancel={read.cancel}
+                    onRefresh={read.refetch}
+                  />
                 </p>
               )}
             </For>

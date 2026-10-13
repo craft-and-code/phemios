@@ -1,3 +1,4 @@
+import { InlineActionForm } from "../components/InlineActionForm";
 import { AccountNotice } from "../components/AccountNotice";
 import { useLibrary } from "../library/context";
 import { createAccountSavedArticles } from "./account-saved";
@@ -96,7 +97,7 @@ export function WikipediaPanel(props: {
         fallback={
           <>
             <Show when={props.mode === "search"}>
-              <form
+              <InlineActionForm
                 class="wikipedia-search"
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -121,7 +122,7 @@ export function WikipediaPanel(props: {
                 >
                   {t("Rechercher")}
                 </ActionButton>
-              </form>
+              </InlineActionForm>
               <Show when={!isNative()}>
                 <p class="subtle">
                   {t(

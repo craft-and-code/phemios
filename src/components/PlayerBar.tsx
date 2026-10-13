@@ -79,7 +79,14 @@ export function PlayerBar() {
             </Show>
           </span>
           <small>
-            {player.current()?.artist} {player.current() ? "· " : ""}
+            <Show when={player.current()?.album?.artist} fallback={player.current()?.artist}>
+              {(artist) => (
+                <a class="playing-artist-link" href={`#/artist/${encodeURIComponent(artist())}`}>
+                  {player.current()?.artist}
+                </a>
+              )}
+            </Show>{" "}
+            {player.current() ? "· " : ""}
             {status()}
           </small>
           <Show when={issue()}>

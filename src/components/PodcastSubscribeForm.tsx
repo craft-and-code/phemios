@@ -1,3 +1,4 @@
+import { InlineActionForm } from "./InlineActionForm";
 import { ActionButton } from "./ActionButton";
 import { t } from "../i18n";
 /** Controlled RSS acquisition form; account and transport admission stay with its caller. */
@@ -9,7 +10,7 @@ export function PodcastSubscribeForm(props: {
   onSubscribe: () => void;
 }) {
   return (
-    <form
+    <InlineActionForm
       class="podcast-add"
       onSubmit={(event) => {
         event.preventDefault();
@@ -36,6 +37,6 @@ export function PodcastSubscribeForm(props: {
       >
         {t("S’abonner")}
       </ActionButton>
-    </form>
+    </InlineActionForm>
   );
 }

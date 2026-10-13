@@ -1,3 +1,5 @@
+import { RefreshButton } from "../components/RefreshButton";
+import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { EmptyState } from "../components/EmptyState";
 import { t } from "../i18n";
@@ -7,7 +9,6 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { issueLabels, parseDoctor, severityLabels, type Severity } from "../library/doctor";
 import { numberLabel } from "../library/statistics";
-import { Icon } from "../components/Icon";
 /** Read the existing Aède Doctor contract with severity filters and bounded pagination. */
 export function DoctorPage() {
   const library = useLibrary(),
@@ -40,46 +41,46 @@ export function DoctorPage() {
       ),
   );
   return (
-    <section class="page doctor-page">
-      <div class="doctor-toolbar">
-        <div class="choices" aria-label={t("Sévérité des diagnostics")}>
-          <button
-            aria-pressed={!severity()}
-            onClick={() => {
-              setOffset(0);
-              setSeverity("");
-            }}
-          >
-            {t("Tous")}
-          </button>
-          <For each={["error", "warning", "info"] as const}>
-            {(value) => (
-              <button
-                aria-pressed={severity() === value}
-                onClick={() => {
-                  setOffset(0);
-                  setSeverity(value);
-                }}
-              >
-                {t(severityLabels[value])}
-              </button>
-            )}
-          </For>
+    <section class="page result-page doctor-page">
+      <StickyHeader>
+        <div class="doctor-toolbar">
+          <div class="choices" aria-label={t("Sévérité des diagnostics")}>
+            <button
+              aria-pressed={!severity()}
+              onClick={() => {
+                setOffset(0);
+                setSeverity("");
+              }}
+            >
+              {t("Tous")}
+            </button>
+            <For each={["error", "warning", "info"] as const}>
+              {(value) => (
+                <button
+                  aria-pressed={severity() === value}
+                  onClick={() => {
+                    setOffset(0);
+                    setSeverity(value);
+                  }}
+                >
+                  {t(severityLabels[value])}
+                </button>
+              )}
+            </For>
+          </div>
+          <RefreshButton
+            label={t("Actualiser le diagnostic")}
+            busy={report.loading()}
+            disabled={!library.session() || (report.pending() && !report.loading())}
+            onCancel={report.cancel}
+            onRefresh={report.refetch}
+          />
         </div>
-        <button
-          class="icon-button quiet"
-          aria-label={t("Actualiser le diagnostic")}
-          title={t("Actualiser le diagnostic")}
-          aria-busy={report.loading()}
-          disabled={!library.session() || report.loading()}
-          onClick={() => report.refetch()}
-        >
-          <Show when={report.loading()} fallback={<Icon name="refresh" />}>
-            <span class="spinner" aria-hidden="true" />
-          </Show>
-        </button>
-      </div>
+      </StickyHeader>
       <AccountNotice />
+      <Show when={!library.session()}>
+        <EmptyState icon="doctor">{t("Aucun diagnostic dans cette sélection.")}</EmptyState>
+      </Show>
       <Show when={report.loading()}>
         <span class="sr-only" role="status">
           {t("Lecture des diagnostics…")}

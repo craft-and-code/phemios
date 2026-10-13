@@ -1191,7 +1191,7 @@ main:has(> .playback-page) > :not(.playback-page) {
   height: 36px;
 }
 .wikipedia-panel {
-  margin-top: 22px;
+  margin-top: 0;
 }
 .edition-switch {
   position: relative;
@@ -2131,4 +2131,122 @@ main:has(> .library-page .cover-flow) > :not(.library-page) {
   color: var(--accent);
   display: grid;
   place-items: center;
+}
+
+/* Result pages share one remaining-height contract, including nested saved-article content. */
+main:has(> .result-page) {
+  display: flex;
+  flex-direction: column;
+}
+main:has(> .result-page) > * {
+  flex-shrink: 0;
+}
+.page.result-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.result-page > :not(.empty-state):not(.wikipedia-panel) {
+  flex-shrink: 0;
+}
+.result-page > .wikipedia-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.result-page :is(.mood-cards, .personal-list, .tagged-grid):empty {
+  display: none;
+}
+.page-sticky-header {
+  min-height: 61px;
+}
+.page-sticky-header[data-separator="hidden"] {
+  border-bottom-color: transparent;
+}
+.page-sticky-header
+  > :is(
+    .section-heading,
+    .doctor-toolbar,
+    .statistics-heading,
+    .concerts-toolbar,
+    .personal-selection-actions,
+    .page-heading,
+    .encyclopedia-tabs
+  ) {
+  min-height: 36px;
+  margin-block: 0;
+}
+.page-sticky-header > :is(.statistics-heading, .section-heading) > p {
+  margin-block: 0;
+}
+.history-selection-actions {
+  justify-content: flex-start;
+}
+.empty-state > svg {
+  flex: 0 0 38px;
+}
+.inline-action-form input:not([type="range"], [type="checkbox"]) {
+  min-height: var(--form-control-height);
+}
+.page-sticky-header .podcast-add {
+  margin-bottom: 0;
+}
+.detail-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.playing-artist-link:hover {
+  color: var(--accent);
+}
+
+.inline-action-form {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.inline-action-form > label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+.choice-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block: 0 20px;
+}
+.choice-chips > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 18px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.choice-chips > button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.choice-chips > button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.choice-chip-marker {
+  display: inline-grid;
+  place-items: center;
+  opacity: 0;
+  width: 14px;
+}
+.choice-chip-marker > svg {
+  width: 14px;
+  height: 14px;
+}
+.choice-chips > button[aria-pressed="true"] .choice-chip-marker {
+  opacity: 1;
 }

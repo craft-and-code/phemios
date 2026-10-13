@@ -160,3 +160,60 @@ it("never admits a diagnostic read after disposal", async () => {
   expect(read.error()).toBe("");
   expect(read.loading()).toBe(false);
 });
+it("cancels refresh admission, keeps confirmed values and refuses overlapping retries", async () => {
+  const late = deferred();
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(7)
+    .mockReturnValueOnce(late.promise)
+    .mockResolvedValueOnce(9);
+  let dispose!: () => void;
+  const read = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createDiagnosticRead(() => ({ source: "local" }), request);
+  });
+  try {
+    await settle();
+    expect(read.current()).toBe(7);
+    const pending = read.refetch();
+    await settle();
+    expect(read.loading()).toBe(true);
+    read.cancel();
+    expect(read.loading()).toBe(false);
+    expect(read.pending()).toBe(true);
+    await read.refetch();
+    expect(request).toHaveBeenCalledTimes(2);
+    late.resolve(99);
+    await pending;
+    await settle();
+    expect(read.current()).toBe(7);
+    expect(read.pending()).toBe(false);
+    await read.refetch();
+    await settle();
+    expect(read.current()).toBe(9);
+  } finally {
+    dispose();
+  }
+});
+it("cancellation retires initial errors without admitting a late rejected response", async () => {
+  const late = deferred();
+  let dispose!: () => void;
+  const read = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createDiagnosticRead(
+      () => ({ source: "local" }),
+      () => late.promise,
+    );
+  });
+  try {
+    await settle();
+    read.cancel();
+    late.reject(new Error("Cancelled response"));
+    await settle();
+    expect(read.current()).toBeUndefined();
+    expect(read.error()).toBe("");
+    expect(read.loading()).toBe(false);
+  } finally {
+    dispose();
+  }
+});
