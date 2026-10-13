@@ -123,8 +123,8 @@ main {
 .page-heading {
   margin-bottom: 20px;
 }
-.page-heading > span,
-.section-heading > span {
+.page-heading > span:not(.result-count),
+.section-heading > span:not(.result-count) {
   color: var(--muted);
   font-size: 12px;
 }

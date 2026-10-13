@@ -13,7 +13,11 @@ export interface MoodPage {
     release: string | null;
     number: number;
     album_total: number;
-    reason: { tag: string | null; genre: string | null };
+    reason: {
+      tag: string | null;
+      genre: string | null;
+      scope?: "track" | "album" | "artist" | "genre";
+    };
   }[];
   total: number;
   offset: number;
@@ -60,6 +64,8 @@ export function parseMoods(raw: unknown): MoodPage {
       !Number.isSafeInteger(item.album_total) ||
       item.album_total < item.number ||
       !item.reason ||
+      (item.reason.scope !== undefined &&
+        !["track", "album", "artist", "genre"].includes(item.reason.scope)) ||
       [item.reason.tag, item.reason.genre].some(
         (value) => value !== null && typeof value !== "string",
       )
@@ -78,4 +84,19 @@ export function moodName(rule: MoodRule): string {
   };
   const preset = presets[rule.id];
   return preset && rule.name === preset[0] ? preset[1] : rule.name;
+}
+
+/** Explain the most specific retained evidence; old servers remain readable without a source label. */
+export function moodReason(reason: MoodPage["items"][number]["reason"]): string {
+  if (!reason.tag) return t("Genre : {0}", reason.genre ?? "");
+  switch (reason.scope) {
+    case "track":
+      return t("Tag de la piste : {0}", reason.tag);
+    case "album":
+      return t("Tag de l’album : {0}", reason.tag);
+    case "artist":
+      return t("Tag de l’artiste : {0}", reason.tag);
+    default:
+      return t("Tag : {0}", reason.tag);
+  }
 }

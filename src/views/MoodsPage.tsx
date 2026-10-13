@@ -6,7 +6,7 @@ import { createEffect, createResource, createSignal, For, Show } from "solid-js"
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { parseMoods, moodName, type MoodRule } from "../library/moods";
+import { parseMoods, moodName, moodReason, type MoodRule } from "../library/moods";
 import { Icon } from "../components/Icon";
 import { Artwork } from "../components/Artwork";
 import { EmptyState } from "../components/EmptyState";
@@ -155,7 +155,9 @@ export function MoodsPage() {
     <section class="page result-page moods-page">
       <StickyHeader>
         <div class="page-heading">
-          <ResultCount value={current()?.moods.length ?? 0} />
+          <ResultCount
+            value={selected() ? (current()?.total ?? 0) : (current()?.moods.length ?? 0)}
+          />
           <button
             class="icon-button"
             aria-label={t("Créer une ambiance")}
@@ -235,7 +237,7 @@ export function MoodsPage() {
           </label>
           <p class="muted">
             {t(
-              "Une piste est retenue si au moins un tag ou genre correspond. Les tags de son album et de son artiste principal comptent aussi.",
+              "Les tags d’ambiance de la piste priment sur ceux de l’album, puis de l’artiste. Sans tag d’ambiance, les genres sont utilisés.",
             )}
           </p>
           <div class="settings-actions">
@@ -289,11 +291,7 @@ export function MoodsPage() {
                       </Show>
                       <span>
                         <strong>{item.title}</strong>
-                        <small>
-                          {item.reason.tag
-                            ? t("Tag : {0}", item.reason.tag)
-                            : t("Genre : {0}", item.reason.genre ?? "")}
-                        </small>
+                        <small>{moodReason(item.reason)}</small>
                       </span>
                     </a>
                     <button

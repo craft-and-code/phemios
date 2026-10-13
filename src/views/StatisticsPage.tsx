@@ -1,7 +1,7 @@
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
-import { PageLoader } from "../components/PageLoader";
+import { StatisticsContent } from "../components/StatisticsContent";
 import { Feedback } from "../components/Feedback";
 import { exportStatistics, isNative } from "../platform/desktop";
 import { csvDocument, statisticsCsv, type CsvRow } from "../library/statistics-csv";
@@ -55,6 +55,7 @@ export function StatisticsPage() {
     async (key) =>
       parseDiagnosis(await requestAede("/api/v1/doctor", { limit: "1" }, "GET", null, key.source)),
   );
+  const loading = () => report.loading() || doctor.loading();
   const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
   const currentReport = report.current;
   const own = () =>
@@ -169,7 +170,8 @@ export function StatisticsPage() {
               onClick={downloadCsv}
             />
             <RefreshButton
-              busy={report.loading() || doctor.loading()}
+              busyIndicator="stop"
+              busy={loading()}
               disabled={
                 !library.session() ||
                 ((report.pending() || doctor.pending()) && !report.loading() && !doctor.loading())
@@ -196,79 +198,129 @@ export function StatisticsPage() {
           )}{" "}
         </p>
       </Show>
-      <Show when={report.loading() && !report.current()}>
-        <PageLoader inline label={t("Chargement des statistiques Aède…")} />
-      </Show>
-      <Show when={report.error()}>
-        <p role="alert">
-          {t("Statistiques indisponibles :")} {String(report.error())}
-        </p>
-      </Show>
-      <h2>{t("Votre collection")}</h2>
-      <div class="stat-tiles">
-        <For each={tiles()}>
-          {(tile) => (
-            <div>
-              <span>{tile[0]}</span>
-              <StatValue value={tile[1]} />
-            </div>
-          )}
-        </For>
-      </div>
-      <Show when={library.session()}>
-        <section>
-          <h2>{t("Intégrité et analyses enregistrées")}</h2>
-          <Show when={doctor.error()}>
-            <p role="alert">
-              {t("Diagnostic indisponible :")} {String(doctor.error())}
-            </p>
-          </Show>
-          <Show when={doctor.loading()}>
-            <PageLoader inline label={t("Chargement du diagnostic…")} />
-          </Show>
-          <Show when={doctor.current()}>
-            {(result) => (
-              <div class="stat-tiles">
-                <For
-                  each={
-                    [
-                      [t("Erreurs"), result().summary.error ?? 0],
-                      [t("Avertissements"), result().summary.warning ?? 0],
-                      [t("Informations"), result().summary.info ?? 0],
-                      [t("Fichiers non vérifiés"), result().unverified_files],
-                      [t("Analyses en attente"), result().pending_analyses],
-                    ] as const
-                  }
-                >
-                  {(item) => (
-                    <div>
-                      <span>{item[0]}</span>
-                      <StatValue value={numberLabel(item[1])} />
-                    </div>
-                  )}
-                </For>
+      <StatisticsContent busy={loading()}>
+        <Show when={report.error()}>
+          <p role="alert">
+            {t("Statistiques indisponibles :")} {String(report.error())}
+          </p>
+        </Show>
+        <h2>{t("Votre collection")}</h2>
+        <div class="stat-tiles">
+          <For each={tiles()}>
+            {(tile) => (
+              <div>
+                <span>{tile[0]}</span>
+                <StatValue value={tile[1]} />
               </div>
             )}
-          </Show>
-          <small>
-            {t(
-              "Lecture des résultats existants ; aucun contrôle audio ni analyse n’est lancé.",
-            )}{" "}
-          </small>
-        </section>
+          </For>
+        </div>
+        <Show when={library.session()}>
+          <section>
+            <h2>{t("Intégrité et analyses enregistrées")}</h2>
+            <Show when={doctor.error()}>
+              <p role="alert">
+                {t("Diagnostic indisponible :")} {String(doctor.error())}
+              </p>
+            </Show>
+            <Show when={doctor.current()}>
+              {(result) => (
+                <div class="stat-tiles">
+                  <For
+                    each={
+                      [
+                        [t("Erreurs"), result().summary.error ?? 0],
+                        [t("Avertissements"), result().summary.warning ?? 0],
+                        [t("Informations"), result().summary.info ?? 0],
+                        [t("Fichiers non vérifiés"), result().unverified_files],
+                        [t("Analyses en attente"), result().pending_analyses],
+                      ] as const
+                    }
+                  >
+                    {(item) => (
+                      <div>
+                        <span>{item[0]}</span>
+                        <StatValue value={numberLabel(item[1])} />
+                      </div>
+                    )}
+                  </For>
+                </div>
+              )}
+            </Show>
+            <small>
+              {t(
+                "Lecture des résultats existants ; aucun contrôle audio ni analyse n’est lancé.",
+              )}{" "}
+            </small>
+          </section>
+          <section>
+            <h2>{t("Votre musique")}</h2>
+            <div class="stat-tiles">
+              <For
+                each={
+                  [
+                    [t("Favoris"), own().filter((value) => value?.loved).length],
+                    [t("Notes personnelles"), own().filter((value) => value?.note).length],
+                    [t("Entités notées"), ratings().length],
+                    [
+                      t("Tags personnels distincts"),
+                      new Set(own().flatMap((value) => value?.tags ?? [])).size,
+                    ],
+                  ] as const
+                }
+              >
+                {(item) => (
+                  <div>
+                    <span>{item[0]}</span>
+                    <StatValue value={numberLabel(item[1])} />
+                  </div>
+                )}
+              </For>
+            </div>
+            <Show when={ratings().length}>
+              <p>
+                {t("Note moyenne :")}{" "}
+                {(
+                  ratings().reduce((sum, value) => sum + (value?.rating ?? 0), 0) / ratings().length
+                ).toLocaleString(locale(), { maximumFractionDigits: 2 })}{" "}
+                / 5
+              </p>
+            </Show>
+            <p class="muted">{t("Annotations de votre compte chargées en mémoire.")}</p>
+          </section>
+        </Show>
         <section>
-          <h2>{t("Votre musique")}</h2>
+          <h2>{t("Couverture du catalogue local")}</h2>
           <div class="stat-tiles">
             <For
               each={
                 [
-                  [t("Favoris"), own().filter((value) => value?.loved).length],
-                  [t("Notes personnelles"), own().filter((value) => value?.note).length],
-                  [t("Entités notées"), ratings().length],
                   [
-                    t("Tags personnels distincts"),
-                    new Set(own().flatMap((value) => value?.tags ?? [])).size,
+                    t("Albums sans année"),
+                    library.albums().filter((album) => album.year === null).length,
                   ],
+                  [
+                    t("Artistes d’album sans origine"),
+                    principals().filter((artist) => artist.country === null).length,
+                  ],
+                  [
+                    t("Biographies récupérées"),
+                    principals().filter((artist) => !!artist.biography).length,
+                  ],
+                  [
+                    t("Bannières disponibles"),
+                    principals().filter((artist) => artist.media?.banner).length,
+                  ],
+                  [
+                    t("Arrière-plans disponibles"),
+                    principals().filter((artist) => artist.media?.background).length,
+                  ],
+                  [
+                    t("Portraits disponibles"),
+                    principals().filter((artist) => artist.media?.portrait).length,
+                  ],
+                  [t("Images chargées"), library.mediaProgress()[0] - library.mediaErrors()],
+                  [t("Images indisponibles"), library.mediaErrors()],
                 ] as const
               }
             >
@@ -280,182 +332,128 @@ export function StatisticsPage() {
               )}
             </For>
           </div>
-          <Show when={ratings().length}>
-            <p>
-              {t("Note moyenne :")}{" "}
-              {(
-                ratings().reduce((sum, value) => sum + (value?.rating ?? 0), 0) / ratings().length
-              ).toLocaleString(locale(), { maximumFractionDigits: 2 })}{" "}
-              / 5
-            </p>
-          </Show>
-          <p class="muted">{t("Annotations de votre compte chargées en mémoire.")}</p>
         </section>
-      </Show>
-      <section>
-        <h2>{t("Couverture du catalogue local")}</h2>
-        <div class="stat-tiles">
-          <For
-            each={
-              [
-                [
-                  t("Albums sans année"),
-                  library.albums().filter((album) => album.year === null).length,
-                ],
-                [
-                  t("Artistes d’album sans origine"),
-                  principals().filter((artist) => artist.country === null).length,
-                ],
-                [
-                  t("Biographies récupérées"),
-                  principals().filter((artist) => !!artist.biography).length,
-                ],
-                [
-                  t("Bannières disponibles"),
-                  principals().filter((artist) => artist.media?.banner).length,
-                ],
-                [
-                  t("Arrière-plans disponibles"),
-                  principals().filter((artist) => artist.media?.background).length,
-                ],
-                [
-                  t("Portraits disponibles"),
-                  principals().filter((artist) => artist.media?.portrait).length,
-                ],
-                [t("Images chargées"), library.mediaProgress()[0] - library.mediaErrors()],
-                [t("Images indisponibles"), library.mediaErrors()],
-              ] as const
-            }
-          >
-            {(item) => (
-              <div>
-                <span>{item[0]}</span>
-                <StatValue value={numberLabel(item[1])} />
+        <Show when={currentReport()} keyed>
+          {(value) => (
+            <>
+              <p class="muted">
+                {t("Catalogue scanné le")}{" "}
+                {new Date(value.scanned_at * 1000).toLocaleString(locale())}
+                {t(". Les artistes crédités comprennent aussi les interprètes et auteurs.")}{" "}
+              </p>
+              <section class="stat-completeness">
+                <h2>{t("Complétude des albums")}</h2>
+                <div class="stat-tiles">
+                  <For
+                    each={
+                      [
+                        [t("Pochettes"), value.completeness.covers],
+                        [t("Années"), value.completeness.years],
+                        [t("Genres"), value.completeness.genres],
+                        [t("Identifiants MusicBrainz"), value.completeness.mbid],
+                      ] as const
+                    }
+                  >
+                    {(item) => (
+                      <div>
+                        <span>{item[0]}</span>
+                        <strong>
+                          {(item[1] * 100).toLocaleString(locale(), { maximumFractionDigits: 1 })} %
+                        </strong>
+                        <progress max="1" value={item[1]} />
+                      </div>
+                    )}
+                  </For>
+                </div>
+                <small>
+                  {t(
+                    "Présence de métadonnées dans Aède ; une pochette référencée peut rester illisible sur disque.",
+                  )}{" "}
+                </small>
+              </section>
+              <div class="stat-tables">
+                <StatisticsTable
+                  title={t("Formats")}
+                  unit={t("Fichiers et taille")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => bucket(report.by_codec)}
+                />
+                <StatisticsTable
+                  title={t("Qualité des fichiers")}
+                  unit={t("Caractéristiques encodées ; ne certifie pas la qualité de la source")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => bucket(report.by_quality)}
+                />
+                <StatisticsTable
+                  title={t("Fréquences d’échantillonnage")}
+                  unit={t("Fichiers et taille")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => bucket(report.by_sample_rate)}
+                />
+                <StatisticsTable
+                  title={t("Décennies")}
+                  unit={t("Albums et taille")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => bucket(report.by_decade)}
+                />
+                <StatisticsTable
+                  title={t("Pays et régions")}
+                  unit={t("Artistes dont l’origine est connue dans Aède")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => bucket(report.by_country, false)}
+                />
+                <StatisticsTable
+                  title={t("Rôles dans les crédits")}
+                  unit={t("Crédits ; nombre d’artistes par rôle")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => ({
+                    ...report.roles,
+                    items: report.roles.items.map((row) => ({
+                      label: row.role,
+                      count: row.credits,
+                      extra: t("{0} artistes", numberLabel(row.artists)),
+                    })),
+                  })}
+                />
+                <StatisticsTable
+                  title={t("Artistes les plus présents")}
+                  unit={t("Pistes créditées")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => ({
+                    ...report.top.artists,
+                    items: report.top.artists.items.map((row) => ({
+                      label: row.name,
+                      count: row.tracks,
+                      reference: row.reference,
+                    })),
+                  })}
+                />
+                <StatisticsTable
+                  title={t("Auteurs les plus présents")}
+                  unit={t("Pistes créditées")}
+                  first={value}
+                  read={reader()!}
+                  rows={(report) => ({
+                    ...report.top.writers,
+                    items: report.top.writers.items.map((row) => ({
+                      label: row.name,
+                      count: row.tracks,
+                      reference: row.reference,
+                    })),
+                  })}
+                />
               </div>
-            )}
-          </For>
-        </div>
-      </section>
-      <Show when={currentReport()} keyed>
-        {(value) => (
-          <>
-            <p class="muted">
-              {t("Catalogue scanné le")}{" "}
-              {new Date(value.scanned_at * 1000).toLocaleString(locale())}
-              {t(". Les artistes crédités comprennent aussi les interprètes et auteurs.")}{" "}
-            </p>
-            <section class="stat-completeness">
-              <h2>{t("Complétude des albums")}</h2>
-              <div class="stat-tiles">
-                <For
-                  each={
-                    [
-                      [t("Pochettes"), value.completeness.covers],
-                      [t("Années"), value.completeness.years],
-                      [t("Genres"), value.completeness.genres],
-                      [t("Identifiants MusicBrainz"), value.completeness.mbid],
-                    ] as const
-                  }
-                >
-                  {(item) => (
-                    <div>
-                      <span>{item[0]}</span>
-                      <strong>
-                        {(item[1] * 100).toLocaleString(locale(), { maximumFractionDigits: 1 })} %
-                      </strong>
-                      <progress max="1" value={item[1]} />
-                    </div>
-                  )}
-                </For>
-              </div>
-              <small>
-                {t(
-                  "Présence de métadonnées dans Aède ; une pochette référencée peut rester illisible sur disque.",
-                )}{" "}
-              </small>
-            </section>
-            <div class="stat-tables">
-              <StatisticsTable
-                title={t("Formats")}
-                unit={t("Fichiers et taille")}
-                first={value}
-                read={reader()!}
-                rows={(report) => bucket(report.by_codec)}
-              />
-              <StatisticsTable
-                title={t("Qualité des fichiers")}
-                unit={t("Caractéristiques encodées ; ne certifie pas la qualité de la source")}
-                first={value}
-                read={reader()!}
-                rows={(report) => bucket(report.by_quality)}
-              />
-              <StatisticsTable
-                title={t("Fréquences d’échantillonnage")}
-                unit={t("Fichiers et taille")}
-                first={value}
-                read={reader()!}
-                rows={(report) => bucket(report.by_sample_rate)}
-              />
-              <StatisticsTable
-                title={t("Décennies")}
-                unit={t("Albums et taille")}
-                first={value}
-                read={reader()!}
-                rows={(report) => bucket(report.by_decade)}
-              />
-              <StatisticsTable
-                title={t("Pays et régions")}
-                unit={t("Artistes dont l’origine est connue dans Aède")}
-                first={value}
-                read={reader()!}
-                rows={(report) => bucket(report.by_country, false)}
-              />
-              <StatisticsTable
-                title={t("Rôles dans les crédits")}
-                unit={t("Crédits ; nombre d’artistes par rôle")}
-                first={value}
-                read={reader()!}
-                rows={(report) => ({
-                  ...report.roles,
-                  items: report.roles.items.map((row) => ({
-                    label: row.role,
-                    count: row.credits,
-                    extra: t("{0} artistes", numberLabel(row.artists)),
-                  })),
-                })}
-              />
-              <StatisticsTable
-                title={t("Artistes les plus présents")}
-                unit={t("Pistes créditées")}
-                first={value}
-                read={reader()!}
-                rows={(report) => ({
-                  ...report.top.artists,
-                  items: report.top.artists.items.map((row) => ({
-                    label: row.name,
-                    count: row.tracks,
-                    reference: row.reference,
-                  })),
-                })}
-              />
-              <StatisticsTable
-                title={t("Auteurs les plus présents")}
-                unit={t("Pistes créditées")}
-                first={value}
-                read={reader()!}
-                rows={(report) => ({
-                  ...report.top.writers,
-                  items: report.top.writers.items.map((row) => ({
-                    label: row.name,
-                    count: row.tracks,
-                    reference: row.reference,
-                  })),
-                })}
-              />
-            </div>
-          </>
-        )}
-      </Show>
+            </>
+          )}
+        </Show>
+      </StatisticsContent>
     </section>
   );
 }

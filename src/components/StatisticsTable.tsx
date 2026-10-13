@@ -19,8 +19,8 @@ export function StatisticsTable(props: {
 }) {
   const [offset, setOffset] = createSignal(0);
   const report = createDiagnosticRead(
-    () => ({ offset: offset(), read: props.read, first: props.first }),
-    (key) => (key.offset ? key.read(key.offset) : Promise.resolve(key.first)),
+    () => (offset() ? { offset: offset(), read: props.read, first: props.first } : false),
+    (key) => key.read(key.offset),
   );
   const page = () => props.rows(report.current() ?? props.first);
   const max = () => Math.max(1, ...page().items.map((row) => row.count));

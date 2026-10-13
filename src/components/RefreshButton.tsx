@@ -6,6 +6,8 @@ import { ActivityGlyph } from "./ActivityGlyph";
 export function RefreshButton(props: {
   label?: string;
   busy: boolean;
+  /** A page-wide indicator can own activity while this action remains an immediate Stop. */
+  busyIndicator?: "spinner" | "stop";
   disabled?: boolean;
   onRefresh: () => unknown;
   onCancel?: () => void;
@@ -21,7 +23,9 @@ export function RefreshButton(props: {
       onClick={() => (props.busy ? props.onCancel?.() : void props.onRefresh())}
     >
       <Show when={props.busy} fallback={<Icon name="refresh" />}>
-        <ActivityGlyph cancellable={!!props.onCancel} />
+        <Show when={props.busyIndicator !== "stop"} fallback={<Icon name="stop" />}>
+          <ActivityGlyph cancellable={!!props.onCancel} />
+        </Show>
       </Show>
     </button>
   );

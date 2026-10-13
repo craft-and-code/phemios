@@ -1181,7 +1181,6 @@
   "Tâche terminée.": "Task completed.",
   "Télécharger les paroles": "Download lyrics",
   "Télécharger les paroles · LRCLIB, sans clé API": "Download lyrics · LRCLIB, no API key needed",
-  "Une piste est retenue si au moins un tag ou genre correspond. Les tags de son album et de son artiste principal comptent aussi.": "A track is selected when at least one tag or genre matches. Tags on its album and principal artist also count.",
   "Vagues": "Waves",
   "Votre bibliothèque, vos couleurs.": "Your library, your colours.",
   "{0} pistes": "{0} tracks",
@@ -1626,5 +1625,9 @@
   "Playlists M3U documentées ; export des annotations Audirvana non confirmé.": "M3U playlists documented; Audirvana annotation export not confirmed.",
   "Format d’export des annotations Tune non confirmé ; import prévu ultérieurement.": "Tune annotation export format not confirmed; import planned for a future version.",
   "Favori": "Favourite",
-  "Masquer les albums": "Hide albums"
+  "Masquer les albums": "Hide albums",
+  "Tag de la piste : {0}": "Track tag: {0}",
+  "Tag de l’album : {0}": "Album tag: {0}",
+  "Tag de l’artiste : {0}": "Artist tag: {0}",
+  "Les tags d’ambiance de la piste priment sur ceux de l’album, puis de l’artiste. Sans tag d’ambiance, les genres sont utilisés.": "The track’s atmosphere tags take precedence over album tags, then artist tags. Without atmosphere tags, genres are used."
 }
