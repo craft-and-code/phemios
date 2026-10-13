@@ -829,3 +829,87 @@ it("invalidates a pending presentation before account replacement can replay its
     dispose();
   });
 });
+
+it.each(["complete", "reset"])(
+  "serializes delayed collection admission and preserves its source: %s",
+  async (change) => {
+    await createRoot(async (dispose) => {
+      let finish!: (value: unknown) => void;
+      const read = vi.fn(
+        () =>
+          new Promise<unknown>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const player = createPlayback(
+        () => true,
+        () => ({ albums: [album], artists: [] }),
+      );
+      const pending = player.readSelection(read, "local");
+      expect(player.busy()).toBe(true);
+      expect(player.ownsSource("local")).toBe(true);
+      await player.startReference(album.reference);
+      expect(requestAede).not.toHaveBeenCalled();
+      if (change === "reset") player.reset();
+      vi.mocked(playbackState).mockResolvedValue({
+        ...idlePlayback,
+        status: "playing",
+        reference: "track:one",
+        total: 1,
+        index: 0,
+        queue: [0],
+      });
+      finish({
+        items: [
+          {
+            reference: "track:one",
+            title: "First",
+            release: album.reference,
+            number: 1,
+            album_total: 2,
+          },
+        ],
+      });
+      await pending;
+      expect(playbackStart).toHaveBeenCalledTimes(change === "complete" ? 1 : 0);
+      expect(player.busy()).toBe(false);
+      dispose();
+    });
+  },
+);
+
+it("keeps existing playback polling during delayed selection preparation and cancellation", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      index: 0,
+      queue: [0, 1],
+    });
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album], artists: [] }),
+    );
+    await player.start(tracks, album, "Artist");
+    let finish!: (value: unknown) => void;
+    const pending = player.readSelection(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+      "server",
+    );
+    const before = vi.mocked(playbackState).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(180);
+    expect(vi.mocked(playbackState).mock.calls.length).toBeGreaterThan(before);
+    finish(undefined);
+    await pending;
+    const canceled = vi.mocked(playbackState).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(180);
+    expect(vi.mocked(playbackState).mock.calls.length).toBeGreaterThan(canceled);
+    expect(playbackStart).toHaveBeenCalledTimes(1);
+    dispose();
+  });
+});

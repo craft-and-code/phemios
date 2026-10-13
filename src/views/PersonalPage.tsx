@@ -1,3 +1,5 @@
+import { readCollectionPlayback } from "../library/collection-playback";
+import { ActivityGlyph } from "../components/ActivityGlyph";
 import { PageLoader } from "../components/PageLoader";
 import { CoverPlay } from "../components/CoverPlay";
 import { historyTrackAction } from "../library/history-actions";
@@ -49,6 +51,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
     [selected, setSelected] = createSignal(""),
     [message, setMessage] = createSignal(""),
     [saving, setSaving] = createSignal(false),
+    [playingCollection, setPlayingCollection] = createSignal(""),
     [openedCollection, setOpenedCollection] = createSignal(""),
     [offset, setOffset] = createSignal(0);
   let nameInput: HTMLInputElement | undefined;
@@ -65,6 +68,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
       setExpression("");
       setOpenedCollection("");
       setSaving(false);
+      setPlayingCollection("");
     },
   );
   const reads = createPersonalReads(
@@ -106,6 +110,40 @@ export function PersonalPage(props: { section: Section; query: string }) {
         setMessage(failure instanceof Error ? failure.message : t("Enregistrement impossible."));
     } finally {
       if (isCurrent()) setSaving(false);
+    }
+  }
+  async function playCollection(name: string) {
+    const session = library.session(),
+      source = library.source(),
+      admitted = actions.capture();
+    if (
+      !session ||
+      session.account.role === "auditor" ||
+      library.player.busy() ||
+      playingCollection()
+    )
+      return;
+    const epoch = library.trackSources().find((row) => row.source === source)?.scannedAt;
+    setPlayingCollection(name);
+    setMessage("");
+    try {
+      await library.player.readSelection(
+        (current) =>
+          readCollectionPlayback(
+            name,
+            source,
+            session,
+            library.albums(),
+            epoch,
+            () => admitted() && current(),
+          ),
+        source,
+      );
+    } catch (failure) {
+      if (admitted())
+        setMessage(failure instanceof Error ? failure.message : t("Lecture indisponible."));
+    } finally {
+      if (admitted()) setPlayingCollection("");
     }
   }
   async function download(id: string) {
@@ -265,6 +303,24 @@ export function PersonalPage(props: { section: Section; query: string }) {
                     void refetch();
                   }}
                 />
+                <button
+                  type="button"
+                  class="icon-button quiet"
+                  aria-label={t("Lire {0}", row.name)}
+                  title={t("Lire {0}", row.name)}
+                  aria-busy={playingCollection() === row.name || undefined}
+                  disabled={
+                    !library.session() ||
+                    library.session()?.account.role === "auditor" ||
+                    library.player.busy() ||
+                    !!playingCollection()
+                  }
+                  onClick={() => void playCollection(row.name)}
+                >
+                  <Show when={playingCollection() === row.name} fallback={<Icon name="play" />}>
+                    <ActivityGlyph />
+                  </Show>
+                </button>
               </li>
             )}
           </For>

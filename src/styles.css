@@ -2240,13 +2240,9 @@ main:has(> .result-page) > * {
 .choice-chip-marker {
   display: inline-grid;
   place-items: center;
-  opacity: 0;
   width: 14px;
 }
 .choice-chip-marker > svg {
   width: 14px;
   height: 14px;
-}
-.choice-chips > button[aria-pressed="true"] .choice-chip-marker {
-  opacity: 1;
 }

@@ -39,6 +39,7 @@ export function createPlayback(
     [busy, setBusy] = createSignal(false),
     [target, setTarget] = createSignal(""),
     [pendingReference, setPendingReference] = createSignal(""),
+    [pendingSource, setPendingSource] = createSignal<SourceId>(),
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
   const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
@@ -188,15 +189,36 @@ export function createPlayback(
     }
   }
   async function startSelection(value: unknown) {
+    return admitSelection(value);
+  }
+  /** A captured asynchronous selection shares playback admission; undefined means the read was canceled. */
+  async function readSelection(
+    load: (current: () => boolean) => Promise<unknown>,
+    source: SourceId,
+  ) {
+    return admitSelection(undefined, load, source);
+  }
+  async function admitSelection(
+    value: unknown,
+    load?: (current: () => boolean) => Promise<unknown>,
+    source?: SourceId,
+  ) {
     if (!ready() || busy() || !catalog) return;
     beforeStart();
     setBusy(true);
     setError("");
-    cancel();
-    const epoch = generation;
+    if (!load) cancel();
+    let epoch = generation;
+    setPendingSource(source);
     try {
+      const resolved = load ? await load(() => epoch === generation) : value;
+      if (epoch !== generation || (load && resolved === undefined)) return;
+      if (load) {
+        cancel();
+        epoch = generation;
+      }
       const data = catalog(),
-        rows = playbackSelection(value, data.albums, data.artists);
+        rows = playbackSelection(resolved, data.albums, data.artists);
       await startRows(rows, 0, epoch);
     } catch (failure) {
       if (epoch === generation) {
@@ -206,6 +228,7 @@ export function createPlayback(
     } finally {
       if (epoch === generation) {
         setPendingReference("");
+        setPendingSource(undefined);
         setBusy(false);
       }
     }
@@ -376,6 +399,7 @@ export function createPlayback(
       setSelection([]);
       setRetainedOrder([]);
       setPendingReference("");
+      setPendingSource(undefined);
     });
     setOutputs([]);
     setDevice("");
@@ -451,6 +475,7 @@ export function createPlayback(
   }
   /** Empty transport state must not impersonate a source after Stop or during admission. */
   const ownsSource = (source: SourceId) =>
+    pendingSource() === source ||
     [state().reference, selection()[0]?.reference, pendingReference()].some(
       (reference) => !!reference && referenceSource(reference) === source,
     );
@@ -466,6 +491,7 @@ export function createPlayback(
     setTarget,
     startReference,
     startSelection,
+    readSelection,
     identify,
     remaining,
     toggleTime,

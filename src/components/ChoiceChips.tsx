@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import { t } from "../i18n";
 import { additiveCountrySelection, isMac } from "../library/selection";
 import { Icon } from "./Icon";
@@ -23,9 +23,11 @@ export function ChoiceChips(props: {
             aria-pressed={props.selected.includes(choice.id)}
             onClick={(event) => props.onSelect(choice.id, additiveCountrySelection(event, isMac()))}
           >
-            <span class="choice-chip-marker" aria-hidden="true">
-              <Icon name="check" />
-            </span>
+            <Show when={props.selected.includes(choice.id)}>
+              <span class="choice-chip-marker" aria-hidden="true">
+                <Icon name="check" />
+              </span>
+            </Show>
             {choice.label}
           </button>
         )}
