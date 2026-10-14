@@ -736,3 +736,9 @@ fn generation_and_completion_routes_admit_only_their_intended_methods() {
     assert!(!allowed("PUT", "/api/me/v1/album-listening"));
     assert!(!allowed("POST", "/api/me/v1/album-listening"));
 }
+
+#[test]
+fn album_decode_route_accepts_only_the_explicit_administrative_post() {
+    assert!(allowed("POST", "/api/admin/v1/check"));
+    assert!(!allowed("GET", "/api/admin/v1/check"));
+}

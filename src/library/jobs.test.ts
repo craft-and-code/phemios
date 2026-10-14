@@ -235,3 +235,26 @@ it("cancels with the empty-body administrative contract", async () => {
   await tasks.cancel(19, "local");
   expect(request).toHaveBeenCalledWith("/api/admin/v1/tasks/19/cancel", {}, "POST", null, "local");
 });
+
+it("album integrity binds the capability read and exact mutation to the captured local owner", async () => {
+  const owner = { account: { role: "admin" } } as import("./server").AccountSession;
+  request.mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["album_decode_test"] }
+      : { task_id: 7, status: "queued" },
+  );
+  const tasks = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createJobs(() => true, { session: () => owner, changed: async () => {} });
+  });
+  await tasks.start("check", "release:@phemios/local/fixture", true);
+  expect(request).toHaveBeenCalledWith(
+    "/api/admin/v1/check",
+    {},
+    "POST",
+    { release: "release:@phemios/local/fixture" },
+    "local",
+    owner,
+  );
+  expect(tasks.jobs().find((row) => row.task_id === 7)?.kind).toBe("check");
+});

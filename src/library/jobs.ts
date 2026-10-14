@@ -209,12 +209,42 @@ export function createJobs(
       }
     });
   }
-  async function start(kind: "analyze" | "spectrum" | "lyrics", release: string, force: boolean) {
+  async function start(
+    kind: "analyze" | "spectrum" | "lyrics" | "check",
+    release: string,
+    force: boolean,
+  ) {
     setError("");
     if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
       throw new Error(t("Quatre tâches sont déjà actives."));
     const source = referenceSource(release),
       identity = options?.session(source);
+    if (kind === "check") {
+      if (identity?.account.role !== "admin")
+        throw new Error(t("Droits administrateur nécessaires."));
+      const info = await requestAede<{ capabilities?: string[] }>(
+        "/api/v1/status",
+        {},
+        "GET",
+        null,
+        source,
+        identity,
+      );
+      if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
+      if (!info.capabilities?.includes("album_decode_test"))
+        throw new Error(t("Mettez à jour puis redémarrez Aède pour tester cet album."));
+      const result = await requestAede<{ task_id: number; status: "queued" }>(
+        "/api/admin/v1/check",
+        {},
+        "POST",
+        { release },
+        source,
+        identity,
+      );
+      if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
+      track(result, kind, source, release);
+      return result.task_id;
+    }
     const result = await requestAede<{ task_id: number; status: "queued" }>(
       `/api/admin/v1/${kind}`,
       {},

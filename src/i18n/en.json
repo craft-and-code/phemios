@@ -1668,6 +1668,12 @@
   "Bibliothèque à traiter": "Library to process",
   "Annulation impossible.": "Unable to cancel.",
   "À propos": "About",
+  "Tester l’intégrité de l’album": "Test album integrity",
+  "Arrêter le test": "Stop test",
+  "Résultat du test d’intégrité": "Integrity test result",
+  "Mettez à jour puis redémarrez Aède pour tester cet album.": "Update and restart Aède to test this album.",
   "Version non communiquée": "Version not reported",
-  "Moteur non connecté": "Engine not connected"
+  "Moteur non connecté": "Engine not connected",
+  "Test d’intégrité échoué": "Integrity test failed",
+  "Test d’intégrité annulé": "Integrity test cancelled"
 }

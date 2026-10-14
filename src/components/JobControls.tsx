@@ -55,7 +55,7 @@ export function JobControls(props: {
           {t("Générer les spectres")}{" "}
         </button>
       </div>
-      <Show when={busy() || active()}>
+      <Show when={busy() || (active() && active()?.kind !== "check")}>
         <p class="job-activity" role="status">
           <span class="spinner" aria-hidden="true" />
           {busy()
@@ -82,7 +82,11 @@ export function JobControls(props: {
         <p role="alert">{error() || library.tasks.error()}</p>
       </Show>
       <div aria-live="polite">
-        <For each={library.tasks.jobs().filter((job) => job.release === props.release)}>
+        <For
+          each={library.tasks
+            .jobs()
+            .filter((job) => job.release === props.release && job.kind !== "check")}
+        >
           {(job) => (
             <div class="job-result">
               <span>

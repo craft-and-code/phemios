@@ -1,3 +1,4 @@
+import { AlbumIntegrity } from "../components/AlbumIntegrity";
 import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
 import { AlbumMetadata } from "../components/AlbumMetadata";
@@ -176,6 +177,7 @@ export function AlbumPage(props: {
             />
           </div>
         </div>
+        <AlbumIntegrity release={props.album.reference} />
         <JobControls release={props.album.reference} />
       </section>
     </article>

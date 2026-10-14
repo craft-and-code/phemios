@@ -402,6 +402,7 @@ fn allowed(method: &str, path: &str) -> bool {
                 "/api/me/v1/achievements"
                     | "/api/me/v1/background-priority"
                     | "/api/admin/v1/mood-features"
+                    | "/api/admin/v1/check"
                     | "/api/admin/v1/analyze"
                     | "/api/admin/v1/generate"
                     | "/api/admin/v1/spectrum"
