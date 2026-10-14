@@ -7,6 +7,7 @@ import { CoverPlay } from "./CoverPlay";
 /** Separate links and playback avoid nested interactive controls in grid and list layouts. */
 export function AlbumCard(props: {
   album: Album;
+  unplayed?: boolean | undefined;
   rating?: number | undefined;
   ratingFromArtist?: boolean | undefined;
 }) {
@@ -14,7 +15,7 @@ export function AlbumCard(props: {
   return (
     <article class="album-card">
       <a class="album-art-link" href={href()}>
-        <Artwork album={props.album} />
+        <Artwork album={props.album} unplayed={props.unplayed} />
       </a>
       <a class="album-title-link" href={href()}>
         <strong>{props.album.title}</strong>

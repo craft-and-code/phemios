@@ -27,6 +27,8 @@
   --pagination-gap: 16px;
   --page-end-gap: 24px;
   --detail-heading-offset: 6px;
+  --unplayed-color: #d54646;
+  --album-unplayed-size: 30px;
   --header-summary-size: 0.85rem;
   --error: #d47777;
   --compact-control-gap: 4px;
@@ -2417,6 +2419,32 @@ main:has(> .tracks-page) {
 .album-hero > .detail-hero-text {
   padding-top: var(--detail-heading-offset);
 }
+.album-unplayed {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(var(--album-unplayed-size), 25%);
+  aspect-ratio: 1;
+  background: var(--unplayed-color);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  pointer-events: none;
+}
+.generation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.generation-results {
+  margin-top: 16px;
+}
+.generation-results pre {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .page.analysis-page {
   min-height: auto;
 }

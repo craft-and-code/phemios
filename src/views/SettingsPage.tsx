@@ -1,3 +1,4 @@
+import { SettingsAede } from "./SettingsAede";
 import { SettingsImports } from "./SettingsImports";
 import { SettingsBackup } from "./SettingsBackup";
 import { SettingsShortcuts } from "./SettingsShortcuts";
@@ -33,6 +34,7 @@ export function SettingsPage(props: {
               "libraries",
               "accounts",
               "services",
+              "aede",
               "playback",
               "tags",
               "language",
@@ -63,6 +65,7 @@ export function SettingsPage(props: {
             { icon: "library", id: "libraries", label: t("Bibliothèques") },
             { icon: "users", id: "accounts", label: t("Comptes") },
             { icon: "globe", id: "services", label: t("Sources externes") },
+            { icon: "terminal", id: "aede", label: "Aède" },
             { icon: "volume", id: "playback", label: t("Lecture") },
             { icon: "tags", id: "tags", label: t("Tags") },
             { icon: "alphabet", id: "language", label: t("Langue") },
@@ -97,6 +100,9 @@ export function SettingsPage(props: {
         </Show>
         <Show when={tab() === "services"}>
           <SettingsServices />
+        </Show>
+        <Show when={tab() === "aede"}>
+          <SettingsAede />
         </Show>
         <Show when={tab() === "playback"}>
           <SettingsPlayback />

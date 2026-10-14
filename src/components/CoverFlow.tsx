@@ -15,6 +15,7 @@ export function CoverFlow(props: {
   albums: readonly Album[];
   position: CoverPosition;
   reverse: boolean;
+  unplayed?: ((album: Album) => boolean) | undefined;
 }) {
   const [selected, setSelected] = createSignal(""),
     [visualIndex, setVisualIndex] = createSignal(0);
@@ -164,7 +165,7 @@ export function CoverFlow(props: {
                       }
                     }}
                   >
-                    <Artwork album={row} />
+                    <Artwork album={row} unplayed={props.unplayed?.(row)} />
                   </a>
                   <Show when={at() === index()}>
                     <CoverPlay reference={row.reference} title={row.title} />

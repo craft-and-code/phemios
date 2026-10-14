@@ -1,10 +1,16 @@
+import { AlbumUnplayed } from "./AlbumUnplayed";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
 import { Show } from "solid-js";
 import type { Album } from "../library/types";
 import { useLibrary } from "../library/context";
 /** Stable squares reuse resident object URLs; scrolling never fetches a cover. */
-export function Artwork(props: { album: Album; compact?: boolean; thumbnail?: boolean }) {
+export function Artwork(props: {
+  album: Album;
+  compact?: boolean;
+  unplayed?: boolean | undefined;
+  thumbnail?: boolean;
+}) {
   const library = useLibrary();
   const index = () =>
     ["blue", "islands", "edges", "dawn", "first", "lines"].indexOf(props.album.reference);
@@ -46,6 +52,7 @@ export function Artwork(props: { album: Album; compact?: boolean; thumbnail?: bo
         <span>{props.album.title}</span>
         <small>{library.artists().find((a) => a.reference === props.album.artist)?.name}</small>
       </Show>
+      <AlbumUnplayed visible={props.unplayed} />
     </div>
   );
 }

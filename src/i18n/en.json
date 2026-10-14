@@ -1650,5 +1650,21 @@
   "Extraction audio interrompue.": "Audio extraction interrupted.",
   "Droits administrateur nécessaires.": "Administrator privileges required.",
   "Mettez à jour puis redémarrez Aède pour vérifier les M3U des albums.": "Update and restart Aède to check album M3U files.",
-  "Pagination": "Pagination"
+  "Pagination": "Pagination",
+  "Plan de génération invalide.": "Invalid generation plan.",
+  "Un traitement Aède est déjà actif.": "An Aède task is already active.",
+  "Mettez à jour puis redémarrez Aède pour les générations de bibliothèque.": "Update and restart Aède to generate library derivatives.",
+  "État d’écoute Aède invalide.": "Invalid Aède listening state.",
+  "Mettez à jour puis redémarrez Aède pour les états d’écoute.": "Update and restart Aède for album listening states.",
+  "État d’écoute indisponible.": "Listening state unavailable.",
+  "Les états d’écoute dépassent la limite de mémoire.": "Listening states exceed the memory limit.",
+  "Album pas encore écouté intégralement": "Album not yet fully listened to",
+  "Analyses FlacCompagnon": "FlacCompagnon analyses",
+  "Spectrogrammes": "Spectrograms",
+  "Tout lancer": "Run all",
+  "Arrêter les générations": "Stop generation",
+  "Générations Aède": "Aède generation tasks",
+  "Chaque action traite toute la bibliothèque sélectionnée. Tout lancer exécute les quatre étapes dans l’ordre, en arrière-plan. Les fichiers audio et leurs tags restent intacts.": "Each action processes the entire selected library. Run all executes the four stages in order in the background. Audio files and their tags remain unchanged.",
+  "Bibliothèque à traiter": "Library to process",
+  "Annulation impossible.": "Unable to cancel."
 }

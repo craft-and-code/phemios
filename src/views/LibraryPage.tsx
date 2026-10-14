@@ -1,3 +1,5 @@
+import { createAlbumListening } from "../library/album-listening";
+import { Feedback } from "../components/Feedback";
 import { ChoiceChips } from "../components/ChoiceChips";
 import type { CoverPosition } from "../visualizer/cover-position";
 import { CoverFlow } from "../components/CoverFlow";
@@ -14,7 +16,7 @@ import { useLibrary } from "../library/context";
 import { browseArtists, selectCountries } from "../library/selection";
 import { catalogIndex, artistCardSelection } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
-import type { Filters } from "../library/types";
+import type { Album, Filters } from "../library/types";
 import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
 
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
@@ -28,6 +30,22 @@ export function LibraryPage(props: {
   coverPosition: CoverPosition;
 }) {
   const library = useLibrary();
+  const listening = createAlbumListening({
+    enabled: () => !library.demo && props.section === "albums",
+    session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
+    checkpoint: () => {
+      const state = library.player.state();
+      const catalog = (["local", "server"] as const)
+        .map((source) => {
+          const snapshot = library.publicSnapshot(source);
+          return `${snapshot?.scannedAt ?? 0}:${snapshot?.cachedAt ?? ""}:${snapshot?.albums.length ?? 0}:${snapshot?.tracks?.length ?? 0}`;
+        })
+        .join("|");
+      return `${catalog}:${state.queue_id}:${state.index}:${state.reference}:${state.history_confirmed}`;
+    },
+  });
+  const unplayed = (album: Album) =>
+    props.section === "albums" && listening.completed(album.reference) === false;
   const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
   const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
   const countries = () => props.filters.countries ?? [];
@@ -71,6 +89,7 @@ export function LibraryPage(props: {
           <CountryExplorer artists={principals()} selected={countries()} onSelect={setCountry} />
         </Show>
         <div class="library-results">
+          <Feedback error persistent message={listening.error()} />
           <Show when={props.section === "genres"}>
             <ChoiceChips
               label={t("Genres")}
@@ -89,6 +108,7 @@ export function LibraryPage(props: {
                 fallback={
                   <AlbumGrid
                     albums={albums()}
+                    unplayed={unplayed}
                     coverSize={props.coverSize}
                     reverse={props.reverse}
                     emptyIcon={sectionIcon(props.section)}
@@ -97,6 +117,7 @@ export function LibraryPage(props: {
               >
                 <CoverFlow
                   albums={albums()}
+                  unplayed={unplayed}
                   position={props.coverPosition}
                   reverse={props.reverse}
                 />

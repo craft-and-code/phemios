@@ -1,3 +1,4 @@
+import { createGenerations } from "./generation-jobs";
 import { validFeatureProgress, type FeatureProgress } from "./mood-features";
 import { startEnrichment, startSourceEnrichment, hasActiveEnrichment } from "./enrichment";
 import type { AccountSession } from "./server";
@@ -74,7 +75,10 @@ export function createJobs(
               : row,
           ),
         );
-        if (["completed", "failed", "cancelled"].includes(result.status) && job.kind === "fetch")
+        if (
+          ["completed", "failed", "cancelled"].includes(result.status) &&
+          (job.kind === "fetch" || job.kind?.startsWith("generate"))
+        )
           await options?.changed(source);
       } catch (failure) {
         if (options && identity !== options.session(source)) continue;
@@ -156,7 +160,7 @@ export function createJobs(
           (held) => held.source === source && held.task_id === row.task_id,
         );
         return (
-          previous?.kind === "fetch" &&
+          (previous?.kind === "fetch" || previous?.kind?.startsWith("generate")) &&
           ["queued", "running"].includes(previous.status) &&
           ["completed", "failed", "cancelled"].includes(row.status)
         );
@@ -167,7 +171,11 @@ export function createJobs(
           const local = held.find((old) => old.source === source && old.task_id === row.task_id);
           const kind =
             local?.kind ??
-            (row.task_kind === "identification" ? "fetch" : (row.kind ?? row.task_kind));
+            (row.task_kind === "identification"
+              ? "fetch"
+              : row.task_kind?.startsWith("library_generation")
+                ? row.task_kind.replace("library_generation", "generate")
+                : (row.kind ?? row.task_kind));
           const restored = { ...local, ...row, source, ...(kind === undefined ? {} : { kind }) };
           delete restored.tracking_error;
           return restored;
@@ -273,5 +281,23 @@ export function createJobs(
     disposed = true;
     if (timer !== undefined) window.clearTimeout(timer);
   });
-  return { jobs, error, start, cancel, track, restore, enrich, enrichmentPending, features };
+  const generations = createGenerations({
+    jobs,
+    session: (source) => options?.session(source),
+    accepted: (task, kind, source) => track(task, kind, source),
+    recover: restore,
+  });
+  return {
+    jobs,
+    error,
+    start,
+    cancel,
+    track,
+    restore,
+    enrich,
+    enrichmentPending,
+    features,
+    generate: generations.start,
+    generationPending: generations.pending,
+  };
 }

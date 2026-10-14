@@ -727,3 +727,12 @@ fn task_cancellation_transmits_no_json_null_in_place_of_an_absent_body() {
     );
     assert!(worker.join().unwrap().is_empty());
 }
+
+#[test]
+fn generation_and_completion_routes_admit_only_their_intended_methods() {
+    assert!(allowed("POST", "/api/admin/v1/generate"));
+    assert!(!allowed("GET", "/api/admin/v1/generate"));
+    assert!(allowed("GET", "/api/me/v1/album-listening"));
+    assert!(!allowed("PUT", "/api/me/v1/album-listening"));
+    assert!(!allowed("POST", "/api/me/v1/album-listening"));
+}
