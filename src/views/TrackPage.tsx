@@ -57,7 +57,7 @@ export function TrackPage(props: {
                   </div>
                 )}
               </Show>
-              <div>
+              <div class="detail-hero-text">
                 <p class="eyebrow">{t("PISTE")}</p>
                 <div class="detail-title">
                   <h1>{row().title}</h1>

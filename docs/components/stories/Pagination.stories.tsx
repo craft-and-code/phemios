@@ -40,7 +40,8 @@ export const Navigation: Story = {
     expect(canvas.getByText("51–100 / 112")).toBeVisible();
     const nav = canvasElement.querySelector(".pagination-controls")!;
     expect(getComputedStyle(nav).gap).toBe("8px");
-    expect(getComputedStyle(nav).paddingBottom).toBe("24px");
+    expect(getComputedStyle(nav).paddingBottom).toBe("0px");
+    expect(getComputedStyle(nav).marginTop).toBe("16px");
     for (const button of nav.querySelectorAll("button")) {
       expect(button.getBoundingClientRect().width).toBe(36);
       expect(button.getBoundingClientRect().height).toBe(36);

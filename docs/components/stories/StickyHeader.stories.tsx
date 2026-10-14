@@ -173,7 +173,7 @@ export const DetailAlignment: Story = {
       {["ALBUM", "PISTE"].map((kind, index) => (
         <div class="album-hero">
           <div class="artwork" style={{ height: "200px" }} />
-          <div>
+          <div class="detail-hero-text">
             <p class="eyebrow">{kind}</p>
             <h1>Fictional detail</h1>
             {Array.from({ length: index ? 1 : 4 }, () => (
@@ -189,6 +189,7 @@ export const DetailAlignment: Story = {
       expect(
         Math.abs(
           hero.querySelector(".eyebrow")!.getBoundingClientRect().top -
+            6 -
             hero.querySelector(".artwork")!.getBoundingClientRect().top,
         ),
       ).toBeLessThan(1);
@@ -199,7 +200,7 @@ export const DetailAlignment: Story = {
 export const BottomSpacing: Story = {
   render: () => (
     <div>
-      {["doctor-page", "achievements-page"].map((view) => (
+      {["doctor-page", "analysis-page", "achievements-page"].map((view) => (
         <main class="component-sticky" style={{ height: "320px", overflow: "auto" }}>
           <section class={`page result-page ${view}`}>
             <StickyHeader>Fictional header</StickyHeader>
@@ -216,7 +217,9 @@ export const BottomSpacing: Story = {
       const bottom =
         page.getBoundingClientRect().bottom -
         page.querySelector(".fixture-last-content")!.getBoundingClientRect().bottom;
-      expect(bottom).toBeGreaterThanOrEqual(36);
+      expect(bottom).toBeGreaterThanOrEqual(
+        !page.classList.contains("achievements-page") ? 24 : 36,
+      );
     }
   },
 };

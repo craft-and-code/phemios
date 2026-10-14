@@ -59,7 +59,7 @@ export function AlbumPage(props: {
         <Show when={enlarged()}>
           <CoverPreview album={props.album} onClose={() => setEnlarged(false)} />
         </Show>
-        <div>
+        <div class="detail-hero-text">
           <p class="eyebrow">{props.album.compilation ? "COMPILATION" : "ALBUM"}</p>
           <div class="detail-title">
             <h1>{props.album.title}</h1>

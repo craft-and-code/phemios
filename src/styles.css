@@ -24,6 +24,9 @@
   --surface: #1a1c1d;
   --form-control-height: 38px;
   --control-gap: 8px;
+  --pagination-gap: 16px;
+  --page-end-gap: 24px;
+  --detail-heading-offset: 6px;
   --header-summary-size: 0.85rem;
   --error: #d47777;
   --compact-control-gap: 4px;
@@ -2359,8 +2362,8 @@ main:has(> .tracks-page) {
 /* Result pagination and end spacing are shared across tool and track views. */
 .pagination-controls {
   gap: var(--control-gap);
-  margin-block: 24px 0;
-  padding-bottom: 24px;
+  margin-block: var(--pagination-gap) 0;
+  padding-bottom: 0;
 }
 .page:is(.doctor-page, .achievements-page) {
   min-height: auto;
@@ -2400,4 +2403,20 @@ main:has(> .tracks-page) {
   .tracks-heading {
     flex-wrap: wrap;
   }
+}
+
+.page:is(.doctor-page, .analysis-page, .m3u-page, .tracks-page) {
+  padding-bottom: var(--page-end-gap);
+}
+.doctor-issues {
+  margin-bottom: 0;
+}
+.doctor-issues > li:last-child {
+  margin-bottom: 0;
+}
+.album-hero > .detail-hero-text {
+  padding-top: var(--detail-heading-offset);
+}
+.page.analysis-page {
+  min-height: auto;
 }
