@@ -34,10 +34,10 @@ export type Route =
   | { kind: "not-found" };
 
 export const sections: readonly { id: Section; label: string; symbol: string }[] = [
+  { id: "recent", label: t("Nouveautés"), symbol: "sparkles" },
   { id: "artists", label: t("Artistes"), symbol: "users" },
   { id: "albums", label: t("Albums"), symbol: "disc" },
   { id: "tracks", label: t("Pistes"), symbol: "list" },
-  { id: "recent", label: t("Nouveautés"), symbol: "sparkles" },
   { id: "compilations", label: t("Compilations"), symbol: "layers" },
   { id: "countries", label: t("Pays"), symbol: "globe" },
   { id: "genres", label: t("Genres"), symbol: "genres" },

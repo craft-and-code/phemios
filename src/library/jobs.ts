@@ -231,7 +231,7 @@ export function createJobs(
         identity,
       );
       if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
-      if (!info.capabilities?.includes("album_decode_test"))
+      if (!info.capabilities?.includes("album_decode_results"))
         throw new Error(t("Mettez à jour puis redémarrez Aède pour tester cet album."));
       const result = await requestAede<{ task_id: number; status: "queued" }>(
         "/api/admin/v1/check",

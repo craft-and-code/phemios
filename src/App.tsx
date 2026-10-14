@@ -53,6 +53,7 @@ import { createTrackPaging } from "./navigation/track-paging";
 import { TracksPage } from "./views/TracksPage";
 import { TrackPage } from "./views/TrackPage";
 import { TagsPage } from "./views/TagsPage";
+import { recentAlbums } from "./library/recent-albums";
 import { RecentPage } from "./views/RecentPage";
 import { AlbumPage } from "./views/AlbumPage";
 import { WorkspacePage } from "./views/WorkspacePage";
@@ -63,8 +64,12 @@ export function App() {
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
   const shortcuts = createShortcuts();
+  const [recentNow, setRecentNow] = createSignal(Math.floor(Date.now() / 1000));
   const visibleMenus = createMemo(() =>
-    visibleMenu(menu.value()).map((id) => ({
+    visibleMenu(
+      menu.value(),
+      new Set(recentAlbums(library.albums(), recentNow()).length ? [] : (["recent"] as const)),
+    ).map((id) => ({
       ...menuItem(id),
       label: menuLabel(id, menu.value()),
     })),
@@ -138,6 +143,11 @@ export function App() {
     );
   });
   onMount(() => {
+    const recentClock = window.setInterval(
+      () => setRecentNow(Math.floor(Date.now() / 1000)),
+      60000,
+    );
+    onCleanup(() => window.clearInterval(recentClock));
     function key(event: KeyboardEvent) {
       const editing =
         event.target instanceof Element &&
@@ -595,7 +605,7 @@ export function App() {
                             </Show>
                           }
                         >
-                          <RecentPage query={filters().query} />
+                          <RecentPage query={filters().query} now={recentNow()} />
                         </Show>
                       }
                     >

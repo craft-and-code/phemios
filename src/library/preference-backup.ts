@@ -13,7 +13,7 @@ const empty = { getItem: () => null, setItem: () => {} };
 export function exportPreferenceBackup(storage: Pick<Storage, "getItem">): string {
   const defaults: PreferenceBackup = {
     "phemios.appearance": readPreferences(empty),
-    "phemios.navigation.v1": { version: 5, ...readMenuPreferences(empty) },
+    "phemios.navigation.v1": { version: 6, ...readMenuPreferences(empty) },
     "phemios.tools.v1": readToolPreferences(empty),
     "phemios.shortcuts.v1": parseShortcuts(null),
     "phemios.audio.v1": parseAudioPreferences(null),

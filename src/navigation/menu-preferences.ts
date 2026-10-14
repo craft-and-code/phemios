@@ -90,7 +90,8 @@ function validate(raw: unknown): MenuPreferences {
       value.version !== 2 &&
       value.version !== 3 &&
       value.version !== 4 &&
-      value.version !== 5) ||
+      value.version !== 5 &&
+      value.version !== 6) ||
     !valid(value.order) ||
     !valid(value.hidden)
   )
@@ -101,10 +102,25 @@ function validate(raw: unknown): MenuPreferences {
   )
     throw new Error(t("Configuration du menu illisible."));
   const saved = [...value.order];
+  const libraryOrder = saved.filter(
+    (id) => ids().includes(id as Section) && menuHeading(id as Section) === "heading:library",
+  );
+  if (
+    value.version !== 6 &&
+    libraryOrder.join(",") === "artists,albums,tracks,recent,compilations,countries,genres,labels"
+  ) {
+    saved.splice(saved.indexOf("recent"), 1);
+    saved.splice(saved.indexOf("artists"), 0, "recent");
+  }
+
   const tools = saved.filter((id) =>
     ["doctor", "analysis", "relations", "statistics", "players"].includes(id),
   );
-  if (value.version !== 5 && tools.join(",") === "doctor,analysis,relations,statistics,players") {
+  if (
+    value.version !== 5 &&
+    value.version !== 6 &&
+    tools.join(",") === "doctor,analysis,relations,statistics,players"
+  ) {
     saved.splice(saved.indexOf("relations"), 1);
     saved.splice(saved.indexOf("doctor"), 0, "relations");
   }
@@ -124,6 +140,7 @@ function validate(raw: unknown): MenuPreferences {
     value.version !== 3 &&
     value.version !== 4 &&
     value.version !== 5 &&
+    value.version !== 6 &&
     saved.join(",") === legacyDefault.join(",")
   ) {
     for (const id of ["achievements", "encyclopedia"] as const) saved.splice(saved.indexOf(id), 1);
@@ -135,6 +152,7 @@ function validate(raw: unknown): MenuPreferences {
   if (
     value.version !== 4 &&
     value.version !== 5 &&
+    value.version !== 6 &&
     priorTools.join(",") ===
       "relations,doctor,analysis,statistics,achievements,encyclopedia,players"
   ) {
@@ -186,8 +204,8 @@ export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPref
 /** Check the retained store before publishing a validated device-local menu configuration. */
 export function saveMenuPreferences(storage: Store, value: MenuPreferences): MenuPreferences {
   readMenuPreferences(storage);
-  const next = validate({ version: 5, ...value });
-  const raw = JSON.stringify({ version: 5, ...next });
+  const next = validate({ version: 6, ...value });
+  const raw = JSON.stringify({ version: 6, ...next });
   if (raw.length > 8192) throw new Error(t("Configuration du menu illisible."));
   storage.setItem(key, raw);
   announceSetting(key, raw);
@@ -241,8 +259,11 @@ export function createMenuPreferences(storage: Store = interfacePreferences) {
   };
 }
 /** Empty groups disappear while explicit spacers retain their chosen position. */
-export function visibleMenu(value: MenuPreferences): MenuItem[] {
-  const order = value.order.filter((id) => !value.hidden.includes(id));
+export function visibleMenu(
+  value: MenuPreferences,
+  unavailable: ReadonlySet<MenuItem> = new Set(),
+): MenuItem[] {
+  const order = value.order.filter((id) => !value.hidden.includes(id) && !unavailable.has(id));
   return order.filter((id, index) => {
     if (!id.startsWith("heading:")) return true;
     const end = order.findIndex((next, i) => i > index && next.startsWith("heading:"));

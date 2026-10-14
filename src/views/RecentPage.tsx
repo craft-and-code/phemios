@@ -5,11 +5,10 @@ import { recentAlbums } from "../library/recent-albums";
 import { searchAlbum } from "../library/filtering";
 import { AlbumGrid } from "../components/AlbumGrid";
 /** Unknown legacy dates stay unknown until a genuinely new catalog addition is observed. */
-export function RecentPage(props: { query: string }) {
-  const library = useLibrary(),
-    now = Math.floor(Date.now() / 1000);
+export function RecentPage(props: { query: string; now: number }) {
+  const library = useLibrary();
   const albums = createMemo(() =>
-    recentAlbums(library.albums(), now).filter((a) =>
+    recentAlbums(library.albums(), props.now).filter((a) =>
       searchAlbum(
         a,
         library.artists().find((artist) => artist.reference === a.artist),

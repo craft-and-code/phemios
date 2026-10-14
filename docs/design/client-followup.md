@@ -181,3 +181,11 @@ The actual shared CoverPlayView retains the triangle throughout a pending reques
 ## Panoramic artist-list artwork (2026-10-15)
 
 Editorial artist rows prefer a resident background over the portrait, fitting their panoramic photo area. Without a resident background, the existing portrait/banner/album fallback remains available. Large-format cards keep their portrait-first order. The shared pure selection policy only reads the existing image store, reacts to a background becoming available and performs no enrichment, image rewriting or new network request. Existing framing and asset-size limits are unchanged.
+
+## Recent navigation and transient album checks (2026-10-15)
+
+Nouveautés is the first default library entry. Version-6 navigation migrates only the former standard library sequence, preserving custom order, hidden entries and labels. An empty rolling-month selection temporarily hides the entry without altering saved navigation. A shared one-minute clock drives both menu admission and the mounted recent page; other catalog filters do not hide this navigation entry. The coherent navigation migration module remains together above the usual line-count target so each version preserves the preceding menu contracts.
+
+Album integrity occupies the first compact action beside Pistes, before the permanent M3U actions. It requests the captured source’s exact catalogued album through Aède’s `album_decode_results` capability. Unsupported older engines fail visibly before submission. The server owns accepted tasks; the mounted page owns only its explicitly started task’s visible verdicts. Leaving the album, replacing the source/account or reopening the page clears those verdicts. No download or persisted result UI is provided.
+
+Strict version-1 results must cover each current exact file once. Truncated, missing, foreign, duplicate, unknown or exit-inconsistent reports never become green verdicts. A green check means a verified reference digest; a red cross means decode/verification failure; Sans hash means complete decoding without a reference digest. Original audio, tags, cached CRC conclusions and analysis reports remain unchanged. Test action activity uses the existing cancellable spinner/Stop presentation.

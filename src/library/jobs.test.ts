@@ -240,7 +240,7 @@ it("album integrity binds the capability read and exact mutation to the captured
   const owner = { account: { role: "admin" } } as import("./server").AccountSession;
   request.mockImplementation(async (path) =>
     path === "/api/v1/status"
-      ? { capabilities: ["album_decode_test"] }
+      ? { capabilities: ["album_decode_test", "album_decode_results"] }
       : { task_id: 7, status: "queued" },
   );
   const tasks = createRoot((cleanup) => {
@@ -257,4 +257,15 @@ it("album integrity binds the capability read and exact mutation to the captured
     owner,
   );
   expect(tasks.jobs().find((row) => row.task_id === 7)?.kind).toBe("check");
+});
+
+it("refuses a legacy text-only decode server before submitting an integrity check", async () => {
+  const owner = { account: { role: "admin" } } as import("./server").AccountSession;
+  request.mockResolvedValue({ capabilities: ["album_decode_test"] });
+  const tasks = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true, { session: () => owner, changed: async () => {} });
+  });
+  await expect(tasks.start("check", "release:fixture", true)).rejects.toThrow("Mettez à jour");
+  expect(request.mock.calls.every((call) => call[2] === "GET")).toBe(true);
 });

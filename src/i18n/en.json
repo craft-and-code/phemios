@@ -1680,5 +1680,9 @@
   "Ligne éditoriale": "Editorial row",
   "Présentation des artistes": "Artist presentation",
   "Cartes d’artistes": "Artist cards",
-  "Logo de {0}": "{0} logo"
+  "Logo de {0}": "{0} logo",
+  "Résultat d’intégrité Aède invalide ou incomplet.": "Invalid or incomplete Aède integrity result.",
+  "Empreinte vérifiée": "Hash verified",
+  "Échec du contrôle d’intégrité": "Integrity check failed",
+  "Décodage réussi ; aucune empreinte de référence.": "Successfully decoded; no reference hash."
 }

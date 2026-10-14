@@ -737,16 +737,6 @@
 .product-version span {
   color: var(--muted);
 }
-.album-integrity {
-  margin-bottom: 16px;
-}
-
-.album-integrity .job-result pre {
-  max-height: 240px;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
 
 .settings-card .product-versions:not(:has(~ .product-versions)) .product-version:last-child {
   border-bottom: none;

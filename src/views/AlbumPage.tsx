@@ -1,3 +1,4 @@
+import { createAlbumIntegrity, integrityPath } from "../library/album-integrity";
 import { AlbumIntegrity } from "../components/AlbumIntegrity";
 import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
@@ -31,6 +32,14 @@ export function AlbumPage(props: {
     () => (library.sessionFor(props.album.reference) ? props.album.reference : false),
     albumTracks,
   );
+  const integrity = createAlbumIntegrity({
+    release: () => props.album.reference,
+    session: () => library.sessionFor(props.album.reference),
+    paths: () => (tracks() ?? []).map((track) => integrityPath(track.reference) ?? ""),
+    jobs: library.tasks.jobs,
+    start: (release) => library.tasks.start("check", release, true),
+    cancel: (id, source) => library.tasks.cancel(id, source),
+  });
   const discs = createMemo(() => discGroups(tracks() ?? []));
   const completed = () => library.tasks.jobs().filter((job) => job.status === "completed").length;
   let lastCompleted = completed();
@@ -113,12 +122,22 @@ export function AlbumPage(props: {
       <section>
         <div class="section-heading">
           <h2>{t("Pistes")}</h2>
-          <M3UExport
-            release={props.album.reference}
-            title={props.album.title}
-            onStatus={(message, failed) => setM3uStatus({ message, failed })}
-          />
+          <div class="detail-export-actions">
+            <AlbumIntegrity
+              busy={integrity.busy()}
+              cancellable={integrity.canCancel()}
+              enabled={integrity.enabled() && !tracks.loading && !tracks.error}
+              onStart={() => void integrity.start()}
+              onCancel={() => void integrity.cancel()}
+            />
+            <M3UExport
+              release={props.album.reference}
+              title={props.album.title}
+              onStatus={(message, failed) => setM3uStatus({ message, failed })}
+            />
+          </div>
         </div>
+        <Feedback error persistent message={integrity.error()} />
         <Feedback
           message={m3uStatus().message}
           error={m3uStatus().failed}
@@ -150,6 +169,7 @@ export function AlbumPage(props: {
                     <TrackResults
                       track={row.track}
                       number={row.number}
+                      integrity={integrity.result(integrityPath(row.track.reference))}
                       onPlay={() =>
                         void library.player.start(
                           tracks() ?? [],
@@ -177,7 +197,6 @@ export function AlbumPage(props: {
             />
           </div>
         </div>
-        <AlbumIntegrity release={props.album.reference} />
         <JobControls release={props.album.reference} />
       </section>
     </article>

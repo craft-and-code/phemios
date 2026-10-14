@@ -1,3 +1,5 @@
+import type { IntegrityResult } from "../library/album-integrity";
+import { TrackIntegrity } from "./TrackIntegrity";
 import { PageLoader } from "./PageLoader";
 import { LyricsText } from "./LyricsText";
 import { createTrackLyrics } from "../library/track-lyrics";
@@ -22,6 +24,7 @@ export function TrackResults(props: {
   context?: JSX.Element;
   expanded?: boolean;
   origin?: boolean;
+  integrity?: IntegrityResult | undefined;
 }) {
   const library = useLibrary(),
     id = createUniqueId(),
@@ -60,6 +63,7 @@ export function TrackResults(props: {
         <div class="track-heading">
           <span class="track-number">{props.number}.</span>
           <PlayingBars reference={props.track.reference} />
+          <TrackIntegrity result={props.integrity} />
           <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
             {props.track.title}
           </a>
