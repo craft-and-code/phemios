@@ -24,6 +24,7 @@
   --surface: #1a1c1d;
   --form-control-height: 38px;
   --control-gap: 8px;
+  --header-summary-size: 0.85rem;
   --error: #d47777;
   --compact-control-gap: 4px;
   --sidebar: #151718;
@@ -2187,7 +2188,11 @@ main:has(> .result-page) > * {
   > :is(p, span):not(.result-count) {
   margin-block: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--header-summary-size);
+}
+.page-sticky-header :is(.settings-actions, .page-controls) {
+  margin-block: 0;
+  gap: var(--control-gap);
 }
 .history-selection-actions {
   justify-content: flex-start;
@@ -2327,4 +2332,39 @@ main:has(> .result-page) > * {
 /* Mount discovery centres its page activity inside the remaining view, including refreshes. */
 .players-page {
   position: relative;
+}
+
+/* Tracks owns its scroller: fixed controls cannot be carried away by long result pages. */
+main:has(> .tracks-page) {
+  overflow: hidden;
+}
+.tracks-page > .tracks-results {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  position: relative;
+}
+.tracks-page > .track-page-size {
+  flex-shrink: 0;
+  margin: 16px 0 0;
+  justify-content: center;
+}
+.tracks-page .track-page-size .choice-select {
+  width: 90px;
+}
+.tracks-results > .track-list {
+  margin-top: 0;
+}
+
+.m3u-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+
+.tracks-results > :not(.empty-state) {
+  flex-shrink: 0;
 }

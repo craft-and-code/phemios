@@ -426,8 +426,9 @@ export function LibraryProvider(props: ParentProps) {
       setBusy(false);
     }
   }
+  let disconnectingServer = false;
   async function connect(server: string, username: string, password: string) {
-    if (busy()) return;
+    if (busy() || disconnectingServer) return;
     bootstrap.invalidate("server");
     setBusy(true);
     setError("");
@@ -445,10 +446,12 @@ export function LibraryProvider(props: ParentProps) {
   }
   async function releaseServer() {
     bootstrap.invalidate("server");
-    setError("");
-    setSession(undefined);
-    connection.stop();
-    annotationsLoader.reset("server");
+    batch(() => {
+      setError("");
+      connection.stop();
+      setSession(undefined);
+      annotationsLoader.reset("server");
+    });
     try {
       await logoutAede();
     } finally {
@@ -458,10 +461,14 @@ export function LibraryProvider(props: ParentProps) {
     }
   }
   async function disconnect() {
+    if (disconnectingServer) return;
+    disconnectingServer = true;
     try {
       await releaseServer();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Déconnexion interrompue."));
+    } finally {
+      disconnectingServer = false;
     }
   }
   let startingLocal = false;

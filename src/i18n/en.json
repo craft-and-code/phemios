@@ -1648,5 +1648,6 @@
   "{0} caches illisibles ; les données existantes sont conservées.": "{0} unreadable caches; existing data is retained.",
   "Les tags personnels priment. Avec au moins deux exemples tagués sur des pistes ou albums, Aède recherche des sons proches. Sans exemples suffisants, les genres restent utilisés.": "Personal tags take precedence. With at least two tagged track or album examples, Aède finds similar sounds. Without enough examples, genres remain the fallback.",
   "Extraction audio interrompue.": "Audio extraction interrupted.",
-  "Droits administrateur nécessaires.": "Administrator privileges required."
+  "Droits administrateur nécessaires.": "Administrator privileges required.",
+  "Mettez à jour puis redémarrez Aède pour vérifier les M3U des albums.": "Update and restart Aède to check album M3U files."
 }

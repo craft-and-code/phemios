@@ -1,5 +1,5 @@
+import { ConnectionActions } from "./ConnectionActions";
 import { Feedback } from "./Feedback";
-import { Icon } from "./Icon";
 import { t } from "../i18n";
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
 import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
@@ -54,6 +54,16 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
     remembered?.server === initialServer ? remembered.username : "",
   );
   const [password, setPassword] = createSignal("");
+  const [disconnecting, setDisconnecting] = createSignal(false);
+  async function disconnect() {
+    if (disconnecting()) return;
+    setDisconnecting(true);
+    try {
+      await library.disconnect();
+    } finally {
+      setDisconnecting(false);
+    }
+  }
   return (
     <div
       class={props.embedded ? "settings-connection" : "popover-backdrop"}
@@ -132,7 +142,7 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                   onInput={(event) => setPassword(event.currentTarget.value)}
                 />
               </label>
-              <button class="primary" disabled={library.busy() || library.demo}>
+              <button class="primary" disabled={library.busy() || library.demo || disconnecting()}>
                 {library.busy() ? t("Connexion et synchronisation…") : t("Se connecter")}
               </button>
               <Show when={library.demo}>
@@ -160,22 +170,12 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
             </p>
           </Show>
           <p class="muted">{library.serverSession()?.server}</p>
-          <div class="settings-actions">
-            <button
-              disabled={library.busy()}
-              aria-busy={library.busy()}
-              onClick={() => void library.sync("server")}
-            >
-              <Show when={library.busy()} fallback={<Icon name="refresh" />}>
-                <span class="spinner" aria-hidden="true" />
-              </Show>
-              {library.busy() ? t("Synchronisation…") : t("Synchroniser la bibliothèque")}
-            </button>
-            <button disabled={library.busy()} onClick={() => void library.disconnect()}>
-              <Icon name="disconnect" />
-              {t("Se déconnecter")}
-            </button>
-          </div>
+          <ConnectionActions
+            syncing={library.busy()}
+            disconnecting={disconnecting()}
+            onSync={() => void library.sync("server")}
+            onDisconnect={() => void disconnect()}
+          />
         </Show>
         <Feedback error message={preferenceError()} />
         <Feedback error message={library.error()} />

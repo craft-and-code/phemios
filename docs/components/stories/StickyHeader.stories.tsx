@@ -88,6 +88,11 @@ export const SummaryParity: Story = {
   render: () => (
     <main class="component-sticky" style={{ height: "auto" }}>
       <StickyHeader>
+        <div class="selection-filter-row">
+          <ResultCount value={2} />
+        </div>
+      </StickyHeader>
+      <StickyHeader>
         <div class="page-heading">
           <span>Mounted players</span>
           <button class="icon-button">Action</button>
@@ -114,8 +119,10 @@ export const SummaryParity: Story = {
     </main>
   ),
   play: ({ canvasElement }) => {
-    const summaries = canvasElement.querySelectorAll(".page-sticky-header > div > :is(span, p)");
-    const reference = getComputedStyle(summaries[0]!);
+    const summaries = canvasElement.querySelectorAll(
+      ".page-sticky-header > div > :is(span, p):not(.result-count)",
+    );
+    const reference = getComputedStyle(canvasElement.querySelector(".result-count")!);
     for (const summary of summaries) {
       const style = getComputedStyle(summary);
       expect(style.fontSize).toBe(reference.fontSize);
@@ -126,5 +133,36 @@ export const SummaryParity: Story = {
         rect = summary.getBoundingClientRect();
       expect(Math.abs(rect.top + rect.height / 2 - action.top - action.height / 2)).toBeLessThan(1);
     }
+  },
+};
+
+export const StatisticsSeparator: Story = {
+  render: () => (
+    <main class="component-sticky" style={{ height: "auto" }}>
+      <StickyHeader>
+        <div class="selection-filter-row">
+          <ResultCount value={2} />
+          <button class="icon-button">Tag action</button>
+        </div>
+      </StickyHeader>
+      <StickyHeader>
+        <div class="statistics-heading">
+          <p>Whole library</p>
+          <div class="settings-actions">
+            <button class="icon-button">CSV</button>
+            <button class="icon-button">Refresh</button>
+          </div>
+        </div>
+      </StickyHeader>
+    </main>
+  ),
+  play: ({ canvasElement }) => {
+    const headers = canvasElement.querySelectorAll(".page-sticky-header");
+    expect(headers[1]!.getBoundingClientRect().height).toBe(
+      headers[0]!.getBoundingClientRect().height,
+    );
+    const controls = canvasElement.querySelector(".settings-actions")!.getBoundingClientRect(),
+      header = headers[1]!.getBoundingClientRect();
+    expect(Math.abs(header.bottom - controls.bottom - 13)).toBeLessThan(1);
   },
 };

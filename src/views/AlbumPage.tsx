@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
 import { AlbumMetadata } from "../components/AlbumMetadata";
 import { Icon } from "../components/Icon";
@@ -23,6 +24,7 @@ export function AlbumPage(props: {
 }) {
   const library = useLibrary();
   const [enlarged, setEnlarged] = createSignal(false);
+  const [m3uStatus, setM3uStatus] = createSignal({ message: "", failed: false });
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
   const [tracks, { refetch }] = createResource(
     () => (library.sessionFor(props.album.reference) ? props.album.reference : false),
@@ -110,7 +112,17 @@ export function AlbumPage(props: {
       <section>
         <div class="section-heading">
           <h2>{t("Pistes")}</h2>
+          <M3UExport
+            release={props.album.reference}
+            title={props.album.title}
+            onStatus={(message, failed) => setM3uStatus({ message, failed })}
+          />
         </div>
+        <Feedback
+          message={m3uStatus().message}
+          error={m3uStatus().failed}
+          onClose={() => setM3uStatus({ message: "", failed: false })}
+        />
         <Show when={tracks.error}>
           <p role="alert">
             {t("Pistes indisponibles :")} {String(tracks.error)}
@@ -162,7 +174,6 @@ export function AlbumPage(props: {
               album
               available={!!tracks()?.length && tracks()!.every((track) => track.analysis_available)}
             />
-            <M3UExport release={props.album.reference} title={props.album.title} />
           </div>
         </div>
         <JobControls release={props.album.reference} />

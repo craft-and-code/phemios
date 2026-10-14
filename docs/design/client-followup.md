@@ -109,3 +109,11 @@ Country/region statistics prepare a clean Countries selection before following t
 Leading header summaries share 12-pixel muted text and zero block margins across personal/tool layouts, including Concerts, Trophies and Statistics. CoverSize's reset glyph uses the ordinary text color at rest while retaining hover accent, disabled feedback and reset behavior. Unknown collection duration aggregates render no placeholder; confirmed zero remains a real clock.
 
 External-player discovery uses a props-only PlayersContent surface, with one page-centred Loader for initial discovery and Refresh even when a preceding volume list exists. The header remains reachable as Stop without another spinner. Cancel reveals the retained confirmation/selection under the existing guarded-read contract; it does not claim native IPC abortion. Storybook exercises the real surface with fictional mounted volumes.
+
+## Session actions, fixed tracks and album M3U (2026-10-14)
+
+Connected-server Logout stays available during library synchronization; only its own pending logout disables it. Shared ActionButton owns icon/text/activity geometry. Clearing the server account, connection monitor and server-private annotation projection is batched before native revocation, while the local source remains independent.
+
+Tool-header summaries and result counts share one `--header-summary-size` token, taking Tags as the reference. Inner action rows have zero block margins and the common control gap, restoring the Statistics separator's normal 61-pixel single-row geometry. Tracks keeps a bounded independent result scroller below its fixed header; pagination uses icon actions and the page-size control is below the results.
+
+Album M3U creation/download actions stay visible at the right of Pistes, apart from JSON analysis export. A metadata-only, captured-owner lookup of the canonical Aède CLI album file disables redundant creation and enables exact existing-file download. Failed/unsupported lookup is unknown, never a claim of absence. Older servers need the additive `album_m3u_lookup` capability. Saved metadata and feedback retire on account/reference replacement. Actual download feedback renders below the heading rather than widening or wrapping its action row.

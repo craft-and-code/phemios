@@ -209,7 +209,7 @@
 .result-count {
   color: var(--muted);
   white-space: nowrap;
-  font-size: 0.85rem;
+  font-size: var(--header-summary-size);
 }
 .rail-heading .result-count {
   margin-left: auto;
