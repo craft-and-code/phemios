@@ -17,6 +17,8 @@ type Story = StoryObj<typeof meta>;
 export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const buttons = within(canvasElement).getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    expect(within(canvasElement).queryByRole("button", { name: "Portrait immersif" })).toBeNull();
     for (const button of buttons) {
       expect(button).toBeEnabled();
       await userEvent.click(button);

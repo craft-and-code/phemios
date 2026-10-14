@@ -173,6 +173,10 @@ it("retains an optional artist logo hint without inventing assets for older snap
   };
   expect(parseSnapshot(fixture).artists[0]?.media?.logo).toBe(true);
   expect(
-    parseSnapshot({ ...fixture, artists: [{ ...artist, media: {} }] }).artists[0]?.media?.logo,
+    parseSnapshot({ ...fixture, artists: [{ ...artist, media: { logo: false } }] }).artists[0]
+      ?.media?.logo,
   ).toBe(false);
+  expect(
+    parseSnapshot({ ...fixture, artists: [{ ...artist, media: {} }] }).artists[0]?.media?.logo,
+  ).toBeUndefined();
 });

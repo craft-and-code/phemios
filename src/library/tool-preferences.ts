@@ -4,7 +4,7 @@ import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 export const pageSizes = [25, 50, 100, 200] as const;
-export type ArtistView = "portrait" | "discography" | "editorial";
+export type ArtistView = "discography" | "editorial";
 export interface ToolPreferences {
   artistView: ArtistView;
   full: boolean;
@@ -59,6 +59,7 @@ const key = "phemios.tools.v1";
 type Store = Pick<Storage, "getItem" | "setItem">;
 function validate(raw: unknown): ToolPreferences {
   const row = raw as ToolPreferences;
+  const artistView = (raw as Record<string, unknown> | null)?.artistView;
   if (
     !row ||
     typeof row !== "object" ||
@@ -73,8 +74,10 @@ function validate(raw: unknown): ToolPreferences {
       row.discogs === undefined ? false : row.discogs,
     ].every((v) => typeof v === "boolean") ||
     !(
-      row.artistView === undefined ||
-      ["portrait", "discography", "editorial"].includes(row.artistView)
+      artistView === undefined ||
+      artistView === "portrait" ||
+      artistView === "discography" ||
+      artistView === "editorial"
     ) ||
     !validCoverSize(row.coverSize === undefined ? 150 : row.coverSize) ||
     !validCoverOverrides(row.coverSizes === undefined ? {} : row.coverSizes) ||
@@ -89,7 +92,7 @@ function validate(raw: unknown): ToolPreferences {
     throw new Error(t("Options enregistrées illisibles."));
   return {
     ...row,
-    artistView: row.artistView ?? "discography",
+    artistView: artistView === "editorial" ? "editorial" : "discography",
     coverSize: row.coverSize === undefined ? 150 : row.coverSize,
     coverSizes: row.coverSizes === undefined ? {} : row.coverSizes,
     discogs: row.discogs === undefined ? false : row.discogs,

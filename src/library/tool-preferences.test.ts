@@ -133,11 +133,14 @@ it("updates mounted cover controls when settings change elsewhere without sendin
 it("persists all artist presentations and migrates existing account choices", () => {
   const storage = store();
   expect(readToolPreferences(storage).artistView).toBe("discography");
-  for (const artistView of ["portrait", "editorial", "discography"] as const) {
+  for (const artistView of ["editorial", "discography"] as const) {
     saveToolPreferences(storage, { artistView });
     expect(readToolPreferences(storage).artistView).toBe(artistView);
   }
   const legacy = JSON.parse(storage.getItem()!);
+  legacy.artistView = "portrait";
+  storage.setItem("", JSON.stringify(legacy));
+  expect(readToolPreferences(storage).artistView).toBe("discography");
   delete legacy.artistView;
   storage.setItem("", JSON.stringify(legacy));
   expect(readToolPreferences(storage).artistView).toBe("discography");

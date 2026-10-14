@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { ArtistCard } from "../../../src/components/ArtistCard";
 import { Icon } from "../../../src/components/Icon";
 const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="a" x2="1" y2="1"><stop stop-color="#264247"/><stop offset="1" stop-color="#151718"/></linearGradient></defs><rect width="400" height="400" fill="url(#a)"/><circle cx="200" cy="150" r="58" fill="#819586"/><path d="M80 400V300a120 100 0 0 1 240 0v100" fill="#516a65"/></svg>')}`;
@@ -7,7 +7,7 @@ const meta = {
   title: "Catalog/ArtistCard",
   component: ArtistCard,
   args: {
-    view: "portrait",
+    view: "discography",
     name: "The Northern Lights",
     href: "#/artist/fictional",
     metadata: "Post-rock · Islande",
@@ -42,7 +42,6 @@ const meta = {
 } satisfies Meta<typeof ArtistCard>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const Portrait: Story = {};
 export const Discography: Story = {
   args: {
     view: "discography",
@@ -66,6 +65,18 @@ export const Discography: Story = {
     ),
   ],
   play: async ({ canvasElement }) => {
+    const play = within(canvasElement).getByRole("button", { name: "Lire The Northern Lights" });
+    expect(getComputedStyle(play).cursor).toBe("pointer");
+    await userEvent.click(play);
+    const button = play.getBoundingClientRect();
+    expect(
+      play.contains(
+        canvasElement.ownerDocument.elementFromPoint(
+          button.left + button.width / 2,
+          button.top + button.height / 2,
+        ),
+      ),
+    ).toBe(true);
     const card = canvasElement.querySelector(".artist-presentation")!;
     const picture = canvasElement.querySelector(".artist-presentation-picture")!;
     expect(picture.getBoundingClientRect().height).toBeGreaterThan(
@@ -154,7 +165,7 @@ export const VerticalGallery: Story = {
         expect(cover.getBoundingClientRect().width).toBeGreaterThan(rect.width * 0.4);
       const logo = card.querySelector(".artist-presentation-logo img")!;
       expect(getComputedStyle(logo).filter).toContain("grayscale(1)");
-      expect(getComputedStyle(logo).filter).toContain("brightness(2.2)");
+      expect(getComputedStyle(logo).filter).not.toContain("brightness");
     }
     const rowDistance =
       cards[3]!.getBoundingClientRect().top - cards[0]!.getBoundingClientRect().top;

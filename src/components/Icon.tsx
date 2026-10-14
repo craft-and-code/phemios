@@ -1,6 +1,4 @@
 const paths: Record<string, string> = {
-  "artist-card":
-    "M4 2h16v20H4V2ZM8 5h4M8 17h3v3H8v-3Zm5 0h3v3h-3v-3ZM9 10a3 3 0 0 1 6 0M7 15a5 5 0 0 1 10 0",
   "cover-size": "M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4M9 9h6v6H9V9Z",
   external: "M14 3h7v7M21 3 10 14M10 3H3v18h18v-7",
   concerts: "M9 4a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0V4Zm-3 6v1a6 6 0 0 0 12 0v-1M12 17v5M8 22h8",

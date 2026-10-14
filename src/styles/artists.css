@@ -121,54 +121,6 @@
 .artist-presentation-thumbnails a:hover .artwork {
   border-color: var(--accent);
 }
-.artist-presentation-portrait {
-  min-height: 330px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-.artist-presentation-portrait .artist-presentation-identity {
-  position: static;
-  padding: 18px 64px 14px 18px;
-}
-.artist-presentation-portrait .artist-presentation-picture {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.artist-presentation-portrait .artist-presentation-picture img,
-.artist-presentation-portrait .artist-presentation-picture .artwork {
-  border: 0;
-  border-radius: 0;
-}
-.artist-presentation-portrait .artist-presentation-picture::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    transparent 20%,
-    color-mix(in srgb, var(--background) 65%, transparent) 55%,
-    var(--background)
-  );
-}
-.artist-presentation-portrait .artist-presentation-name {
-  position: relative;
-  z-index: 1;
-}
-.artist-presentation-portrait .artist-presentation-albums {
-  position: relative;
-  z-index: 1;
-  pointer-events: none;
-}
-.artist-presentation-portrait .artist-presentation-thumbnails > .artist-album-preview {
-  pointer-events: auto;
-}
-.artist-presentation-portrait .artist-presentation-play {
-  top: auto;
-  bottom: 18px;
-}
 @media (hover: none) {
   .artist-presentation-play .cover-play {
     opacity: 1;
@@ -324,7 +276,7 @@ main:has(> .artist-featured-library) > :not(.library-page) {
   max-height: min(64px, 12cqh);
   object-fit: contain;
   object-position: left top;
-  filter: grayscale(1) brightness(2.2) drop-shadow(0 2px 8px #0006);
+  filter: grayscale(1) drop-shadow(0 2px 8px #0006);
 }
 .artist-presentation-discography .artist-presentation-play {
   position: relative;
