@@ -11,6 +11,7 @@ export function CatalogActions(props: {
   onCompact: () => void;
   onCoverFlow?: (() => void) | undefined;
   children?: JSX.Element;
+  presentations?: JSX.Element;
 }) {
   return (
     <div class="catalog-actions">
@@ -24,16 +25,23 @@ export function CatalogActions(props: {
       >
         <Icon name="sort" />
       </button>
-      <button
-        type="button"
-        class="icon-button"
-        aria-label={t("Vue compacte")}
-        title={t("Vue compacte")}
-        aria-pressed={props.compact}
-        onClick={props.onCompact}
+      <Show
+        when={props.presentations}
+        fallback={
+          <button
+            type="button"
+            class="icon-button"
+            aria-label={t("Vue compacte")}
+            title={t("Vue compacte")}
+            aria-pressed={props.compact}
+            onClick={props.onCompact}
+          >
+            <Icon name="layers" />
+          </button>
+        }
       >
-        <Icon name="layers" />
-      </button>
+        {props.presentations}
+      </Show>
       <Show when={props.onCoverFlow}>
         <button
           type="button"

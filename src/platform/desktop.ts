@@ -9,6 +9,7 @@ export interface RuntimeInfo {
   name: string;
   version: string;
   native: boolean;
+  embedded?: { aede: string; flaccompagnon: string };
 }
 
 /** Browser previews stay offline and report their lack of native capabilities. */

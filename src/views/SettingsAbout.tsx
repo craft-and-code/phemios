@@ -1,4 +1,4 @@
-import { createResource, For } from "solid-js";
+import { createResource, Show } from "solid-js";
 import { getRuntimeInfo, openExternalLink, requestAede } from "../platform/desktop";
 import { createSignal } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -12,10 +12,6 @@ export function SettingsAbout() {
   const library = useLibrary(),
     [runtime] = createResource(getRuntimeInfo),
     [error, setError] = createSignal("");
-  const sources = () =>
-    (["local", "server"] as const).filter(
-      (source) => !!(source === "local" ? library.localSession() : library.serverSession()),
-    );
   const open = (url: string) =>
     void openExternalLink(url).catch((failure) => setError(String(failure)));
   return (
@@ -26,24 +22,32 @@ export function SettingsAbout() {
           {
             name: "Phémios",
             version: runtime()?.version ?? "—",
-            url: "https://craft-and-code.github.io/phemios/",
+          },
+          {
+            name: "Aède",
+            version: runtime()?.embedded?.aede ?? "—",
+            url: "https://craft-and-code.github.io/aede/",
+          },
+          {
+            name: "FlacCompagnon Core",
+            version: runtime()?.embedded?.flaccompagnon ?? "—",
+            url: "https://craft-and-code.github.io/FlacCompagnon/",
           },
         ]}
         onOpen={open}
       />
-      <For each={sources().length ? sources() : [undefined]}>
-        {(source) => <EngineVersion source={source} onOpen={open} />}
-      </For>
+      <Show when={library.serverSession()}>
+        <EngineVersion source="server" onOpen={open} />
+      </Show>
       <Feedback error message={error() || String(runtime.error ?? "")} />
     </section>
   );
 }
-function EngineVersion(props: { source: SourceId | undefined; onOpen: (url: string) => void }) {
+function EngineVersion(props: { source: SourceId; onOpen: (url: string) => void }) {
   const library = useLibrary();
   const [versions] = createResource(
     () => {
       const source = props.source;
-      if (!source) return false;
       const owner = source === "local" ? library.localSession() : library.serverSession();
       return owner ? { source, owner } : false;
     },
@@ -61,8 +65,8 @@ function EngineVersion(props: { source: SourceId | undefined; onOpen: (url: stri
         ).versions,
       ),
   );
-  const suffix = () => (props.source ? ` · ${sourceLabel(props.source)}` : "");
-  const unknown = () => (props.source ? t("Version non communiquée") : t("Moteur non connecté"));
+  const suffix = () => ` · ${sourceLabel(props.source)}`;
+  const unknown = () => t("Version non communiquée");
   return (
     <>
       <ProductVersions

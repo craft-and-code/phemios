@@ -1,3 +1,6 @@
+import { ArtistGallery } from "../components/ArtistGallery";
+import type { ArtistPositions } from "../library/artist-presentation";
+import type { ArtistView } from "../library/tool-preferences";
 import { createAlbumListening } from "../library/album-listening";
 import { Feedback } from "../components/Feedback";
 import { ChoiceChips } from "../components/ChoiceChips";
@@ -22,6 +25,8 @@ import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
   section: Section;
+  artistView: ArtistView;
+  artistPositions: ArtistPositions;
   filters: Filters;
   setFilters: (filters: Filters) => void;
   reverse: boolean;
@@ -124,74 +129,85 @@ export function LibraryPage(props: {
               </Show>
             }
           >
-            <ul class="artist-grid">
-              <For each={artists()}>
-                {(artist) => {
-                  const releases = index().albumsByArtist.get(artist.reference) ?? [];
-                  const selection = artistCardSelection(artist, releases),
-                    cover = selection.cover;
-                  return (
-                    <li>
-                      <div class="artist-card">
-                        <div class="artist-cover">
-                          <a
-                            class="artist-cover-link"
-                            href={`#/artist/${encodeURIComponent(artist.reference)}`}
-                          >
-                            <Show
-                              when={library.image(artist.reference, "portrait")}
-                              fallback={
+            <Show
+              when={props.section === "artists"}
+              fallback={
+                <ul class="artist-grid">
+                  <For each={artists()}>
+                    {(artist) => {
+                      const releases = index().albumsByArtist.get(artist.reference) ?? [];
+                      const selection = artistCardSelection(artist, releases),
+                        cover = selection.cover;
+                      return (
+                        <li>
+                          <div class="artist-card">
+                            <div class="artist-cover">
+                              <a
+                                class="artist-cover-link"
+                                href={`#/artist/${encodeURIComponent(artist.reference)}`}
+                              >
                                 <Show
-                                  when={cover}
+                                  when={library.image(artist.reference, "portrait")}
                                   fallback={
-                                    <div
-                                      class="artwork missing-art"
-                                      aria-label={t("Pas de pochette disponible")}
+                                    <Show
+                                      when={cover}
+                                      fallback={
+                                        <div
+                                          class="artwork missing-art"
+                                          aria-label={t("Pas de pochette disponible")}
+                                        >
+                                          ♪
+                                        </div>
+                                      }
                                     >
-                                      ♪
-                                    </div>
+                                      {(album) => <Artwork album={album()} />}
+                                    </Show>
                                   }
                                 >
-                                  {(album) => <Artwork album={album()} />}
+                                  {(url) => (
+                                    <div class="artwork real-art">
+                                      <img src={url()} alt={t("Portrait de {0}", artist.name)} />
+                                    </div>
+                                  )}
                                 </Show>
-                              }
+                              </a>
+                              <CoverPlay reference={selection.reference} title={selection.title} />
+                            </div>
+                            <a
+                              class="artist-card-link"
+                              href={`#/artist/${encodeURIComponent(artist.reference)}`}
                             >
-                              {(url) => (
-                                <div class="artwork real-art">
-                                  <img src={url()} alt={t("Portrait de {0}", artist.name)} />
-                                </div>
-                              )}
-                            </Show>
-                          </a>
-                          <CoverPlay reference={selection.reference} title={selection.title} />
-                        </div>
-                        <a
-                          class="artist-card-link"
-                          href={`#/artist/${encodeURIComponent(artist.reference)}`}
-                        >
-                          <div>
-                            <h2>
-                              {artist.name} <SourceBadge reference={artist.reference} />
-                            </h2>
-                            <p>
-                              {artist.genre} · {countryName(artist.countryCode, artist.country)}
-                            </p>
-                            <small>
-                              {releases.length} {t("albums")}
-                            </small>
+                              <div>
+                                <h2>
+                                  {artist.name} <SourceBadge reference={artist.reference} />
+                                </h2>
+                                <p>
+                                  {artist.genre} · {countryName(artist.countryCode, artist.country)}
+                                </p>
+                                <small>
+                                  {releases.length} {t("albums")}
+                                </small>
+                              </div>
+                            </a>
+                            <CoverPlay
+                              class="artist-list-play"
+                              reference={selection.reference}
+                              title={selection.title}
+                            />
                           </div>
-                        </a>
-                        <CoverPlay
-                          class="artist-list-play"
-                          reference={selection.reference}
-                          title={selection.title}
-                        />
-                      </div>
-                    </li>
-                  );
-                }}
-              </For>
-            </ul>
+                        </li>
+                      );
+                    }}
+                  </For>
+                </ul>
+              }
+            >
+              <ArtistGallery
+                artists={artists()}
+                view={props.artistView}
+                positions={props.artistPositions}
+              />
+            </Show>
             <Show when={!artists().length}>
               <EmptyState icon={sectionIcon(props.section)}>
                 {t("Aucun artiste dans cette sélection.")}{" "}

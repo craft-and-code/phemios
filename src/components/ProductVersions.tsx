@@ -1,7 +1,7 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 /** Product links and reported versions share one compact accessible presentation. */
 export function ProductVersions(props: {
-  rows: readonly { name: string; version: string; url: string }[];
+  rows: readonly { name: string; version: string; url?: string }[];
   onOpen: (url: string) => void;
 }) {
   return (
@@ -9,15 +9,19 @@ export function ProductVersions(props: {
       <For each={props.rows}>
         {(row) => (
           <div class="product-version">
-            <a
-              href={row.url}
-              onClick={(event) => {
-                event.preventDefault();
-                props.onOpen(row.url);
-              }}
-            >
-              {row.name}
-            </a>
+            <Show when={row.url} fallback={<strong>{row.name}</strong>}>
+              {(url) => (
+                <a
+                  href={url()}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    props.onOpen(url());
+                  }}
+                >
+                  {row.name}
+                </a>
+              )}
+            </Show>
             <span>{row.version}</span>
           </div>
         )}

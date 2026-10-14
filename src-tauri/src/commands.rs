@@ -7,16 +7,19 @@ pub(crate) struct RuntimeInfo {
     name: &'static str,
     version: &'static str,
     native: bool,
+    embedded: serde_json::Value,
 }
 
 #[tauri::command]
-pub(crate) fn runtime_info() -> RuntimeInfo {
-    RuntimeInfo {
+pub(crate) fn runtime_info() -> Result<RuntimeInfo, String> {
+    Ok(RuntimeInfo {
         bridge_version: phemios_core::BRIDGE_VERSION,
         name: "Phémios",
         version: env!("CARGO_PKG_VERSION"),
         native: true,
-    }
+        embedded: serde_json::from_str(include_str!("../binaries/versions.json"))
+            .map_err(|_| "Embedded version metadata is invalid".to_string())?,
+    })
 }
 
 /// Open an explicit source URL in the system browser without exposing shell or file-opening capabilities.

@@ -1,0 +1,51 @@
+import { Show, type JSX } from "solid-js";
+import { t } from "../i18n";
+import type { ArtistView } from "../library/tool-preferences";
+/** Shared card geometry accepts resident artwork and album navigation without a native import. */
+export function ArtistCard(props: {
+  view: ArtistView;
+  name: string;
+  href: string;
+  metadata: string;
+  albumCount: number;
+  image?: string | undefined;
+  banner?: string | undefined;
+  fallback: JSX.Element;
+  badge?: JSX.Element;
+  play: JSX.Element;
+  children?: JSX.Element;
+}) {
+  return (
+    <article class={`artist-presentation artist-presentation-${props.view}`}>
+      <Show when={props.banner && props.view === "discography"}>
+        <img
+          class="artist-presentation-banner"
+          src={props.banner}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+      </Show>
+      <div class="artist-presentation-identity">
+        <div class="artist-presentation-picture">
+          <a href={props.href} aria-label={props.name}>
+            <Show when={props.image} fallback={props.fallback}>
+              {(url) => <img src={url()} alt="" loading="lazy" decoding="async" />}
+            </Show>
+          </a>
+        </div>
+        <a class="artist-presentation-name" href={props.href}>
+          <h2>
+            {props.name} {props.badge}
+          </h2>
+          <p>{props.metadata}</p>
+          <small>
+            {props.albumCount} {t("albums")}
+          </small>
+        </a>
+      </div>
+      <div class="artist-presentation-albums">{props.children}</div>
+      <div class="artist-presentation-play">{props.play}</div>
+    </article>
+  );
+}

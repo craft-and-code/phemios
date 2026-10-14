@@ -4,7 +4,9 @@ import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 export const pageSizes = [25, 50, 100, 200] as const;
+export type ArtistView = "portrait" | "discography" | "editorial";
 export interface ToolPreferences {
+  artistView: ArtistView;
   full: boolean;
   threads: number;
   summaries: boolean;
@@ -19,6 +21,7 @@ export interface ToolPreferences {
   coverSizes: Partial<Record<"albums" | "compilations" | "genres", number>>;
 }
 export const defaultToolPreferences: ToolPreferences = {
+  artistView: "discography",
   full: false,
   threads: 0,
   summaries: true,
@@ -69,6 +72,10 @@ function validate(raw: unknown): ToolPreferences {
       row.lyrics,
       row.discogs === undefined ? false : row.discogs,
     ].every((v) => typeof v === "boolean") ||
+    !(
+      row.artistView === undefined ||
+      ["portrait", "discography", "editorial"].includes(row.artistView)
+    ) ||
     !validCoverSize(row.coverSize === undefined ? 150 : row.coverSize) ||
     !validCoverOverrides(row.coverSizes === undefined ? {} : row.coverSizes) ||
     !Number.isInteger(row.threads) ||
@@ -82,6 +89,7 @@ function validate(raw: unknown): ToolPreferences {
     throw new Error(t("Options enregistrées illisibles."));
   return {
     ...row,
+    artistView: row.artistView ?? "discography",
     coverSize: row.coverSize === undefined ? 150 : row.coverSize,
     coverSizes: row.coverSizes === undefined ? {} : row.coverSizes,
     discogs: row.discogs === undefined ? false : row.discogs,

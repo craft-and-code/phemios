@@ -1,3 +1,5 @@
+import { ArtistViewActions } from "./components/ArtistViewActions";
+import { createArtistPositions } from "./library/artist-presentation";
 import { CatalogActions } from "./components/CatalogActions";
 import { CoverSize } from "./components/CoverSize";
 import { StickyHeader } from "./components/StickyHeader";
@@ -60,6 +62,8 @@ import { WorkspacePage } from "./views/WorkspacePage";
 export function App() {
   const library = useLibrary();
   const browsing = createToolPreferences();
+  const artistPositions = createArtistPositions();
+  createEffect(() => artistPositions.retain(library.artists().map((artist) => artist.reference)));
   const menu = createMenuPreferences();
   const shortcuts = createShortcuts();
   const visibleMenus = createMemo(() =>
@@ -224,7 +228,8 @@ export function App() {
       class="app"
       classList={{
         "sidebar-hidden": !sidebar(),
-        "density-compact": compact() && !["favourites", "rated", "tags"].includes(section()),
+        "density-compact":
+          compact() && !["favourites", "rated", "tags", "artists"].includes(section()),
       }}
       onContextMenu={(event) => event.preventDefault()}
       onAuxClick={externalClick}
@@ -458,6 +463,14 @@ export function App() {
               <span>{library.busy() ? t("Synchronisation…") : ""}</span>
               <Show when={hasFilters()}>
                 <CatalogActions
+                  presentations={
+                    section() === "artists" ? (
+                      <ArtistViewActions
+                        value={browsing.value().artistView}
+                        onChange={(artistView) => browsing.update({ artistView })}
+                      />
+                    ) : undefined
+                  }
                   reverse={reverse()}
                   compact={compact()}
                   coverFlow={coverFlow()}
@@ -601,6 +614,8 @@ export function App() {
                   }
                 >
                   <LibraryPage
+                    artistView={browsing.value().artistView}
+                    artistPositions={artistPositions}
                     coverSize={
                       browsing.value().coverSizes[
                         section() as "albums" | "compilations" | "genres"

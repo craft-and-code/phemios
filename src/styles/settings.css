@@ -747,3 +747,10 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.settings-card .product-versions:not(:has(~ .product-versions)) .product-version:last-child {
+  border-bottom: none;
+}
+.product-version strong {
+  font-weight: inherit;
+}
