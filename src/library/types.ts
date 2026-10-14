@@ -13,7 +13,7 @@ export interface Artist {
   releaseRefs?: readonly string[];
   searchFields?: readonly string[];
   biographyCredit?: { url: string; lang: string; licence: string };
-  media?: { banner: boolean; background: boolean; portrait: boolean };
+  media?: { banner: boolean; background: boolean; portrait: boolean; logo?: boolean };
   relations?: readonly {
     reference: string;
     name: string;

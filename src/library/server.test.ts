@@ -162,3 +162,17 @@ it("refuses malformed optional projections and duplicate or cross-source identit
   ])
     expect(() => parseSnapshot({ ...publicSnapshot(), labels })).toThrow();
 });
+
+it("retains an optional artist logo hint without inventing assets for older snapshots", () => {
+  const fixture = {
+    artists: [{ ...artist, media: { logo: true } }],
+    albums: [],
+    server: "http://localhost:8787",
+    accountId: "fictional",
+    scannedAt: 1,
+  };
+  expect(parseSnapshot(fixture).artists[0]?.media?.logo).toBe(true);
+  expect(
+    parseSnapshot({ ...fixture, artists: [{ ...artist, media: {} }] }).artists[0]?.media?.logo,
+  ).toBe(false);
+});

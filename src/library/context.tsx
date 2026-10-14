@@ -338,6 +338,9 @@ export function LibraryProvider(props: ParentProps) {
   }
   async function warmCovers() {
     const queue = [
+      ...artists()
+        .filter((a) => a.media?.logo)
+        .map((a) => ({ ref: a.reference, kind: "logo" })),
       ...albums()
         .filter((a) => a.cover)
         .map((a) => ({ ref: a.reference, kind: "cover" })),

@@ -1,5 +1,4 @@
 import { ArtistGallery } from "../components/ArtistGallery";
-import type { ArtistPositions } from "../library/artist-presentation";
 import type { ArtistView } from "../library/tool-preferences";
 import { createAlbumListening } from "../library/album-listening";
 import { Feedback } from "../components/Feedback";
@@ -26,7 +25,6 @@ import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
 export function LibraryPage(props: {
   section: Section;
   artistView: ArtistView;
-  artistPositions: ArtistPositions;
   filters: Filters;
   setFilters: (filters: Filters) => void;
   reverse: boolean;
@@ -86,7 +84,11 @@ export function LibraryPage(props: {
   return (
     <section
       class="page library-page"
-      classList={{ "country-library": props.section === "countries" }}
+      classList={{
+        "country-library": props.section === "countries",
+        "artist-featured-library":
+          props.section === "artists" && props.artistView === "discography",
+      }}
       aria-label={t("Catalogue")}
     >
       <div classList={{ "country-layout": props.section === "countries" }}>
@@ -202,11 +204,7 @@ export function LibraryPage(props: {
                 </ul>
               }
             >
-              <ArtistGallery
-                artists={artists()}
-                view={props.artistView}
-                positions={props.artistPositions}
-              />
+              <ArtistGallery artists={artists()} view={props.artistView} />
             </Show>
             <Show when={!artists().length}>
               <EmptyState icon={sectionIcon(props.section)}>

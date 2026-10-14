@@ -9,7 +9,7 @@ export function ArtistCard(props: {
   metadata: string;
   albumCount: number;
   image?: string | undefined;
-  banner?: string | undefined;
+  logo?: string | undefined;
   fallback: JSX.Element;
   badge?: JSX.Element;
   play: JSX.Element;
@@ -17,14 +17,15 @@ export function ArtistCard(props: {
 }) {
   return (
     <article class={`artist-presentation artist-presentation-${props.view}`}>
-      <Show when={props.banner && props.view === "discography"}>
-        <img
-          class="artist-presentation-banner"
-          src={props.banner}
-          alt=""
-          loading="lazy"
-          decoding="async"
-        />
+      <Show when={props.logo && props.view === "discography"}>
+        <a class="artist-presentation-logo" href={props.href}>
+          <img
+            src={props.logo}
+            alt={t("Logo de {0}", props.name)}
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
       </Show>
       <div class="artist-presentation-identity">
         <div class="artist-presentation-picture">

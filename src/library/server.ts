@@ -99,6 +99,7 @@ export function parseSnapshot(value: unknown): Snapshot {
         banner: media.banner === true,
         background: media.background === true,
         portrait: media.portrait === true,
+        logo: media.logo === true,
       },
       relations: relations(row.relations ?? []),
     };

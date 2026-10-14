@@ -219,12 +219,12 @@ impl Client {
         if reference.len() > 16 * 1024
             || !matches!(
                 kind,
-                "cover" | "banner" | "background" | "portrait" | "spectrum"
+                "cover" | "banner" | "background" | "portrait" | "logo" | "spectrum"
             )
         {
             return Err("Image non prise en charge.".into());
         }
-        let size = if matches!(kind, "cover" | "portrait") {
+        let size = if matches!(kind, "cover" | "portrait" | "logo") {
             "512"
         } else {
             "1920"

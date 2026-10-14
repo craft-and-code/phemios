@@ -1,3 +1,4 @@
+import { engineVersions } from "../library/product-versions";
 import { wikipediaDocument } from "../encyclopedia/document";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
@@ -21,7 +22,7 @@ export async function getRuntimeInfo(): Promise<RuntimeInfo> {
   if (info.bridgeVersion !== 1) {
     throw new Error(t("Incompatible Phémios desktop bridge. Update the application."));
   }
-  return info;
+  return info.embedded !== undefined ? { ...info, embedded: engineVersions(info.embedded)! } : info;
 }
 
 /** All native data operations carry the bridge version and stay on typed IPC. */

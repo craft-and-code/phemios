@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { artistDiscography, createArtistPositions } from "./artist-presentation";
+import { artistDiscography, featuredArtistAlbums } from "./artist-presentation";
 import type { Album, Artist } from "./types";
 const artist = { reference: "artist:main" } as Artist;
 const album = (reference: string, year: number | null, title = reference): Album => ({
@@ -24,13 +24,31 @@ it("retains the full chronological principal discography and excludes guest-only
   ]);
   expect(rows.map((row) => row.reference)).toEqual(["later", "undated", "first", "guest"]);
 });
-it("remembers each carousel independently across layouts and removes retired artist positions", () => {
-  const positions = createArtistPositions(),
-    rows = [album("first", 1980), album("later", 2020)];
-  positions.forArtist("a").restore(rows, false);
-  positions.forArtist("a").select("later");
-  expect(positions.forArtist("b").restore(rows, false)).toBe("first");
-  expect(positions.forArtist("a").restore(rows, false)).toBe("later");
-  positions.retain(["b"]);
-  expect(positions.forArtist("a").restore(rows, false)).toBe("first");
+
+it("features only the owner's highest ratings with favourites breaking equal notes", () => {
+  const rows = [
+    album("first", 1980),
+    { ...album("favourite", 1990), rating: 4, favourite: true },
+    { ...album("best", 2010), rating: 5 },
+    { ...album("same", 2000), rating: 4 },
+  ];
+  expect(featuredArtistAlbums(rows).map((row) => row.reference)).toEqual(["best", "favourite"]);
+  expect(
+    featuredArtistAlbums(rows.map(({ rating: _rating, favourite: _favourite, ...row }) => row)).map(
+      (row) => row.reference,
+    ),
+  ).toEqual(["first", "favourite"]);
+});
+it("prefers available cover art when no album is rated and never fabricates a second album", () => {
+  const rows = [
+    { ...album("bare", 1980), favourite: true },
+    { ...album("cover", 1990), cover: true },
+    { ...album("cover-favourite", 2000), cover: true, favourite: true },
+  ];
+  expect(featuredArtistAlbums(rows).map((row) => row.reference)).toEqual([
+    "cover-favourite",
+    "cover",
+  ]);
+  expect(featuredArtistAlbums([rows[0]!])).toEqual([rows[0]]);
+  expect(featuredArtistAlbums([])).toEqual([]);
 });
