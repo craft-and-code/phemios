@@ -47,3 +47,16 @@ it("shows every restricting criterion and removes one without discarding the oth
     "years",
   );
 });
+it("starts Artists with both rails hidden while retaining explicit choices on return", () => {
+  createRoot((dispose) => {
+    const [section, setSection] = createSignal<Section>("artists");
+    const filters = createScopedFilters(section, () => [1980, 2025]);
+    expect(filters.value().mode).toBe("none");
+    filters.set({ ...filters.value(), mode: "years" });
+    setSection("albums");
+    expect(filters.value().mode).toBe("years");
+    setSection("artists");
+    expect(filters.value().mode).toBe("years");
+    dispose();
+  });
+});

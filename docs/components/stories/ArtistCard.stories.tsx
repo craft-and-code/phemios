@@ -122,27 +122,44 @@ export const VerticalGallery: Story = {
   args: { ...Discography.args },
   decorators: [
     (Story) => (
-      <div style={{ width: "1000px", height: "580px", overflow: "auto", "container-type": "size" }}>
-        <ul class="artist-presentations artist-presentations-discography">
-          {[0, 1, 2].map(() => (
-            <li>
-              <Story />
-            </li>
-          ))}
-        </ul>
+      <div class="artist-featured-library">
+        <div>
+          <div class="library-results" style={{ width: "1000px", height: "580px", flex: "none" }}>
+            <ul class="artist-presentations artist-presentations-discography">
+              {[0, 1, 2, 3, 4, 5].map(() => (
+                <li>
+                  <Story />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     ),
   ],
   play: async ({ canvasElement }) => {
     const cards = canvasElement.querySelectorAll(".artist-presentation"),
-      grid = canvasElement.querySelector(".artist-presentations")!;
-    expect(cards).toHaveLength(3);
+      grid = canvasElement.querySelector(".artist-presentations")!,
+      scroller = canvasElement.querySelector(".library-results")!;
+    expect(cards).toHaveLength(6);
+    expect(getComputedStyle(scroller).scrollSnapType).toBe("y mandatory");
     for (const card of cards) {
       const rect = card.getBoundingClientRect();
       expect(rect.width).toBeGreaterThan(grid.getBoundingClientRect().width * 0.3);
-      expect(rect.height).toBeGreaterThan(rect.width * 1.6);
+      expect(Math.abs(rect.height - scroller.getBoundingClientRect().height)).toBeLessThanOrEqual(
+        2,
+      );
+      expect(getComputedStyle(card.parentElement!).scrollSnapStop).toBe("always");
       for (const cover of card.querySelectorAll(".artist-album-preview .artwork"))
         expect(cover.getBoundingClientRect().width).toBeGreaterThan(rect.width * 0.4);
+      const logo = card.querySelector(".artist-presentation-logo img")!;
+      expect(getComputedStyle(logo).filter).toContain("grayscale(1)");
+      expect(getComputedStyle(logo).filter).toContain("brightness(2.2)");
     }
+    const rowDistance =
+      cards[3]!.getBoundingClientRect().top - cards[0]!.getBoundingClientRect().top;
+    expect(
+      Math.abs(rowDistance - scroller.getBoundingClientRect().height - 20),
+    ).toBeLessThanOrEqual(2);
   },
 };

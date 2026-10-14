@@ -224,15 +224,18 @@ main:has(> .artist-featured-library) > :not(.library-page) {
   overflow-y: auto;
   container-type: size;
   scrollbar-gutter: stable;
+  scroll-snap-type: y mandatory;
 }
 .artist-presentations-discography {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   align-items: stretch;
+  grid-auto-rows: 100cqh;
 }
 .artist-presentations-discography > li {
   width: 100%;
-  aspect-ratio: 3 / 4.75;
-  min-height: 100cqh;
+  min-height: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 .artist-presentation-discography {
   box-sizing: border-box;
@@ -296,8 +299,8 @@ main:has(> .artist-featured-library) > :not(.library-page) {
   align-items: flex-start;
 }
 .artist-presentation-discography .artist-album-preview {
-  width: calc((100% - 14px) / 2);
-  flex: 0 0 calc((100% - 14px) / 2);
+  width: min(calc((100% - 14px) / 2), 35cqh);
+  flex: 0 0 min(calc((100% - 14px) / 2), 35cqh);
   height: auto;
 }
 .artist-presentation-discography .artist-album-preview > a {
@@ -318,10 +321,10 @@ main:has(> .artist-featured-library) > :not(.library-page) {
 .artist-presentation-logo img {
   display: block;
   width: 100%;
-  max-height: 64px;
+  max-height: min(64px, 12cqh);
   object-fit: contain;
   object-position: left top;
-  filter: drop-shadow(0 2px 8px #0006);
+  filter: grayscale(1) brightness(2.2) drop-shadow(0 2px 8px #0006);
 }
 .artist-presentation-discography .artist-presentation-play {
   position: relative;

@@ -31,4 +31,4 @@ The explorer uses pinned development dependencies. Solid support is community ma
 
 Shared Pagination supplies the same range and arrow controls to Tracks, Diagnostic, Analysis and M3U. Its scenario covers first/last-page admission, movement and common geometry. TracksHeader keeps the page-size selector and Refresh above the results, with Pagination below them; detail alignment, lower-page spacing and the MoodFeatures title/action axis have browser regressions.
 
-The vertical ArtistCard gallery exercises three full-width portrait columns and equal large bottom cover slots. Its single-card scenario checks actual cover width and the fixed gap; native acceptance additionally checks short-window scrolling and retained resident portraits.
+The vertical ArtistCard gallery exercises two rows of three full-width columns, exact available-height cells, mandatory native row snapping, bright monochrome logos and equal large bottom cover slots. Its single-card scenario checks actual cover width and the fixed gap; native acceptance additionally checks short-window scrolling and retained resident portraits.
