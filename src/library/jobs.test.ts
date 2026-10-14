@@ -214,3 +214,24 @@ it("refreshes retained catalog data if retry discovers that enrichment already c
   expect(tasks.jobs()[0]?.status).toBe("completed");
   expect(tasks.jobs()[0]?.tracking_error).toBeUndefined();
 });
+it("starts one scoped acoustic task and refuses a duplicate while it runs", async () => {
+  request.mockResolvedValue({ task_id: 19, status: "queued" });
+  const tasks = controller();
+  await tasks.features("local");
+  expect(request).toHaveBeenCalledWith(
+    "/api/admin/v1/mood-features",
+    {},
+    "POST",
+    { force: false },
+    "local",
+  );
+  expect(tasks.jobs()[0]).toMatchObject({ kind: "mood_features", source: "local", task_id: 19 });
+  await expect(tasks.features("local")).rejects.toThrow();
+});
+
+it("cancels with the empty-body administrative contract", async () => {
+  request.mockResolvedValue({});
+  const tasks = controller();
+  await tasks.cancel(19, "local");
+  expect(request).toHaveBeenCalledWith("/api/admin/v1/tasks/19/cancel", {}, "POST", null, "local");
+});

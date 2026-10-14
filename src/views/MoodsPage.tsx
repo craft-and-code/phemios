@@ -1,8 +1,12 @@
+import { retainedMoodPage } from "../library/retained-mood-page";
+import { MoodFeatures } from "../components/MoodFeatures";
+import { Feedback } from "../components/Feedback";
+import { isNative } from "../platform/desktop";
 import { ResultCount } from "../components/ResultCount";
 import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
-import { createEffect, createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createResource, createSignal, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -21,13 +25,16 @@ export function MoodsPage() {
     [genres, setGenres] = createSignal(""),
     [id, setId] = createSignal(""),
     [busy, setBusy] = createSignal(false),
-    [error, setError] = createSignal("");
+    [error, setError] = createSignal(""),
+    [submitting, setSubmitting] = createSignal(false),
+    [expected, setExpected] = createSignal("");
   const [response, { refetch }] = createResource(
     () => ({
       session: library.session(),
       source: library.source(),
       selected: selected(),
       offset: offset(),
+      expected: expected(),
     }),
     async (key) => {
       if (!key.session) return undefined;
@@ -47,21 +54,30 @@ export function MoodsPage() {
             ...(key.selected ? { mood: key.selected } : {}),
             offset: String(key.offset),
             limit: "50",
+            ...(info.capabilities?.includes("mood_audio_features")
+              ? { audio: "true", ...(key.offset && key.expected ? { revision: key.expected } : {}) }
+              : {}),
           },
           "GET",
           null,
           key.source,
         ),
       );
-      return { ...key, page };
+      return {
+        ...key,
+        page,
+        audio: !!info.capabilities?.includes("mood_audio_features"),
+        extractable: !!info.capabilities?.includes("mood_audio_extraction"),
+      };
     },
   );
   const current = () =>
-    response()?.session === library.session() &&
-    response()?.source === library.source() &&
-    response()?.selected === selected()
-      ? response()?.page
-      : undefined;
+    retainedMoodPage(response, {
+      session: library.session(),
+      source: library.source(),
+      selected: selected(),
+      offset: offset(),
+    });
   const rule = () => current()?.moods.find((mood) => mood.rule.id === selected())?.rule;
   createEffect(() => {
     library.session();
@@ -70,6 +86,51 @@ export function MoodsPage() {
     setOffset(0);
     setEditing(false);
   });
+  const featureJob = () =>
+    library.tasks
+      .jobs()
+      .filter((job) => job.source === library.source() && job.kind === "mood_features")
+      .at(-1);
+  let watched = "";
+  createEffect(() => {
+    const job = featureJob(),
+      key = `${library.source()}:${job?.task_id}:${job?.status}:${job?.progress?.done}`;
+    if (watched && watched !== key) {
+      setOffset(0);
+      setExpected("");
+      void refetch();
+    }
+    watched = key;
+  });
+  createEffect(() => {
+    if (!current()?.acoustic?.warming) return;
+    const timer = setTimeout(() => void refetch(), 1000);
+    onCleanup(() => clearTimeout(timer));
+  });
+  async function extract() {
+    setSubmitting(true);
+    setError("");
+    try {
+      await library.tasks.features(library.source());
+    } catch (failure) {
+      setError(String(failure));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  async function stopFeatures() {
+    const job = featureJob();
+    if (!job) return;
+    try {
+      await library.tasks.cancel(job.task_id, job.source);
+    } catch (failure) {
+      setError(String(failure));
+    }
+  }
+  function pageOffset(next: number) {
+    setExpected(current()?.selection_revision ?? "");
+    setOffset(next);
+  }
   function edit(rule?: MoodRule) {
     setId(rule?.id ?? `custom:${crypto.randomUUID()}`);
     setName(rule ? moodName(rule) : "");
@@ -120,7 +181,9 @@ export function MoodsPage() {
       const source = library.source(),
         session = library.session(),
         mood = selected(),
-        total = current()?.total ?? 0;
+        total = current()?.total ?? 0,
+        revision = current()?.selection_revision,
+        acoustic = !!response.latest?.audio;
       if (total > 4096) throw new Error(t("Sélection limitée à 4096 pistes."));
       const items: unknown[] = [];
       let epoch: number | undefined;
@@ -128,7 +191,12 @@ export function MoodsPage() {
         const page = parseMoods(
           await requestAede(
             "/api/me/v1/moods",
-            { mood, offset: String(offset), limit: "200" },
+            {
+              mood,
+              offset: String(offset),
+              limit: "200",
+              ...(acoustic ? { audio: "true", ...(revision ? { revision } : {}) } : {}),
+            },
             "GET",
             null,
             source,
@@ -137,6 +205,8 @@ export function MoodsPage() {
         if (
           (epoch !== undefined && epoch !== page.scanned_at) ||
           page.total !== total ||
+          page.selection_revision !== revision ||
+          mood !== selected() ||
           session !== library.session() ||
           source !== library.source()
         )
@@ -184,7 +254,31 @@ export function MoodsPage() {
         </Show>
       </StickyHeader>
       <AccountNotice />
-      <Show when={response.loading}>
+      <Show when={current()?.acoustic}>
+        <MoodFeatures
+          coverage={current()?.acoustic}
+          {...(featureJob() ? { job: featureJob()! } : {})}
+          admin={
+            isNative() &&
+            !!response.latest?.extractable &&
+            library.session()?.account.role === "admin"
+          }
+          submitting={submitting()}
+          onStart={extract}
+          onStop={() => void stopFeatures()}
+        />
+      </Show>
+      <Show when={featureJob()?.status === "failed"}>
+        <Feedback
+          error
+          message={
+            featureJob()?.result?.stderr ||
+            featureJob()?.error?.message ||
+            t("Extraction audio interrompue.")
+          }
+        />
+      </Show>
+      <Show when={response.loading && !response.latest}>
         <PageLoader />
       </Show>
       <Show when={response.error || error()}>
@@ -201,6 +295,7 @@ export function MoodsPage() {
               onClick={() => {
                 setSelected(mood.rule.id);
                 setOffset(0);
+                setExpected("");
               }}
             >
               <strong>{moodName(mood.rule)}</strong>
@@ -259,15 +354,17 @@ export function MoodsPage() {
                 <p class="muted">{[...row().tags, ...row().genres].join(" · ")}</p>
               </div>
               <div class="choices">
-                <button
-                  class="icon-button"
-                  disabled={library.session()?.account.role === "auditor"}
-                  aria-label={t("Modifier l’ambiance")}
-                  title={t("Modifier l’ambiance")}
-                  onClick={() => edit(row())}
-                >
-                  <Icon name="edit" />
-                </button>
+                <Show when={!row().acoustic}>
+                  <button
+                    class="icon-button"
+                    disabled={library.session()?.account.role === "auditor"}
+                    aria-label={t("Modifier l’ambiance")}
+                    title={t("Modifier l’ambiance")}
+                    onClick={() => edit(row())}
+                  >
+                    <Icon name="edit" />
+                  </button>
+                </Show>
                 <button
                   class="icon-button"
                   disabled={busy() || !current()?.total || !library.player.ready()}
@@ -315,7 +412,7 @@ export function MoodsPage() {
                   class="icon-button"
                   disabled={!offset()}
                   aria-label={t("Précédent")}
-                  onClick={() => setOffset(Math.max(0, offset() - 50))}
+                  onClick={() => pageOffset(Math.max(0, offset() - 50))}
                 >
                   <Icon name="back" />
                 </button>
@@ -324,7 +421,7 @@ export function MoodsPage() {
                   class="icon-button"
                   disabled={offset() + 50 >= (current()?.total ?? 0)}
                   aria-label={t("Suivant")}
-                  onClick={() => setOffset(offset() + 50)}
+                  onClick={() => pageOffset(offset() + 50)}
                 >
                   <Icon name="forward" />
                 </button>

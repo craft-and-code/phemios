@@ -1,3 +1,4 @@
+import { createBackgroundPriority } from "./background-priority";
 import { createRetainedSearch } from "./retained-search";
 import { createQueueLyrics } from "./queue-lyrics-controller";
 import { createCatalogBootstrap } from "./catalog-bootstrap";
@@ -259,6 +260,14 @@ export function LibraryProvider(props: ParentProps) {
     changed: async (source) => {
       await sync(source);
     },
+  });
+  createBackgroundPriority({
+    jobs: tasks.jobs,
+    session: sessionFor,
+    playing: () =>
+      ["playing", "connecting"].includes(player.state().status) ||
+      ["playing", "connecting"].includes(radio.status()) ||
+      ["playing", "connecting"].includes(podcast.status()),
   });
   const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
   const pending = new Map<string, Promise<void>>(),

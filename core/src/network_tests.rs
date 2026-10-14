@@ -666,3 +666,64 @@ fn snapshot_refuses_label_details_from_a_changed_scan_without_publication() {
         "Le catalogue change pendant la synchronisation. Réessayez."
     );
 }
+#[test]
+fn acoustic_background_paths_are_exact_post_contracts_without_arbitrary_filesystem_routes() {
+    for path in [
+        "/api/admin/v1/mood-features",
+        "/api/me/v1/background-priority",
+    ] {
+        assert!(allowed("POST", path));
+        assert!(!allowed("GET", path));
+        assert!(!allowed("DELETE", path));
+        assert!(!allowed("POST", &format!("{path}/arbitrary")));
+    }
+}
+
+#[test]
+fn task_cancellation_transmits_no_json_null_in_place_of_an_absent_body() {
+    use std::io::{Read, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let server = format!("http://{}", listener.local_addr().unwrap());
+    let worker = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let mut bytes = Vec::new();
+        while !bytes.ends_with(b"\r\n\r\n") {
+            let mut byte = [0];
+            stream.read_exact(&mut byte).unwrap();
+            bytes.push(byte[0]);
+            assert!(bytes.len() < 8192);
+        }
+        let headers = String::from_utf8(bytes).unwrap();
+        assert!(headers.starts_with("POST /api/admin/v1/tasks/19/cancel "));
+        let length = headers
+            .lines()
+            .find_map(|line| {
+                line.to_ascii_lowercase()
+                    .strip_prefix("content-length:")
+                    .map(|n| n.trim().parse::<usize>().unwrap())
+            })
+            .unwrap_or(0);
+        let mut body = vec![0; length];
+        stream.read_exact(&mut body).unwrap();
+        stream
+            .write_all(b"HTTP/1.1 202 Accepted\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}")
+            .unwrap();
+        body
+    });
+    let client = Client {
+        agent: agent(),
+        server,
+        token: "fictional".into(),
+        account: json!({}),
+    };
+    assert_eq!(
+        client
+            .request("POST", "/api/admin/v1/tasks/19/cancel", &[], None)
+            .unwrap(),
+        json!({})
+    );
+    assert!(worker.join().unwrap().is_empty());
+}

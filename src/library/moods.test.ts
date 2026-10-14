@@ -63,3 +63,73 @@ it("accepts specific evidence from new servers and preserves older reason explan
     }),
   ).toThrow();
 });
+it("accepts opt-in measured recipes without inventing personal tag criteria", () => {
+  const page = {
+    moods: [
+      {
+        rule: {
+          id: "@aede/audio/slow",
+          name: "Slow tempo",
+          tags: [],
+          genres: [],
+          acoustic: "slow",
+        },
+        count: 1,
+      },
+    ],
+    items: [
+      {
+        reference: "track:one",
+        title: "First",
+        release: null,
+        number: 1,
+        album_total: 1,
+        reason: {
+          tag: null,
+          genre: null,
+          scope: "acoustic",
+          audio: { kind: "descriptor", value: 80, unit: "bpm" },
+        },
+      },
+    ],
+    total: 1,
+    offset: 0,
+    scanned_at: 1,
+    selection_revision: "0123456789abcdef",
+    acoustic: { profile: 1, ready: 1, missing: 0, cache_errors: 0, warming: false },
+  };
+  expect(parseMoods(page).moods[0]?.rule.acoustic).toBe("slow");
+  expect(() =>
+    parseMoods({
+      ...page,
+      moods: [{ rule: { ...page.moods[0]?.rule, acoustic: "fake" }, count: 1 }],
+    }),
+  ).toThrow();
+});
+
+it("refuses fabricated acoustic explanations and an invalid paging revision", () => {
+  const item = {
+    reference: "track:one",
+    title: "First",
+    release: null,
+    number: 1,
+    album_total: 1,
+    reason: {
+      tag: null,
+      genre: null,
+      scope: "acoustic",
+      audio: { kind: "neighbor", distance: 0.1, examples: 2 },
+    },
+  };
+  const page = { moods: [{ rule, count: 1 }], items: [item], total: 1, offset: 0, scanned_at: 1 };
+  expect(parseMoods(page).items[0]?.reason.scope).toBe("acoustic");
+  for (const reason of [
+    { ...item.reason, audio: undefined },
+    { ...item.reason, audio: { kind: "neighbor", distance: NaN, examples: 2 } },
+    { ...item.reason, audio: { kind: "neighbor", distance: 0.1, examples: 1 } },
+    { ...item.reason, tag: "someone else" },
+    { ...item.reason, audio: { kind: "descriptor", value: 0, unit: "bpm" } },
+  ])
+    expect(() => parseMoods({ ...page, items: [{ ...item, reason }] })).toThrow();
+  expect(() => parseMoods({ ...page, selection_revision: "wrong" })).toThrow();
+});

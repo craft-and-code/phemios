@@ -173,7 +173,8 @@ impl Client {
                 request.call()
             }
         } else {
-            let data = body.unwrap_or(&Value::Null).to_string();
+            // Absence is an empty HTTP body, never JSON null (notably task Stop).
+            let data = body.map(Value::to_string).unwrap_or_default();
             if data.len() > 16 * 1024 {
                 return Err("Requête trop grande.".into());
             }
@@ -398,6 +399,8 @@ fn allowed(method: &str, path: &str) -> bool {
             matches!(
                 path,
                 "/api/me/v1/achievements"
+                    | "/api/me/v1/background-priority"
+                    | "/api/admin/v1/mood-features"
                     | "/api/admin/v1/analyze"
                     | "/api/admin/v1/spectrum"
                     | "/api/me/v1/m3u"

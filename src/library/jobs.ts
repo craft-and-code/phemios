@@ -1,3 +1,4 @@
+import { validFeatureProgress, type FeatureProgress } from "./mood-features";
 import { startEnrichment, startSourceEnrichment, hasActiveEnrichment } from "./enrichment";
 import type { AccountSession } from "./server";
 import { t } from "../i18n";
@@ -14,6 +15,7 @@ export interface Job {
   result?: { exit_code: number; stdout: string; stderr: string; output_truncated: boolean };
   error?: { message: string };
   tracking_error?: string;
+  progress?: FeatureProgress;
 }
 /** Activity is sourced from confirmed tasks, not a timer pretending to measure progress. */
 export function activeReleaseJob(jobs: readonly Job[], release: string): Job | undefined {
@@ -60,6 +62,7 @@ export function createJobs(
         if (disposed) return;
         if (options && identity !== options.session(source)) continue;
         if (
+          !validFeatureProgress(result.progress) ||
           result.task_id !== job.task_id ||
           !["queued", "running", "completed", "failed", "cancelled"].includes(result.status)
         )
@@ -140,6 +143,7 @@ export function createJobs(
         rows.some(
           (row) =>
             !row ||
+            !validFeatureProgress(row.progress) ||
             !Number.isSafeInteger(row.task_id) ||
             row.task_id <= 0 ||
             !["queued", "running", "completed", "failed", "cancelled"].includes(row.status),
@@ -213,6 +217,34 @@ export function createJobs(
     track(result, kind, source, release);
     return result.task_id;
   }
+  /** Extract shared audio facts explicitly; retain work across navigation and refuse duplicate submissions. */
+  async function features(source: SourceId) {
+    if (
+      jobs().some(
+        (job) =>
+          job.source === source &&
+          job.kind === "mood_features" &&
+          ["queued", "running"].includes(job.status),
+      )
+    )
+      throw new Error(t("Une extraction audio est déjà active."));
+    if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
+      throw new Error(t("Quatre tâches sont déjà actives."));
+    const identity = options?.session(source);
+    if (options && identity?.account.role !== "admin")
+      throw new Error(t("Droits administrateur nécessaires."));
+    const result = await requestAede<{ task_id: number; status: "queued" }>(
+      "/api/admin/v1/mood-features",
+      {},
+      "POST",
+      { force: false },
+      source,
+    );
+    if (disposed || (options && identity !== options.session(source)))
+      throw new Error(t("Session invalide."));
+    track(result, "mood_features", source);
+    return result.task_id;
+  }
   /** Submission remains owned by the library when the initiating settings view is closed. */
   async function enrich(sources: readonly SourceId[], input: Record<string, boolean>) {
     if (enrichmentPending() || hasActiveEnrichment(jobs())) return undefined;
@@ -235,11 +267,11 @@ export function createJobs(
     }
   }
   async function cancel(id: number, source: SourceId = "server") {
-    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", {}, source);
+    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", null, source);
   }
   onCleanup(() => {
     disposed = true;
     if (timer !== undefined) window.clearTimeout(timer);
   });
-  return { jobs, error, start, cancel, track, restore, enrich, enrichmentPending };
+  return { jobs, error, start, cancel, track, restore, enrich, enrichmentPending, features };
 }
