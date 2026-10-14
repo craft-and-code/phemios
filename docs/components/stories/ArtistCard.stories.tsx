@@ -34,7 +34,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ "max-width": "700px" }}>
+      <div style={{ "max-width": "1400px" }}>
         <Story />
       </div>
     ),
@@ -100,7 +100,7 @@ export const Editorial: Story = {
   args: { view: "editorial" },
   decorators: [
     (Story) => (
-      <ul class="artist-presentations artist-presentations-editorial">
+      <ul class="artist-presentations artist-presentations-editorial" style={{ width: "1200px" }}>
         <li>
           <Story />
         </li>
@@ -109,24 +109,31 @@ export const Editorial: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    expect(canvas.getByRole("button", { name: "Lire The Northern Lights" })).toBeEnabled();
-    expect(canvas.getAllByRole("link")).toHaveLength(4);
-    expect(
-      getComputedStyle(canvas.getByRole("button", { name: "Lire The Northern Lights" }))
-        .borderRadius,
-    ).toBe("7px");
+    const play = canvas.getByRole("button", { name: "Lire The Northern Lights" });
+    expect(play).toBeEnabled();
+    expect(canvas.getAllByRole("link")).toHaveLength(5);
+    expect(getComputedStyle(play).borderRadius).toBe("7px");
     const card = canvasElement.querySelector(".artist-presentation")!;
-    const picture = card.querySelector(".artist-presentation-picture")!,
-      covers = card.querySelectorAll(".artist-album-preview .artwork");
-    expect(picture.getBoundingClientRect().height).toBeGreaterThanOrEqual(128);
-    expect(
-      Math.abs(card.getBoundingClientRect().height - picture.getBoundingClientRect().height),
-    ).toBeLessThanOrEqual(2);
-    for (const cover of covers)
-      if (cover.getClientRects().length)
-        expect(
-          Math.abs(cover.getBoundingClientRect().height - picture.getBoundingClientRect().height),
-        ).toBeLessThanOrEqual(2);
+    const picture = card.querySelector(".artist-presentation-picture")!;
+    const row = card.getBoundingClientRect(),
+      photo = picture.getBoundingClientRect();
+    expect(photo.width).toBeGreaterThan(row.width * 0.3);
+    expect(Math.abs(photo.height - row.height)).toBeLessThanOrEqual(2);
+    const covers = [...card.querySelectorAll(".artist-album-preview .artwork")];
+    expect(covers.filter((cover) => cover.getClientRects().length)).toHaveLength(3);
+    for (const cover of covers) {
+      const rect = cover.getBoundingClientRect();
+      expect(Math.abs(rect.width - rect.height)).toBeLessThanOrEqual(2);
+      expect(rect.height).toBeGreaterThan(row.height * 0.6);
+      expect(rect.height).toBeLessThan(row.height * 0.8);
+      expect(
+        Math.abs((rect.top + rect.bottom) / 2 - (row.top + row.bottom) / 2),
+      ).toBeLessThanOrEqual(2);
+    }
+    await userEvent.click(play);
+    expect(getComputedStyle(card.querySelector("h2")!).color).toBe(
+      getComputedStyle(card).borderTopColor,
+    );
   },
 };
 export const VerticalGallery: Story = {
@@ -172,5 +179,36 @@ export const VerticalGallery: Story = {
     expect(
       Math.abs(rowDistance - scroller.getBoundingClientRect().height - 20),
     ).toBeLessThanOrEqual(2);
+  },
+};
+
+export const NarrowEditorial: Story = {
+  args: { view: "editorial" },
+  decorators: [
+    (Story) => (
+      <ul class="artist-presentations artist-presentations-editorial" style={{ width: "640px" }}>
+        <li>
+          <Story />
+        </li>
+      </ul>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const card = canvasElement.querySelector(".artist-presentation")!;
+    const row = card.getBoundingClientRect();
+    const covers = [...card.querySelectorAll(".artist-album-preview .artwork")].filter(
+      (cover) => cover.getClientRects().length,
+    );
+    expect(covers).toHaveLength(1);
+    const photo = card.querySelector(".artist-presentation-picture")!.getBoundingClientRect();
+    expect(photo.width).toBeGreaterThan(row.width * 0.3);
+    const play = within(canvasElement)
+      .getByRole("button", { name: "Lire The Northern Lights" })
+      .getBoundingClientRect();
+    expect(play.right).toBeLessThanOrEqual(row.right);
+    expect(Math.abs((play.top + play.bottom) / 2 - (row.top + row.bottom) / 2)).toBeLessThanOrEqual(
+      2,
+    );
+    expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth);
   },
 };

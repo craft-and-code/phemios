@@ -1,44 +1,25 @@
-import { createSignal, Show } from "solid-js";
 import { useLibrary } from "../library/context";
-import { t } from "../i18n";
-import { Icon } from "./Icon";
-/** Independent playback action: cover/detail links retain their original navigation. */
+import { CoverPlayView } from "./CoverPlayView";
+/** Native/account admission wraps the shared Play presentation without changing queue semantics. */
 export function CoverPlay(props: {
   reference: string;
   title: string;
   class?: string;
   disabled?: boolean;
 }) {
-  const library = useLibrary(),
-    [pending, setPending] = createSignal(false);
-  async function play(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    setPending(true);
-    try {
-      await library.player.startReference(props.reference);
-    } finally {
-      setPending(false);
-    }
-  }
+  const library = useLibrary();
   return (
-    <button
-      class={`icon-button cover-play ${props.class ?? ""}`}
-      aria-label={t("Lire {0}", props.title)}
-      title={t("Lire {0}", props.title)}
-      data-play-reference={props.reference}
-      aria-busy={pending()}
+    <CoverPlayView
+      reference={props.reference}
+      title={props.title}
+      class={props.class}
       disabled={
         props.disabled ||
         !library.sessionFor(props.reference) ||
         library.sessionFor(props.reference)?.account.role === "auditor" ||
         library.player.busy()
       }
-      onClick={(event) => void play(event)}
-    >
-      <Show when={pending()} fallback={<Icon name="play" />}>
-        <span class="spinner" aria-hidden="true" />
-      </Show>
-    </button>
+      onPlay={() => library.player.startReference(props.reference)}
+    />
   );
 }
