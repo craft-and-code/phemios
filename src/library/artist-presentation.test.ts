@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { artistDiscography, featuredArtistAlbums } from "./artist-presentation";
+import {
+  artistDiscography,
+  featuredArtistAlbums,
+  artistPresentationImage,
+} from "./artist-presentation";
 import type { Album, Artist } from "./types";
 const artist = { reference: "artist:main" } as Artist;
 const album = (reference: string, year: number | null, title = reference): Album => ({
@@ -51,4 +55,30 @@ it("prefers available cover art when no album is rated and never fabricates a se
   ]);
   expect(featuredArtistAlbums([rows[0]!])).toEqual([rows[0]]);
   expect(featuredArtistAlbums([])).toEqual([]);
+});
+
+it("prefers resident panoramic art for rows while retaining portraits for cards and all fallbacks", () => {
+  const artwork = {
+    background: "cached-panorama",
+    portrait: "cached-portrait",
+    banner: "cached-banner",
+  };
+  expect(artistPresentationImage("editorial", (kind) => artwork[kind])).toBe("cached-panorama");
+  expect(artistPresentationImage("discography", (kind) => artwork[kind])).toBe("cached-portrait");
+  expect(
+    artistPresentationImage("editorial", (kind) =>
+      kind === "background" ? undefined : artwork[kind],
+    ),
+  ).toBe("cached-portrait");
+  expect(
+    artistPresentationImage("discography", (kind) =>
+      kind === "portrait" ? undefined : artwork[kind],
+    ),
+  ).toBe("cached-panorama");
+  for (const view of ["editorial", "discography"] as const) {
+    expect(
+      artistPresentationImage(view, (kind) => (kind === "banner" ? artwork.banner : undefined)),
+    ).toBe("cached-banner");
+    expect(artistPresentationImage(view, () => undefined)).toBeUndefined();
+  }
 });

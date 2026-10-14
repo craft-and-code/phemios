@@ -585,3 +585,11 @@ Isolated native macOS acceptance displays three panoramic artist rows in the ava
 Initial native archive attempts run out of disk space. Only rebuildable development compilation artifacts are cleaned; source/data files and installed rollback bundles are retained. Verification and final bundle compilation are rerun after cleanup.
 
 The complete final gate passes 873 tests (670 TypeScript, 19 Node tooling, 166 core Rust, 18 bridge), formatting, lint, strict compilation, bridge compatibility, Clippy, Rustdoc and 329 authored declaration modules. Storybook contains 54 real components / 136 scenarios / 54 authored play definitions. The signed production bundle is installed in `dist-native/Phémios.app`; `Phémios.before-artist-list.app` is retained for rollback, embedded Aède code is verified and the standard debug namespace/engine restored. No Aède source or dependency changes.
+
+## Resident backgrounds in editorial artist rows — 2026-10-15
+
+The image-selection regression first returns the portrait for an editorial row and fails. It then passes for background-first rows, portrait-first cards, absent-primary fallbacks, banner-only artwork and an empty resident store. The complete gate passes 874 tests (671 TypeScript, 19 Node tooling, 166 core Rust and 18 bridge), strict builds, formatting, lint, bridge compatibility, Clippy and documentation; declaration and Storybook inventory remain unchanged.
+
+Offline native macOS acceptance uses only the isolated profile's retained public artwork, with its local engine disabled and no remote session. The editorial rows display the existing landscape backgrounds rather than their portrait thumbnails: the formerly close-cropped artist face now includes the upper body and surrounding image. Switching to large-format cards restores their original portrait images. No playback, provider enrichment or original-media write is started. The test app is closed after inspection. Physical audio and other-platform acceptance are unchanged.
+
+The signed production bundle is installed in `dist-native/Phémios.app`, retaining `Phémios.before-list-background.app` for rollback. Embedded Aède code is verified after signing and the standard debug namespace/engine are restored. No Aède source or dependency change is included.

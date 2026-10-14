@@ -1,4 +1,5 @@
 import type { Album, Artist } from "./types";
+import type { ArtistView } from "./tool-preferences";
 /** Only principal releases form artist previews, matching chronological discography playback. */
 export function artistDiscography(artist: Artist, related: readonly Album[]) {
   return related
@@ -25,4 +26,14 @@ export function featuredArtistAlbums(albums: readonly Album[]): Album[] {
         a.reference.localeCompare(b.reference),
     )
     .slice(0, 2);
+}
+
+/** Read only resident art; source selection never performs enrichment or changes asset bytes. */
+export function artistPresentationImage(
+  view: ArtistView,
+  read: (kind: "portrait" | "background" | "banner") => string | undefined,
+) {
+  const first = view === "editorial" ? "background" : "portrait";
+  const second = first === "background" ? "portrait" : "background";
+  return read(first) ?? read(second) ?? read("banner");
 }

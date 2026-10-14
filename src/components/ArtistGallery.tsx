@@ -4,7 +4,11 @@ import { Feedback } from "./Feedback";
 import { For, Show, createMemo, createEffect, createSignal, onMount, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
 import { catalogIndex } from "../library/index";
-import { artistDiscography, featuredArtistAlbums } from "../library/artist-presentation";
+import {
+  artistDiscography,
+  featuredArtistAlbums,
+  artistPresentationImage,
+} from "../library/artist-presentation";
 import type { ArtistView } from "../library/tool-preferences";
 import type { Album, Artist } from "../library/types";
 import { countryName } from "../i18n";
@@ -68,9 +72,7 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
               props.view === "discography" ? featuredArtistAlbums(albums()) : albums().slice(0, 3),
             );
             const image = () =>
-              library.image(artist.reference, "portrait") ??
-              library.image(artist.reference, "background") ??
-              library.image(artist.reference, "banner");
+              artistPresentationImage(props.view, (kind) => library.image(artist.reference, kind));
             const fallback = () => albums()[0];
             return (
               <li
