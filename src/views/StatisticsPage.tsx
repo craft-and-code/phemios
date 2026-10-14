@@ -11,6 +11,7 @@ import { referenceSource } from "../library/sources";
 import { createEffect, on, createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { createDiagnosticRead } from "../library/diagnostic-read";
+import { statisticsSelection } from "../library/statistics-navigation";
 import { browseArtists } from "../library/selection";
 import { requestAede } from "../platform/desktop";
 import {
@@ -25,7 +26,9 @@ import {
 import { StatisticsTable, type StatRow } from "../components/StatisticsTable";
 import { StatValue } from "../components/StatValue";
 /** Server totals stay distinct from public snapshot coverage and current-owner annotations. */
-export function StatisticsPage() {
+export function StatisticsPage(props: {
+  onBrowse: (selection: NonNullable<ReturnType<typeof statisticsSelection>>) => void;
+}) {
   const library = useLibrary(),
     [refresh, setRefresh] = createSignal(0),
     [exporting, setExporting] = createSignal(false),
@@ -63,13 +66,23 @@ export function StatisticsPage() {
       (value) => !!value && referenceSource(value.reference) === library.source(),
     );
   const ratings = () => own().filter((value) => value?.rating != null);
-  const bucket = (page: Page<Bucket>, weight = true): Page<StatRow> => ({
+  const bucket = (
+    page: Page<Bucket>,
+    weight = true,
+    kind?: "country" | "decade",
+  ): Page<StatRow> => ({
     ...page,
-    items: page.items.map((row) => ({
-      label: row.label,
-      count: row.count,
-      ...(weight ? { extra: bytesLabel(row.bytes) } : {}),
-    })),
+    items: page.items.map((row) => {
+      const selection = kind ? statisticsSelection(kind, row.label, library.artists()) : undefined;
+      return {
+        label: row.label,
+        count: row.count,
+        ...(weight ? { extra: bytesLabel(row.bytes) } : {}),
+        ...(selection
+          ? { browse: { href: `#/${selection.section}`, select: () => props.onBrowse(selection) } }
+          : {}),
+      };
+    }),
   });
   const tiles = () => {
     const value = currentReport();
@@ -398,14 +411,14 @@ export function StatisticsPage() {
                   unit={t("Albums et taille")}
                   first={value}
                   read={reader()!}
-                  rows={(report) => bucket(report.by_decade)}
+                  rows={(report) => bucket(report.by_decade, true, "decade")}
                 />
                 <StatisticsTable
                   title={t("Pays et régions")}
                   unit={t("Artistes dont l’origine est connue dans Aède")}
                   first={value}
                   read={reader()!}
-                  rows={(report) => bucket(report.by_country, false)}
+                  rows={(report) => bucket(report.by_country, false, "country")}
                 />
                 <StatisticsTable
                   title={t("Rôles dans les crédits")}

@@ -552,7 +552,13 @@ export function App() {
                                 <Show
                                   when={section() === "tags"}
                                   fallback={
-                                    <WorkspacePage section={section()} query={filters().query} />
+                                    <WorkspacePage
+                                      section={section()}
+                                      query={filters().query}
+                                      onStatisticsBrowse={(selection) =>
+                                        scopedFilters.select(selection.section, selection.filters)
+                                      }
+                                    />
                                   }
                                 >
                                   <TagsPage

@@ -83,3 +83,48 @@ export const PersonalSpacing: Story = {
     expect(Math.abs(gaps[0]![1]! - gaps[1]![1]!)).toBeLessThan(0.6);
   },
 };
+
+export const SummaryParity: Story = {
+  render: () => (
+    <main class="component-sticky" style={{ height: "auto" }}>
+      <StickyHeader>
+        <div class="page-heading">
+          <span>Mounted players</span>
+          <button class="icon-button">Action</button>
+        </div>
+      </StickyHeader>
+      <StickyHeader>
+        <div class="concerts-toolbar">
+          <span>Artists · Concerts</span>
+          <button class="icon-button">Action</button>
+        </div>
+      </StickyHeader>
+      <StickyHeader>
+        <div class="section-heading">
+          <p>Unlocked trophies</p>
+          <button class="icon-button">Action</button>
+        </div>
+      </StickyHeader>
+      <StickyHeader>
+        <div class="statistics-heading">
+          <p>Whole library</p>
+          <button class="icon-button">Action</button>
+        </div>
+      </StickyHeader>
+    </main>
+  ),
+  play: ({ canvasElement }) => {
+    const summaries = canvasElement.querySelectorAll(".page-sticky-header > div > :is(span, p)");
+    const reference = getComputedStyle(summaries[0]!);
+    for (const summary of summaries) {
+      const style = getComputedStyle(summary);
+      expect(style.fontSize).toBe(reference.fontSize);
+      expect(style.color).toBe(reference.color);
+      expect(style.marginBlockStart).toBe("0px");
+      expect(style.marginBlockEnd).toBe("0px");
+      const action = summary.nextElementSibling!.getBoundingClientRect(),
+        rect = summary.getBoundingClientRect();
+      expect(Math.abs(rect.top + rect.height / 2 - action.top - action.height / 2)).toBeLessThan(1);
+    }
+  },
+};

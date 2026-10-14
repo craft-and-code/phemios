@@ -25,7 +25,11 @@ import { PersonalPage } from "./PersonalPage";
 import { PlayersPage } from "./PlayersPage";
 import { AnalysisPage } from "./AnalysisPage";
 /** Section services stay reactive while navigation keeps the same workspace owner. */
-export function WorkspacePage(props: { section: Section; query: string }) {
+export function WorkspacePage(props: {
+  section: Section;
+  query: string;
+  onStatisticsBrowse: Parameters<typeof StatisticsPage>[0]["onBrowse"];
+}) {
   return (
     <Suspense
       fallback={
@@ -71,7 +75,7 @@ export function WorkspacePage(props: { section: Section; query: string }) {
           <DoctorPage />
         </Match>
         <Match when={props.section === "statistics"}>
-          <StatisticsPage />
+          <StatisticsPage onBrowse={props.onStatisticsBrowse} />
         </Match>
         <Match when={props.section === "relations"}>
           <RelationsPage query={props.query} />

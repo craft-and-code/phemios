@@ -5,6 +5,8 @@ export interface Artist {
   genre: string;
   country: string | null;
   countryCode?: string;
+  /** Unlocalized MusicBrainz area retained for Aède country/region statistics navigation. */
+  originArea?: string;
   biography: string;
   artwork: boolean;
   genres?: readonly string[];

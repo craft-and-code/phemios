@@ -17,3 +17,10 @@ export function trackDuration(ms: number | null): string {
   const seconds = Math.round(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
+
+/** Unknown collection aggregates stay blank; confirmed milliseconds retain the existing truncated clock. */
+export function collectionDuration(ms: number | null | undefined): string {
+  if (ms == null || !Number.isSafeInteger(ms) || ms < 0) return "";
+  const seconds = Math.floor(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}

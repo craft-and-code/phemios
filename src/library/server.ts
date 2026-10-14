@@ -103,6 +103,9 @@ export function parseSnapshot(value: unknown): Snapshot {
       relations: relations(row.relations ?? []),
     };
     if (code) artist.countryCode = code;
+    const origin = object(row.origin ?? {});
+    if (typeof origin.area === "string" && origin.area.trim())
+      artist.originArea = origin.area.trim();
     if (credit)
       artist.biographyCredit = {
         url: string(credit.url),

@@ -8,6 +8,7 @@ import { CoverPlay } from "../components/CoverPlay";
 import { historyTrackAction } from "../library/history-actions";
 import { currentHistoryListen } from "../library/history-current";
 import { AccountNotice } from "../components/AccountNotice";
+import { collectionDuration } from "../library/detail-format";
 import { StickyHeader } from "../components/StickyHeader";
 import { Feedback } from "../components/Feedback";
 import { ResultCount } from "../components/ResultCount";
@@ -326,9 +327,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   }}
                 />
                 <span class="collection-duration" title={t("Durée totale")}>
-                  {Number.isSafeInteger(row.duration_ms) && (row.duration_ms ?? -1) >= 0
-                    ? `${Math.floor(row.duration_ms! / 60000)}:${String(Math.floor(row.duration_ms! / 1000) % 60).padStart(2, "0")}`
-                    : "—"}
+                  {collectionDuration(row.duration_ms)}
                 </span>
                 <button
                   type="button"

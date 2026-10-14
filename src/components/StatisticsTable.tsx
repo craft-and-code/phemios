@@ -8,6 +8,8 @@ export interface StatRow {
   count: number;
   extra?: string;
   reference?: string | null;
+  /** A catalog selection is prepared before the internal link is followed. */
+  browse?: { href: string; select: () => void };
 }
 /** Independent bounded pagination keeps every ranking accessible without rendering all rows. */
 export function StatisticsTable(props: {
@@ -45,8 +47,21 @@ export function StatisticsTable(props: {
               {(row) => (
                 <li>
                   <span class="stat-label">
-                    <Show when={row.reference} fallback={row.label}>
-                      {(ref) => <a href={`#/artist/${encodeURIComponent(ref())}`}>{row.label}</a>}
+                    <Show
+                      when={row.browse}
+                      fallback={
+                        <Show when={row.reference} fallback={row.label}>
+                          {(ref) => (
+                            <a href={`#/artist/${encodeURIComponent(ref())}`}>{row.label}</a>
+                          )}
+                        </Show>
+                      }
+                    >
+                      {(browse) => (
+                        <a href={browse().href} onClick={() => browse().select()}>
+                          {row.label}
+                        </a>
+                      )}
                     </Show>
                     <small>{row.extra}</small>
                   </span>

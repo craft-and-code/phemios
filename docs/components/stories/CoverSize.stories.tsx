@@ -108,3 +108,19 @@ export const AccountDefaultReset: Story = {
     );
   },
 };
+
+export const RestingIconColor: Story = {
+  render: (args) => (
+    <div>
+      <CoverSize {...args} />
+      <button class="icon-button quiet" aria-label="Reference action">
+        Action
+      </button>
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    const reset = canvasElement.querySelector(".cover-size-reset")!;
+    const reference = canvasElement.querySelector(".icon-button")!;
+    expect(getComputedStyle(reset).color).toBe(getComputedStyle(reference).color);
+  },
+};

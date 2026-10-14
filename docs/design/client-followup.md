@@ -101,3 +101,11 @@ M3U inventory and content reads share diagnostic admission. Refresh keeps confir
 ## Coherent statistics activity and atmosphere counters
 
 Statistics waits for both aggregate and diagnostic reads behind one central PageLoader, using the shared Refresh as an immediate Stop without a second spinner. Its first table pages are synchronous projections of the confirmed report; only explicit nonzero table pages perform asynchronous reads. Cancellation retains the read-admission limits described above. ResultCount keeps its shared font size inside page headings, including Ambiances. Once a recipe is selected its header count represents matching tracks, rather than the number of recipe cards. Optional atmosphere evidence scopes explain specific personal tags while older server responses remain readable.
+
+## Statistics navigation and shared tool presentation (2026-10-14)
+
+Country/region statistics prepare a clean Countries selection before following the internal link. Parsed snapshots retain the original MusicBrainz area alongside the display country; matching area or ISO-derived English country names select the corresponding display-country values, without confusing an untranslated label with a French facet. Canonical numeric decade buckets open the inclusive ten-year album interval without stale query, alphabet, genre or country facets. Undated and malformed labels remain text rather than fabricating a range. The same row contract preserves artist links and independently paginated tables.
+
+Leading header summaries share 12-pixel muted text and zero block margins across personal/tool layouts, including Concerts, Trophies and Statistics. CoverSize's reset glyph uses the ordinary text color at rest while retaining hover accent, disabled feedback and reset behavior. Unknown collection duration aggregates render no placeholder; confirmed zero remains a real clock.
+
+External-player discovery uses a props-only PlayersContent surface, with one page-centred Loader for initial discovery and Refresh even when a preceding volume list exists. The header remains reachable as Stop without another spinner. Cancel reveals the retained confirmation/selection under the existing guarded-read contract; it does not claim native IPC abortion. Storybook exercises the real surface with fictional mounted volumes.

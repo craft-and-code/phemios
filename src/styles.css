@@ -2181,8 +2181,13 @@ main:has(> .result-page) > * {
   min-height: 36px;
   margin-block: 0;
 }
-.page-sticky-header > :is(.statistics-heading, .section-heading) > p {
+/* Leading header summaries use one type scale across personal and tool views. */
+.page-sticky-header
+  > :is(.statistics-heading, .section-heading, .page-heading, .concerts-toolbar)
+  > :is(p, span):not(.result-count) {
   margin-block: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 .history-selection-actions {
   justify-content: flex-start;
@@ -2317,4 +2322,9 @@ main:has(> .result-page) > * {
   width: 30px;
   height: 30px;
   padding: 5px;
+}
+
+/* Mount discovery centres its page activity inside the remaining view, including refreshes. */
+.players-page {
+  position: relative;
 }

@@ -1688,7 +1688,7 @@ button.metadata-link:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: inherit;
+  color: var(--text);
   flex: 0 0 24px;
 }
 .cover-size-reset > svg {
