@@ -1,3 +1,4 @@
+import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
@@ -228,29 +229,14 @@ export function M3UPage(props: { query: string }) {
         </div>
       </Show>
       <Show when={(reads.page()?.total ?? 0) > 50}>
-        <div class="page-controls">
-          <button
-            class="icon-button"
-            title={t("Précédentes")}
-            aria-label={t("Précédentes")}
-            disabled={!offset() || reads.refreshing()}
-            onClick={() => setOffset(Math.max(0, offset() - 50))}
-          >
-            <Icon name="back" />
-          </button>
-          <span>
-            {offset() + 1}–{offset() + (reads.page()?.items.length ?? 0)} / {reads.page()?.total}
-          </span>
-          <button
-            class="icon-button"
-            title={t("Suivantes")}
-            aria-label={t("Suivantes")}
-            disabled={offset() + 50 >= (reads.page()?.total ?? 0) || reads.refreshing()}
-            onClick={() => setOffset(offset() + 50)}
-          >
-            <Icon name="forward" />
-          </button>
-        </div>
+        <Pagination
+          offset={offset()}
+          size={50}
+          total={reads.page()?.total ?? 0}
+          count={reads.page()?.items.length ?? 0}
+          busy={reads.refreshing()}
+          onOffset={setOffset}
+        />
       </Show>
     </section>
   );

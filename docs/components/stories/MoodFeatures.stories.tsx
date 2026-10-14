@@ -15,7 +15,16 @@ const meta = {
 } satisfies Meta<typeof MoodFeatures>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const Ready: Story = {};
+export const Ready: Story = {
+  play: ({ canvasElement }) => {
+    const heading = canvasElement.querySelector("h2")!,
+      action = canvasElement.querySelector("button")!;
+    const title = heading.getBoundingClientRect(),
+      button = action.getBoundingClientRect();
+    expect(Math.abs(title.top + title.height / 2 - button.top - button.height / 2)).toBeLessThan(1);
+    expect(canvasElement.querySelector(".page-heading p")).toBeNull();
+  },
+};
 export const WaitingForPlayback: Story = {
   render: (args) => {
     const [stopped, setStopped] = createSignal(false);

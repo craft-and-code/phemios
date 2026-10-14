@@ -1,53 +1,43 @@
 import { t } from "../i18n";
-import { Icon } from "./Icon";
+import { ChoiceSelect } from "./ChoiceSelect";
 import { RefreshButton } from "./RefreshButton";
 import { StickyHeader } from "./StickyHeader";
-/** Pagination and read admission stay above the independent track scroller. */
+/** Page size and read admission stay above the independent track scroller. */
 export function TracksHeader(props: {
   total: number;
   offset: number;
   size: number;
+  sizes: readonly number[];
   busy: boolean;
   pending: boolean;
   onRefresh: () => void;
   onCancel: () => void;
-  onOffset: (offset: number) => void;
+  onSize: (size: number) => void;
 }) {
   return (
     <StickyHeader>
-      <div class="section-heading">
-        <span>
-          {props.total} {t("piste")} · {props.total ? props.offset + 1 : 0}–
-          {Math.min(props.offset + props.size, props.total)}
-        </span>
-        <div class="page-controls">
+      <div class="section-heading tracks-heading">
+        <div class="tracks-header-controls">
+          <div class="track-page-size">
+            <span>{t("Pistes par page")}</span>
+            <ChoiceSelect
+              label={t("Pistes par page")}
+              value={props.size}
+              onChange={(value) => props.onSize(Number(value))}
+              options={props.sizes.map((size) => ({ value: String(size), label: String(size) }))}
+            />
+          </div>
           <RefreshButton
             busy={props.busy}
             disabled={props.pending && !props.busy}
             onCancel={props.onCancel}
             onRefresh={props.onRefresh}
           />
-          <button
-            type="button"
-            class="icon-button quiet"
-            title={t("Précédentes")}
-            aria-label={t("Précédentes")}
-            disabled={!props.offset || props.busy}
-            onClick={() => props.onOffset(Math.max(0, props.offset - props.size))}
-          >
-            <Icon name="arrow-left" />
-          </button>
-          <button
-            type="button"
-            class="icon-button quiet"
-            title={t("Suivantes")}
-            aria-label={t("Suivantes")}
-            disabled={props.busy || props.offset + props.size >= props.total}
-            onClick={() => props.onOffset(props.offset + props.size)}
-          >
-            <Icon name="arrow-right" />
-          </button>
         </div>
+        <span>
+          {props.total} {t("piste")} · {props.total ? props.offset + 1 : 0}–
+          {Math.min(props.offset + props.size, props.total)}
+        </span>
       </div>
     </StickyHeader>
   );

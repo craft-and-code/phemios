@@ -1,3 +1,4 @@
+import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
@@ -146,24 +147,14 @@ export function DoctorPage() {
                   )}
                 </For>
               </ul>
-              <div class="page-heading">
-                <button
-                  disabled={offset() === 0}
-                  onClick={() => setOffset(Math.max(0, offset() - 50))}
-                >
-                  {t("Précédents")}{" "}
-                </button>
-                <span>
-                  {offset() + 1}–{Math.min(offset() + 50, ready().total)} /{" "}
-                  {numberLabel(ready().total)}
-                </span>
-                <button
-                  disabled={offset() + 50 >= ready().total}
-                  onClick={() => setOffset(offset() + 50)}
-                >
-                  {t("Suivants")}{" "}
-                </button>
-              </div>
+              <Pagination
+                offset={offset()}
+                size={50}
+                total={ready().total}
+                count={ready().items.length}
+                busy={report.pending()}
+                onOffset={setOffset}
+              />
             </Show>
           </>
         )}

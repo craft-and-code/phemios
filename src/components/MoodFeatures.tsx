@@ -17,16 +17,7 @@ export function MoodFeatures(props: {
   return (
     <section class="settings-card mood-features">
       <div class="page-heading">
-        <div>
-          <h2>{t("Caractéristiques audio")}</h2>
-          <p class="muted">
-            {t(
-              "{0} analysés · {1} à analyser",
-              props.coverage?.ready ?? 0,
-              props.coverage?.missing ?? 0,
-            )}
-          </p>
-        </div>
+        <h2>{t("Caractéristiques audio")}</h2>
         <Show when={props.admin}>
           <Show
             when={active()}
@@ -50,6 +41,13 @@ export function MoodFeatures(props: {
           </Show>
         </Show>
       </div>
+      <p class="muted">
+        {t(
+          "{0} analysés · {1} à analyser",
+          props.coverage?.ready ?? 0,
+          props.coverage?.missing ?? 0,
+        )}
+      </p>
       <Show when={active()}>
         <p role="status">
           {props.job?.progress?.phase === "waiting_for_playback"

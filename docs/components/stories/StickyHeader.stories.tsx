@@ -166,3 +166,57 @@ export const StatisticsSeparator: Story = {
     expect(Math.abs(header.bottom - controls.bottom - 13)).toBeLessThan(1);
   },
 };
+
+export const DetailAlignment: Story = {
+  render: () => (
+    <div>
+      {["ALBUM", "PISTE"].map((kind, index) => (
+        <div class="album-hero">
+          <div class="artwork" style={{ height: "200px" }} />
+          <div>
+            <p class="eyebrow">{kind}</p>
+            <h1>Fictional detail</h1>
+            {Array.from({ length: index ? 1 : 4 }, () => (
+              <p>Context</p>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    for (const hero of canvasElement.querySelectorAll(".album-hero")) {
+      expect(
+        Math.abs(
+          hero.querySelector(".eyebrow")!.getBoundingClientRect().top -
+            hero.querySelector(".artwork")!.getBoundingClientRect().top,
+        ),
+      ).toBeLessThan(1);
+    }
+  },
+};
+
+export const BottomSpacing: Story = {
+  render: () => (
+    <div>
+      {["doctor-page", "achievements-page"].map((view) => (
+        <main class="component-sticky" style={{ height: "320px", overflow: "auto" }}>
+          <section class={`page result-page ${view}`}>
+            <StickyHeader>Fictional header</StickyHeader>
+            <div class="fixture-last-content" style={{ height: "500px" }}>
+              Fictional result
+            </div>
+          </section>
+        </main>
+      ))}
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    for (const page of canvasElement.querySelectorAll(".result-page")) {
+      const bottom =
+        page.getBoundingClientRect().bottom -
+        page.querySelector(".fixture-last-content")!.getBoundingClientRect().bottom;
+      expect(bottom).toBeGreaterThanOrEqual(36);
+    }
+  },
+};

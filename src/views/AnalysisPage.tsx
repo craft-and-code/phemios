@@ -1,3 +1,4 @@
+import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { StickyHeader } from "../components/StickyHeader";
@@ -310,29 +311,14 @@ export function AnalysisPage(props: { query: string }) {
               </div>
             </Show>
             <Show when={value().total > 50}>
-              <div class="page-controls">
-                <button
-                  class="icon-button"
-                  aria-label={t("Précédent")}
-                  title={t("Précédent")}
-                  disabled={!offset()}
-                  onClick={() => setOffset((value) => Math.max(0, value - 50))}
-                >
-                  <Icon name="back" />
-                </button>
-                <span>
-                  {offset() + 1}–{offset() + value().items.length} / {value().total}
-                </span>
-                <button
-                  class="icon-button"
-                  aria-label={t("Suivant")}
-                  title={t("Suivant")}
-                  disabled={offset() + 50 >= value().total}
-                  onClick={() => setOffset((value) => value + 50)}
-                >
-                  <Icon name="forward" />
-                </button>
-              </div>
+              <Pagination
+                offset={offset()}
+                size={50}
+                total={value().total}
+                count={value().items.length}
+                busy={read.pending()}
+                onOffset={setOffset}
+              />
             </Show>
           </>
         )}

@@ -1,3 +1,4 @@
+import { StickyHeader } from "../components/StickyHeader";
 import { PageLoader } from "../components/PageLoader";
 import { EmptyState } from "../components/EmptyState";
 import { createMemo, createSignal, createResource, createEffect, on, For, Show } from "solid-js";
@@ -102,44 +103,46 @@ export function LabelsPage(props: { query: string }) {
     ) ?? [];
   return (
     <section class="page labels-page">
-      <div class="label-toolbar">
-        <button
-          class="icon-button"
-          title={t("Trier par nom")}
-          aria-label={t("Trier par nom")}
-          aria-pressed={sort() === "name"}
-          onClick={() => {
-            setSort("name");
-            setOffset(0);
-          }}
-        >
-          <Icon name="alphabet" />
-        </button>
-        <button
-          class="icon-button"
-          title={t("Trier par nombre d’albums")}
-          aria-label={t("Trier par nombre d’albums")}
-          aria-pressed={sort() === "albums"}
-          onClick={() => {
-            setSort("albums");
-            setOffset(0);
-          }}
-        >
-          <Icon name="disc" />
-        </button>
-        <button
-          class="icon-button"
-          title={t("Inverser le tri")}
-          aria-label={t("Inverser le tri")}
-          aria-pressed={descending()}
-          onClick={() => {
-            setDescending(!descending());
-            setOffset(0);
-          }}
-        >
-          <Icon name="sort" />
-        </button>
-      </div>
+      <StickyHeader>
+        <div class="label-toolbar">
+          <button
+            class="icon-button"
+            title={t("Trier par nom")}
+            aria-label={t("Trier par nom")}
+            aria-pressed={sort() === "name"}
+            onClick={() => {
+              setSort("name");
+              setOffset(0);
+            }}
+          >
+            <Icon name="alphabet" />
+          </button>
+          <button
+            class="icon-button"
+            title={t("Trier par nombre d’albums")}
+            aria-label={t("Trier par nombre d’albums")}
+            aria-pressed={sort() === "albums"}
+            onClick={() => {
+              setSort("albums");
+              setOffset(0);
+            }}
+          >
+            <Icon name="disc" />
+          </button>
+          <button
+            class="icon-button"
+            title={t("Inverser le tri")}
+            aria-label={t("Inverser le tri")}
+            aria-pressed={descending()}
+            onClick={() => {
+              setDescending(!descending());
+              setOffset(0);
+            }}
+          >
+            <Icon name="sort" />
+          </button>
+        </div>
+      </StickyHeader>
       <Show when={!sources().length}>
         <EmptyState icon="label">{t("Aucun label dans cette sélection.")}</EmptyState>
       </Show>

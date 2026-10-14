@@ -5,9 +5,9 @@ import { createDiagnosticRead } from "../library/diagnostic-read";
 import { RefreshButton } from "../components/RefreshButton";
 import { PageLoader } from "../components/PageLoader";
 import { TracksHeader } from "../components/TracksHeader";
-import { ChoiceSelect } from "../components/ChoiceSelect";
-import { EmptyState } from "../components/EmptyState";
 import { pageSizes } from "../library/tool-preferences";
+import { Pagination } from "../components/Pagination";
+import { EmptyState } from "../components/EmptyState";
 import { t } from "../i18n";
 import { createMemo, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
@@ -87,13 +87,14 @@ export function TracksPage(props: {
         total={page()?.total ?? 0}
         offset={offset()}
         size={props.size}
+        sizes={pageSizes}
         busy={recovery.loading() || read.loading()}
         pending={recovery.pending() || read.pending()}
         onCancel={() => {
           recovery.cancel();
           read.cancel();
         }}
-        onOffset={setOffset}
+        onSize={props.setSize}
         onRefresh={() => {
           const missing = page()?.unavailable[0];
           if (missing) setRetry({ source: missing.source });
@@ -180,15 +181,14 @@ export function TracksPage(props: {
           )}
         </Show>
       </div>
-      <div class="track-page-size">
-        <span>{t("Pistes par page")}</span>
-        <ChoiceSelect
-          label={t("Pistes par page")}
-          value={props.size}
-          onChange={(value) => props.setSize(Number(value))}
-          options={pageSizes.map((size) => ({ value: String(size), label: String(size) }))}
-        />
-      </div>
+      <Pagination
+        offset={offset()}
+        size={props.size}
+        total={page()?.total ?? 0}
+        count={page()?.items.length ?? 0}
+        busy={recovery.pending() || read.pending()}
+        onOffset={setOffset}
+      />
     </section>
   );
 }

@@ -2275,11 +2275,6 @@ main:has(> .result-page) > * {
   color: var(--muted);
   margin-inline: 8px;
 }
-.analysis-page > .page-controls,
-.analysis-page .page-controls {
-  padding-bottom: 24px;
-  gap: var(--control-gap);
-}
 .personal-page:has(.cover-flow) {
   display: flex;
   flex-direction: column;
@@ -2347,14 +2342,6 @@ main:has(> .tracks-page) {
   scrollbar-gutter: stable;
   position: relative;
 }
-.tracks-page > .track-page-size {
-  flex-shrink: 0;
-  margin: 16px 0 0;
-  justify-content: center;
-}
-.tracks-page .track-page-size .choice-select {
-  width: 90px;
-}
 .tracks-results > .track-list {
   margin-top: 0;
 }
@@ -2367,4 +2354,50 @@ main:has(> .tracks-page) {
 
 .tracks-results > :not(.empty-state) {
   flex-shrink: 0;
+}
+
+/* Result pagination and end spacing are shared across tool and track views. */
+.pagination-controls {
+  gap: var(--control-gap);
+  margin-block: 24px 0;
+  padding-bottom: 24px;
+}
+.page:is(.doctor-page, .achievements-page) {
+  min-height: auto;
+}
+.tracks-header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.tracks-header-controls .track-page-size {
+  margin: 0;
+  gap: var(--control-gap);
+}
+.tracks-header-controls .choice-select {
+  width: 90px;
+}
+.tracks-page > .tracks-results {
+  margin-right: -12px;
+  padding-right: 12px;
+}
+.tracks-page > .pagination-controls {
+  flex-shrink: 0;
+}
+.page-sticky-header > .label-toolbar {
+  margin-block: 0;
+}
+.mood-features > .page-heading {
+  margin-bottom: 0;
+}
+.mood-features > .page-heading h2 {
+  margin: 0;
+}
+.album-hero {
+  align-items: flex-start;
+}
+@media (max-width: 600px) {
+  .tracks-heading {
+    flex-wrap: wrap;
+  }
 }
