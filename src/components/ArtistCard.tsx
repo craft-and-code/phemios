@@ -44,9 +44,14 @@ export function ArtistCard(props: {
             {props.albumCount} {t("albums")}
           </small>
         </a>
+        <Show when={props.view === "discography"}>
+          <div class="artist-presentation-play">{props.play}</div>
+        </Show>
       </div>
       <div class="artist-presentation-albums">{props.children}</div>
-      <div class="artist-presentation-play">{props.play}</div>
+      <Show when={props.view !== "discography"}>
+        <div class="artist-presentation-play">{props.play}</div>
+      </Show>
     </article>
   );
 }

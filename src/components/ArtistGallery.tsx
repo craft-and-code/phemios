@@ -25,9 +25,6 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
             props.view === "discography" ? featuredArtistAlbums(albums()) : albums().slice(0, 3),
           );
           const image = () =>
-            (props.view === "discography"
-              ? library.image(artist.reference, "background")
-              : undefined) ??
             library.image(artist.reference, "portrait") ??
             library.image(artist.reference, "background") ??
             library.image(artist.reference, "banner");
@@ -68,12 +65,6 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
                           title={album.title}
                         >
                           <Artwork album={album} thumbnail />
-                          <Show when={props.view === "discography"}>
-                            <span class="artist-featured-album-title">
-                              {album.title}
-                              <small>{album.year ?? ""}</small>
-                            </span>
-                          </Show>
                         </a>
                         <Show when={props.view === "discography"}>
                           <CoverPlay reference={album.reference} title={album.title} />

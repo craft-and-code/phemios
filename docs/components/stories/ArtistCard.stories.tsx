@@ -52,10 +52,6 @@ export const Discography: Story = {
           <div class="artist-album-preview">
             <a href={`#/album/${title}`} title={title}>
               <img class="artwork" src={image} alt={title} />
-              <span class="artist-featured-album-title">
-                {title}
-                <small>2020</small>
-              </span>
             </a>
           </div>
         ))}
@@ -78,7 +74,15 @@ export const Discography: Story = {
     expect(
       within(canvasElement).getByRole("img", { name: "Logo de The Northern Lights" }),
     ).toBeVisible();
-    expect(canvasElement.querySelectorAll(".artist-album-preview")).toHaveLength(2);
+    const albums = canvasElement.querySelectorAll(".artist-album-preview");
+    expect(albums).toHaveLength(2);
+    for (const album of albums)
+      expect(album.getBoundingClientRect().width).toBeGreaterThan(
+        card.getBoundingClientRect().width * 0.4,
+      );
+    const first = albums[0]!.getBoundingClientRect(),
+      second = albums[1]!.getBoundingClientRect();
+    expect(second.left - first.right).toBeLessThanOrEqual(16);
   },
 };
 export const Editorial: Story = {
@@ -112,5 +116,33 @@ export const Editorial: Story = {
         expect(
           Math.abs(cover.getBoundingClientRect().height - picture.getBoundingClientRect().height),
         ).toBeLessThanOrEqual(2);
+  },
+};
+export const VerticalGallery: Story = {
+  args: { ...Discography.args },
+  decorators: [
+    (Story) => (
+      <div style={{ width: "1000px", height: "580px", overflow: "auto", "container-type": "size" }}>
+        <ul class="artist-presentations artist-presentations-discography">
+          {[0, 1, 2].map(() => (
+            <li>
+              <Story />
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const cards = canvasElement.querySelectorAll(".artist-presentation"),
+      grid = canvasElement.querySelector(".artist-presentations")!;
+    expect(cards).toHaveLength(3);
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      expect(rect.width).toBeGreaterThan(grid.getBoundingClientRect().width * 0.3);
+      expect(rect.height).toBeGreaterThan(rect.width * 1.6);
+      for (const cover of card.querySelectorAll(".artist-album-preview .artwork"))
+        expect(cover.getBoundingClientRect().width).toBeGreaterThan(rect.width * 0.4);
+    }
   },
 };
