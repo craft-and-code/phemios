@@ -1,3 +1,4 @@
+import { SettingsAbout } from "./SettingsAbout";
 import { SettingsAede } from "./SettingsAede";
 import { SettingsImports } from "./SettingsImports";
 import { SettingsBackup } from "./SettingsBackup";
@@ -43,6 +44,7 @@ export function SettingsPage(props: {
               "shortcuts",
               "backup",
               "imports",
+              "about",
             ],
             index = ids.indexOf(tab());
           const next = ["ArrowRight", "ArrowDown"].includes(event.key)
@@ -74,6 +76,7 @@ export function SettingsPage(props: {
             { icon: "keyboard", id: "shortcuts", label: t("Raccourcis") },
             { icon: "download", id: "backup", label: t("Sauvegarde") },
             { icon: "upload", id: "imports", label: t("Imports") },
+            { icon: "help", id: "about", label: t("À propos") },
           ]}
         >
           {(item) => (
@@ -127,6 +130,9 @@ export function SettingsPage(props: {
         </Show>
         <Show when={tab() === "appearance"}>
           <SettingsAppearance />
+        </Show>
+        <Show when={tab() === "about"}>
+          <SettingsAbout />
         </Show>
         <Feedback message={library.savedSettings.status()} />
         <Feedback error message={library.savedSettings.error()} />

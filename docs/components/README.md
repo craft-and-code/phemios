@@ -12,7 +12,7 @@ From the repository root, run `npm run components:dev`, then open `http://127.0.
 
 The Controls panel edits component props. Stateful scenarios retain their own in-memory values and expose a readout; changing Controls updates those values. The language toolbar applies FR/EN only within this browser preview and never saves a preference.
 
-The explorer now imports 50 real components in 129 scenarios. Controls include cover sizing, histogram rails, filters, rich notes, radio search and role help; status primitives include loaders, empty results, counts, downloads and dismissible feedback. Data scenarios include adaptive statistic values, integrity evidence, analysis charts and paginated tables. Media scenarios include the real globe/country explorer, relation graph, particle scenes, 24 frequency bands, radio wave and fixed footer presentation.
+The explorer now imports 51 real components in 130 scenarios. Controls include cover sizing, histogram rails, filters, rich notes, radio search and role help; status primitives include loaders, empty results, counts, downloads and dismissible feedback. Data scenarios include adaptive statistic values, integrity evidence, analysis charts and paginated tables. Media scenarios include the real globe/country explorer, relation graph, particle scenes, 24 frequency bands, radio wave and fixed footer presentation.
 
 The [complete component inventory](coverage.md) records all 89 component modules, including account/native wrappers that are not yet standalone scenarios. Coverage is explicit: showing a primitive inside a wrapper does not establish acceptance of the connected workflow. These remaining surfaces need typed presentation props before they can enter the explorer without a real account.
 
