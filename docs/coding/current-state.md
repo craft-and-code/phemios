@@ -1,5 +1,7 @@
 # Phémios — Current state
 
+Integrity alignment refinement (2026-10-15): all transient track verdicts occupy the same centred 16px slot; successful decoding without a reference digest displays a neutral dash, retaining its explicit accessible label and tooltip. The existing Storybook scenario now checks equal title origins and badge widths for all three states.
+
 Recent/integrity refinement (2026-10-15): the default menu starts with Nouveautés and temporarily hides it when the rolling-month catalog is empty, retaining private navigation customizations. Album checks use a first Pistes action and only fresh per-track OK / KO / Sans hash badges. Versioned exact-file reports, captured owner/source admission and page-local lifecycle prevent historical or incomplete output from becoming a current verdict. The complete macOS gate passes 883 tests (680 TypeScript, 19 Node, 166 core Rust, 18 bridge), with 331 declaration modules and 56 Storybook components / 145 scenarios / 56 authored play definitions. Native acceptance is recorded separately.
 
 Panoramic artist-list refinement (2026-10-15): editorial rows now prefer resident artist backgrounds, retaining portrait/banner fallbacks; large-format cards remain portrait-first. The complete gate passes 874 tests (671 TypeScript, 19 Node, 166 core Rust, 18 bridge). Offline native acceptance confirms the panoramic image and unchanged cards; see the acceptance log.

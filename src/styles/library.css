@@ -1719,7 +1719,10 @@ button.metadata-link:hover {
 .track-integrity {
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
   font-size: 11px;
   line-height: 1;
   white-space: nowrap;

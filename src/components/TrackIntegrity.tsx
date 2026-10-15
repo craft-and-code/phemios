@@ -19,7 +19,7 @@ export function TrackIntegrity(props: { result: IntegrityResult | undefined }) {
           aria-label={label()}
           title={[label(), value().verifier, value().message].filter(Boolean).join(" · ")}
         >
-          <Show when={value().status !== "no_hash"} fallback={t("Sans hash")}>
+          <Show when={value().status !== "no_hash"} fallback="-">
             <Icon name={value().status === "ok" ? "check" : "close"} />
           </Show>
         </span>

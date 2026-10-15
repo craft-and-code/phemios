@@ -27,16 +27,21 @@ export const NoHash: Story = {
 export const AllStates: Story = {
   render: () => (
     <div>
-      <p>
-        <TrackIntegrity result={{ status: "ok", verifier: "Rust" }} /> Fictional verified track
-      </p>
-      <p>
-        <TrackIntegrity result={{ status: "ko", verifier: "Rust", message: "MD5 mismatch" }} />{" "}
-        Fictional rejected track
-      </p>
-      <p>
-        <TrackIntegrity result={{ status: "no_hash", verifier: "Rust" }} /> Fictional decoded track
-      </p>
+      <div class="track-heading">
+        <span class="track-number">1.</span>
+        <TrackIntegrity result={{ status: "ok", verifier: "Rust" }} />
+        <span data-testid="verified-title">Fictional verified track</span>
+      </div>
+      <div class="track-heading">
+        <span class="track-number">2.</span>
+        <TrackIntegrity result={{ status: "ko", verifier: "Rust", message: "MD5 mismatch" }} />
+        <span data-testid="rejected-title">Fictional rejected track</span>
+      </div>
+      <div class="track-heading">
+        <span class="track-number">3.</span>
+        <TrackIntegrity result={{ status: "no_hash", verifier: "Rust" }} />
+        <span data-testid="decoded-title">Fictional decoded track</span>
+      </div>
       <p>
         <TrackIntegrity result={undefined} /> Fictional untested track
       </p>
@@ -50,7 +55,21 @@ export const AllStates: Story = {
     expect(ok.querySelector("svg")?.getBoundingClientRect().width).toBe(16);
     expect(ko.querySelector("svg")?.getBoundingClientRect().width).toBe(16);
     expect(getComputedStyle(ok).color).not.toBe(getComputedStyle(ko).color);
-    expect(canvas.getByText("Sans hash")).toBeVisible();
+    const titles = ["verified-title", "rejected-title", "decoded-title"].map(
+      (id) => canvas.getByTestId(id).getBoundingClientRect().left,
+    );
+    expect(titles[1]).toBe(titles[0]);
+    expect(titles[2]).toBe(titles[0]);
+    const noHash = canvas.getByRole("img", {
+      name: "Décodage réussi ; aucune empreinte de référence.",
+    });
+    expect(noHash).toHaveTextContent("-");
+    expect(noHash).toHaveAttribute(
+      "title",
+      "Décodage réussi ; aucune empreinte de référence. · Rust",
+    );
+    for (const badge of canvas.getAllByRole("img"))
+      expect(badge.getBoundingClientRect().width).toBe(16);
     expect(canvas.queryAllByRole("button")).toHaveLength(0);
   },
 };
