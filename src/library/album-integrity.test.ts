@@ -1,6 +1,11 @@
 import { createRoot, createSignal } from "solid-js";
 import { afterEach, expect, it, vi } from "vitest";
-import { createAlbumIntegrity, parseIntegrityResults, integrityPath } from "./album-integrity";
+import {
+  createAlbumIntegrity,
+  createIntegrityDisclosure,
+  parseIntegrityResults,
+  integrityPath,
+} from "./album-integrity";
 import type { Job } from "./jobs";
 import type { AccountSession } from "./server";
 const owner: AccountSession = {
@@ -139,4 +144,46 @@ it("reads exact file identities from lightweight track tokens without URL decodi
     "track:",
   ])
     expect(integrityPath(invalid)).toBeUndefined();
+});
+
+it("discloses only the chosen failed result and closes for a fresh or cleared verdict", () => {
+  createRoot((end) => {
+    dispose = end;
+    const [result, setResult] = createSignal<
+      import("./album-integrity").IntegrityResult | undefined
+    >({ status: "ko", verifier: "Rust", message: "MD5 mismatch" });
+    const detail = createIntegrityDisclosure(result);
+    expect(detail.open()).toBe(false);
+    detail.toggle();
+    expect(detail.open()).toBe(true);
+    detail.toggle();
+    expect(detail.open()).toBe(false);
+    detail.toggle();
+    detail.close();
+    expect(detail.open()).toBe(false);
+    detail.toggle();
+    setResult({ status: "ko", verifier: "Rust", message: "Read failed" });
+    expect(detail.open()).toBe(false);
+    detail.toggle();
+    setResult(undefined);
+    expect(detail.open()).toBe(false);
+  });
+});
+it("never opens integrity error details for success or an absent reference digest", () => {
+  createRoot((end) => {
+    dispose = end;
+    const [result, setResult] = createSignal<
+      import("./album-integrity").IntegrityResult | undefined
+    >();
+    const detail = createIntegrityDisclosure(result);
+    for (const value of [
+      undefined,
+      { status: "ok" as const, verifier: "Rust" },
+      { status: "no_hash" as const, verifier: "Rust" },
+    ]) {
+      setResult(value);
+      detail.toggle();
+      expect(detail.open()).toBe(false);
+    }
+  });
 });

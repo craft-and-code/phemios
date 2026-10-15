@@ -1,4 +1,5 @@
-import type { IntegrityResult } from "../library/album-integrity";
+import { createIntegrityDisclosure, type IntegrityResult } from "../library/album-integrity";
+import { TrackIntegrityError } from "./TrackIntegrityError";
 import { TrackIntegrity } from "./TrackIntegrity";
 import { PageLoader } from "./PageLoader";
 import { LyricsText } from "./LyricsText";
@@ -42,6 +43,11 @@ export function TrackResults(props: {
     jobs: library.tasks.jobs,
     detail: !!props.expanded,
   });
+  const integrityDetails = createIntegrityDisclosure(() => props.integrity);
+  const closeIntegrity = () => {
+    integrityDetails.close();
+    document.getElementById(`${id}-integrity-toggle`)?.focus();
+  };
   const duration = () => props.track.duration_ms;
   const [detail] = createResource(
     () =>
@@ -63,7 +69,13 @@ export function TrackResults(props: {
         <div class="track-heading">
           <span class="track-number">{props.number}.</span>
           <PlayingBars reference={props.track.reference} />
-          <TrackIntegrity result={props.integrity} />
+          <TrackIntegrity
+            result={props.integrity}
+            id={`${id}-integrity-toggle`}
+            controls={`${id}-integrity-detail`}
+            expanded={integrityDetails.open()}
+            onToggle={integrityDetails.toggle}
+          />
           <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
             {props.track.title}
           </a>
@@ -141,6 +153,13 @@ export function TrackResults(props: {
           <div class="track-context">{props.context}</div>
         </Show>
       </div>
+      <Show when={integrityDetails.open()}>
+        <TrackIntegrityError
+          id={`${id}-integrity-detail`}
+          result={props.integrity}
+          onClose={closeIntegrity}
+        />
+      </Show>
       <Show when={analysis()}>
         <div id={`${id}-analysis`} class="track-analysis">
           <div class="analysis-result-heading">

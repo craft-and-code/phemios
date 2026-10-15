@@ -1684,5 +1684,9 @@
   "Résultat d’intégrité Aède invalide ou incomplet.": "Invalid or incomplete Aède integrity result.",
   "Empreinte vérifiée": "Hash verified",
   "Échec du contrôle d’intégrité": "Integrity check failed",
-  "Décodage réussi ; aucune empreinte de référence.": "Successfully decoded; no reference hash."
+  "Décodage réussi ; aucune empreinte de référence.": "Successfully decoded; no reference hash.",
+  "Afficher ou masquer le détail de l’erreur d’intégrité": "Show or hide integrity error details",
+  "Détail de l’erreur d’intégrité": "Integrity error details",
+  "Fermer le détail de l’erreur": "Close error details",
+  "Le vérificateur n’a fourni aucun détail supplémentaire.": "The verifier provided no further details."
 }

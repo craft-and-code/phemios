@@ -178,3 +178,18 @@ export function createAlbumIntegrity(options: {
     },
   };
 }
+
+/** A disclosure belongs to one failed verdict object; a fresh result never inherits its open state. */
+export function createIntegrityDisclosure(result: () => IntegrityResult | undefined) {
+  const [selected, setSelected] = createSignal<IntegrityResult>();
+  const open = () => result()?.status === "ko" && selected() === result();
+  return {
+    open,
+    toggle() {
+      if (result()?.status === "ko") setSelected(open() ? undefined : result());
+    },
+    close() {
+      setSelected(undefined);
+    },
+  };
+}
