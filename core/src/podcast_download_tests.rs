@@ -183,3 +183,19 @@ fn http_truncation_and_html_errors_do_not_leave_downloads() {
         assert!(!folder.0.exists() || std::fs::read_dir(&folder.0).unwrap().count() == 0);
     }
 }
+
+#[test]
+fn revoked_download_publication_leaves_no_final_or_partial_episode() {
+    let folder = Fixture::new();
+    let result = publish_authorized(
+        &folder.0,
+        "private episode",
+        "mp3",
+        &b"audio"[..],
+        Some(5),
+        10,
+        || Err("session replaced".into()),
+    );
+    assert_eq!(result.unwrap_err(), "session replaced");
+    assert_eq!(std::fs::read_dir(&folder.0).unwrap().count(), 0);
+}

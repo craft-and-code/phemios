@@ -17,6 +17,7 @@ export function ArtistCard(props: {
 }) {
   return (
     <article class={`artist-presentation artist-presentation-${props.view}`}>
+      <a class="artist-presentation-open" href={props.href} aria-hidden="true" tabIndex={-1} />
       <Show when={props.logo && props.view === "discography"}>
         <a class="artist-presentation-logo" href={props.href}>
           <img

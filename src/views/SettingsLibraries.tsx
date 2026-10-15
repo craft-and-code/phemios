@@ -40,9 +40,7 @@ export function SettingsLibraries() {
         "local",
       ),
   );
-  const administrative = () =>
-    library.serverSession()?.account.role === "admin" &&
-    library.serverSession()?.server.startsWith("http://");
+  const administrative = () => library.serverSession()?.account.role === "admin";
   async function perform(work: () => Promise<unknown>) {
     if (busy()) return;
     setError("");

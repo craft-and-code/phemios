@@ -9,6 +9,32 @@ pub(super) fn request_failure(
     detail: Option<&Value>,
 ) -> String {
     let code = detail.and_then(|v| v["error"]["code"].as_str());
+    let parental = match code {
+        Some("parental_outside_schedule") => Some("Cette plage horaire n’autorise pas l’écoute."),
+        Some("parental_daily_limit") => Some("La durée d’écoute maximale du jour est atteinte."),
+        Some("parental_weekly_limit") => {
+            Some("La durée d’écoute maximale de la semaine est atteinte.")
+        }
+        Some("parental_radio_blocked") => Some("L’accès aux radios est interdit pour ce compte."),
+        Some("parental_podcast_blocked") => Some("Ce podcast est masqué pour ce compte."),
+        Some("parental_artist_blocked") => Some("Cet artiste est masqué pour ce compte."),
+        Some("parental_policy_unavailable") => {
+            Some("Le contrôle parental ne peut pas être vérifié. Reconnectez Aède.")
+        }
+        Some("parental_locked") => {
+            Some("Ce compte est verrouillé par son administrateur responsable.")
+        }
+        Some("parental_administrator_required") => {
+            Some("Connectez un compte administrateur pour verrouiller ces règles.")
+        }
+        Some("parental_conflict") => {
+            Some("Ces règles ont été modifiées ailleurs. Actualisez avant d’enregistrer.")
+        }
+        _ => None,
+    };
+    if let Some(message) = parental {
+        return message.into();
+    }
     if method == "GET" && (path == "/api/me/v1/m3u-files" || super::library_playlist_path(path)) {
         let message = match (status, code) {
             (404, Some("m3u_file_not_found")) => {

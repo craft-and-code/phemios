@@ -17,9 +17,10 @@ export function SettingsAccounts() {
     [busy, setBusy] = createSignal(false),
     [currentPassword, setCurrentPassword] = createSignal(""),
     [newPassword, setNewPassword] = createSignal("");
-  const administrative = () =>
-    library.session()?.account.role === "admin" && library.session()?.server.startsWith("http://");
+  const administrative = () => library.session()?.account.role === "admin";
   const accounts = createAccountList(library.session, library.source);
+  const locked = (account: Account) =>
+    !!account.parental_locked_by && account.parental_locked_by !== library.session()?.account.id;
   async function perform(work: () => Promise<unknown>) {
     if (busy()) return;
     const owner = library.session(),
@@ -81,9 +82,7 @@ export function SettingsAccounts() {
         when={administrative()}
         fallback={
           <p class="muted">
-            {t(
-              "L’administration des comptes nécessite un administrateur sur Aède HTTP local. Le serveur HTTPS désactive ses routes administratives ; utilisez sa commande accounts.",
-            )}{" "}
+            {t("Connectez un compte administrateur pour gérer les comptes Aède.")}{" "}
           </p>
         }
       >
@@ -93,13 +92,16 @@ export function SettingsAccounts() {
         <For each={accounts.values()}>
           {(account) => (
             <div class="account-row">
-              <strong>{account.username}</strong>
+              <strong>
+                {account.username}
+                <Show when={locked(account)}> · {t("Verrouillé")}</Show>
+              </strong>
               <div class="account-role">
                 <RoleHelp />
                 <ChoiceSelect
                   label={t("Rôle")}
                   value={account.role}
-                  disabled={busy() || account.username === "phemios-local"}
+                  disabled={busy() || locked(account) || account.username === "phemios-local"}
                   onChange={(value) => void patch(account, { role: value })}
                   options={[
                     { value: "admin", label: t("Administrateur") },
@@ -110,13 +112,13 @@ export function SettingsAccounts() {
               </div>
 
               <button
-                disabled={busy() || account.username === "phemios-local"}
+                disabled={busy() || locked(account) || account.username === "phemios-local"}
                 onClick={() => void patch(account, { enabled: !account.enabled })}
               >
                 {account.enabled ? t("Désactiver") : t("Activer")}
               </button>
               <button
-                disabled={busy() || account.username === "phemios-local"}
+                disabled={busy() || locked(account) || account.username === "phemios-local"}
                 onClick={() =>
                   void perform(() =>
                     requestAede(
@@ -131,7 +133,7 @@ export function SettingsAccounts() {
               >
                 {t("Révoquer les sessions")}{" "}
               </button>
-              <Show when={account.username !== "phemios-local"}>
+              <Show when={account.username !== "phemios-local" && !locked(account)}>
                 <details>
                   <summary>{t("Modifier ce compte")}</summary>
                   <form

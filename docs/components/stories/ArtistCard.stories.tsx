@@ -128,6 +128,12 @@ export const Discography: Story = {
       ),
     ).toBe(true);
     const card = canvasElement.querySelector(".artist-presentation")!;
+    const bounds = card.getBoundingClientRect();
+    const bottom = canvasElement.ownerDocument.elementFromPoint(
+      bounds.left + bounds.width / 2,
+      bounds.bottom - 4,
+    );
+    expect(bottom?.closest("a")?.getAttribute("href")).toBe("#/artist/fictional");
     const picture = canvasElement.querySelector(".artist-presentation-picture")!;
     expect(picture.getBoundingClientRect().height).toBeGreaterThan(
       card.getBoundingClientRect().height * 0.8,

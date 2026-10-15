@@ -71,9 +71,34 @@ fn publish(
     let mut retained = retained
         .lock()
         .map_err(|_| "Cache natif indisponible.".to_string())?;
-    let next = cache.save(next)?;
+    let next = if next["parentalEnabled"] == true {
+        phemios_core::cache::validate(&next)?;
+        next
+    } else {
+        cache.save(next)?
+    };
     *retained = Some(Arc::new(next.clone()));
     Ok(next)
+}
+
+/// Previously cached images are not an authority to expose a now-hidden reference.
+pub(crate) fn admit_artwork(
+    client: &Client,
+    snapshot: &Value,
+    reference: &str,
+) -> Result<(), String> {
+    client.admit_artwork_snapshot(snapshot)?;
+    if snapshot["parentalEnabled"] == true && !projection_contains(snapshot, reference) {
+        return Err("Cette image est masquée par le contrôle parental.".into());
+    }
+    Ok(())
+}
+fn projection_contains(snapshot: &Value, reference: &str) -> bool {
+    ["artists", "albums", "tracks"].iter().any(|kind| {
+        snapshot[*kind]
+            .as_array()
+            .is_some_and(|rows| rows.iter().any(|row| row["reference"] == reference))
+    })
 }
 
 #[cfg(test)]

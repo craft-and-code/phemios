@@ -29,11 +29,18 @@ impl Client {
     /// Oversized pages fail before retention; differing projection epochs allow three attempts.
     pub fn snapshot(&self) -> Result<Value, String> {
         for _ in 0..3 {
+            let policy = self.parental_status()?;
             let mut budget = SnapshotBudget {
                 remaining: crate::cache::MAX_CATALOG,
             };
             // Reserve the fixed wrapper first; page-array overhead is deliberately conservative.
             budget.reserve(&json!({"artists":[],"albums":[],"tracks":[],"labels":[],"scannedAt":u64::MAX,"server":self.server,"accountId":self.account["id"]}))?;
+            if let Some(status) = policy
+                .as_ref()
+                .filter(|status| status["policy"]["enabled"] == true)
+            {
+                budget.reserve(&json!({"parentalEnabled": true, "parentalRevision":status["revision"], "parentalPolicy":status["policy"]}))?;
+            }
             let artists = self.pages("/api/v1/presentation/artists", &mut budget)?;
             let albums = self.pages("/api/v1/presentation/albums", &mut budget)?;
             let mut tracks = self.pages("/api/v1/presentation/tracks", &mut budget)?;
@@ -73,9 +80,21 @@ impl Client {
                         continue;
                     }
                 }
-                return Ok(
-                    json!({"artists":artists.0,"albums":albums.0,"tracks":tracks.0,"labels":labels,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]}),
-                );
+                if self
+                    .parental_status()?
+                    .as_ref()
+                    .map(|v| (&v["revision"], &v["policy"]))
+                    != policy.as_ref().map(|v| (&v["revision"], &v["policy"]))
+                {
+                    continue;
+                }
+                let mut snapshot = json!({"artists":artists.0,"albums":albums.0,"tracks":tracks.0,"labels":labels,"scannedAt":artists.1,"server":self.server,"accountId":self.account["id"]});
+                if let Some(policy) = policy.filter(|policy| policy["policy"]["enabled"] == true) {
+                    snapshot["parentalEnabled"] = Value::Bool(true);
+                    snapshot["parentalRevision"] = policy["revision"].clone();
+                    snapshot["parentalPolicy"] = policy["policy"].clone();
+                }
+                return Ok(snapshot);
             }
         }
         Err("Le catalogue change pendant la synchronisation. Réessayez.".into())

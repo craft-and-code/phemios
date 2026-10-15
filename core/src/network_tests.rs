@@ -73,7 +73,9 @@ fn transient_artwork_admission_is_retried_before_declaring_a_cover_missing() {
         }
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -118,7 +120,9 @@ fn transient_annotation_read_retries_busy_admission() {
         }
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -174,7 +178,9 @@ fn busy_playlist_publication_is_never_replayed() {
         stream.write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -297,7 +303,9 @@ fn spectrum_exports_request_original_dimensions_and_preserve_response_bytes() {
         stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nContent-Type: image/png\r\nConnection: close\r\n\r\n\x89PNG\r\n\x1a\n").unwrap();
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -340,7 +348,9 @@ fn label_reads_and_private_missing_decisions_have_narrow_methods() {
 #[test]
 fn missing_cover_selectors_refuse_paths_urls_and_invalid_groups_before_network_access() {
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server: "http://127.0.0.1:1".into(),
         token: "0".repeat(64),
         account: json!({}),
@@ -405,7 +415,9 @@ fn idempotent_reads_retry_temporary_personal_store_contention() {
         count
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -486,7 +498,9 @@ fn snapshot_rejects_cumulative_artist_and_album_pages_before_caching() {
         }
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({"id":"fixture"}),
@@ -542,7 +556,9 @@ fn snapshot_preserves_complete_same_epoch_projections_and_raw_metadata() {
         }
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server: server.clone(),
         token: "fictional".into(),
         account: json!({"id":"fixture"}),
@@ -714,7 +730,9 @@ fn task_cancellation_transmits_no_json_null_in_place_of_an_absent_body() {
         body
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),
@@ -767,7 +785,9 @@ fn artist_logos_request_a_bounded_thumbnail_without_expanding_image_capabilities
         stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nContent-Type: image/png\r\nConnection: close\r\n\r\n\x89PNG\r\n\x1a\n").unwrap();
     });
     let client = Client {
+        artwork_parental: Arc::default(),
         agent: agent(),
+        playback_tls: None,
         server,
         token: "fictional".into(),
         account: json!({}),

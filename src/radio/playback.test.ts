@@ -281,3 +281,71 @@ it("prepares measurement inside the start gesture but never plays a canceled adm
     dispose();
   });
 });
+
+it("authorizes radio immediately before play and authorizes again when resuming", async () => {
+  await createRoot(async (dispose) => {
+    const events: string[] = [],
+      audio = media(),
+      authorize = vi.fn(async () => {
+        events.push("authorize");
+      });
+    vi.mocked(audio.play).mockImplementation(async () => {
+      events.push("play");
+    });
+    const player = createRadioPlayback(
+      async (uuid) => {
+        events.push("resolve");
+        return { stationuuid: uuid, url: "https://radio.example.org/live.mp3" };
+      },
+      async () => {},
+      () => audio,
+      undefined,
+      authorize,
+    );
+    try {
+      await player.start(station);
+      expect(events).toEqual(["resolve", "authorize", "play"]);
+      player.pause();
+      player.resume();
+      await vi.waitFor(() => expect(authorize).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(audio.play).toHaveBeenCalledTimes(2));
+      expect(authorize).toHaveBeenCalledWith({ kind: "radio" });
+    } finally {
+      dispose();
+    }
+  });
+});
+it("never plays after a refused or retired parental admission", async () => {
+  await createRoot(async (dispose) => {
+    const audio = media(),
+      authorize = vi.fn().mockRejectedValueOnce(Error("Radio blocked"));
+    const player = createRadioPlayback(
+      async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+      async () => {},
+      () => audio,
+      undefined,
+      authorize,
+    );
+    try {
+      await player.start(station);
+      expect(player.error()).toBe("Radio blocked");
+      expect(audio.play).not.toHaveBeenCalled();
+      let resolve!: () => void;
+      authorize.mockImplementationOnce(
+        () =>
+          new Promise<void>((done) => {
+            resolve = done;
+          }),
+      );
+      const pending = player.start(station);
+      await vi.waitFor(() => expect(authorize).toHaveBeenCalledTimes(2));
+      player.pause();
+      resolve();
+      await pending;
+      expect(audio.play).not.toHaveBeenCalled();
+      expect(player.status()).toBe("paused");
+    } finally {
+      dispose();
+    }
+  });
+});

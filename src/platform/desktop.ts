@@ -205,7 +205,12 @@ export const disconnectHqPlayer = () => nativeCall<void>("hqplayer_disconnect");
 
 /** Explicit episode download streams to Downloads/Phémios/Podcasts, without overwriting prior files. */
 export const downloadPodcastEpisode = (url: string, title: string) =>
-  nativeCall<string>("podcast_download", { url, title });
+  nativeCall<string>("podcast_download", {
+    url,
+    title,
+    source: requestSource,
+    expectedSession: nativeSessions[requestSource],
+  });
 
 /** Explicit public Wikipedia search, independent of library/account authority. */
 export const searchEncyclopedia = (language: import("../i18n").Language, query: string) =>

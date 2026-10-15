@@ -80,10 +80,7 @@ export function LyricsDownload(props: { reference: string }) {
         label={t("Télécharger les paroles · LRCLIB, sans clé API")}
         icon="lyrics-download"
         identity={identity()}
-        disabled={
-          identity().session?.account.role !== "admin" ||
-          !identity().session?.server.startsWith("http://")
-        }
+        disabled={identity().session?.account.role !== "admin"}
         busy={active()}
         completed={
           job()?.status === "completed" && (!job()?.result || job()?.result?.exit_code === 0)

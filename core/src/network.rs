@@ -1,10 +1,15 @@
 //! Bounded HTTP client for one explicit Aède authority; sessions stay in memory.
 use serde_json::{Value, json};
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 #[path = "network_errors.rs"]
 mod errors;
+#[path = "network_parental.rs"]
+mod parental;
 #[path = "network_snapshot.rs"]
 mod snapshot;
+#[path = "network_tls.rs"]
+mod tls;
 
 const JSON_LIMIT: u64 = 16 * 1024 * 1024;
 /// Trusted native session; never serialize or log this value.
@@ -14,6 +19,8 @@ pub struct Client {
     server: String,
     token: String,
     account: Value,
+    artwork_parental: Arc<Mutex<Option<(Instant, Value)>>>,
+    playback_tls: Option<Arc<rustls::ClientConfig>>,
 }
 /// Reject insecure remote login, URL credentials, redirects and embedded queries.
 pub fn server_address(value: &str) -> Result<String, String> {
@@ -89,6 +96,15 @@ impl Client {
     }
     /// Authenticate only against the selected authority. Passwords are not retained.
     pub fn login(server: &str, username: &str, password: &str) -> Result<Self, String> {
+        Self::authenticate(server, username, password, agent(), None)
+    }
+    fn authenticate(
+        server: &str,
+        username: &str,
+        password: &str,
+        agent: ureq::Agent,
+        playback_tls: Option<Arc<rustls::ClientConfig>>,
+    ) -> Result<Self, String> {
         let server = server_address(server)?;
         if username.trim().is_empty()
             || username.len() > 128
@@ -97,7 +113,6 @@ impl Client {
         {
             return Err("Identifiants invalides.".into());
         }
-        let agent = agent();
         let data = json!({"username":username,"password":password}).to_string();
         let response = agent
             .post(format!("{server}/api/auth/v1/session"))
@@ -119,11 +134,18 @@ impl Client {
             server,
             token,
             account,
+            artwork_parental: Arc::default(),
+            playback_tls,
         })
     }
     /// Compare native session identity without exposing its bearer credential.
     pub fn same_session(&self, other: &Self) -> bool {
         self.server == other.server && self.token == other.token
+    }
+    pub(crate) fn playback_connector(&self) -> Option<tungstenite::Connector> {
+        self.playback_tls
+            .as_ref()
+            .map(|tls| tungstenite::Connector::Rustls(tls.clone()))
     }
     /// Public account metadata excludes the bearer credential.
     pub fn account(&self) -> Value {
@@ -331,6 +353,17 @@ fn read_response(
     }
     call()
 }
+fn parental_account_path(path: &str) -> bool {
+    path.strip_prefix("/api/admin/v1/accounts/")
+        .and_then(|p| p.strip_suffix("/parental"))
+        .is_some_and(|name| {
+            !name.is_empty()
+                && name.len() <= 64
+                && name
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
+        })
+}
 fn allowed(method: &str, path: &str) -> bool {
     match method {
         "GET" => {
@@ -358,6 +391,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/v1/labels"
                     | "/api/v1/label"
                     | "/api/me/v1/missing"
+                    | "/api/me/v1/parental"
                     | "/api/me/v1/annotation"
                     | "/api/me/v1/annotations"
                     | "/api/me/v1/preferences"
@@ -376,15 +410,19 @@ fn allowed(method: &str, path: &str) -> bool {
                 || library_playlist_path(path)
                 || m3u_playback_path(path)
                 || account_path(path, false)
+                || parental_account_path(path)
         }
-        "PUT" => matches!(
-            path,
-            "/api/me/v1/annotation"
-                | "/api/me/v1/moods"
-                | "/api/me/v1/collection"
-                | "/api/auth/v1/password"
-                | "/api/me/v1/missing"
-        ),
+        "PUT" => {
+            parental_account_path(path)
+                || matches!(
+                    path,
+                    "/api/me/v1/annotation"
+                        | "/api/me/v1/moods"
+                        | "/api/me/v1/collection"
+                        | "/api/auth/v1/password"
+                        | "/api/me/v1/missing"
+                )
+        }
         "PATCH" => {
             path == "/api/me/v1/collection"
                 || path == "/api/me/v1/preferences"
@@ -401,6 +439,7 @@ fn allowed(method: &str, path: &str) -> bool {
             matches!(
                 path,
                 "/api/me/v1/achievements"
+                    | "/api/me/v1/parental/lease"
                     | "/api/me/v1/background-priority"
                     | "/api/admin/v1/mood-features"
                     | "/api/admin/v1/check"

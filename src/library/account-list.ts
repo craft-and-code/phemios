@@ -8,6 +8,7 @@ export interface Account {
   username: string;
   role: "admin" | "user" | "auditor";
   enabled: boolean;
+  parental_locked_by?: string;
 }
 export function parseAccounts(raw: unknown): Account[] {
   if (
@@ -21,23 +22,24 @@ export function parseAccounts(raw: unknown): Account[] {
         typeof row.username !== "string" ||
         !row.username ||
         !["admin", "user", "auditor"].includes(row.role) ||
-        typeof row.enabled !== "boolean",
+        typeof row.enabled !== "boolean" ||
+        (row.parental_locked_by !== undefined &&
+          (typeof row.parental_locked_by !== "string" ||
+            !row.parental_locked_by ||
+            row.parental_locked_by.length > 256)),
     ) ||
     new Set(raw.map((row) => row.id)).size !== raw.length
   )
     throw new Error(t("Liste des comptes Aède invalide."));
   return raw as Account[];
 }
-/** Read only the captured local administrator, retaining read errors inside the optional settings tab. */
+/** Read only the captured administrator, retaining read errors inside the optional settings tab. */
 export function createAccountList(
   session: () => AccountSession | undefined,
   source: () => SourceId,
 ) {
   const [rows, { refetch }] = createResource(
-    () =>
-      session()?.account.role === "admin" && session()?.server.startsWith("http://")
-        ? { session: session()!, source: source() }
-        : false,
+    () => (session()?.account.role === "admin" ? { session: session()!, source: source() } : false),
     async (key) => {
       try {
         return {

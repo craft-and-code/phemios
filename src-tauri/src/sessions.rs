@@ -84,6 +84,32 @@ pub(crate) fn scoped_dispatch<T>(
     }
     result
 }
+/// Keep bounded cache IO inside the captured process generation, including an unauthenticated view.
+pub(crate) fn with_generation<T>(
+    session: &Mutex<Option<Client>>,
+    generation: &AtomicU64,
+    expected: u64,
+    work: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    let _session = session.lock().map_err(|_| "Session native indisponible.")?;
+    if generation.load(Ordering::SeqCst) != expected {
+        return Err("Session remplacée ou déconnectée. Reconnectez-vous.".into());
+    }
+    work()
+}
+
+/// Refuse queued or late artwork replies even when the captured view had no authenticated client.
+pub(crate) fn generation_dispatch<T>(
+    session: &Mutex<Option<Client>>,
+    generation: &AtomicU64,
+    expected: u64,
+    work: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    with_generation(session, generation, expected, || Ok(()))?;
+    let result = work();
+    with_generation(session, generation, expected, || result)
+}
+
 /// Check live server permissions outside locks, then admit bounded private-file mutation atomically.
 pub(crate) fn private_write<T>(
     session: &Mutex<Option<Client>>,

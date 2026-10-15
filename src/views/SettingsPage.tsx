@@ -1,3 +1,4 @@
+import { SettingsParental } from "./SettingsParental";
 import { SettingsAbout } from "./SettingsAbout";
 import { SettingsAede } from "./SettingsAede";
 import { SettingsImports } from "./SettingsImports";
@@ -23,6 +24,22 @@ export function SettingsPage(props: {
 }) {
   const [tab, setTab] = createSignal(props.tab ?? "libraries"),
     library = useLibrary();
+  const tabs = [
+    { icon: "library", id: "libraries", label: t("Bibliothèques") },
+    { icon: "users", id: "accounts", label: t("Comptes") },
+    { icon: "lock", id: "parental", label: t("Contrôle parental") },
+    { icon: "globe", id: "services", label: t("Sources externes") },
+    { icon: "terminal", id: "aede", label: "Aède" },
+    { icon: "volume", id: "playback", label: t("Lecture") },
+    { icon: "tags", id: "tags", label: t("Tags") },
+    { icon: "alphabet", id: "language", label: t("Langue") },
+    { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
+    { icon: "menu", id: "navigation", label: t("Navigation") },
+    { icon: "keyboard", id: "shortcuts", label: t("Raccourcis") },
+    { icon: "download", id: "backup", label: t("Sauvegarde") },
+    { icon: "upload", id: "imports", label: t("Imports") },
+    { icon: "help", id: "about", label: t("À propos") },
+  ];
   return (
     <section class="page settings-page">
       <div
@@ -31,21 +48,7 @@ export function SettingsPage(props: {
         aria-orientation="horizontal"
         aria-label={t("Paramètres")}
         onKeyDown={(event) => {
-          const ids = [
-              "libraries",
-              "accounts",
-              "services",
-              "aede",
-              "playback",
-              "tags",
-              "language",
-              "appearance",
-              "navigation",
-              "shortcuts",
-              "backup",
-              "imports",
-              "about",
-            ],
+          const ids = tabs.map((item) => item.id),
             index = ids.indexOf(tab());
           const next = ["ArrowRight", "ArrowDown"].includes(event.key)
             ? (index + 1) % ids.length
@@ -62,23 +65,7 @@ export function SettingsPage(props: {
           event.currentTarget.querySelectorAll<HTMLButtonElement>("[role=tab]")[next]?.focus();
         }}
       >
-        <For
-          each={[
-            { icon: "library", id: "libraries", label: t("Bibliothèques") },
-            { icon: "users", id: "accounts", label: t("Comptes") },
-            { icon: "globe", id: "services", label: t("Sources externes") },
-            { icon: "terminal", id: "aede", label: "Aède" },
-            { icon: "volume", id: "playback", label: t("Lecture") },
-            { icon: "tags", id: "tags", label: t("Tags") },
-            { icon: "alphabet", id: "language", label: t("Langue") },
-            { icon: "palette", id: "appearance", label: t("Couleurs et thèmes") },
-            { icon: "menu", id: "navigation", label: t("Navigation") },
-            { icon: "keyboard", id: "shortcuts", label: t("Raccourcis") },
-            { icon: "download", id: "backup", label: t("Sauvegarde") },
-            { icon: "upload", id: "imports", label: t("Imports") },
-            { icon: "help", id: "about", label: t("À propos") },
-          ]}
-        >
+        <For each={tabs}>
           {(item) => (
             <button
               role="tab"
@@ -100,6 +87,9 @@ export function SettingsPage(props: {
         </Show>
         <Show when={tab() === "accounts"}>
           <SettingsAccounts />
+        </Show>
+        <Show when={tab() === "parental"}>
+          <SettingsParental />
         </Show>
         <Show when={tab() === "services"}>
           <SettingsServices />

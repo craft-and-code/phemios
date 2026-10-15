@@ -71,10 +71,12 @@ export function createPlayback(
     setAudio(next);
     announceSetting(audioPreferenceKey, raw);
   }
-  async function configureAudio() {
+  async function configureAudio(epoch: number) {
     if (device() === "@hqplayer") return;
     await playbackControl("crossfade", audio().crossfadeMs);
+    if (epoch !== generation) return;
     await playbackControl("repeat", audio().repeat);
+    if (epoch !== generation) return;
     await playbackControl("volume", state().volume);
   }
   let pendingCrossfade: { ms: number; lifetime: number; profile: object } | undefined,
@@ -161,7 +163,7 @@ export function createPlayback(
   async function startRows(rows: PlayableSelection[], index: number, epoch: number) {
     if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
     setPendingReference(rows[index]?.reference ?? rows[0]?.reference ?? "");
-    await configureAudio();
+    await configureAudio(epoch);
     if (epoch !== generation) return;
     if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
     await playbackStart(
@@ -385,6 +387,7 @@ export function createPlayback(
     timer = undefined;
   }
   async function refresh(epoch: number, rows?: PlayableSelection[]) {
+    if (epoch !== generation) return;
     try {
       const value = parsePlayback(await playbackState());
       if (epoch !== generation) return;
@@ -442,6 +445,7 @@ export function createPlayback(
     const epoch = generation;
     try {
       await playbackControl(command, value);
+      if (epoch !== generation) return;
       if (command === "repeat" && ["off", "one", "all"].includes(String(value)))
         saveAudio({ ...audio(), repeat: value as AudioPreferences["repeat"] });
       await refresh(epoch);
@@ -654,6 +658,62 @@ export function createPlayback(
       }
     }
   }
+  let revocation: { epoch: number; pending: Promise<boolean> } | undefined;
+  /** Revoke audio admission immediately, including an unfinished start. Native Clear also cancels pending HQPlayer activation. */
+  function revoke(): Promise<boolean> {
+    if (revocation?.epoch === generation) return revocation.pending;
+    addition++;
+    lifetime++;
+    progress.reset();
+    cancelDiscovery();
+    cancel();
+    const epoch = generation;
+    pendingVolume = undefined;
+    pendingCrossfade = undefined;
+    setCrossfade(audio().crossfadeMs);
+    batch(() => {
+      setAppending(false);
+      setBusy(true);
+      setClearing(true);
+      setError("");
+      setSelection([]);
+      setRetainedOrder([]);
+      setPendingReference("");
+      setPendingSource(undefined);
+      setState({ ...idlePlayback, volume: state().volume });
+      setTarget("");
+    });
+    const pending = clearRevoked(epoch);
+    revocation = { epoch, pending };
+    void pending.finally(() => {
+      if (revocation?.pending === pending) revocation = undefined;
+    });
+    return pending;
+  }
+  async function clearRevoked(epoch: number) {
+    try {
+      // Unlike an ordinary queue edit, revocation must reach native audio even while busy or empty.
+      const value = parsePlayback(await playbackControl("clear", null));
+      if (epoch !== generation) return false;
+      if (value.status !== "idle" || value.total || value.queue.length || value.reference)
+        throw new Error(t("File de lecture invalide."));
+      return true;
+    } catch (failure) {
+      if (epoch !== generation) return false;
+      setError(message(failure));
+      try {
+        await playbackControl("stop", null);
+      } catch {
+        // Keep the first failure visible; metadata stays revoked regardless of native failure.
+      }
+      return false;
+    } finally {
+      if (epoch === generation) {
+        setBusy(false);
+        setClearing(false);
+      }
+    }
+  }
   function reset() {
     setClearing(false);
     addition++;
@@ -761,6 +821,7 @@ export function createPlayback(
     canStart,
     clearing,
     clearQueue,
+    revoke,
     removeOccurrence,
     appending,
     appendSelection,

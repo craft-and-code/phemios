@@ -435,3 +435,19 @@ main:has(> .artist-featured-library) > :not(.library-page) {
 .artist-album-preview:focus-within .artwork {
   border-color: var(--accent);
 }
+
+/* Empty card space navigates without covering independent album and playback controls. */
+.artist-presentation-open {
+  position: absolute;
+  inset: 0;
+}
+.artist-presentation-identity,
+.artist-presentation-albums {
+  pointer-events: none;
+}
+.artist-presentation-identity a,
+.artist-presentation-identity button,
+.artist-presentation-albums a,
+.artist-presentation-albums button {
+  pointer-events: auto;
+}

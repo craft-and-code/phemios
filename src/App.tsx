@@ -1,3 +1,6 @@
+import { parentalRouteAllowed } from "./library/parental-route";
+import { EmptyState } from "./components/EmptyState";
+import { ParentalNotice } from "./components/ParentalNotice";
 import { RecentAlbumsFilter } from "./components/RecentAlbumsFilter";
 import { ArtistViewActions } from "./components/ArtistViewActions";
 import { CatalogActions } from "./components/CatalogActions";
@@ -69,7 +72,13 @@ export function App() {
   const shortcuts = createShortcuts();
   const [recentNow, setRecentNow] = createSignal(Math.floor(Date.now() / 1000));
   const visibleMenus = createMemo(() =>
-    visibleMenu(menu.value()).map((id) => ({
+    visibleMenu(
+      menu.value(),
+      new Set([
+        ...(library.parental.radioAllowed() ? [] : ["radio" as const]),
+        ...(library.parental.podcastsAllowed() ? [] : ["podcasts" as const]),
+      ]),
+    ).map((id) => ({
       ...menuItem(id),
       label: menuLabel(id, menu.value()),
     })),
@@ -129,6 +138,10 @@ export function App() {
       radio: !!library.radio.station(),
     }),
   );
+  const pageRoute = createMemo(() => {
+    library.parental.viewScope();
+    return { ...current() };
+  });
   const selectedArtist = createMemo(() => {
     const value = current();
     return value.kind === "artist"
@@ -396,6 +409,7 @@ export function App() {
         </aside>
       </Show>
       <main id="content">
+        <ParentalNotice />
         <Feedback message={externalError()} error onClose={() => setExternalError("")} />
         <Feedback message={browsing.error()} error />
         <Show when={library.error()}>
@@ -569,7 +583,7 @@ export function App() {
             </For>
           </div>
         </Show>
-        <Show when={current()} keyed>
+        <Show when={pageRoute()} keyed>
           {(route) => (
             <ErrorBoundary
               fallback={(error) => (
@@ -581,186 +595,195 @@ export function App() {
                 </div>
               )}
             >
-              <Show when={route.kind === "section" && section() === "labels"}>
-                <LabelsPage query={filters().query} />
-              </Show>
-              <Show when={route.kind === "section" && section() !== "labels"}>
-                <Show
-                  when={["artists", "albums", "compilations", "countries", "genres"].includes(
-                    section(),
-                  )}
-                  fallback={
-                    <Show
-                      when={section() === "tracks"}
-                      fallback={
-                        <Show
-                          when={section() === "settings"}
-                          fallback={
-                            <Show
-                              when={section() === "tags"}
-                              fallback={
-                                <WorkspacePage
-                                  compact={compact()}
-                                  section={section()}
+              <Show
+                when={parentalRouteAllowed(route, library.parental.available)}
+                fallback={
+                  <div class="page">
+                    <EmptyState icon="lock">{t("Accès indisponible pour ce compte.")}</EmptyState>
+                  </div>
+                }
+              >
+                <Show when={route.kind === "section" && section() === "labels"}>
+                  <LabelsPage query={filters().query} />
+                </Show>
+                <Show when={route.kind === "section" && section() !== "labels"}>
+                  <Show
+                    when={["artists", "albums", "compilations", "countries", "genres"].includes(
+                      section(),
+                    )}
+                    fallback={
+                      <Show
+                        when={section() === "tracks"}
+                        fallback={
+                          <Show
+                            when={section() === "settings"}
+                            fallback={
+                              <Show
+                                when={section() === "tags"}
+                                fallback={
+                                  <WorkspacePage
+                                    compact={compact()}
+                                    section={section()}
+                                    query={filters().query}
+                                    onStatisticsBrowse={(selection) =>
+                                      scopedFilters.select(selection.section, selection.filters)
+                                    }
+                                  />
+                                }
+                              >
+                                <TagsPage
                                   query={filters().query}
-                                  onStatisticsBrowse={(selection) =>
-                                    scopedFilters.select(selection.section, selection.filters)
-                                  }
+                                  selected={selectedTag()}
+                                  onSelect={(value) => {
+                                    setSelectedTag(value);
+                                    setTagOffset(0);
+                                  }}
+                                  offset={tagOffset()}
+                                  setOffset={setTagOffset}
                                 />
-                              }
-                            >
-                              <TagsPage
-                                query={filters().query}
-                                selected={selectedTag()}
-                                onSelect={(value) => {
-                                  setSelectedTag(value);
-                                  setTagOffset(0);
-                                }}
-                                offset={tagOffset()}
-                                setOffset={setTagOffset}
-                              />
-                            </Show>
-                          }
-                        >
-                          <SettingsPage
-                            menu={menu}
-                            tab={
-                              route.kind === "section" ? (route.tab ?? "libraries") : "libraries"
+                              </Show>
                             }
-                          />
-                        </Show>
-                      }
-                    >
-                      <TracksPage
-                        query={filters().query}
-                        size={browsing.value().trackPageSize}
-                        setSize={(size) => browsing.update({ trackPageSize: size })}
-                        preferenceError={browsing.error()}
-                        offset={trackPaging.offset()}
-                        setOffset={trackPaging.setOffset}
-                      />
-                    </Show>
-                  }
-                >
-                  <LibraryPage
-                    artistView={browsing.value().artistView}
-                    now={filters().recentOnly ? recentNow() : 0}
-                    compact={compact()}
-                    coverSize={
-                      browsing.value().coverSizes[
-                        section() as "albums" | "compilations" | "genres"
-                      ] ?? browsing.value().coverSize
+                          >
+                            <SettingsPage
+                              menu={menu}
+                              tab={
+                                route.kind === "section" ? (route.tab ?? "libraries") : "libraries"
+                              }
+                            />
+                          </Show>
+                        }
+                      >
+                        <TracksPage
+                          query={filters().query}
+                          size={browsing.value().trackPageSize}
+                          setSize={(size) => browsing.update({ trackPageSize: size })}
+                          preferenceError={browsing.error()}
+                          offset={trackPaging.offset()}
+                          setOffset={trackPaging.setOffset}
+                        />
+                      </Show>
                     }
-                    section={section()}
-                    filters={filters()}
-                    setFilters={setFilters}
-                    reverse={reverse()}
-                    coverFlow={coverFlow()}
-                    coverPosition={coverPosition}
+                  >
+                    <LibraryPage
+                      artistView={browsing.value().artistView}
+                      now={filters().recentOnly ? recentNow() : 0}
+                      compact={compact()}
+                      coverSize={
+                        browsing.value().coverSizes[
+                          section() as "albums" | "compilations" | "genres"
+                        ] ?? browsing.value().coverSize
+                      }
+                      section={section()}
+                      filters={filters()}
+                      setFilters={setFilters}
+                      reverse={reverse()}
+                      coverFlow={coverFlow()}
+                      coverPosition={coverPosition}
+                    />
+                  </Show>
+                </Show>
+                <Show when={route.kind === "artist"}>
+                  <Show
+                    when={selectedArtist()}
+                    fallback={<p class="empty">{t("Artiste introuvable.")}</p>}
+                  >
+                    {(artist) => (
+                      <ArtistPage
+                        artist={artist()}
+                        compact={compact() && section() !== "artists"}
+                        onGenres={(genres) => {
+                          scopedFilters.select("genres", {
+                            mode: "none",
+                            query: "",
+                            countries: [],
+                            genre: undefined,
+                            genres,
+                          });
+                          navigation.navigate("#/genres");
+                        }}
+                        onCountry={(country) => {
+                          scopedFilters.select("countries", {
+                            mode: "none",
+                            query: "",
+                            genre: undefined,
+                            genres: [],
+                            countries: [country],
+                          });
+                          navigation.navigate("#/countries");
+                        }}
+                      />
+                    )}
+                  </Show>
+                </Show>
+                <Show when={route.kind === "album"}>
+                  <Show
+                    when={selectedAlbum()}
+                    fallback={<p class="empty">{t("Album introuvable.")}</p>}
+                  >
+                    {(album) => (
+                      <AlbumPage
+                        album={album()}
+                        onGenres={(genres) => {
+                          scopedFilters.select("genres", {
+                            mode: "none",
+                            query: "",
+                            countries: [],
+                            genre: undefined,
+                            genres,
+                          });
+                          navigation.navigate("#/genres");
+                        }}
+                        onCountry={(country) => {
+                          scopedFilters.select("countries", {
+                            mode: "none",
+                            query: "",
+                            genre: undefined,
+                            genres: [],
+                            countries: [country],
+                          });
+                          navigation.navigate("#/countries");
+                        }}
+                        onYear={(year) => {
+                          scopedFilters.select("albums", selectAlbumYear(filters(), year));
+                          navigation.navigate("#/albums");
+                        }}
+                      />
+                    )}
+                  </Show>
+                </Show>
+                <Show when={route.kind === "label"}>
+                  <LabelPage
+                    reference={(route as { reference: string }).reference}
+                    onTitle={setLabelTitle}
+                    compact={compact()}
+                    onCompact={() => setCompact(!compact())}
                   />
                 </Show>
-              </Show>
-              <Show when={route.kind === "artist"}>
-                <Show
-                  when={selectedArtist()}
-                  fallback={<p class="empty">{t("Artiste introuvable.")}</p>}
-                >
-                  {(artist) => (
-                    <ArtistPage
-                      artist={artist()}
-                      compact={compact() && section() !== "artists"}
-                      onGenres={(genres) => {
-                        scopedFilters.select("genres", {
-                          mode: "none",
-                          query: "",
-                          countries: [],
-                          genre: undefined,
-                          genres,
-                        });
-                        navigation.navigate("#/genres");
-                      }}
-                      onCountry={(country) => {
-                        scopedFilters.select("countries", {
-                          mode: "none",
-                          query: "",
-                          genre: undefined,
-                          genres: [],
-                          countries: [country],
-                        });
-                        navigation.navigate("#/countries");
-                      }}
-                    />
-                  )}
+                <Show when={route.kind === "track"}>
+                  <TrackPage
+                    reference={(route as { reference: string }).reference}
+                    onBrowse={(target) => {
+                      scopedFilters.select(target.section, {
+                        mode: target.year === undefined ? "none" : "years",
+                        ...(target.year === undefined
+                          ? {}
+                          : { years: [target.year, target.year] as const }),
+                        query: target.section === "genres" ? "" : target.query,
+                        countries: [],
+                        genre: undefined,
+                        genres: target.section === "genres" ? [target.query] : [],
+                        includeUnknownYear: target.year === undefined,
+                      });
+                      navigation.navigate(`#/${target.section}`);
+                    }}
+                  />
                 </Show>
-              </Show>
-              <Show when={route.kind === "album"}>
-                <Show
-                  when={selectedAlbum()}
-                  fallback={<p class="empty">{t("Album introuvable.")}</p>}
-                >
-                  {(album) => (
-                    <AlbumPage
-                      album={album()}
-                      onGenres={(genres) => {
-                        scopedFilters.select("genres", {
-                          mode: "none",
-                          query: "",
-                          countries: [],
-                          genre: undefined,
-                          genres,
-                        });
-                        navigation.navigate("#/genres");
-                      }}
-                      onCountry={(country) => {
-                        scopedFilters.select("countries", {
-                          mode: "none",
-                          query: "",
-                          genre: undefined,
-                          genres: [],
-                          countries: [country],
-                        });
-                        navigation.navigate("#/countries");
-                      }}
-                      onYear={(year) => {
-                        scopedFilters.select("albums", selectAlbumYear(filters(), year));
-                        navigation.navigate("#/albums");
-                      }}
-                    />
-                  )}
+                <Show when={route.kind === "not-found"}>
+                  <div class="empty">
+                    <h1>{t("Page introuvable")}</h1>
+                    <a href="#/artists">{t("Revenir aux artistes")}</a>
+                  </div>
                 </Show>
-              </Show>
-              <Show when={route.kind === "label"}>
-                <LabelPage
-                  reference={(route as { reference: string }).reference}
-                  onTitle={setLabelTitle}
-                  compact={compact()}
-                  onCompact={() => setCompact(!compact())}
-                />
-              </Show>
-              <Show when={route.kind === "track"}>
-                <TrackPage
-                  reference={(route as { reference: string }).reference}
-                  onBrowse={(target) => {
-                    scopedFilters.select(target.section, {
-                      mode: target.year === undefined ? "none" : "years",
-                      ...(target.year === undefined
-                        ? {}
-                        : { years: [target.year, target.year] as const }),
-                      query: target.section === "genres" ? "" : target.query,
-                      countries: [],
-                      genre: undefined,
-                      genres: target.section === "genres" ? [target.query] : [],
-                      includeUnknownYear: target.year === undefined,
-                    });
-                    navigation.navigate(`#/${target.section}`);
-                  }}
-                />
-              </Show>
-              <Show when={route.kind === "not-found"}>
-                <div class="empty">
-                  <h1>{t("Page introuvable")}</h1>
-                  <a href="#/artists">{t("Revenir aux artistes")}</a>
-                </div>
               </Show>
             </ErrorBoundary>
           )}

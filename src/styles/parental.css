@@ -1,0 +1,184 @@
+/* One editor is scoped to a selected account; bounded lists never stretch the settings panel. */
+.settings-parental .section-heading h2 {
+  margin: 0 auto 0 0;
+}
+.settings-parental .parental-account {
+  max-width: 380px;
+}
+.settings-card .parental-policy {
+  max-width: none;
+  gap: 0;
+}
+.parental-policy > h3,
+.parental-policy section > h3 {
+  margin: 24px 0 12px;
+}
+.settings-card .parental-policy label {
+  margin-block: 8px;
+}
+.parental-policy .parental-clock {
+  display: flex;
+  align-items: end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.parental-clock > label:first-child {
+  flex: 1;
+  max-width: 380px;
+  min-width: 160px;
+}
+.parental-limit {
+  min-width: 120px;
+}
+.parental-limit > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.parental-limit input {
+  width: 98px;
+}
+.parental-limit small {
+  color: var(--muted);
+}
+.parental-schedule > p {
+  margin: 4px 0 12px;
+}
+.parental-day {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 150px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.parental-day > strong {
+  font-size: 13px;
+}
+.parental-windows {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.parental-window {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.parental-window input {
+  width: 108px;
+  min-width: 0;
+}
+.parental-window > span {
+  color: var(--muted);
+}
+.parental-window button.icon-button {
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+}
+.parental-windows > button.icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+}
+.parental-midnight {
+  width: 108px;
+  min-height: var(--form-control-height);
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--background);
+  border: 1px solid var(--border);
+}
+.parental-day .parental-limit {
+  font-size: 11px;
+}
+.parental-day .parental-limit input {
+  width: 100%;
+}
+.parental-artist-picker > input {
+  width: 100%;
+  margin-block: 12px;
+}
+.parental-picker-results {
+  max-height: 290px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+.parental-blocked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.parental-blocked .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 6px 4px 12px;
+  font-size: 12px;
+}
+.parental-blocked .tag > button {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  padding: 4px;
+}
+.parental-feed-input {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.parental-feed-input > input {
+  flex: 1;
+  min-width: 0;
+}
+.parental-feeds {
+  list-style: none;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.parental-feeds > li {
+  display: flex;
+  gap: var(--control-gap);
+  align-items: center;
+  padding: 5px 0;
+}
+.parental-feeds li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 12px;
+}
+.parental-policy .parental-save {
+  margin-bottom: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 850px) {
+  .parental-day {
+    grid-template-columns: 85px minmax(0, 1fr);
+  }
+  .parental-day .parental-limit {
+    grid-column: 2;
+    margin: 0;
+  }
+}
+@media (max-width: 560px) {
+  .parental-day {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .parental-day .parental-limit {
+    grid-column: 1;
+  }
+  .parental-window input,
+  .parental-midnight {
+    width: 96px;
+  }
+}

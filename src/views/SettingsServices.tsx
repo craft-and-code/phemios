@@ -39,7 +39,7 @@ export function SettingsServices() {
   const targets = createMemo(() =>
     (["local", "server"] as const).filter((source) => {
       const session = source === "local" ? library.localSession() : library.serverSession();
-      return session?.account.role === "admin" && session.server.startsWith("http://");
+      return session?.account.role === "admin";
     }),
   );
   async function save(remove?: "fanart" | "acoustid") {
@@ -272,17 +272,11 @@ export function SettingsServices() {
         when={
           !targets().length ||
           [library.localSession(), library.serverSession()].some(
-            (session) =>
-              session &&
-              (session.account.role !== "admin" || session.server.startsWith("https://")),
+            (session) => session && session.account.role !== "admin",
           )
         }
       >
-        <p class="notice">
-          {t(
-            "Un administrateur Aède HTTP local est nécessaire pour lancer une tâche. Sur un serveur HTTPS, utilisez la commande fetch du serveur.",
-          )}
-        </p>
+        <p class="notice">{t("Connectez un compte administrateur Aède pour lancer une tâche.")}</p>
       </Show>
       <Feedback error message={library.tasks.error()} />
       <Show when={recentJobs().length}>

@@ -5,34 +5,63 @@ use std::hash::{Hash, Hasher};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 pub(crate) const MAX_CATALOG: u64 = 100 * 1024 * 1024;
 const MAX_IMAGE: u64 = 32 * 1024 * 1024;
 /// Application-owned paths. No path supplied by the webview is accepted.
 #[derive(Clone)]
 pub struct Cache {
     root: PathBuf,
+    // Catalog migration is a read/write transaction; image IO never takes this lock.
+    catalog_io: Arc<Mutex<()>>,
 }
 impl Cache {
     /// Construct an isolated cache location without modifying existing files.
     pub fn new(root: PathBuf) -> Self {
-        Self { root }
+        Self {
+            root,
+            catalog_io: Arc::default(),
+        }
     }
     /// A missing cache is distinct from an unreadable or incompatible cache.
+    /// Old public caches lose private policy metadata atomically; supervised projections remain process-only.
     pub fn load(&self) -> Result<Option<Value>, String> {
+        let _transaction = self
+            .catalog_io
+            .lock()
+            .map_err(|_| "Cache du catalogue indisponible.")?;
         let path = self.root.join("catalog.json");
         let Some(bytes) = read(&path, MAX_CATALOG)? else {
             return Ok(None);
         };
-        let snapshot: Value = serde_json::from_slice(&bytes).map_err(|_| {
+        let mut snapshot: Value = serde_json::from_slice(&bytes).map_err(|_| {
             "Le cache du catalogue est illisible. Relancez explicitement une synchronisation."
                 .to_string()
         })?;
         validate(&snapshot)?;
+        if snapshot["parentalEnabled"] == true {
+            return Err(
+                "Un catalogue supervisé ne peut pas être lu depuis le cache public.".into(),
+            );
+        }
+        if strip_parental_metadata(&mut snapshot) {
+            let bytes = serde_json::to_vec(&snapshot)
+                .map_err(|_| "Catalogue impossible à enregistrer.".to_string())?;
+            write_atomic(&path, &bytes)?;
+        }
         Ok(Some(snapshot))
     }
     /// Atomically publish a complete library snapshot after explicit synchronization.
     pub fn save(&self, mut snapshot: Value) -> Result<Value, String> {
+        let _transaction = self
+            .catalog_io
+            .lock()
+            .map_err(|_| "Cache du catalogue indisponible.")?;
         validate(&snapshot)?;
+        if snapshot["parentalEnabled"] == true {
+            return Err("Un catalogue supervisé ne peut pas remplacer le cache public.".into());
+        }
+        strip_parental_metadata(&mut snapshot);
         snapshot["cachedAt"] = Value::from(
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -55,9 +84,19 @@ impl Cache {
         reference: &str,
         kind: &str,
     ) -> Result<Option<Vec<u8>>, String> {
-        read(&self.image_path(snapshot, reference, kind), MAX_IMAGE)
+        let shared = self.image_path(snapshot, reference, kind, false);
+        if let Some(bytes) = read(&shared, MAX_IMAGE)? {
+            return Ok(Some(bytes));
+        }
+        // Reuse the current account's old cache without treating its presence as access authority.
+        let legacy = read(&self.image_path(snapshot, reference, kind, true), MAX_IMAGE)?;
+        if let Some(bytes) = &legacy {
+            write_atomic(&shared, bytes)?;
+        }
+        Ok(legacy)
     }
-    /// Keep validated server art in an catalog-version/account/authority-specific namespace.
+    /// Share immutable catalogue art across accounts of the same authority and catalogue version.
+    /// The native caller must separately admit the reference through the active account projection.
     pub fn save_image(
         &self,
         snapshot: &Value,
@@ -68,13 +107,17 @@ impl Cache {
         if bytes.len() as u64 > MAX_IMAGE {
             return Err("Image trop grande pour le cache.".into());
         }
-        write_atomic(&self.image_path(snapshot, reference, kind), bytes)
+        write_atomic(&self.image_path(snapshot, reference, kind, false), bytes)
     }
-    fn image_path(&self, snapshot: &Value, reference: &str, kind: &str) -> PathBuf {
+    fn image_path(&self, snapshot: &Value, reference: &str, kind: &str, legacy: bool) -> PathBuf {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
         for value in [
             snapshot["server"].to_string(),
-            snapshot["accountId"].to_string(),
+            if legacy {
+                snapshot["accountId"].to_string()
+            } else {
+                "shared-artwork-v2".into()
+            },
             snapshot["scannedAt"].to_string(),
             reference.to_owned(),
             kind.to_owned(),
@@ -86,7 +129,17 @@ impl Cache {
             .join(format!("{:016x}.image", hash.finish()))
     }
 }
-fn validate(snapshot: &Value) -> Result<(), String> {
+fn strip_parental_metadata(snapshot: &mut Value) -> bool {
+    let mut removed = false;
+    if let Some(fields) = snapshot.as_object_mut() {
+        for key in ["parentalPolicy", "parentalEnabled", "parentalRevision"] {
+            removed |= fields.remove(key).is_some();
+        }
+    }
+    removed
+}
+/// Validate a bounded projection before process-only retention or public-cache publication.
+pub fn validate(snapshot: &Value) -> Result<(), String> {
     if ["tracks", "labels"]
         .iter()
         .any(|key| snapshot.get(key).is_some_and(|value| !value.is_array()))

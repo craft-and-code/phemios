@@ -18,6 +18,8 @@ export const Interactive: Story = {
   play: async ({ canvasElement }) => {
     const buttons = within(canvasElement).getAllByRole("button");
     expect(buttons).toHaveLength(2);
+    expect(buttons[0]).toHaveAccessibleName("Ligne éditoriale");
+    expect(buttons[1]).toHaveAccessibleName("Cartes d’artistes");
     expect(within(canvasElement).queryByRole("button", { name: "Portrait immersif" })).toBeNull();
     for (const button of buttons) {
       expect(button).toBeEnabled();

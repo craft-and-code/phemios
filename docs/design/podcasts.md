@@ -33,3 +33,7 @@ The private podcast document retains a separate collection of at most 4096 marke
 The finite episode lifetime and an individual `play()` attempt have separate tickets. Pause invalidates its pending start/resume result before calling the media adapter and keeps the same media element, source and position. An older rejected promise cannot turn a newer paused or successfully resumed episode into an error. The current attempt's genuine playback failure still releases the media and exposes the existing error. Stop, replacement and application disposal invalidate both lifetimes.
 
 Native text limits count UTF-16 code units to match the WebView validator. Parseable feed dates normalize to `Date.toISOString()` before persistence; native admission validates that canonical calendar/time representation, signed six-digit years and JavaScript Date bounds. Invalid payloads and malformed retained documents are refused without replacing existing bytes. See the [account-isolation report](../coding/account-isolation.md) for session, filesystem and revocation limits.
+
+## Supervised account admission
+
+An enabled parental policy can hide subscription RSS identities and restrict episode listening by schedule or budget. Start/resume checks the captured owner and original feed, then holds a short listening lease; hidden records remain preserved privately. Standalone episode exports are unavailable to supervised accounts in UI and native admission. Already exported files remain outside this application boundary. See [parental controls](parental-controls.md).

@@ -9,6 +9,8 @@ use std::{
 };
 #[path = "local_mounts.rs"]
 mod mounts;
+#[path = "local_tls.rs"]
+mod tls;
 /// App-owned local engine. Keeping its stdin open leases the server's lifetime.
 pub struct Engine {
     root: PathBuf,
@@ -16,6 +18,7 @@ pub struct Engine {
     child: Option<Child>,
     lease: Option<ChildStdin>,
     address: Option<String>,
+    certificate: Option<Vec<u8>>,
 }
 impl Engine {
     /// Construct a manager for a fixed bundled executable and isolated app data.
@@ -28,6 +31,7 @@ impl Engine {
             child: None,
             lease: None,
             address: None,
+            certificate: None,
         }
     }
     fn file(&self) -> PathBuf {
@@ -146,13 +150,17 @@ impl Engine {
             .as_mut()
             .is_some_and(|child| child.try_wait().ok() == Some(None))
         {
-            return crate::network::Client::login(
+            return crate::network::Client::login_pinned(
                 self.address.as_deref().ok_or("Adresse locale absente.")?,
                 "phemios-local",
                 password,
+                self.certificate
+                    .as_deref()
+                    .ok_or("Identité TLS locale absente.")?,
             );
         }
         self.stop_process();
+        let identity = tls::Identity::generate()?;
         let mut command = self.command();
         command
             .args(["serve", "--port=0"])
@@ -166,12 +174,8 @@ impl Engine {
             .spawn()
             .map_err(|_| "Le moteur Aède embarqué ne peut pas démarrer.")?;
         let mut stdin = child.stdin.take().ok_or("Entrée du moteur indisponible.")?;
-        writeln!(
-            stdin,
-            "{}",
-            json!({"username":"phemios-local","password":password})
-        )
-        .map_err(|_| "Initialisation du moteur impossible.")?;
+        writeln!(stdin, "{}", identity.bootstrap("phemios-local", password))
+            .map_err(|_| "Initialisation du moteur impossible.")?;
         let stdout = child
             .stdout
             .take()
@@ -191,12 +195,7 @@ impl Engine {
             .ok()
             .and_then(Result::ok)
             .and_then(|line| serde_json::from_str::<Value>(&line).ok());
-        let address = ready
-            .as_ref()
-            .filter(|v| v["desktopProtocol"] == 1)
-            .and_then(|v| v["address"].as_str())
-            .filter(|s| s.starts_with("http://127.0.0.1:"))
-            .map(str::to_owned);
+        let address = ready.as_ref().and_then(tls::address);
         let Some(address) = address else {
             drop(stdin);
             let _ = child.kill();
@@ -204,9 +203,15 @@ impl Engine {
             return Err("Aède n’a pas confirmé son démarrage local.".into());
         };
         self.address = Some(address.clone());
+        self.certificate = Some(identity.certificate_der.clone());
         self.child = Some(child);
         self.lease = Some(stdin);
-        crate::network::Client::login(&address, "phemios-local", password)
+        crate::network::Client::login_pinned(
+            &address,
+            "phemios-local",
+            password,
+            &identity.certificate_der,
+        )
     }
     fn command(&self) -> Command {
         let mut command = Command::new(&self.executable);
@@ -226,6 +231,7 @@ impl Engine {
     fn stop_process(&mut self) {
         self.lease.take();
         self.address.take();
+        self.certificate.take();
         if let Some(mut child) = self.child.take() {
             std::thread::spawn(move || {
                 let _ = child.wait();

@@ -1,3 +1,4 @@
+import type { ExternalParentalMedia } from "../library/parental-access";
 import { browserRadioMedia } from "./browser-media";
 export { browserRadioMedia } from "./browser-media";
 import { t } from "../i18n";
@@ -20,6 +21,7 @@ export function createRadioPlayback(
   beforePlay: () => Promise<void>,
   createMedia = browserRadioMedia,
   initialVolume?: () => number,
+  authorize?: (media: ExternalParentalMedia) => Promise<void>,
 ) {
   const [station, setStation] = createSignal<Station>(),
     [status, setStatus] = createSignal<"idle" | "connecting" | "playing" | "paused" | "error">(
@@ -109,6 +111,8 @@ export function createRadioPlayback(
       );
       audio.volume(volume());
       audio.source(url);
+      if (authorize) await authorize({ kind: "radio" });
+      if (held !== epoch || !alive) return;
       await audio.play();
     } catch (failure) {
       if (held !== epoch) return;

@@ -1,3 +1,4 @@
+import type { ExternalParentalMedia } from "../library/parental-access";
 import { createSignal, onCleanup } from "solid-js";
 import { episodeListened } from "./listened";
 import { t } from "../i18n";
@@ -68,6 +69,7 @@ export function createPodcastPlayback(
   completed: (feed: string, id: string) => void = () => {},
   initialVolume?: () => number,
   captureOwner: () => () => boolean = () => () => true,
+  authorize?: (media: ExternalParentalMedia) => Promise<void>,
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -82,13 +84,15 @@ export function createPodcastPlayback(
     epoch = 0,
     playAttempt = 0,
     audible = 0.5,
-    stall: ReturnType<typeof setTimeout> | undefined;
+    stall: ReturnType<typeof setTimeout> | undefined,
+    retainedOwner: (() => boolean) | undefined;
   function release() {
     epoch++;
     playAttempt++;
     clearTimeout(stall);
     media?.release();
     media = undefined;
+    retainedOwner = undefined;
   }
   function stop() {
     release();
@@ -130,6 +134,7 @@ export function createPodcastPlayback(
       if (epoch !== held || !ownerCurrent()) return;
       const audio = createMedia();
       media = audio;
+      retainedOwner = ownerCurrent;
       let marked = false;
       function markListened() {
         if (marked || epoch !== held || !ownerCurrent() || !audio.played) return;
@@ -160,10 +165,13 @@ export function createPodcastPlayback(
       audio.volume(volume());
       audio.source(url);
       watch(held);
+      if (authorize) await authorize({ kind: "podcast", feed: feed.url });
+      if (epoch !== held || attempt !== playAttempt || !ownerCurrent()) return;
       await audio.play();
     } catch (e) {
       if (epoch !== held || attempt !== playAttempt) return;
       fail();
+      if (authorize && e instanceof Error) setError(e.message);
       if (e instanceof Error && e.name === "NotAllowedError")
         setError(t("Relancez explicitement la lecture de cet épisode."));
     }
@@ -183,13 +191,24 @@ export function createPodcastPlayback(
       return;
     }
     const held = epoch,
-      attempt = ++playAttempt;
+      attempt = ++playAttempt,
+      ownerCurrent = retainedOwner,
+      selected = podcast();
+    if (!ownerCurrent?.() || !selected) {
+      stop();
+      return;
+    }
     setStatus("connecting");
     watch(held);
     try {
+      if (authorize) await authorize({ kind: "podcast", feed: selected.url });
+      if (epoch !== held || attempt !== playAttempt || !ownerCurrent() || !media) return;
       await media.play();
-    } catch {
-      if (held === epoch && attempt === playAttempt) fail();
+    } catch (failure) {
+      if (held === epoch && attempt === playAttempt) {
+        fail();
+        if (failure instanceof Error) setError(failure.message);
+      }
     }
   }
   function changeVolume(n: number) {

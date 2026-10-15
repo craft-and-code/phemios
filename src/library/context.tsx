@@ -1,3 +1,5 @@
+import { createParentalAccess } from "./parental-access";
+import { createParentalMedia } from "./parental-media";
 import { createBackgroundPriority } from "./background-priority";
 import { createRetainedSearch } from "./retained-search";
 import { createQueueLyrics } from "./queue-lyrics-controller";
@@ -47,6 +49,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  parental: ReturnType<typeof createParentalAccess>;
   queueLyrics: ReturnType<typeof createQueueLyrics>;
   savedSettings: ReturnType<typeof createSavedSettings>;
   missing: ReturnType<typeof createMissingCatalog>;
@@ -108,13 +111,58 @@ export function LibraryProvider(props: ParentProps) {
     [busy, setBusy] = createSignal(false),
     [connected, setConnected] = createSignal(false),
     [error, setError] = createSignal("");
+  const sessionAt = (owner: SourceId) => (owner === "local" ? localSession() : serverSession());
+  const rawSnapshot = (owner: SourceId) => (owner === "local" ? localSnapshot() : serverSnapshot());
+  const parentalSync = new Set<SourceId>();
+  const policyEpochs: Record<SourceId, number> = { local: 0, server: 0 };
+  const [parentalEpoch, setParentalEpoch] = createSignal(0);
+  const parental = createParentalAccess({
+    session: sessionAt,
+    source: () => source(),
+    changed: (owner, status) => {
+      if (status.policy.enabled && source() === owner && !radioGuard.owner()) radio.stop();
+      stopControlledSource(owner);
+      parentalSync.add(owner);
+      clearMedia();
+      setParentalEpoch((value) => value + 1);
+    },
+    unavailable: stopControlledSource,
+  });
+  const admitted = {
+    local: createMemo(() => {
+      const value = rawSnapshot("local");
+      return parental.catalogVisible("local", value) ? value : undefined;
+    }),
+    server: createMemo(() => {
+      const value = rawSnapshot("server");
+      return parental.catalogVisible("server", value) ? value : undefined;
+    }),
+  };
+  const admittedSnapshot = (owner: SourceId) => admitted[owner]();
+  function stopControlledSource(owner: SourceId) {
+    policyEpochs[owner]++;
+    if (source() === owner && !radioGuard.owner()) radio.stop();
+    annotationsLoader.reset(owner);
+    advancedSearch.reset();
+    if (radioGuard?.applies(owner)) {
+      radioGuard.stop();
+      radio.stop();
+    }
+    if (podcastGuard?.applies(owner)) {
+      podcastGuard.stop();
+      podcast.stop();
+    }
+    if (player?.ownsSource(owner)) {
+      void player.revoke();
+    }
+  }
   const origins = createMemo(() =>
     catalogOrigins(
       [
-        ...(localSnapshot()?.artists ?? []),
-        ...(localSnapshot()?.albums ?? []),
-        ...(serverSnapshot()?.artists ?? []),
-        ...(serverSnapshot()?.albums ?? []),
+        ...(admittedSnapshot("local")?.artists ?? []),
+        ...(admittedSnapshot("local")?.albums ?? []),
+        ...(admittedSnapshot("server")?.artists ?? []),
+        ...(admittedSnapshot("server")?.albums ?? []),
       ].map((row) => row.reference),
     ),
   );
@@ -133,15 +181,17 @@ export function LibraryProvider(props: ParentProps) {
         : [];
     }),
   );
-  const advancedSearch = createRetainedSearch(() =>
-    JSON.stringify(
-      trackSources().map((row) => [
-        row.source,
-        row.identity,
-        row.scannedAt,
-        (row.source === "local" ? localSession() : serverSession())?.nativeSession,
-      ]),
-    ),
+  const advancedSearch = createRetainedSearch(
+    () =>
+      parental.viewScope() +
+      JSON.stringify(
+        trackSources().map((row) => [
+          row.source,
+          row.identity,
+          row.scannedAt,
+          (row.source === "local" ? localSession() : serverSession())?.nativeSession,
+        ]),
+      ),
   );
   const tagPreferences = createTagPreferences();
   const source = createMemo(() =>
@@ -156,8 +206,8 @@ export function LibraryProvider(props: ParentProps) {
   const sessionFor = (reference: string) =>
     referenceSource(reference) === "local" ? localSession() : serverSession();
   const snapshot = createMemo<Snapshot | undefined>(() => {
-    const remote = serverSnapshot(),
-      local = localSnapshot();
+    const remote = admittedSnapshot("server"),
+      local = admittedSnapshot("local");
     const base = remote ?? local;
     return base
       ? {
@@ -220,6 +270,20 @@ export function LibraryProvider(props: ParentProps) {
     sessionFor,
     (reference) => referenceSource(reference) === "local" || connected(),
   );
+  const radioGuard = createParentalMedia({
+    access: parental,
+    source,
+    session: sessionAt,
+    stop: () => radio.stop(),
+    error: setError,
+  });
+  const podcastGuard = createParentalMedia({
+    access: parental,
+    source,
+    session: sessionAt,
+    stop: () => podcast.stop(),
+    error: setError,
+  });
   const radio = createRadioPlayback(
     resolveRadio,
     async () => {
@@ -232,6 +296,7 @@ export function LibraryProvider(props: ParentProps) {
     },
     browserRadioMedia,
     () => player.state().volume,
+    radioGuard.authorize,
   );
   const podcastListened = createAccountPodcasts(session, source);
   const podcast = createPodcastPlayback(
@@ -249,7 +314,10 @@ export function LibraryProvider(props: ParentProps) {
     },
     () => player.state().volume,
     () => podcastListened.capture().current,
+    podcastGuard.authorize,
   );
+  createEffect(() => radioGuard.observe(radio.status()));
+  createEffect(() => podcastGuard.observe(podcast.status()));
 
   createEffect(on([session, source], () => podcast.stop(), { defer: true }));
 
@@ -387,10 +455,12 @@ export function LibraryProvider(props: ParentProps) {
         for (const ref of Object.keys(annotations))
           if (referenceSource(ref) === owner) setAnnotations(ref, undefined);
       }),
-    publish: (_owner, rows) =>
+    publish: (owner, rows) => {
+      if (!parental.available(owner)) return;
       batch(() => {
         for (const row of rows) setAnnotations(row.reference, row);
-      }),
+      });
+    },
     error: setError,
   });
   const annotationOwners: Record<SourceId, AccountSession | undefined> = {
@@ -402,6 +472,12 @@ export function LibraryProvider(props: ParentProps) {
     for (const owner of ["local", "server"] as const)
       if (annotationOwners[owner] !== next[owner]) {
         annotationOwners[owner] = next[owner];
+        if (
+          next[owner]?.account.parental_enabled === true &&
+          source() === owner &&
+          !radioGuard.owner()
+        )
+          radio.stop();
         untrack(() => {
           if (player.ownsSource(owner)) player.reset();
         });
@@ -416,14 +492,20 @@ export function LibraryProvider(props: ParentProps) {
     setBusy(true);
     setError("");
     try {
+      await parental.refresh(owner);
+      parentalSync.delete(owner);
+      const policyEpoch = policyEpochs[owner];
       const raw = await syncAede(owner);
-      if (!current()) return;
+      if (!current() || policyEpochs[owner] !== policyEpoch || !parental.available(owner)) return;
       const value = parseSnapshot(raw);
+      if (!parental.catalogVisible(owner, value))
+        throw Error(t("Catalogue supervisé à actualiser. Synchronisez la bibliothèque."));
       clearMedia();
       if (owner === "local") setLocalSnapshot(value);
       else setServerSnapshot(value);
       await annotationsLoader.load(owner);
-      if (current()) void warmCovers();
+      if (current() && policyEpochs[owner] === policyEpoch && parental.available(owner))
+        void warmCovers();
     } catch (failure) {
       if (current())
         setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
@@ -431,6 +513,13 @@ export function LibraryProvider(props: ParentProps) {
       setBusy(false);
     }
   }
+  createEffect(() => {
+    parentalEpoch();
+    if (!busy()) {
+      const next = [...parentalSync].find((owner) => sessionAt(owner));
+      if (next) void sync(next);
+    }
+  });
   let disconnectingServer = false;
   async function connect(server: string, username: string, password: string) {
     if (busy() || disconnectingServer) return;
@@ -541,6 +630,7 @@ export function LibraryProvider(props: ParentProps) {
   onCleanup(missingArtwork.dispose);
 
   const value: Library = {
+    parental,
     savedSettings,
     queueLyrics,
     missing,
@@ -563,7 +653,10 @@ export function LibraryProvider(props: ParentProps) {
     radio,
     podcast,
     podcastListened,
-    podcastSubscriptions: podcastListened,
+    podcastSubscriptions: {
+      ...podcastListened,
+      feeds: () => podcastListened.feeds().filter((feed) => parental.podcastAllowed(feed.url)),
+    },
     player,
     artists,
     albums,
@@ -583,11 +676,12 @@ export function LibraryProvider(props: ParentProps) {
     connected,
     error,
     snapshot,
-    publicSnapshot: (source) => (source === "local" ? localSnapshot() : serverSnapshot()),
+    publicSnapshot: admittedSnapshot,
     connect,
     sync,
     disconnect,
-    image: (ref, kind) => images[key(ref, kind)],
+    image: (ref, kind) =>
+      admittedSnapshot(referenceSource(ref)) ? images[key(ref, kind)] : undefined,
     imageError: (ref, kind) => imageErrors[key(ref, kind)],
     warmImage,
     mediaProgress,
@@ -595,7 +689,7 @@ export function LibraryProvider(props: ParentProps) {
     annotations,
     tagPreferences,
     updateAnnotation: (ref, value) => {
-      if (!sessionFor(ref)) return;
+      if (!sessionFor(ref) || !parental.available(referenceSource(ref))) return;
       const checked = value === null ? null : parseAnnotation(value, ref);
       annotationsLoader.updated(ref, checked);
       setAnnotations(ref, checked ?? undefined);

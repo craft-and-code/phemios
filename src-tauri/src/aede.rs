@@ -72,13 +72,32 @@ pub(crate) async fn aede_login(
         .generation
         .load(std::sync::atomic::Ordering::SeqCst);
     let client = blocking(move || Client::login(&server, &username, &password)).await?;
-    crate::sessions::publish_login(
+    let account = crate::sessions::publish_login(
         &state.server.session,
         &state.server.generation,
         generation,
-        client,
+        client.clone(),
         false,
-    )
+    )?;
+    if account["account"]["parental_enabled"] == true {
+        crate::sessions::with_current(
+            &state.server.session,
+            &state.server.generation,
+            account["nativeSession"]
+                .as_str()
+                .ok_or("Session native indisponible.")?,
+            &client,
+            || {
+                *state
+                    .server
+                    .snapshot
+                    .lock()
+                    .map_err(|_| "Cache natif indisponible.")? = None;
+                Ok(())
+            },
+        )?;
+    }
+    Ok(account)
 }
 #[tauri::command]
 pub(crate) async fn aede_logout(
@@ -139,7 +158,31 @@ pub(crate) async fn aede_cache(
     let state = state.owner(origin);
     let cache = state.cache.clone();
     let retained = state.snapshot.clone();
-    let snapshot = blocking(move || crate::snapshots::load(cache, retained)).await?;
+    let session = state.session.clone();
+    let snapshot = blocking(move || {
+        let client = session
+            .lock()
+            .map_err(|_| "Session native indisponible.")?
+            .clone();
+        if let Some(client) = client
+            && client
+                .parental_status()?
+                .is_some_and(|value| value["policy"]["enabled"] == true)
+        {
+            let snapshot = retained
+                .lock()
+                .map_err(|_| "Cache natif indisponible.")?
+                .clone();
+            return snapshot
+                .map(|value| {
+                    client.admit_snapshot(&value)?;
+                    Ok(value.as_ref().clone())
+                })
+                .transpose();
+        }
+        crate::snapshots::load(cache, retained)
+    })
+    .await?;
     snapshot.map(|value| public(value, origin)).transpose()
 }
 #[tauri::command]
@@ -239,9 +282,12 @@ pub(crate) async fn aede_artwork(
     bridge(version)?;
     let (origin, reference) = phemios_core::federation::resolve(&reference)?;
     let state = state.owner(origin);
+    // Capture before the client: even a guest cache read must not outlive a later child login.
+    let generation = state.generation.clone();
+    let ticket = generation.load(std::sync::atomic::Ordering::SeqCst);
+    let sessions = state.session.clone();
     let cache = state.cache.clone();
-    let session = state
-        .session
+    let session = sessions
         .lock()
         .map_err(|_| "Session native indisponible.".to_string())?
         .clone();
@@ -251,24 +297,37 @@ pub(crate) async fn aede_artwork(
         .map_err(|_| "Cache natif indisponible.".to_string())?
         .clone()
         .ok_or("Synchronisez le catalogue avant les images.")?;
-    blocking(move || {
-        if let Some(bytes) = cache.image(&snapshot, &reference, &kind)? {
-            return Ok(bytes);
-        }
-        let client = session
-            .ok_or("Cette image n’a pas encore été mise en cache. Connectez-vous à Aède.")?;
-        let account = client.account();
-        if snapshot["server"] != account["server"]
-            || snapshot["accountId"] != account["account"]["id"]
-        {
-            return Err("Synchronisez le compte connecté avant ses images.".into());
-        }
-        let bytes = client.artwork(&reference, &kind)?;
-        cache.save_image(&snapshot, &reference, &kind, &bytes)?;
-        Ok(bytes)
+    let bytes = blocking(move || {
+        crate::sessions::generation_dispatch(&sessions, &generation, ticket, || {
+            if let Some(client) = &session {
+                crate::snapshots::admit_artwork(client, &snapshot, &reference)?;
+            }
+            if let Some(bytes) =
+                crate::sessions::with_generation(&sessions, &generation, ticket, || {
+                    cache.image(&snapshot, &reference, &kind)
+                })?
+            {
+                return Ok(bytes);
+            }
+            let client = session
+                .ok_or("Cette image n’a pas encore été mise en cache. Connectez-vous à Aède.")?;
+            let account = client.account();
+            if snapshot["server"] != account["server"]
+                || snapshot["accountId"] != account["account"]["id"]
+            {
+                return Err("Synchronisez le compte connecté avant ses images.".into());
+            }
+            let bytes = client.artwork(&reference, &kind)?;
+            crate::sessions::with_generation(&sessions, &generation, ticket, || {
+                cache.save_image(&snapshot, &reference, &kind, &bytes)
+            })?;
+            Ok(bytes)
+        })
     })
-    .await
-    .map(tauri::ipc::Response::new)
+    .await?;
+    crate::sessions::with_generation(&state.session, &state.generation, ticket, || {
+        Ok(tauri::ipc::Response::new(bytes))
+    })
 }
 
 #[tauri::command]
@@ -282,9 +341,12 @@ pub(crate) async fn aede_missing_cover(
     bridge(version)?;
     let (origin, artist) = phemios_core::federation::resolve(&artist)?;
     let state = state.owner(origin);
+    // Capture before the client: even a guest cache read must not outlive a later child login.
+    let generation = state.generation.clone();
+    let ticket = generation.load(std::sync::atomic::Ordering::SeqCst);
+    let sessions = state.session.clone();
     let cache = state.cache.clone();
-    let session = state
-        .session
+    let session = sessions
         .lock()
         .map_err(|_| "Session native indisponible.".to_string())?
         .clone();
@@ -294,38 +356,51 @@ pub(crate) async fn aede_missing_cover(
         .map_err(|_| "Cache natif indisponible.".to_string())?
         .clone()
         .ok_or("Synchronisez le catalogue avant les images.")?;
-    blocking(move || {
-        if group.len() != 36
-            || !group.bytes().enumerate().all(|(i, b)| {
-                if [8, 13, 18, 23].contains(&i) {
-                    b == b'-'
-                } else {
-                    b.is_ascii_hexdigit()
-                }
-            })
-        {
-            return Err("Album manquant Aède invalide.".into());
-        }
-        let kind = format!("missing-cover:{group}");
-        if let Some(bytes) = cache.image(&snapshot, &artist, &kind)? {
-            return Ok(bytes);
-        }
-        let client = session
-            .ok_or("Cette image n’a pas encore été mise en cache. Connectez-vous à Aède.")?;
-        let account = client.account();
-        if snapshot["server"] != account["server"]
-            || snapshot["accountId"] != account["account"]["id"]
-        {
-            return Err("Synchronisez le compte connecté avant ses images.".into());
-        }
-        let bytes = client.missing_cover(&artist, &group, download)?;
-        if !bytes.is_empty() {
-            cache.save_image(&snapshot, &artist, &kind, &bytes)?;
-        }
-        Ok(bytes)
+    let bytes = blocking(move || {
+        crate::sessions::generation_dispatch(&sessions, &generation, ticket, || {
+            if let Some(client) = &session {
+                crate::snapshots::admit_artwork(client, &snapshot, &artist)?;
+            }
+            if group.len() != 36
+                || !group.bytes().enumerate().all(|(i, b)| {
+                    if [8, 13, 18, 23].contains(&i) {
+                        b == b'-'
+                    } else {
+                        b.is_ascii_hexdigit()
+                    }
+                })
+            {
+                return Err("Album manquant Aède invalide.".into());
+            }
+            let kind = format!("missing-cover:{group}");
+            if let Some(bytes) =
+                crate::sessions::with_generation(&sessions, &generation, ticket, || {
+                    cache.image(&snapshot, &artist, &kind)
+                })?
+            {
+                return Ok(bytes);
+            }
+            let client = session
+                .ok_or("Cette image n’a pas encore été mise en cache. Connectez-vous à Aède.")?;
+            let account = client.account();
+            if snapshot["server"] != account["server"]
+                || snapshot["accountId"] != account["account"]["id"]
+            {
+                return Err("Synchronisez le compte connecté avant ses images.".into());
+            }
+            let bytes = client.missing_cover(&artist, &group, download)?;
+            if !bytes.is_empty() {
+                crate::sessions::with_generation(&sessions, &generation, ticket, || {
+                    cache.save_image(&snapshot, &artist, &kind, &bytes)
+                })?;
+            }
+            Ok(bytes)
+        })
     })
-    .await
-    .map(tauri::ipc::Response::new)
+    .await?;
+    crate::sessions::with_generation(&state.session, &state.generation, ticket, || {
+        Ok(tauri::ipc::Response::new(bytes))
+    })
 }
 
 #[tauri::command]

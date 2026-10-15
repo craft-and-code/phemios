@@ -86,6 +86,7 @@ pub(crate) async fn playback_start(
         crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || Ok(()))?;
         let current = || epoch.load(std::sync::atomic::Ordering::SeqCst) == generation;
         let prepared = if device == phemios_core::hqplayer::OUTPUT {
+            client.require_unrestricted_output()?;
             Some(phemios_core::hqplayer::Controller::prepare(
                 &client,
                 tracks.clone(),

@@ -3,8 +3,8 @@ import { Icon } from "./Icon";
 import { t } from "../i18n";
 import type { ArtistView } from "../library/tool-preferences";
 const choices = [
-  { id: "discography", icon: "users", label: "Cartes d’artistes" },
   { id: "editorial", icon: "layers", label: "Ligne éditoriale" },
+  { id: "discography", icon: "users", label: "Cartes d’artistes" },
 ] as const;
 /** Mutually selected presentations remain available; choosing one never disables its neighbours. */
 export function ArtistViewActions(props: {

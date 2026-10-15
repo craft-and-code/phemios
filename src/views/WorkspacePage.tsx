@@ -1,3 +1,5 @@
+import { useLibrary } from "../library/context";
+import { EmptyState } from "../components/EmptyState";
 import { PageLoader } from "../components/PageLoader";
 import { EncyclopediaPage } from "./EncyclopediaPage";
 import { AchievementsPage } from "./AchievementsPage";
@@ -5,7 +7,7 @@ import { AdvancedSearchPage } from "./AdvancedSearchPage";
 
 import { PlaybackPage } from "./PlaybackPage";
 
-import { Switch, Match, lazy, Suspense } from "solid-js";
+import { Switch, Match, lazy, Suspense, Show } from "solid-js";
 import { t } from "../i18n";
 const ConcertsPage = lazy(() =>
   import("./ConcertsPage").then((module) => ({ default: module.ConcertsPage })),
@@ -31,6 +33,7 @@ export function WorkspacePage(props: {
   compact: boolean;
   onStatisticsBrowse: Parameters<typeof StatisticsPage>[0]["onBrowse"];
 }) {
+  const library = useLibrary();
   return (
     <Suspense
       fallback={
@@ -64,13 +67,31 @@ export function WorkspacePage(props: {
           <RatedPage query={props.query} />
         </Match>
         <Match when={props.section === "podcasts"}>
-          <PodcastsPage query={props.query} />
+          <Show
+            when={library.parental.podcastsAllowed()}
+            fallback={
+              <EmptyState icon="podcast">
+                {t("L’accès aux podcasts est interdit pour ce compte.")}
+              </EmptyState>
+            }
+          >
+            <PodcastsPage query={props.query} />
+          </Show>
         </Match>
         <Match when={props.section === "concerts"}>
           <ConcertsPage query={props.query} />
         </Match>
         <Match when={props.section === "radio"}>
-          <RadioPage query={props.query} />
+          <Switch>
+            <Match when={library.parental.radioAllowed()}>
+              <RadioPage query={props.query} />
+            </Match>
+            <Match when={!library.parental.radioAllowed()}>
+              <EmptyState icon="radio">
+                {t("L’accès aux radios est interdit pour ce compte.")}
+              </EmptyState>
+            </Match>
+          </Switch>
         </Match>
         <Match when={props.section === "doctor"}>
           <DoctorPage />

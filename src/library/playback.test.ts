@@ -1933,3 +1933,141 @@ it("refuses a non-empty clear acknowledgement instead of discarding a staged occ
   });
   vi.unstubAllGlobals();
 });
+
+it("revokes a pending catalogue admission even when the queue is still empty", async () => {
+  await createRoot(async (dispose) => {
+    let resolve!: (value: unknown) => void;
+    vi.mocked(requestAede).mockReturnValue(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    vi.mocked(playbackControl).mockResolvedValue(idlePlayback);
+    const player = createPlayback(
+      () => true,
+      () => ({ albums: [album], artists: [] }),
+    );
+    const pending = player.startReference(album.reference);
+    expect(player.busy()).toBe(true);
+    await player.revoke();
+    expect(playbackControl).toHaveBeenCalledExactlyOnceWith("clear", null);
+    expect(player.state().status).toBe("idle");
+    expect(player.queue()).toEqual([]);
+    resolve({
+      items: [
+        {
+          reference: "track:one",
+          title: "First",
+          release: album.reference,
+          number: 1,
+          album_total: 1,
+        },
+      ],
+    });
+    await pending;
+    expect(playbackStart).not.toHaveBeenCalled();
+    expect(playbackState).not.toHaveBeenCalled();
+    expect(player.busy()).toBe(false);
+    dispose();
+  });
+});
+
+it("revokes native startup immediately and rejects its late metadata without resetting output preferences", async () => {
+  await createRoot(async (dispose) => {
+    let resolve!: () => void;
+    vi.mocked(playbackStart).mockReturnValue(
+      new Promise<void>((done) => {
+        resolve = done;
+      }),
+    );
+    vi.mocked(playbackControl).mockResolvedValue(idlePlayback);
+    const player = createPlayback(() => true);
+    await player.volume(0.7);
+    await player.chooseOutput("fixture-output");
+    const pending = player.start(tracks, album, "Artist");
+    await vi.waitFor(() => expect(playbackStart).toHaveBeenCalledOnce());
+    expect(player.busy()).toBe(true);
+    await player.revoke();
+    expect(playbackControl).toHaveBeenLastCalledWith("clear", null);
+    expect(player.current()).toBeUndefined();
+    expect(player.queue()).toEqual([]);
+    expect(player.device()).toBe("fixture-output");
+    expect(player.state().volume).toBe(0.7);
+    resolve();
+    await pending;
+    expect(playbackState).not.toHaveBeenCalled();
+    expect(player.state().status).toBe("idle");
+    dispose();
+  });
+});
+
+it("coalesces revocation, scrubs a busy queue before native acknowledgement and falls back to Stop on failure", async () => {
+  await createRoot(async (dispose) => {
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      queue: [0, 1],
+    });
+    const player = createPlayback(() => true);
+    await player.start(tracks, album, "Artist");
+    let reject!: (failure: Error) => void;
+    vi.mocked(playbackControl).mockImplementation((command) =>
+      command === "clear"
+        ? new Promise((_, fail) => {
+            reject = fail;
+          })
+        : Promise.resolve(undefined),
+    );
+    const first = player.revoke(),
+      second = player.revoke();
+    expect(player.queue()).toEqual([]);
+    expect(player.current()).toBeUndefined();
+    expect(player.state().status).toBe("idle");
+    expect(player.busy()).toBe(true);
+    expect(
+      vi.mocked(playbackControl).mock.calls.filter(([command]) => command === "clear"),
+    ).toHaveLength(1);
+    reject(Error("Clear refused"));
+    expect(await first).toBe(false);
+    expect(await second).toBe(false);
+    expect(playbackControl).toHaveBeenLastCalledWith("stop", null);
+    expect(player.busy()).toBe(false);
+    expect(player.error()).toBe("Clear refused");
+    dispose();
+  });
+});
+
+it("does not stop a replacement playback when an earlier revocation fails late", async () => {
+  await createRoot(async (dispose) => {
+    let reject!: (failure: Error) => void;
+    vi.mocked(playbackControl).mockImplementation((command) =>
+      command === "clear"
+        ? new Promise((_, fail) => {
+            reject = fail;
+          })
+        : Promise.resolve(undefined),
+    );
+    const player = createPlayback(() => true);
+    const previous = player.revoke();
+    player.reset();
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      queue: [0, 1],
+    });
+    await player.start(tracks, album, "Artist");
+    reject(Error("Old clear refused"));
+    expect(await previous).toBe(false);
+    expect(vi.mocked(playbackControl).mock.calls.some(([command]) => command === "stop")).toBe(
+      false,
+    );
+    expect(player.current()?.title).toBe("First");
+    expect(player.state().status).toBe("playing");
+    expect(player.error()).toBe("");
+    dispose();
+  });
+});

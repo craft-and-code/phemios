@@ -147,3 +147,67 @@ fn a_completed_private_export_cannot_publish_after_logout_or_replacement() {
         assert_eq!(publications.load(Ordering::SeqCst), 0);
     }
 }
+
+#[test]
+fn captured_artwork_generations_refuse_guest_work_queued_before_login() {
+    let (client, _) = sessions();
+    let session = Mutex::new(None);
+    let generation = AtomicU64::new(0);
+    let ticket = generation.load(Ordering::SeqCst);
+    publish_login(&session, &generation, ticket, client, false).unwrap();
+    let reads = AtomicUsize::new(0);
+    assert!(
+        generation_dispatch(&session, &generation, ticket, || {
+            reads.fetch_add(1, Ordering::SeqCst);
+            Ok(vec![1, 2, 3])
+        })
+        .is_err()
+    );
+    assert_eq!(reads.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn late_artwork_cache_reads_and_failures_do_not_cross_login_or_logout() {
+    let (client, _) = sessions();
+    for authenticated in [false, true] {
+        for failed in [false, true] {
+            let session = Mutex::new(authenticated.then_some(client.clone()));
+            let generation = AtomicU64::new(1);
+            let result = generation_dispatch(&session, &generation, 1, || {
+                if authenticated {
+                    invalidate(&session, &generation).unwrap();
+                } else {
+                    publish_login(&session, &generation, 1, client.clone(), false).unwrap();
+                }
+                if failed {
+                    Err("Earlier artwork error".into())
+                } else {
+                    Ok(vec![1, 2, 3])
+                }
+            });
+            assert_eq!(
+                result.unwrap_err(),
+                "Session remplacée ou déconnectée. Reconnectez-vous."
+            );
+        }
+    }
+}
+
+#[test]
+fn generation_guard_rejects_publication_after_even_same_client_replacement() {
+    let (client, _) = sessions();
+    let session = Mutex::new(Some(client.clone()));
+    let generation = AtomicU64::new(1);
+    let ticket = generation.load(Ordering::SeqCst);
+    publish_login(&session, &generation, ticket, client, true).unwrap();
+    let writes = AtomicUsize::new(0);
+    assert!(
+        with_generation(&session, &generation, ticket, || {
+            writes.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        })
+        .is_err()
+    );
+    assert_eq!(writes.load(Ordering::SeqCst), 0);
+    assert!(with_generation(&session, &generation, 2, || Ok(())).is_ok());
+}

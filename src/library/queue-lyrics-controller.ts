@@ -35,7 +35,7 @@ export function createQueueLyrics(library: {
       .filter((row) => reference === undefined || row.reference === reference)
       .every((r) => {
         const s = library.sessionFor(r.reference);
-        return s?.account.role === "admin" && s.server.startsWith("http://");
+        return s?.account.role === "admin";
       });
   const availability = createQueueLyricAvailability({ ...library, jobs: library.tasks.jobs });
   const [acquiring, setAcquiring] = createSignal("");

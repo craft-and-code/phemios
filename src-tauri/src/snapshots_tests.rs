@@ -180,3 +180,20 @@ fn uncontended_disk_read_can_install_the_retained_offline_snapshot() {
     assert_eq!(load(cache, retained.clone()).unwrap(), Some(saved.clone()));
     assert_eq!(retained.lock().unwrap().as_ref().unwrap().as_ref(), &saved);
 }
+
+#[test]
+fn supervised_publication_is_process_only_and_does_not_replace_the_adult_disk_cache() {
+    let (client, _) = sessions();
+    let sandbox = Sandbox::new();
+    let cache = Cache::new(sandbox.0.clone());
+    let public = cache.save(catalog(&client, 1)).unwrap();
+    let mut restricted = catalog(&client, 2);
+    restricted["parentalEnabled"] = json!(true);
+    restricted["parentalRevision"] = json!(1);
+    let session = Mutex::new(Some(client.clone()));
+    let retained = Mutex::new(None);
+    publish(&session, &retained, &cache, &client, restricted.clone()).unwrap();
+    assert_eq!(cache.load().unwrap(), Some(public));
+    assert_eq!(retained.lock().unwrap().as_deref(), Some(&restricted));
+    assert!(!projection_contains(&restricted, "artist:hidden"));
+}

@@ -219,3 +219,73 @@ it("ignores played evidence from a replaced private podcast owner", async () => 
     dispose();
   });
 });
+
+it("authorizes each podcast start and resume, preserving the refusal reason without playing", async () => {
+  await createRoot(async (dispose) => {
+    const f = fixture(),
+      authorize = vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(Error("Listening time reached"));
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+      () => {},
+      undefined,
+      () => () => true,
+      authorize,
+    );
+    try {
+      await player.start(feed, feed.episodes[0]!);
+      expect(f.media.play).toHaveBeenCalledOnce();
+      expect(authorize).toHaveBeenCalledWith({ kind: "podcast", feed: feed.url });
+      player.pause();
+      await player.resume();
+      expect(authorize).toHaveBeenCalledTimes(2);
+      expect(f.media.play).toHaveBeenCalledOnce();
+      expect(player.status()).toBe("error");
+      expect(player.error()).toBe("Listening time reached");
+    } finally {
+      dispose();
+    }
+  });
+});
+it("does not resume a retained podcast after owner replacement or a late cancelled authorization", async () => {
+  await createRoot(async (dispose) => {
+    const f = fixture();
+    let current = true;
+    const authorize = vi.fn().mockResolvedValueOnce(undefined);
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+      () => {},
+      undefined,
+      () => () => current,
+      authorize,
+    );
+    try {
+      await player.start(feed, feed.episodes[0]!);
+      player.pause();
+      let finish!: () => void;
+      authorize.mockImplementationOnce(
+        () =>
+          new Promise<void>((done) => {
+            finish = done;
+          }),
+      );
+      const pending = player.resume();
+      player.pause();
+      finish();
+      await pending;
+      expect(f.media.play).toHaveBeenCalledOnce();
+      expect(player.status()).toBe("paused");
+      current = false;
+      await player.resume();
+      expect(authorize).toHaveBeenCalledTimes(2);
+      expect(f.media.play).toHaveBeenCalledOnce();
+      expect(player.status()).toBe("idle");
+    } finally {
+      dispose();
+    }
+  });
+});

@@ -55,8 +55,13 @@ pub(super) fn connect(client: &Client) -> Result<Socket, String> {
         max_frame_size: Some(32768),
         ..Default::default()
     };
-    let (socket, _) = tungstenite::client_tls_with_config(request, tcp, Some(config), None)
-        .map_err(|_| "Flux audio refusé : vérifiez la session et le serveur Aède.")?;
+    let (socket, _) = tungstenite::client_tls_with_config(
+        request,
+        tcp,
+        Some(config),
+        client.playback_connector(),
+    )
+    .map_err(|_| "Flux audio refusé : vérifiez la session et le serveur Aède.")?;
     let tcp = match socket.get_ref() {
         MaybeTlsStream::Plain(tcp) => tcp,
         MaybeTlsStream::Rustls(tls) => &tls.sock,

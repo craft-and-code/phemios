@@ -11,6 +11,15 @@ use ureq::{http::Uri, unversioned::transport::DefaultConnector};
 const MAX_EPISODE: u64 = 1024 * 1024 * 1024;
 /// Download one public enclosure into the native-owned podcast directory, without session headers.
 pub fn download_episode(folder: &Path, url: &str, title: &str) -> Result<PathBuf, String> {
+    download_episode_authorized(folder, url, title, || Ok(()))
+}
+/// Revalidate the captured account immediately before publishing the completed temporary download.
+pub fn download_episode_authorized(
+    folder: &Path,
+    url: &str,
+    title: &str,
+    admit: impl FnOnce() -> Result<(), String>,
+) -> Result<PathBuf, String> {
     let config = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(1200)))
         .timeout_connect(Some(Duration::from_secs(15)))
@@ -18,13 +27,23 @@ pub fn download_episode(folder: &Path, url: &str, title: &str) -> Result<PathBuf
         .proxy(None)
         .build();
     let agent = ureq::Agent::with_parts(config, DefaultConnector::default(), PublicResolver);
-    download_with(&agent, folder, url, title)
+    download_with_authorized(&agent, folder, url, title, admit)
 }
+#[cfg(test)]
 fn download_with(
     agent: &ureq::Agent,
     folder: &Path,
     url: &str,
     title: &str,
+) -> Result<PathBuf, String> {
+    download_with_authorized(agent, folder, url, title, || Ok(()))
+}
+fn download_with_authorized(
+    agent: &ureq::Agent,
+    folder: &Path,
+    url: &str,
+    title: &str,
+    admit: impl FnOnce() -> Result<(), String>,
 ) -> Result<PathBuf, String> {
     let uri = feed_address(url).map_err(|_| "Adresse podcast invalide.")?;
     if title.len() > 2048 {
@@ -60,13 +79,14 @@ fn download_with(
     if length.is_some_and(|value| value == 0 || value > MAX_EPISODE) {
         return Err("Épisode vide ou trop volumineux (limite : 1 Go).".into());
     }
-    publish_episode(
+    publish_authorized(
         folder,
         title,
         extension,
         response.body_mut().as_reader(),
         length,
         MAX_EPISODE,
+        admit,
     )
 }
 fn media_extension<'a>(mime: &str, uri: &'a Uri) -> Result<&'a str, String> {
@@ -101,6 +121,7 @@ fn media_extension<'a>(mime: &str, uri: &'a Uri) -> Result<&'a str, String> {
         _ => Err("Format de téléchargement du podcast non pris en charge.".into()),
     }
 }
+#[cfg(test)]
 fn publish_episode(
     folder: &Path,
     title: &str,
@@ -108,6 +129,17 @@ fn publish_episode(
     reader: impl Read,
     expected: Option<u64>,
     limit: u64,
+) -> Result<PathBuf, String> {
+    publish_authorized(folder, title, extension, reader, expected, limit, || Ok(()))
+}
+fn publish_authorized(
+    folder: &Path,
+    title: &str,
+    extension: &str,
+    reader: impl Read,
+    expected: Option<u64>,
+    limit: u64,
+    admit: impl FnOnce() -> Result<(), String>,
 ) -> Result<PathBuf, String> {
     static NEXT: AtomicU64 = AtomicU64::new(0);
     fs::create_dir_all(folder).map_err(|_| "Dossier de téléchargement inaccessible.")?;
@@ -147,6 +179,7 @@ fn publish_episode(
         }
         file.sync_all().map_err(|_| "Téléchargement interrompu.")?;
         drop(file);
+        admit()?;
         for attempt in 0..1000 {
             let suffix = if attempt == 0 {
                 String::new()

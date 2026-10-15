@@ -1,3 +1,4 @@
+import { LibraryPickerRow } from "./LibraryPickerRow";
 import { For, Show, onMount, createMemo } from "solid-js";
 import { t } from "../i18n";
 import {
@@ -95,61 +96,52 @@ export function QueueAddView(props: {
             {(row) => {
               const reason = createMemo(() => props.disabled(row));
               return (
-                <div class="queue-add-row">
-                  <div class="queue-add-art">
-                    <Show
-                      when={props.image(row)}
-                      fallback={
-                        <Icon
-                          name={
-                            row.playlist
-                              ? "playlist"
-                              : row.collection
-                                ? "library"
-                                : row.reference?.startsWith("artist:")
-                                  ? "users"
-                                  : "disc"
-                          }
-                        />
-                      }
-                    >
-                      {(url) => <img src={url()} alt="" decoding="async" />}
-                    </Show>
-                  </div>
-                  <div class="queue-add-description">
-                    <strong title={row.title}>{row.title}</strong>
-                    <small title={row.detail}>
+                <LibraryPickerRow
+                  title={row.title}
+                  image={props.image(row)}
+                  icon={
+                    row.playlist
+                      ? "playlist"
+                      : row.collection
+                        ? "library"
+                        : row.reference?.startsWith("artist:")
+                          ? "users"
+                          : "disc"
+                  }
+                  detailTitle={row.detail}
+                  detail={
+                    <>
                       <Show when={props.category === "all" && row.category}>
                         {t(queueCategoryLabels[row.category!])}
                         {" · "}
                       </Show>
                       {row.detail}
                       <Show when={props.origins}>
-                        {" "}
-                        · {row.source === "local" ? t("Local") : t("Serveur")}
+                        {" · "}
+                        {row.source === "local" ? t("Local") : t("Serveur")}
                       </Show>
-                    </small>
-                    <Show when={!props.pending && reason()}>
-                      <small class="queue-add-reason">{reason()}</small>
-                    </Show>
-                  </div>
-                  <button
-                    class="icon-button quiet"
-                    classList={{ "download-complete": props.added === row.key }}
-                    disabled={!!props.pending || !!reason()}
-                    title={reason() || t("Ajouter {0} à la suite", row.title)}
-                    aria-label={t("Ajouter {0} à la suite", row.title)}
-                    aria-busy={props.pending === row.key}
-                    onClick={() => props.onAdd(row)}
-                  >
-                    <Show
-                      when={props.pending === row.key}
-                      fallback={<Icon name={props.added === row.key ? "check" : "plus"} />}
+                    </>
+                  }
+                  reason={!props.pending ? reason() : ""}
+                  action={
+                    <button
+                      class="icon-button quiet"
+                      classList={{ "download-complete": props.added === row.key }}
+                      disabled={!!props.pending || !!reason()}
+                      title={reason() || t("Ajouter {0} à la suite", row.title)}
+                      aria-label={t("Ajouter {0} à la suite", row.title)}
+                      aria-busy={props.pending === row.key}
+                      onClick={() => props.onAdd(row)}
                     >
-                      <span class="spinner" />
-                    </Show>
-                  </button>
-                </div>
+                      <Show
+                        when={props.pending === row.key}
+                        fallback={<Icon name={props.added === row.key ? "check" : "plus"} />}
+                      >
+                        <span class="spinner" />
+                      </Show>
+                    </button>
+                  }
+                />
               );
             }}
           </For>

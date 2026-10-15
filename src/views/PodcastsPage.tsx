@@ -21,7 +21,11 @@ export function PodcastsPage(props: { query: string }) {
     [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
     [error, setError] = createSignal("");
   const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
-  const downloads = createEpisodeDownloads(downloadPodcastEpisode, owner);
+  const downloads = createEpisodeDownloads(async (url, title) => {
+    if (!library.parental.available() || library.parental.status()?.policy.enabled)
+      throw Error(t("Le téléchargement des épisodes est indisponible pour un compte supervisé."));
+    return downloadPodcastEpisode(url, title);
+  }, owner);
   type Actor = ReturnType<typeof subscriptions.capture>;
   const [removal, setRemoval] = createSignal<{ url: string; title: string; actor: Actor }>();
   const unsubscribe = {
@@ -67,7 +71,11 @@ export function PodcastsPage(props: { query: string }) {
     setError("");
     try {
       const source = podcastUrl(value.trim()),
-        xml = await readPodcastFeed(source);
+        xml = await (async () => {
+          if (!library.parental.podcastAllowed(source))
+            throw Error(t("Ce podcast est masqué pour ce compte."));
+          return readPodcastFeed(source);
+        })();
       if (!alive || !actor.current()) return;
       const data = parsePodcastFeed(xml, source);
       if ((await actor.save(data)) && alive && actor.current()) {
@@ -218,7 +226,10 @@ export function PodcastsPage(props: { query: string }) {
                           label={t("Télécharger {0}", row.title)}
                           identity={owner()}
                           disabled={
-                            !isNative() || (!!downloads.busy() && downloads.busy() !== row.url)
+                            !isNative() ||
+                            !library.parental.available() ||
+                            !!library.parental.status()?.policy.enabled ||
+                            (!!downloads.busy() && downloads.busy() !== row.url)
                           }
                           busy={downloads.busy() === row.url}
                           onClick={() => downloads.save(row.url, row.title)}

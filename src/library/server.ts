@@ -1,3 +1,4 @@
+import { parseParentalPolicy, type ParentalPolicy } from "./parental-controls";
 import { t } from "../i18n";
 import { parseCatalogTrack, type CatalogTrack } from "./track-page";
 import { parseLabel, parseLabelDetail, type LabelSummary, type LabelDetail } from "./labels";
@@ -14,6 +15,9 @@ export interface Snapshot {
   accountId: string;
   scannedAt: number;
   cachedAt?: string;
+  parentalEnabled?: boolean;
+  parentalRevision?: number;
+  parentalPolicy?: ParentalPolicy;
 }
 export interface Annotation {
   reference: string;
@@ -36,7 +40,7 @@ export interface AccountSession {
   /** Non-secret native process generation for private-file admission. */
   nativeSession?: string;
   server: string;
-  account: { id: string; username: string; role: string };
+  account: { id: string; username: string; role: string; parental_enabled?: boolean };
 }
 const regions = new Intl.DisplayNames(["fr"], { type: "region" });
 function object(value: unknown): Record<string, unknown> {
@@ -172,6 +176,15 @@ export function parseSnapshot(value: unknown): Snapshot {
     if (new Set(rows.map((row) => row.reference)).size !== rows.length)
       throw new Error(t("Références Aède dupliquées."));
   return {
+    ...(snapshot.parentalPolicy !== undefined
+      ? { parentalPolicy: parseParentalPolicy(snapshot.parentalPolicy) }
+      : {}),
+    ...(typeof snapshot.parentalEnabled === "boolean"
+      ? { parentalEnabled: snapshot.parentalEnabled }
+      : {}),
+    ...(Number.isSafeInteger(snapshot.parentalRevision) && Number(snapshot.parentalRevision) >= 0
+      ? { parentalRevision: Number(snapshot.parentalRevision) }
+      : {}),
     artists,
     albums,
     ...(tracks ? { tracks } : {}),
