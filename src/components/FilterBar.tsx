@@ -64,6 +64,7 @@ export function FilterBar(props: {
           class="quiet"
           onClick={() =>
             update({
+              recentOnly: false,
               years: props.yearDomain,
               alphabet: [0, 26],
               includeUnknownYear: true,

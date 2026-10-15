@@ -580,24 +580,6 @@ legend {
   width: 38px;
   height: 38px;
 }
-.play-control > .transport-stop {
-  position: absolute;
-  right: -8px;
-  bottom: -7px;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface);
-}
-.transport-stop svg {
-  width: 11px;
-  height: 11px;
-}
-
 /* Summary and volume use the same box and centre axis; summaries need their own hover rule. */
 .player-options {
   align-items: center;

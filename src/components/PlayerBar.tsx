@@ -121,11 +121,7 @@ export function PlayerBar() {
             <div class="play-control">
               <button
                 class="play-button"
-                disabled={
-                  player.busy() ||
-                  (!player.ready() && !active()) ||
-                  (!active() && state().status !== "ended" && !player.target())
-                }
+                disabled={!player.canTogglePlayback()}
                 aria-label={
                   state().status === "playing"
                     ? t("Mettre en pause")
@@ -133,15 +129,7 @@ export function PlayerBar() {
                       ? t("Reprendre la lecture")
                       : t("Lancer la lecture")
                 }
-                onClick={() =>
-                  void (state().status === "playing"
-                    ? player.action("pause")
-                    : state().status === "paused"
-                      ? player.action("resume")
-                      : player.target()
-                        ? player.startReference()
-                        : player.action("resume"))
-                }
+                onClick={() => void player.togglePlayback()}
               >
                 <Icon name={state().status === "playing" ? "pause" : "play"} />
               </button>
@@ -163,7 +151,7 @@ export function PlayerBar() {
                 disabled() ||
                 (state().repeat !== "all" &&
                   (state().queue.length
-                    ? state().queue.indexOf(state().index) + 1 >= state().total
+                    ? state().queue.indexOf(state().index) + 1 >= state().queue.length
                     : state().index + 1 >= state().total))
               }
               aria-label={t("Morceau suivant")}

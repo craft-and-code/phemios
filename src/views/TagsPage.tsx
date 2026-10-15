@@ -197,7 +197,11 @@ export function TagsPage(props: {
                       </div>
                       <strong>{value().label}</strong>
                     </a>
-                    <CoverPlay reference={target.reference} title={value().label} />
+                    <CoverPlay
+                      reference={target.reference}
+                      title={value().label}
+                      append={compact()}
+                    />
                   </div>
                 )}
               </Show>

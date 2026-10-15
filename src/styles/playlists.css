@@ -1,0 +1,81 @@
+/* One session queue fills the dedicated page; drawer rules stay unchanged. */
+main:has(> .playlist-page) {
+  overflow: hidden;
+}
+main > .playlist-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  padding: 24px 36px var(--page-end-gap);
+  gap: 0;
+}
+.playlist-page > .playback-queue.standalone-queue {
+  position: static;
+  inset: auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.standalone-queue > .queue-workspace-header {
+  flex-shrink: 0;
+  position: static;
+  margin: 0 0 16px;
+  padding: 0 0 16px;
+}
+.standalone-queue .queue-workspace-header .page-heading {
+  margin: 0 0 var(--control-gap);
+}
+.standalone-queue .queue-workspace-header .queue-actions {
+  margin: 0;
+}
+.standalone-queue .queue-actions {
+  flex-wrap: wrap;
+}
+.standalone-queue > .empty-state {
+  flex: 1;
+  min-height: 100px;
+}
+.standalone-queue > .queue-add-panel {
+  flex-shrink: 1;
+  margin-bottom: 12px;
+  width: 100%;
+}
+.standalone-queue .playlist-files-toggle {
+  margin-left: auto;
+}
+
+.playback-queue > .empty-state > svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* Only explicitly supplied thumbnails add a column; cloned drag rows retain their geometry. */
+.playback-page .playback-queue li.queue-row-with-cover {
+  --queue-cover-size: 40px;
+  grid-template-columns: 20px 34px 24px var(--queue-cover-size) minmax(0, 1fr);
+}
+.playback-queue .queue-track-cover {
+  width: var(--queue-cover-size);
+  height: var(--queue-cover-size);
+  align-self: center;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--muted);
+}
+.playback-queue .queue-track-cover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

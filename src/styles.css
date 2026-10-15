@@ -1,3 +1,7 @@
+@import "./styles/playlists.css";
+@import "./styles/circular-play-actions.css";
+@import "./styles/playback-actions.css";
+@import "./styles/queue-add.css";
 @import "./styles/artists.css";
 @import "./styles/feedback.css";
 @import "./styles/podcasts.css";
@@ -702,8 +706,14 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   border-radius: 6px;
 }
 .playback-queue li.queue-drop-target {
-  box-shadow: inset 0 2px var(--accent);
   background: var(--surface);
+  border-radius: 0;
+}
+.playback-queue li.queue-drop-before {
+  box-shadow: inset 0 2px var(--accent);
+}
+.playback-queue li.queue-drop-after {
+  box-shadow: inset 0 -2px var(--accent);
 }
 .playback-queue li .queue-grip {
   flex: 0 0 24px;
@@ -813,10 +823,6 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 
 .queue-actions {
   flex-wrap: wrap;
-}
-.queue-save-feedback {
-  flex-basis: 100%;
-  min-width: 0;
 }
 .integrity-status {
   display: flex;

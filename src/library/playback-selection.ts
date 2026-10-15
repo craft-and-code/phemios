@@ -19,6 +19,9 @@ export function playbackSelection(
   if (!Array.isArray(rows) || !rows.length || rows.length > 4096)
     throw new Error(t("Sélection vide ou supérieure à 4096 pistes."));
   const releases = new Map(albums.map((a) => [a.reference, a]));
+  const artistNames = new Map<string, string>();
+  for (const artist of artists)
+    if (!artistNames.has(artist.reference)) artistNames.set(artist.reference, artist.name);
   return rows.map((value) => {
     if (!value || typeof value !== "object") throw new Error(t("Piste Aède invalide."));
     const r = value as Record<string, unknown>,
@@ -39,10 +42,25 @@ export function playbackSelection(
       title: r.title,
       album,
       artist:
-        artists.find((a) => a.reference === album?.artist)?.name ??
+        artistNames.get(album?.artist ?? "") ??
         (album ? t("Artistes divers") : t("Titre sans album")),
       number: Number(r.number),
       albumTotal: Number(r.album_total),
     };
   });
+}
+
+/** Track additions admit exactly one matching identity; album/artist and explicit lists retain their order. */
+export function queueAdditionSelection(
+  value: unknown,
+  albums: readonly Album[],
+  artists: readonly Artist[],
+  reference?: string,
+): PlayableSelection[] {
+  const rows = playbackSelection(value, albums, artists);
+  if (!reference?.startsWith("track:")) return rows;
+  const matching = rows.filter((row) => row.reference === reference);
+  if (matching.length !== 1)
+    throw new Error(t("Sélection modifiée ; resynchronisez la bibliothèque."));
+  return matching;
 }

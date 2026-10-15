@@ -1,3 +1,4 @@
+import type { Route } from "./routes";
 /** A detail selection wins; Cover Flow's front album precedes other visible Play controls. */
 export function contextualReference(
   detail: string,
@@ -15,4 +16,20 @@ export function repeatDisabled(
   external: boolean,
 ): boolean {
   return busy || !ready || external || !["playing", "paused"].includes(status);
+}
+
+/** A prepared playlist must be launchable even while an external stream owns the other views. */
+export function footerTransport(input: {
+  queueView: boolean;
+  queued: boolean;
+  podcast: boolean;
+  radio: boolean;
+}): "catalog" | "podcast" | "radio" {
+  if (input.queueView && input.queued) return "catalog";
+  return input.podcast ? "podcast" : input.radio ? "radio" : "catalog";
+}
+
+/** Detail routes retain their origin menu; only the actual workspace owns prepared-list controls. */
+export function isQueueWorkspace(route: Route): boolean {
+  return route.kind === "section" && route.section === "playlists";
 }

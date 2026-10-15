@@ -26,7 +26,7 @@ it("shows all sections initially and appends newly available menus without losin
 it("moves one section to its chosen position without duplicating or dropping any section", () => {
   const moved = moveMenu(ids, "labels", "artists");
   expect(moved.indexOf("labels")).toBe(moved.indexOf("artists") - 1);
-  expect(moved[0]).toBe("recent");
+  expect(moved[0]).toBe("labels");
   expect([...moved].sort()).toEqual([...ids].sort());
   expect(moveMenu(moved, "labels", "labels")).toEqual(moved);
 });
@@ -167,38 +167,34 @@ it("refuses labels on unknown identities, empty names or oversized text before w
     ).toThrow("Configuration");
 });
 
-it("places recent albums first and migrates the former default without losing customized navigation", () => {
-  expect(defaultMenuOrder().slice(0, 3)).toEqual(["heading:library", "recent", "artists"]);
-  const previous = moveMenu(defaultMenuOrder(), "recent", "compilations");
-  expect(
-    readMenuPreferences({
-      getItem: () =>
-        JSON.stringify({
-          version: 5,
-          order: previous,
-          hidden: ["radio"],
-          labels: { recent: "Ajouts" },
-        }),
-    }),
-  ).toEqual({ order: defaultMenuOrder(), hidden: ["radio"], labels: { recent: "Ajouts" } });
-  const custom = moveMenu(previous, "labels", "artists");
-  expect(
-    readMenuPreferences({
-      getItem: () => JSON.stringify({ version: 5, order: custom, hidden: [] }),
-    }).order,
-  ).toEqual(custom);
+it("removes the retired recent menu from default and saved navigation without losing other customizations", () => {
+  expect(sections.some((item) => String(item.id) === "recent")).toBe(false);
+  const order = moveMenu(defaultMenuOrder(), "labels", "artists");
+  const legacy = ["recent", ...order];
+  const restored = readMenuPreferences({
+    getItem: () =>
+      JSON.stringify({
+        version: 6,
+        order: legacy,
+        hidden: ["recent", "radio"],
+        labels: { recent: "Ajouts", doctor: "Santé" },
+      }),
+  });
+  expect(restored).toEqual({ order, hidden: ["radio"], labels: { doctor: "Santé" } });
 });
-it("hides unavailable recent albums without saving a hidden preference or leaving an empty heading", () => {
-  const value = {
-    order: [
-      "heading:library",
-      "recent",
-      "heading:personal",
-      "favourites",
-    ] as import("./menu-preferences").MenuItem[],
-    hidden: [],
-  };
-  expect(visibleMenu(value, new Set(["recent"]))).toEqual(["heading:personal", "favourites"]);
-  expect(visibleMenu(value)).toEqual(value.order);
-  expect(value.hidden).toEqual([]);
+it("migrates old flat recent-menu preferences and still rejects duplicated legacy entries", () => {
+  const restored = readMenuPreferences({
+    getItem: () =>
+      JSON.stringify({ version: 1, order: ["recent", "albums", "artists"], hidden: ["recent"] }),
+  });
+  expect(restored.order.filter((id) => menuItem(id).kind === "section").slice(0, 2)).toEqual([
+    "albums",
+    "artists",
+  ]);
+  expect(restored.hidden).toEqual([]);
+  expect(() =>
+    readMenuPreferences({
+      getItem: () => JSON.stringify({ version: 6, order: ["recent", "recent"], hidden: [] }),
+    }),
+  ).toThrow();
 });

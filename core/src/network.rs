@@ -374,6 +374,7 @@ fn allowed(method: &str, path: &str) -> bool {
             ) || task_path(path, false)
                 || playlist_path(path)
                 || library_playlist_path(path)
+                || m3u_playback_path(path)
                 || account_path(path, false)
         }
         "PUT" => matches!(
@@ -466,4 +467,9 @@ pub(crate) mod test_support;
 fn library_playlist_path(path: &str) -> bool {
     path.strip_prefix("/api/me/v1/m3u-files/m3u-file-")
         .is_some_and(|id| id.len() == 64 && id.bytes().all(|b| b.is_ascii_hexdigit()))
+}
+
+fn m3u_playback_path(path: &str) -> bool {
+    path.strip_suffix("/playback")
+        .is_some_and(|base| playlist_path(base) || library_playlist_path(base))
 }

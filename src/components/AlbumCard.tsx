@@ -7,6 +7,7 @@ import { CoverPlay } from "./CoverPlay";
 /** Separate links and playback avoid nested interactive controls in grid and list layouts. */
 export function AlbumCard(props: {
   album: Album;
+  compact?: boolean | undefined;
   unplayed?: boolean | undefined;
   rating?: number | undefined;
   ratingFromArtist?: boolean | undefined;
@@ -29,7 +30,11 @@ export function AlbumCard(props: {
       <small class="album-year">
         {props.album.year ?? t("Année inconnue")} <SourceBadge reference={props.album.reference} />
       </small>
-      <CoverPlay reference={props.album.reference} title={props.album.title} />
+      <CoverPlay
+        reference={props.album.reference}
+        title={props.album.title}
+        append={props.compact}
+      />
     </article>
   );
 }

@@ -5,7 +5,6 @@ use crate::network::Client;
 use std::sync::{Arc, Mutex, mpsc::Receiver};
 pub(super) fn run(
     client: Client,
-    tracks: Vec<String>,
     index: usize,
     output: (String, super::Policy),
     commands: Receiver<Command>,
@@ -13,7 +12,10 @@ pub(super) fn run(
     signals: &Arc<Signals>,
 ) -> Result<(), String> {
     let (mut device, mut policy) = output;
-    let mut queue = super::queue::Queue::new(tracks.len(), index);
+    let mut queue = super::queue::Queue::new(
+        state.lock().map_err(|_| "État audio indisponible.")?.total,
+        index,
+    );
     let mut position = 0;
     let mut paused = false;
     loop {
@@ -24,7 +26,7 @@ pub(super) fn run(
         } else {
             update(state, |s| {
                 s.status = "connecting";
-                s.reference = tracks[index].clone();
+                s.reference = s.tracks[index].clone();
                 s.index = index;
                 s.position = position;
                 s.error.clear();
@@ -35,10 +37,11 @@ pub(super) fn run(
                 .lock()
                 .map_err(|_| "État audio indisponible.")?
                 .crossfade_ms;
+            let reference =
+                state.lock().map_err(|_| "État audio indisponible.")?.tracks[index].clone();
             let result = if crossfade_ms > 0 && matches!(policy, super::Policy::Dsp) {
                 super::crossfade::stream(
                     &client,
-                    &tracks,
                     (index, position),
                     &device,
                     crossfade_ms,
@@ -49,7 +52,7 @@ pub(super) fn run(
             } else {
                 stream(
                     &client,
-                    &tracks[index],
+                    &reference,
                     position,
                     (&device, policy),
                     &commands,
@@ -87,6 +90,31 @@ pub(super) fn run(
                 }
                 position = 0;
                 paused = false;
+            }
+            Command::Remove(occurrence, done) => {
+                let outcome = {
+                    let mut state = state.lock().map_err(|_| "État audio indisponible.")?;
+                    super::removal::edit(&mut state, occurrence, paused)
+                };
+                match outcome {
+                    Ok(super::removal::Outcome::Stop) => {
+                        let _ = done.send(Ok(()));
+                        return Ok(());
+                    }
+                    Ok(super::removal::Outcome::Advance(next)) => {
+                        position = 0;
+                        queue.jump(next);
+                        synchronize(&mut queue, state)?;
+                        let _ = done.send(Ok(()));
+                    }
+                    Ok(super::removal::Outcome::Keep) => {
+                        synchronize(&mut queue, state)?;
+                        let _ = done.send(Ok(()));
+                    }
+                    Err(error) => {
+                        let _ = done.send(Err(error));
+                    }
+                }
             }
             Command::Crossfade(value) => {
                 update(state, |s| s.crossfade_ms = value)?;
@@ -146,5 +174,5 @@ pub(super) fn run(
 
 fn synchronize(queue: &mut super::queue::Queue, state: &Mutex<State>) -> Result<(), String> {
     let state = state.lock().map_err(|_| "État audio indisponible.")?;
-    queue.synchronize(&state.queue, state.shuffled)
+    queue.synchronize(&state.queue, state.shuffled, state.total)
 }

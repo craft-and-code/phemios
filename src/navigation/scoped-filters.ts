@@ -47,6 +47,7 @@ export interface ActiveFilter {
 /** Hidden rails do not restrict results and are omitted from the visible summary. */
 export function activeFilters(value: Filters, domain: Interval): ActiveFilter[] {
   const out: ActiveFilter[] = [];
+  if (value.recentOnly) out.push({ key: "recent", label: t("Ajoutés ces 30 derniers jours") });
   if (value.query.trim()) out.push({ key: "query", label: t("Recherche : {0}", value.query) });
   if (["years", "both"].includes(value.mode)) {
     if (value.years[0] !== domain[0] || value.years[1] !== domain[1])
@@ -78,6 +79,7 @@ export function activeFilters(value: Filters, domain: Interval): ActiveFilter[] 
 }
 /** Remove only the chosen restriction, retaining rail visibility and unrelated selections. */
 export function clearFilter(value: Filters, key: string, domain: Interval): Filters {
+  if (key === "recent") return { ...value, recentOnly: false };
   if (key === "query") return { ...value, query: "" };
   if (key === "years") return { ...value, years: domain };
   if (key === "unknown") return { ...value, includeUnknownYear: true };

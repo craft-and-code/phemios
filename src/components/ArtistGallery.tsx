@@ -98,7 +98,13 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
                   image={image()}
                   logo={library.image(artist.reference, "logo")}
                   badge={<SourceBadge reference={artist.reference} />}
-                  play={<CoverPlay reference={artist.reference} title={artist.name} />}
+                  play={
+                    <CoverPlay
+                      reference={artist.reference}
+                      title={artist.name}
+                      append={props.view === "editorial" ? true : "badge"}
+                    />
+                  }
                   fallback={
                     <Show
                       when={fallback()}

@@ -102,6 +102,7 @@ export function RatedPage(props: { query: string }) {
         >
           <AlbumGrid
             albums={albums()}
+            compact={compact()}
             rating={(album) => albumRating(album, library.annotations)}
             ratingFromArtist={(album) =>
               !!album.artist &&

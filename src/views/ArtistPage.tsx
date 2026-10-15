@@ -14,6 +14,7 @@ import type { Artist } from "../library/types";
 /** Present local editions and contributions without inventing a principal credit. */
 export function ArtistPage(props: {
   artist: Artist;
+  compact: boolean;
   onGenres: (genres: readonly string[]) => void;
   onCountry: (country: string) => void;
 }) {
@@ -139,6 +140,7 @@ export function ArtistPage(props: {
             </span>
           </div>
           <AlbumGrid
+            compact={props.compact}
             albums={albums()}
             missing={
               preferences.value().showMissingAlbums && !catalogue().credited
@@ -154,7 +156,7 @@ export function ArtistPage(props: {
           </Show>
           <Show when={appearances().length}>
             <h2>{t("Participations")}</h2>
-            <AlbumGrid albums={appearances()} chronological />
+            <AlbumGrid compact={props.compact} albums={appearances()} chronological />
           </Show>
           <Show when={props.artist.relations?.length}>
             <section class="artist-collaborations">

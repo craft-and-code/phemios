@@ -21,3 +21,25 @@ it("uses catalog entry dates and excludes unknown, future and out-of-window date
   ];
   expect(recentAlbums(rows, now).map((a) => a.reference)).toEqual(["new", "bound"]);
 });
+it("combines the recent toggle with the existing album filters without changing catalog order", async () => {
+  const { filterAlbums } = await import("./filtering");
+  const now = 4000000;
+  const base = { artist: null, year: 2000, compilation: false, tags: [] };
+  const albums: Album[] = [
+    { ...base, reference: "old", title: "A title", addedAt: now - 31 * 86400 },
+    { ...base, reference: "fresh", title: "A title", addedAt: now - 2 },
+    { ...base, reference: "other", title: "B title", addedAt: now - 1 },
+  ];
+  const filters = {
+    mode: "both" as const,
+    years: [1990, 2010] as const,
+    alphabet: [1, 1] as const,
+    includeUnknownYear: true,
+    query: "title",
+    recentOnly: true,
+  };
+  expect(filterAlbums(albums, [], filters, now).map((a) => a.reference)).toEqual(["fresh"]);
+  expect(
+    filterAlbums(albums, [], { ...filters, recentOnly: false }, now).map((a) => a.reference),
+  ).toEqual(["old", "fresh"]);
+});

@@ -113,6 +113,14 @@ export const playbackStart = (
     policy,
     expectedSession: nativeSessions[tracks[0] ? referenceSource(tracks[0]) : requestSource],
   });
+/** Append exact occurrences to the captured native queue, never restarting the current output. */
+export const playbackAppend = (queueId: number, expectedTotal: number, tracks: readonly string[]) =>
+  nativeCall<void>("playback_append", {
+    tracks,
+    queueId,
+    expectedTotal,
+    expectedSession: nativeSessions[tracks[0] ? referenceSource(tracks[0]) : requestSource],
+  });
 export const playbackControl = (action: string, value: unknown = null) =>
   nativeCall<unknown>("playback_control", { action, value });
 

@@ -121,6 +121,7 @@ pub fn run() -> Result<(), tauri::Error> {
             playback::playback_devices,
             playback::playback_state,
             playback::playback_start,
+            playback::playback_append,
             playback::playback_control,
             aede::aede_login,
             aede::aede_logout,

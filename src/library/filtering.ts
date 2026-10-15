@@ -1,3 +1,4 @@
+import { isRecentAlbum } from "./recent-albums";
 import { t } from "../i18n";
 import { catalogIndex } from "./index";
 import type { Album, Artist, Filters, Interval } from "./types";
@@ -145,9 +146,11 @@ export function filterAlbums(
   albums: readonly Album[],
   artists: readonly Artist[],
   filters: Filters,
+  nowSeconds = Math.floor(Date.now() / 1000),
 ) {
   const index = catalogIndex(artists, albums);
   return albums.filter((album) => {
+    if (filters.recentOnly && !isRecentAlbum(album, nowSeconds)) return false;
     const related = index.artistsByAlbum.get(album.reference) ?? [];
     const fallback: Artist = {
       reference: "",

@@ -287,7 +287,7 @@ export function AnalysisPage(props: { query: string }) {
                                     onStatus={(message, failure) => setNotice({ message, failure })}
                                   />
                                 </Show>
-                                <CoverPlay reference={row.reference} title={row.title} />
+                                <CoverPlay reference={row.reference} title={row.title} append />
                               </div>
                             </td>
                           </tr>

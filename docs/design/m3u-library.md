@@ -1,5 +1,7 @@
 # Library M3U files and saved exports
 
+The file browser is accessed through the header action in **Listes de lecture / Playlists**. The section itself defaults to the temporary shared play queue; the browser return action preserves its prepared contents. See [queue composition](queue-composition.md).
+
 The M3U view separates existing files in the selected Aède library from saved owner-private exports. Its default is **Library files**. It does not infer files from Phémios actions: Aède discovers `.m3u` and `.m3u8` under its watched roots, including playlists created by the CLI and playlists with no adjacent catalogue album. Shared library files are not imported into the private playlist store. The existing personal-library selector distinguishes local and remote sources when both are present.
 
 ## Read and identity contracts

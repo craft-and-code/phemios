@@ -1,3 +1,6 @@
+import { CircularPlaybackActionsView } from "../../../src/components/CircularPlaybackActionsView";
+import { PlaybackActionsView } from "../../../src/components/PlaybackActionsView";
+import { QueueAppendView } from "../../../src/components/QueueAppendView";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { ArtistCard } from "../../../src/components/ArtistCard";
@@ -32,6 +35,41 @@ const meta = {
       </div>
     ),
   },
+  render: (args) => (
+    <ArtistCard
+      {...args}
+      play={
+        args.view === "editorial" ? (
+          <PlaybackActionsView
+            append={
+              <QueueAppendView
+                reference="artist:example"
+                title="The Northern Lights"
+                class="cover-play"
+                onAppend={async () => 12}
+              />
+            }
+            play={
+              <button class="icon-button cover-play" aria-label="Lire The Northern Lights">
+                <Icon name="play" />
+              </button>
+            }
+          />
+        ) : (
+          <CircularPlaybackActionsView
+            play={args.play}
+            append={
+              <QueueAppendView
+                reference="artist:example"
+                title="The Northern Lights"
+                onAppend={async () => 12}
+              />
+            }
+          />
+        )
+      }
+    />
+  ),
   decorators: [
     (Story) => (
       <div style={{ "max-width": "1400px" }}>
@@ -66,6 +104,18 @@ export const Discography: Story = {
   ],
   play: async ({ canvasElement }) => {
     const play = within(canvasElement).getByRole("button", { name: "Lire The Northern Lights" });
+    const add = within(canvasElement).getByRole("button", {
+      name: "Ajouter The Northern Lights à la suite",
+    });
+    expect(add).toBeVisible();
+    expect(getComputedStyle(add).opacity).toBe("1");
+    const badge = add.getBoundingClientRect();
+    expect(badge.width).toBe(22);
+    expect(badge.right).toBeLessThanOrEqual(
+      canvasElement.querySelector(".artist-presentation")!.getBoundingClientRect().right,
+    );
+    await userEvent.click(add);
+    expect(add).toHaveClass("download-complete");
     expect(getComputedStyle(play).cursor).toBe("pointer");
     await userEvent.click(play);
     const button = play.getBoundingClientRect();

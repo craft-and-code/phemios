@@ -47,6 +47,7 @@ export type RailMode = "years" | "alphabet" | "both" | "none";
 
 /** Both active intervals intersect; hidden rails do not filter results. */
 export interface Filters {
+  recentOnly?: boolean | undefined;
   mode: RailMode;
   years: Interval;
   alphabet: Interval;

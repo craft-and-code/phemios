@@ -1,3 +1,4 @@
+import { CoverPlay } from "./CoverPlay";
 import { createIntegrityDisclosure, type IntegrityResult } from "../library/album-integrity";
 import { TrackIntegrityError } from "./TrackIntegrityError";
 import { TrackIntegrity } from "./TrackIntegrity";
@@ -134,19 +135,13 @@ export function TrackResults(props: {
                 <Icon name="lyrics" />
               </button>
             </Show>
-            <button
-              class="icon-button quiet"
-              disabled={
-                !library.sessionFor(props.track.reference) ||
-                library.sessionFor(props.track.reference)?.account.role === "auditor" ||
-                library.player.busy()
-              }
-              aria-label={t("Lire {0}", props.track.title)}
-              data-play-reference={props.track.reference}
-              onClick={props.onPlay}
-            >
-              <Icon name="play" />
-            </button>
+            <CoverPlay
+              reference={props.track.reference}
+              title={props.track.title}
+              class="quiet track-play"
+              append
+              onPlay={props.onPlay}
+            />
           </div>
         </div>
         <Show when={props.context}>

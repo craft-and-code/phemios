@@ -6,7 +6,7 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { AlbumGrid } from "./AlbumGrid";
 /** Evaluate saved rules on Aède; never silently discard editions absent from a stale cache. */
-export function CollectionAlbums(props: { name: string }) {
+export function CollectionAlbums(props: { name: string; compact: boolean }) {
   const library = useLibrary();
   const [result] = createResource(
     () => {
@@ -44,7 +44,9 @@ export function CollectionAlbums(props: { name: string }) {
       <Show when={result()?.error}>
         <p role="alert">{result()?.error}</p>
       </Show>
-      <Show when={result()?.albums}>{(albums) => <AlbumGrid albums={albums()} />}</Show>
+      <Show when={result()?.albums}>
+        {(albums) => <AlbumGrid albums={albums()} compact={props.compact} />}
+      </Show>
     </section>
   );
 }

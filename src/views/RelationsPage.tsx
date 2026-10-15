@@ -8,7 +8,7 @@ import { AlbumGrid } from "../components/AlbumGrid";
 import { RelationGraph } from "../components/RelationGraph";
 import { neighbours } from "../library/relations";
 /** A bounded, keyboard-accessible view of Aède's actual local collaborations. */
-export function RelationsPage(props: { query: string }) {
+export function RelationsPage(props: { query: string; compact: boolean }) {
   const library = useLibrary(),
     [reference, setReference] = createSignal(""),
     [search, setSearch] = createSignal(""),
@@ -155,7 +155,7 @@ export function RelationsPage(props: { query: string }) {
                     "Discographie et participations issues du catalogue. Le graphe affiche les 16 premiers albums ; les pochettes ci-dessous donnent accès à l’ensemble.",
                   )}{" "}
                 </p>
-                <AlbumGrid albums={albums()} />
+                <AlbumGrid compact={props.compact} albums={albums()} />
               </Show>
             </Show>
             <a href={`#/artist/${encodeURIComponent(artist().reference)}`}>

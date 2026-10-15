@@ -1,3 +1,4 @@
+import { isRecentAlbum } from "./recent-albums";
 import {
   matchesAlphabet,
   matchesFacets,
@@ -29,11 +30,13 @@ export function distributions(
   albums: readonly Album[],
   filters: Filters,
   artistView: boolean,
+  nowSeconds = Math.floor(Date.now() / 1000),
 ) {
   const years = new Map<number, Set<string>>();
   const letters = new Map<number, Set<string>>();
   const index = catalogIndex(artists, albums);
   for (const album of albums) {
+    if (filters.recentOnly && !isRecentAlbum(album, nowSeconds)) continue;
     const related = index.artistsByAlbum.get(album.reference) ?? [];
     for (const artist of related) {
       if (!matchesFacets(artist, filters) || !searchAlbum(album, artist, filters.query)) continue;

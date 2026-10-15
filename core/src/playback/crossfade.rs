@@ -21,9 +21,9 @@ struct Voice {
     supplied: u64,
 }
 impl Voice {
-    fn open(client: &Client, tracks: &[String], index: usize, rate: u32, position: u64) -> Self {
+    fn open(client: &Client, reference: String, index: usize, rate: u32, position: u64) -> Self {
         Self {
-            source: Source::open(client, tracks[index].clone(), rate, position),
+            source: Source::open(client, reference, rate, position),
             format: None,
             frames: VecDeque::new(),
             ended: false,
@@ -66,7 +66,6 @@ impl Voice {
 }
 struct Mixer<'a> {
     client: &'a Client,
-    tracks: &'a [String],
     state: &'a Mutex<State>,
     signals: &'a Arc<Signals>,
     output: Output,
@@ -109,9 +108,26 @@ impl Mixer<'_> {
             VoiceSlot::Retired => self.retired.as_ref().ok_or("Voix du fondu indisponible.")?,
             VoiceSlot::Current => &self.current,
         };
+        let protected = if self.mixing.is_some()
+            || self
+                .retired
+                .as_ref()
+                .is_some_and(|voice| voice.start.is_some())
+        {
+            [&self.current]
+                .into_iter()
+                .chain(self.next.iter())
+                .chain(self.retired.iter())
+                .filter(|voice| voice.start.is_some())
+                .map(|voice| voice.index)
+                .collect()
+        } else {
+            Vec::new()
+        };
         update(self.state, |s| {
+            s.protected = protected;
             s.index = audible.index;
-            s.reference = self.tracks[audible.index].clone();
+            s.reference = s.tracks[audible.index].clone();
             if let Some(format) = &audible.format {
                 s.position = audible.position(consumed, self.output.rate);
                 s.duration = format.duration;
@@ -185,10 +201,11 @@ impl Mixer<'_> {
         if self.next.is_none()
             && (self.current.ended || remaining.is_some_and(|value| value <= ms + 3000))
             && let Some(index) = successor
+            && let Some(reference) = preload_reference(self.state, index)?
         {
             self.next = Some(Voice::open(
                 self.client,
-                self.tracks,
+                reference,
                 index,
                 self.output.rate,
                 0,
@@ -213,7 +230,10 @@ impl Mixer<'_> {
         if let Some(error) = failure {
             return Err(error);
         }
-        update(self.state, |state| state.confirmed = true)
+        update(self.state, |state| {
+            state.confirmed = true;
+            state.protected.clear();
+        })
     }
     fn seek(&mut self, position: u64, ticket: u64) -> Result<(), String> {
         self.signals.paused.store(true, Ordering::Relaxed);
@@ -303,7 +323,20 @@ impl Mixer<'_> {
                 }
             }
             if self.current.ended && self.current.frames.is_empty() {
+                if self.next.as_ref().is_some_and(|next| {
+                    !self
+                        .state
+                        .lock()
+                        .is_ok_and(|state| state.queue.contains(&next.index))
+                }) {
+                    std::thread::sleep(Duration::from_millis(2));
+                    continue;
+                }
                 if let Some(mut next) = self.next.take() {
+                    if !super::removal::reserve_mix(self.state, self.current.index, next.index)? {
+                        self.next = Some(next);
+                        continue;
+                    }
                     next.start.get_or_insert(self.sent);
                     self.retired = Some(std::mem::replace(&mut self.current, next));
                     self.mixing = None;
@@ -351,6 +384,9 @@ impl Mixer<'_> {
                     })
                     .saturating_sub(self.current.supplied);
                 if fade > 0 && remaining <= fade {
+                    if !super::removal::reserve_mix(self.state, self.current.index, next.index)? {
+                        continue;
+                    }
                     next.start = Some(self.sent);
                     self.mixing = Some((0, remaining.max(1)));
                 }
@@ -397,7 +433,6 @@ impl Mixer<'_> {
 }
 pub(super) fn stream(
     client: &Client,
-    tracks: &[String],
     initial: (usize, u64),
     device: &str,
     ms: u64,
@@ -407,10 +442,10 @@ pub(super) fn stream(
 ) -> Result<Option<Command>, String> {
     signals.paused.store(true, Ordering::Relaxed);
     let output = Output::open(device, signals.clone())?;
-    let current = Voice::open(client, tracks, initial.0, output.rate, initial.1);
+    let reference = state.lock().map_err(|_| "État audio indisponible.")?.tracks[initial.0].clone();
+    let current = Voice::open(client, reference, initial.0, output.rate, initial.1);
     let mut mixer = Mixer {
         client,
-        tracks,
         state,
         signals,
         output,
@@ -428,3 +463,17 @@ pub(super) fn stream(
     let stopped = mixer.finish();
     result.and_then(|command| stopped.map(|()| command))
 }
+
+// Recheck the captured successor at the last point before opening its source.
+fn preload_reference(state: &Mutex<State>, index: usize) -> Result<Option<String>, String> {
+    let state = state.lock().map_err(|_| "État audio indisponible.")?;
+    Ok(if state.queue.contains(&index) {
+        state.tracks.get(index).cloned()
+    } else {
+        None
+    })
+}
+
+#[cfg(test)]
+#[path = "crossfade_tests.rs"]
+mod tests;

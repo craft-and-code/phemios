@@ -1,9 +1,9 @@
 import { createAlbumIntegrity, integrityPath } from "../library/album-integrity";
+import { CoverPlay } from "../components/CoverPlay";
 import { AlbumIntegrity } from "../components/AlbumIntegrity";
 import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
 import { AlbumMetadata } from "../components/AlbumMetadata";
-import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
@@ -103,19 +103,13 @@ export function AlbumPage(props: {
             onGenres={props.onGenres}
             onCountry={props.onCountry}
           />
-          <button
-            class="icon-button detail-play"
-            aria-label={t("Lire l’album")}
-            title={t("Lire l’album")}
-            disabled={
-              !library.sessionFor(props.album.reference) ||
-              library.sessionFor(props.album.reference)?.account.role === "auditor" ||
-              library.player.busy()
-            }
-            onClick={() => void library.player.startReference(props.album.reference)}
-          >
-            <Icon name="play" />
-          </button>
+          <CoverPlay
+            detail
+            append="badge"
+            reference={props.album.reference}
+            title={props.album.title}
+            label={t("Lire l’album")}
+          />
         </div>
       </div>
       <AnnotationPanel reference={props.album.reference} kind="album" />

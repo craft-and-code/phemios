@@ -10,6 +10,7 @@ import type { Album } from "../library/types";
 /** Each local edition keeps its own identity and cover when opening details. */
 export function AlbumGrid(props: {
   albums: readonly Album[];
+  compact?: boolean | undefined;
   unplayed?: ((album: Album) => boolean) | undefined;
   coverSize?: number | undefined;
   missing?: readonly MissingAlbum[];
@@ -43,6 +44,7 @@ export function AlbumGrid(props: {
                 fallback={
                   <AlbumCard
                     album={album}
+                    compact={props.compact}
                     unplayed={props.unplayed?.(album)}
                     rating={props.rating?.(album)}
                     ratingFromArtist={props.ratingFromArtist?.(album)}

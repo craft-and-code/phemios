@@ -4,6 +4,7 @@ import { getOwner, onCleanup } from "solid-js";
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 import { sections, type Section } from "./routes";
+type LegacyMenuItem = MenuItem | "recent";
 type Store = Pick<Storage, "getItem" | "setItem">;
 export type MenuItem =
   | Section
@@ -74,12 +75,13 @@ function addHeadings(order: readonly MenuItem[]): MenuItem[] {
 export const defaultMenuOrder = () => addHeadings(ids());
 function validate(raw: unknown): MenuPreferences {
   const value = raw as { version?: unknown; order?: unknown; hidden?: unknown; labels?: unknown };
-  const validId = (id: unknown): id is MenuItem =>
+  const validId = (id: unknown): id is LegacyMenuItem =>
     typeof id === "string" &&
-    (ids().includes(id as Section) ||
+    (id === "recent" ||
+      ids().includes(id as Section) ||
       Object.hasOwn(headings, id) ||
       /^separator:[a-zA-Z0-9-]{1,40}$/.test(id));
-  const valid = (rows: unknown): rows is MenuItem[] =>
+  const valid = (rows: unknown): rows is LegacyMenuItem[] =>
     Array.isArray(rows) &&
     rows.length <= 96 &&
     new Set(rows).size === rows.length &&
@@ -98,21 +100,13 @@ function validate(raw: unknown): MenuPreferences {
     throw new Error(t("Configuration du menu illisible."));
   if (
     value.version === 1 &&
-    [...value.order, ...value.hidden].some((id) => !ids().includes(id as Section))
+    [...value.order, ...value.hidden].some(
+      (id) => id !== "recent" && !ids().includes(id as Section),
+    )
   )
     throw new Error(t("Configuration du menu illisible."));
-  const saved = [...value.order];
-  const libraryOrder = saved.filter(
-    (id) => ids().includes(id as Section) && menuHeading(id as Section) === "heading:library",
-  );
-  if (
-    value.version !== 6 &&
-    libraryOrder.join(",") === "artists,albums,tracks,recent,compilations,countries,genres,labels"
-  ) {
-    saved.splice(saved.indexOf("recent"), 1);
-    saved.splice(saved.indexOf("artists"), 0, "recent");
-  }
-
+  const saved: MenuItem[] = value.order.filter((id): id is MenuItem => id !== "recent");
+  const hidden: MenuItem[] = value.hidden.filter((id): id is MenuItem => id !== "recent");
   const tools = saved.filter((id) =>
     ["doctor", "analysis", "relations", "statistics", "players"].includes(id),
   );
@@ -173,13 +167,14 @@ function validate(raw: unknown): MenuPreferences {
   const order = addHeadings(
     untouched ? ids() : [...saved, ...ids().filter((id) => !saved.includes(id))],
   );
-  if (order.length > 96 || value.hidden.some((id) => !order.includes(id)))
+  if (order.length > 96 || hidden.some((id) => !order.includes(id)))
     throw new Error(t("Configuration du menu illisible."));
   const labels: Partial<Record<MenuItem, string>> = {};
   if (value.labels !== undefined) {
     if (!value.labels || typeof value.labels !== "object" || Array.isArray(value.labels))
       throw new Error(t("Configuration du menu illisible."));
     for (const [id, name] of Object.entries(value.labels)) {
+      if (id === "recent") continue;
       if (
         !order.includes(id as MenuItem) ||
         id.startsWith("separator:") ||
@@ -192,7 +187,7 @@ function validate(raw: unknown): MenuPreferences {
       labels[id as MenuItem] = name.trim();
     }
   }
-  return { order, hidden: [...value.hidden], ...(Object.keys(labels).length ? { labels } : {}) };
+  return { order, hidden, ...(Object.keys(labels).length ? { labels } : {}) };
 }
 /** New sections remain visible by default; corrupt preferences are never replaced implicitly. */
 export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPreferences {

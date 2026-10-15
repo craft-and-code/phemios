@@ -76,3 +76,17 @@ it("validates measured frequency banks together without inventing legacy data", 
   ])
     expect(() => parsePlayback({ ...state, spectrum, spectrum_hz, ...change })).toThrow();
 });
+it("accepts sparse stable occurrence ids but rejects removed-slot restoration outside the slot bound", () => {
+  expect(parsePlayback({ ...state, total: 4, index: 2, queue: [2, 0] }).queue).toEqual([2, 0]);
+  expect(() => parsePlayback({ ...state, total: 4, queue: [2, 2] })).toThrow();
+  expect(() => parsePlayback({ ...state, total: 4, queue: [0, 4] })).toThrow();
+});
+
+it("bounds protected crossfade occurrences without inventing reservations for legacy snapshots", () => {
+  expect(parsePlayback(state).protected_occurrences).toBeUndefined();
+  expect(parsePlayback({ ...state, protected_occurrences: [0, 1] }).protected_occurrences).toEqual([
+    0, 1,
+  ]);
+  expect(() => parsePlayback({ ...state, protected_occurrences: [2] })).toThrow();
+  expect(() => parsePlayback({ ...state, protected_occurrences: "0" })).toThrow();
+});

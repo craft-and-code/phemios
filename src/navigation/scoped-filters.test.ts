@@ -60,3 +60,24 @@ it("starts Artists with both rails hidden while retaining explicit choices on re
     dispose();
   });
 });
+
+it("keeps the recent-only flag inside Albums and clears it independently of other criteria", () => {
+  createRoot((dispose) => {
+    const [section, setSection] = createSignal<Section>("albums");
+    const filters = createScopedFilters(section, () => [1980, 2026]);
+    filters.set({ ...filters.value(), recentOnly: true, query: "live" });
+    expect(activeFilters(filters.value(), [1980, 2026]).map((row) => row.key)).toEqual([
+      "recent",
+      "query",
+    ]);
+    setSection("artists");
+    expect(filters.value().recentOnly).toBeUndefined();
+    setSection("albums");
+    expect(filters.value().recentOnly).toBe(true);
+    expect(clearFilter(filters.value(), "recent", [1980, 2026])).toMatchObject({
+      recentOnly: false,
+      query: "live",
+    });
+    dispose();
+  });
+});

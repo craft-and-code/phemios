@@ -22,9 +22,17 @@ impl Queue {
     pub fn shuffled(&self) -> bool {
         self.shuffled
     }
-    pub fn synchronize(&mut self, order: &[usize], shuffled: bool) -> Result<(), String> {
-        if order.len() != self.order.len()
-            || order.iter().any(|index| *index >= order.len())
+    pub fn synchronize(
+        &mut self,
+        order: &[usize],
+        shuffled: bool,
+        total: usize,
+    ) -> Result<(), String> {
+        if order.is_empty()
+            || total == 0
+            || total > 4096
+            || order.len() > total
+            || order.iter().any(|index| *index >= total)
             || order
                 .iter()
                 .copied()

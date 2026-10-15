@@ -7,6 +7,7 @@ mod crossfade_source;
 mod output;
 mod protocol;
 mod queue;
+mod removal;
 mod socket;
 mod spectrum;
 mod stream;
@@ -25,6 +26,7 @@ enum Command {
     Policy(Policy),
     Crossfade(u64),
     Jump(usize),
+    Remove(usize, SyncSender<Result<(), String>>),
     Pause,
     Resume,
     Next,
@@ -77,6 +79,21 @@ struct State {
     repeat: &'static str,
     crossfade_ms: u64,
     queue: Vec<usize>,
+    tracks: Vec<String>,
+    protected: Vec<usize>,
+}
+impl State {
+    fn clear_selection(&mut self) {
+        *self = State {
+            status: "idle",
+            device: std::mem::take(&mut self.device),
+            policy: self.policy,
+            repeat: self.repeat,
+            crossfade_ms: self.crossfade_ms,
+            error: std::mem::take(&mut self.error),
+            ..State::default()
+        };
+    }
 }
 /// One bounded actor owns the socket and device; no credential enters the UI or audio callback.
 pub struct Player {
@@ -130,7 +147,7 @@ impl Player {
             [0.; 24]
         };
         Ok(
-            json!({"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"protected_occurrences":s.protected,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -189,21 +206,14 @@ impl Player {
             total: tracks.len(),
             index,
             queue: (0..tracks.len()).collect(),
+            tracks,
             queue_id: self.next_queue.fetch_add(1, Ordering::Relaxed),
             device: device.clone(),
             policy,
             ..State::default()
         };
         let handle = std::thread::spawn(move || {
-            if let Err(error) = actor::run(
-                client,
-                tracks,
-                index,
-                (device, policy),
-                rx,
-                &state,
-                &signals,
-            ) {
+            if let Err(error) = actor::run(client, index, (device, policy), rx, &state, &signals) {
                 signals.paused.store(true, Ordering::Relaxed);
                 if let Ok(mut s) = state.lock() {
                     s.status = "error";
@@ -217,8 +227,56 @@ impl Player {
         });
         Ok(())
     }
+    /// Append occurrences without touching the device, PCM buffers, consumption or visit.
+    /// Both queue identity and expected size refuse delayed or repeated submissions.
+    pub fn append(
+        &self,
+        id: u64,
+        expected_total: usize,
+        tracks: Vec<String>,
+    ) -> Result<(), String> {
+        if tracks.is_empty()
+            || tracks.len() > 4096
+            || tracks
+                .iter()
+                .any(|r| protocol::start(r, 48000, Policy::WithoutEffects).is_err())
+        {
+            return Err(
+                "Sélection audio invalide ou trop volumineuse (4096 pistes maximum).".into(),
+            );
+        }
+        let worker = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
+        if worker.as_ref().is_none_or(|w| w.handle.is_finished()) {
+            return Err("Aucune lecture active.".into());
+        }
+        let mut state = self.state.lock().map_err(|_| "État audio indisponible.")?;
+        if state.queue_id != id
+            || state.total != expected_total
+            || state.total == 0
+            || state.tracks.len() != state.total
+        {
+            return Err("La liste de lecture a changé.".into());
+        }
+        let total = state
+            .total
+            .checked_add(tracks.len())
+            .filter(|n| *n <= 4096)
+            .ok_or("Sélection limitée à 4096 pistes.")?;
+        let previous = state.total;
+        state.tracks.extend(tracks);
+        state.queue.extend(previous..total);
+        state.total = total;
+        Ok(())
+    }
     /// Stop and join the native worker before revoking its authentication session.
     pub fn halt(&self) -> Result<(), String> {
+        self.stop(false)
+    }
+    /// Stop the worker and forget its selection, retaining device and audio configuration.
+    pub fn clear(&self) -> Result<(), String> {
+        self.stop(true)
+    }
+    fn stop(&self, clear: bool) -> Result<(), String> {
         let mut slot = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
         self.signals.paused.store(true, Ordering::Relaxed);
         if let Some(worker) = slot.as_ref()
@@ -235,7 +293,15 @@ impl Player {
                 .join()
                 .map_err(|_| "Arrêt audio interrompu.")?;
         }
-        update(&self.state, |s| s.status = "idle")
+        update(&self.state, |s| {
+            if clear {
+                s.clear_selection();
+            } else {
+                s.status = "idle";
+                s.tracks.clear();
+                s.protected.clear();
+            }
+        })
     }
     /// Queue a seek and return its ticket; snapshots acknowledge it only after the actor applies it.
     pub fn seek(&self, position: u64) -> Result<u64, String> {
@@ -325,11 +391,22 @@ impl Player {
                 return Err("Aucune lecture active.".into());
             }
             let mut state = self.state.lock().map_err(|_| "État audio indisponible.")?;
-            if state.queue_id != id || state.total == 0 || state.index >= state.total {
+            if state.queue_id != id
+                || order.len() != state.queue.len()
+                || {
+                    let mut requested = order.clone();
+                    requested.sort_unstable();
+                    let mut retained = state.queue.clone();
+                    retained.sort_unstable();
+                    requested != retained
+                }
+                || state.total == 0
+                || state.index >= state.total
+            {
                 return Err("La liste de lecture a changé.".into());
             }
             let mut queue = queue::Queue::new(state.total, state.index);
-            queue.synchronize(&order, false)?;
+            queue.synchronize(&order, false, state.total)?;
             state.queue = queue.order().to_vec();
             state.shuffled = false;
             return Ok(());
@@ -348,7 +425,7 @@ impl Player {
                 return Err("Aucune lecture active.".into());
             }
             let mut queue = queue::Queue::new(state.total, state.index);
-            queue.synchronize(&state.queue, state.shuffled)?;
+            queue.synchronize(&state.queue, state.shuffled, state.total)?;
             queue.shuffle(enabled)?;
             state.queue = queue.order().to_vec();
             state.shuffled = queue.shuffled();
@@ -364,7 +441,7 @@ impl Player {
                     .filter(|index| {
                         self.state
                             .lock()
-                            .is_ok_and(|state| *index < state.total as u64)
+                            .is_ok_and(|state| state.queue.contains(&(*index as usize)))
                     })
                     .ok_or("Position de file invalide.")? as usize,
             ),
@@ -417,3 +494,11 @@ fn update(state: &Mutex<State>, work: impl FnOnce(&mut State)) -> Result<(), Str
 #[cfg(test)]
 #[path = "player_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "append_tests.rs"]
+mod append_tests;
+
+#[cfg(test)]
+#[path = "clear_tests.rs"]
+mod clear_tests;

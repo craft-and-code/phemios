@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseRoute, artistCatalog, navigationLabel } from "./routes";
+import { parseRoute, artistCatalog, navigationLabel, sections } from "./routes";
 
 it("opens stable references and refuses unknown or malformed URLs", () => {
   expect(parseRoute("#/artist/artist%3Astable")).toEqual({
@@ -60,4 +60,9 @@ it("keeps resolved detail names literal and supplies an honest unknown-detail la
       () => undefined,
     ),
   ).toBe("Piste");
+});
+
+it("keeps the existing playlists route with its new shared navigation and Settings label", () => {
+  expect(parseRoute("#/playlists")).toEqual({ kind: "section", section: "playlists" });
+  expect(sections.find((row) => row.id === "playlists")?.label).toBe("Listes de lecture");
 });

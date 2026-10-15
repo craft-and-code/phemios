@@ -1,9 +1,14 @@
+import { RecentAlbumsFilter } from "./components/RecentAlbumsFilter";
 import { ArtistViewActions } from "./components/ArtistViewActions";
 import { CatalogActions } from "./components/CatalogActions";
 import { CoverSize } from "./components/CoverSize";
 import { StickyHeader } from "./components/StickyHeader";
 import { createCoverPosition } from "./visualizer/cover-position";
-import { contextualReference } from "./navigation/contextual-play";
+import {
+  contextualReference,
+  footerTransport,
+  isQueueWorkspace,
+} from "./navigation/contextual-play";
 import { Feedback } from "./components/Feedback";
 import { activateExternalLink } from "./navigation/external-links";
 import { isNative, openExternalLink } from "./platform/desktop";
@@ -53,8 +58,6 @@ import { createTrackPaging } from "./navigation/track-paging";
 import { TracksPage } from "./views/TracksPage";
 import { TrackPage } from "./views/TrackPage";
 import { TagsPage } from "./views/TagsPage";
-import { recentAlbums } from "./library/recent-albums";
-import { RecentPage } from "./views/RecentPage";
 import { AlbumPage } from "./views/AlbumPage";
 import { WorkspacePage } from "./views/WorkspacePage";
 
@@ -66,10 +69,7 @@ export function App() {
   const shortcuts = createShortcuts();
   const [recentNow, setRecentNow] = createSignal(Math.floor(Date.now() / 1000));
   const visibleMenus = createMemo(() =>
-    visibleMenu(
-      menu.value(),
-      new Set(recentAlbums(library.albums(), recentNow()).length ? [] : (["recent"] as const)),
-    ).map((id) => ({
+    visibleMenu(menu.value()).map((id) => ({
       ...menuItem(id),
       label: menuLabel(id, menu.value()),
     })),
@@ -121,6 +121,14 @@ export function App() {
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
     section = navigation.section;
+  const footer = createMemo(() =>
+    footerTransport({
+      queueView: isQueueWorkspace(current()),
+      queued: library.player.queue().length > 0,
+      podcast: !!library.podcast.episode(),
+      radio: !!library.radio.station(),
+    }),
+  );
   const selectedArtist = createMemo(() => {
     const value = current();
     return value.kind === "artist"
@@ -181,17 +189,22 @@ export function App() {
               visible: button.getClientRects().length > 0,
             })),
           );
-          const media = library.podcast.episode()
-            ? library.podcast
-            : library.radio.station()
-              ? library.radio
-              : undefined;
+          const media =
+            footer() === "podcast"
+              ? library.podcast
+              : footer() === "radio"
+                ? library.radio
+                : undefined;
           if (media?.status() === "playing") {
             media.pause();
             return;
           }
           if (media?.status() === "paused") {
             void media.resume();
+            return;
+          }
+          if (isQueueWorkspace(current()) && player.queue().length) {
+            void player.togglePlayback();
             return;
           }
           void (player.state().status === "playing"
@@ -411,9 +424,12 @@ export function App() {
               resultCount={
                 artistCatalog(section())
                   ? filterArtists(principalArtists(), library.albums(), filters()).length
-                  : filterAlbums(library.albums(), library.artists(), filters()).filter(
-                      (album) => section() !== "compilations" || album.compilation,
-                    ).length
+                  : filterAlbums(
+                      library.albums(),
+                      library.artists(),
+                      filters(),
+                      filters().recentOnly ? recentNow() : 0,
+                    ).filter((album) => section() !== "compilations" || album.compilation).length
               }
               value={filters()}
               setValue={setFilters}
@@ -427,6 +443,7 @@ export function App() {
                 library.albums(),
                 filters(),
                 current().kind === "section" && artistCatalog(section()),
+                filters().recentOnly ? recentNow() : 0,
               )}
               countLabel={
                 current().kind === "section" && artistCatalog(section()) ? t("artistes") : "albums"
@@ -450,6 +467,12 @@ export function App() {
                     {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
                   </a>
                 )}
+              </Show>
+              <Show when={hasFilters() && section() === "albums"}>
+                <RecentAlbumsFilter
+                  active={!!filters().recentOnly}
+                  onToggle={() => setFilters({ ...filters(), recentOnly: !filters().recentOnly })}
+                />
               </Show>
               <Show when={hasFilters() && ["albums", "compilations", "genres"].includes(section())}>
                 <CoverSize
@@ -497,6 +520,14 @@ export function App() {
                 >
                   <SelectionCollection
                     section={section() === "genres" ? "albums" : section()}
+                    disabled={!!filters().recentOnly}
+                    reason={
+                      filters().recentOnly
+                        ? t(
+                            "La création d’une collection depuis les ajouts récents n’est pas encore prise en charge.",
+                          )
+                        : undefined
+                    }
                     filters={filters()}
                   />
                 </CatalogActions>
@@ -513,7 +544,6 @@ export function App() {
               "compilations",
               "countries",
               "genres",
-              "recent",
               "tracks",
               "tags",
               "labels",
@@ -564,48 +594,40 @@ export function App() {
                       when={section() === "tracks"}
                       fallback={
                         <Show
-                          when={section() === "recent"}
+                          when={section() === "settings"}
                           fallback={
                             <Show
-                              when={section() === "settings"}
+                              when={section() === "tags"}
                               fallback={
-                                <Show
-                                  when={section() === "tags"}
-                                  fallback={
-                                    <WorkspacePage
-                                      section={section()}
-                                      query={filters().query}
-                                      onStatisticsBrowse={(selection) =>
-                                        scopedFilters.select(selection.section, selection.filters)
-                                      }
-                                    />
+                                <WorkspacePage
+                                  compact={compact()}
+                                  section={section()}
+                                  query={filters().query}
+                                  onStatisticsBrowse={(selection) =>
+                                    scopedFilters.select(selection.section, selection.filters)
                                   }
-                                >
-                                  <TagsPage
-                                    query={filters().query}
-                                    selected={selectedTag()}
-                                    onSelect={(value) => {
-                                      setSelectedTag(value);
-                                      setTagOffset(0);
-                                    }}
-                                    offset={tagOffset()}
-                                    setOffset={setTagOffset}
-                                  />
-                                </Show>
+                                />
                               }
                             >
-                              <SettingsPage
-                                menu={menu}
-                                tab={
-                                  route.kind === "section"
-                                    ? (route.tab ?? "libraries")
-                                    : "libraries"
-                                }
+                              <TagsPage
+                                query={filters().query}
+                                selected={selectedTag()}
+                                onSelect={(value) => {
+                                  setSelectedTag(value);
+                                  setTagOffset(0);
+                                }}
+                                offset={tagOffset()}
+                                setOffset={setTagOffset}
                               />
                             </Show>
                           }
                         >
-                          <RecentPage query={filters().query} now={recentNow()} />
+                          <SettingsPage
+                            menu={menu}
+                            tab={
+                              route.kind === "section" ? (route.tab ?? "libraries") : "libraries"
+                            }
+                          />
                         </Show>
                       }
                     >
@@ -622,6 +644,8 @@ export function App() {
                 >
                   <LibraryPage
                     artistView={browsing.value().artistView}
+                    now={filters().recentOnly ? recentNow() : 0}
+                    compact={compact()}
                     coverSize={
                       browsing.value().coverSizes[
                         section() as "albums" | "compilations" | "genres"
@@ -644,6 +668,7 @@ export function App() {
                   {(artist) => (
                     <ArtistPage
                       artist={artist()}
+                      compact={compact() && section() !== "artists"}
                       onGenres={(genres) => {
                         scopedFilters.select("genres", {
                           mode: "none",
@@ -742,9 +767,9 @@ export function App() {
         </Show>
       </main>
       <Show
-        when={library.podcast.episode()}
+        when={footer() === "podcast"}
         fallback={
-          <Show when={library.radio.station()} fallback={<PlayerBar />}>
+          <Show when={footer() === "radio"} fallback={<PlayerBar />}>
             <RadioPlayerBar />
           </Show>
         }

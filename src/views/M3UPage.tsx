@@ -3,7 +3,17 @@ import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
 import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
-import { batch, createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
+import {
+  batch,
+  createMemo,
+  createSignal,
+  createEffect,
+  on,
+  onCleanup,
+  For,
+  Show,
+  type JSX,
+} from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { createM3UBrowser } from "../library/m3u-browser";
@@ -15,7 +25,7 @@ import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
 import { t } from "../i18n";
 /** Existing folder files and owner-private exports stay distinct, with inert previews and exact downloads. */
-export function M3UPage(props: { query: string }) {
+export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
   const library = useLibrary(),
     [kind, setKind] = createSignal<M3UKind>("files"),
     [offset, setOffset] = createSignal(0),
@@ -87,6 +97,7 @@ export function M3UPage(props: { query: string }) {
     <section class="page m3u-page">
       <StickyHeader>
         <div class="m3u-toolbar">
+          {props.navigation}
           <div class="choices" aria-label={t("Origine des listes M3U")}>
             <button aria-pressed={kind() === "files"} onClick={() => choose("files")}>
               {t("Fichiers de la bibliothèque")}

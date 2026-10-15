@@ -9,6 +9,7 @@ import { announceSetting } from "./saved-settings";
 import { t } from "../i18n";
 import { batch, createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 import {
+  playbackAppend,
   playbackControl,
   playbackOutputs,
   playbackStart,
@@ -16,9 +17,13 @@ import {
   requestAede,
 } from "../platform/desktop";
 import { idlePlayback, parseOutputs, parsePlayback, type AudioOutput } from "./playback-state";
-import type { Track } from "./server";
+import type { AccountSession, Track } from "./server";
 import { createSeekProgress } from "./seek-progress";
-import { playbackSelection, type PlayableSelection } from "./playback-selection";
+import {
+  playbackSelection,
+  queueAdditionSelection,
+  type PlayableSelection,
+} from "./playback-selection";
 import type { Artist, Album } from "./types";
 import { referenceSource, type SourceId } from "./sources";
 const message = (failure: unknown) =>
@@ -28,6 +33,8 @@ export function createPlayback(
   ready: Accessor<boolean>,
   catalog?: () => { albums: readonly Album[]; artists: readonly Artist[] },
   beforeStart: () => void = () => {},
+  sessionFor?: (reference: string) => AccountSession | undefined,
+  availableFor?: (reference: string) => boolean,
 ) {
   const [state, setState] = createSignal(idlePlayback),
     [outputs, setOutputs] = createSignal<AudioOutput[]>([]),
@@ -37,6 +44,8 @@ export function createPlayback(
     [retainedOrder, setRetainedOrder] = createSignal<readonly number[]>([]),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
+    [appending, setAppending] = createSignal(false),
+    [clearing, setClearing] = createSignal(false),
     [target, setTarget] = createSignal(""),
     [pendingReference, setPendingReference] = createSignal(""),
     [pendingSource, setPendingSource] = createSignal<SourceId>(),
@@ -144,10 +153,17 @@ export function createPlayback(
     }
     if (["playing", "paused"].includes(state().status)) await action("policy", value);
   }
+  /** Public cache visibility does not grant another source's session or playback permission. */
+  function canStart(reference = target()) {
+    if (!reference || !ready() || (availableFor && !availableFor(reference))) return false;
+    return !sessionFor || ["user", "admin"].includes(sessionFor(reference)?.account.role ?? "");
+  }
   async function startRows(rows: PlayableSelection[], index: number, epoch: number) {
+    if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
     setPendingReference(rows[index]?.reference ?? rows[0]?.reference ?? "");
     await configureAudio();
     if (epoch !== generation) return;
+    if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
     await playbackStart(
       rows.map((row) => row.reference),
       device(),
@@ -158,7 +174,7 @@ export function createPlayback(
     await refresh(epoch, rows);
   }
   async function startReference(reference = target()) {
-    if (!ready() || busy() || !reference || !catalog) return;
+    if (!canStart(reference) || busy() || !catalog) return;
     beforeStart();
     const current = selection()[state().index];
     if (
@@ -203,7 +219,8 @@ export function createPlayback(
     load?: (current: () => boolean) => Promise<unknown>,
     source?: SourceId,
   ) {
-    if (!ready() || busy() || !catalog) return;
+    if (!ready() || busy() || !catalog || (source && !canStart(`track:@phemios/${source}/queue`)))
+      return;
     beforeStart();
     setBusy(true);
     setError("");
@@ -233,9 +250,135 @@ export function createPlayback(
       }
     }
   }
+  /** Append a captured source without replacing the live stream. A canonical track reference limits admission to that identity. */
+  async function appendSelection(
+    load: (current: () => boolean) => Promise<unknown>,
+    source: SourceId,
+    reference?: string,
+  ) {
+    if (!canStart(`track:@phemios/${source}/queue`) || busy() || appending() || !catalog)
+      throw new Error(t("Lecture indisponible."));
+    if (device() === "@hqplayer")
+      throw new Error(t("L’ajout à la file HQPlayer n’est pas pris en charge."));
+    const ownerReference = `track:@phemios/${source}/queue`,
+      owner = sessionFor?.(ownerReference);
+    if (sessionFor && (!owner || owner.account.role === "auditor"))
+      throw new Error(t("Votre compte ne permet pas la lecture."));
+    const existing = selection();
+    if (existing.length && referenceSource(existing[0]!.reference) !== source)
+      throw new Error(t("Lecture de plusieurs origines non prise en charge dans une seule file."));
+    const held = lifetime,
+      profile = interfaceProfileIdentity(),
+      ticket = ++addition;
+    setAppending(true);
+    const current = () =>
+      held === lifetime &&
+      ticket === addition &&
+      selection() === existing &&
+      profile === interfaceProfileIdentity() &&
+      (!sessionFor || sessionFor(ownerReference) === owner);
+    let pollingEpoch: number | undefined;
+    try {
+      const raw = await load(current);
+      if (!current() || raw === undefined) return 0;
+      if (!canStart(ownerReference)) throw new Error(t("Lecture indisponible."));
+      if (device() === "@hqplayer")
+        throw new Error(t("L’ajout à la file HQPlayer n’est pas pris en charge."));
+      const data = catalog(),
+        rows = queueAdditionSelection(raw, data.albums, data.artists, reference);
+      if (
+        rows.some((row) => referenceSource(row.reference) !== source) ||
+        existing.length + rows.length > 4096
+      )
+        throw new Error(t("Sélection audio invalide ou trop volumineuse (4096 pistes maximum)."));
+      if (busy()) throw new Error(t("Lecteur occupé, réessayez."));
+      setBusy(true);
+      const active = ["playing", "paused", "connecting"].includes(state().status);
+      const next = [...existing, ...rows];
+      cancel();
+      pollingEpoch = generation;
+      if (active)
+        await playbackAppend(
+          state().queue_id,
+          existing.length,
+          rows.map((row) => row.reference),
+        );
+      if (
+        pollingEpoch !== generation ||
+        profile !== interfaceProfileIdentity() ||
+        (sessionFor && sessionFor(ownerReference) !== owner)
+      )
+        return 0;
+      const order = [
+        ...orderedQueue().map((row) => row.index),
+        ...rows.map((_, index) => existing.length + index),
+      ];
+      batch(() => {
+        setSelection(next);
+        setRetainedOrder(order);
+        setState((s) => ({ ...s, total: next.length, queue: order }));
+      });
+      if (active) await refresh(pollingEpoch);
+      return rows.length;
+    } finally {
+      if (ticket === addition) setAppending(false);
+      if (pollingEpoch === generation) {
+        setBusy(false);
+        if (!timer && ["playing", "paused", "connecting"].includes(state().status))
+          void refresh(pollingEpoch);
+      }
+    }
+  }
+  /** Footer admission follows the queued source before the visible page; connecting has no second start. */
+  function canTogglePlayback() {
+    if (busy() || state().status === "connecting") return false;
+    if (state().status === "playing") return true;
+    if (state().status === "paused") return canStart(state().reference);
+    return canStart(orderedQueue()[0]?.reference ?? target());
+  }
+  /** Resume the prepared order before falling back to the page. Explicit contextual Play still replaces it. */
+  async function togglePlayback() {
+    if (!canTogglePlayback()) return;
+    if (state().status === "playing") return action("pause");
+    if (state().status === "paused") return action("resume");
+    const first = orderedQueue()[0];
+    if (first) return playQueueOccurrence(first.index);
+    return startReference();
+  }
+  /** Contextual additions reuse canonical expansion; failures surface through the existing player feedback. */
+  async function appendReference(
+    reference: string,
+    load?: (current: () => boolean) => Promise<unknown>,
+  ) {
+    const held = lifetime,
+      owner = sessionFor?.(reference);
+    let current: (() => boolean) | undefined;
+    setError("");
+    try {
+      return await appendSelection(
+        (admitted) => {
+          current = admitted;
+          return load
+            ? load(admitted)
+            : requestAede("/api/v1/presentation/playback", { ref: reference });
+        },
+        referenceSource(reference),
+        load ? undefined : reference,
+      );
+    } catch (failure) {
+      if (
+        held === lifetime &&
+        (!current || current()) &&
+        (!sessionFor || sessionFor(reference) === owner)
+      )
+        setError(message(failure));
+      return 0;
+    }
+  }
   let timer: ReturnType<typeof setTimeout> | undefined,
     generation = 0,
-    lifetime = 0;
+    lifetime = 0,
+    addition = 0;
   function cancel() {
     generation++;
     clearTimeout(timer);
@@ -266,7 +409,32 @@ export function createPlayback(
   }
   async function action(command: string, value: unknown = null) {
     if (command === "seek" && typeof value === "number") return progress.seek(value);
+    if (
+      ["resume", "jump", "next", "previous"].includes(command) &&
+      !canStart(state().reference || selection()[0]?.reference || "")
+    )
+      return;
     if (busy()) return;
+    if (command === "queue" && !["playing", "paused", "connecting"].includes(state().status)) {
+      const edit = value as { queue_id?: unknown; order?: unknown } | null;
+      const held = orderedQueue().map((row) => row.index),
+        requested = edit?.order;
+      if (
+        edit?.queue_id !== state().queue_id ||
+        !Array.isArray(requested) ||
+        requested.length !== held.length ||
+        new Set(requested).size !== held.length ||
+        requested.some((index) => !held.includes(index))
+      ) {
+        setError(t("File de lecture invalide."));
+        return;
+      }
+      batch(() => {
+        setRetainedOrder(requested);
+        setState((s) => ({ ...s, queue: requested, shuffled: false }));
+      });
+      return;
+    }
     progress.reset();
     setBusy(true);
     setError("");
@@ -287,7 +455,7 @@ export function createPlayback(
     }
   }
   async function start(tracks: readonly Track[], album: Album, artist: string, index = 0) {
-    if (!ready() || busy()) return;
+    if (!ready() || busy() || tracks.some((track) => !canStart(track.reference))) return;
     beforeStart();
     setBusy(true);
     setError("");
@@ -385,7 +553,111 @@ export function createPlayback(
       if (error()) setDevice(previous);
     }
   }
+  /** Remove exactly one occurrence; only the currently removed stream may stop or advance. */
+  async function removeOccurrence(occurrence: number) {
+    const existing = selection(),
+      order = orderedQueue().map((row) => row.index);
+    if (busy() || !order.includes(occurrence) || state().device === "@hqplayer") return false;
+    addition++;
+    setAppending(false);
+    progress.reset();
+    cancel();
+    const epoch = generation,
+      id = state().queue_id,
+      active = ["playing", "paused", "connecting"].includes(state().status);
+    setBusy(true);
+    setError("");
+    try {
+      const value = parsePlayback(
+        await playbackControl(
+          active ? "remove" : "clear",
+          active ? { queue_id: id, index: occurrence } : null,
+        ),
+      );
+      if (epoch !== generation) return false;
+      if (
+        active &&
+        ((value.total > 0 && value.queue_id !== id) ||
+          value.queue.length !== order.length - 1 ||
+          value.queue.includes(occurrence) ||
+          value.queue.some((index) => !order.includes(index)) ||
+          (value.total && value.total !== existing.length))
+      )
+        throw new Error(t("File de lecture invalide."));
+      if (
+        !active &&
+        (value.status !== "idle" || value.total || value.queue.length || value.reference)
+      )
+        throw new Error(t("File de lecture invalide."));
+      batch(() => {
+        if (active) {
+          if (!value.total) setSelection([]);
+          setRetainedOrder(value.queue);
+          setState({ ...value, volume: state().volume });
+        } else {
+          const retained = order.filter((index) => index !== occurrence);
+          const original = [...retained].sort((a, b) => a - b);
+          const remaining = original.map((index) => existing[index]!);
+          const remapped = new Map(original.map((index, slot) => [index, slot]));
+          const next = retained.map((index) => remapped.get(index)!);
+          setSelection(remaining);
+          setRetainedOrder(next);
+          setState({ ...value, total: remaining.length, queue: next, volume: state().volume });
+        }
+      });
+      if (["playing", "paused", "connecting"].includes(value.status)) void refresh(epoch);
+      return true;
+    } catch (failure) {
+      if (epoch === generation) {
+        setError(message(failure));
+        if (active) void refresh(epoch);
+      }
+      return false;
+    } finally {
+      if (epoch === generation) setBusy(false);
+    }
+  }
+  /** Confirm native stop/clear before discarding occurrences; output/account preferences remain resident. */
+  async function clearQueue() {
+    if (busy() || !selection().length) return false;
+    addition++;
+    setAppending(false);
+    progress.reset();
+    cancel();
+    const epoch = generation;
+    setBusy(true);
+    setClearing(true);
+    setError("");
+    try {
+      const value = parsePlayback(await playbackControl("clear", null));
+      if (epoch !== generation) return false;
+      if (value.status !== "idle" || value.total || value.queue.length || value.reference)
+        throw new Error(t("File de lecture invalide."));
+      batch(() => {
+        setSelection([]);
+        setRetainedOrder([]);
+        setPendingReference("");
+        setPendingSource(undefined);
+        setState({ ...value, volume: state().volume });
+      });
+      return true;
+    } catch (failure) {
+      if (epoch === generation) {
+        setError(message(failure));
+        if (["playing", "paused", "connecting"].includes(state().status)) void refresh(epoch);
+      }
+      return false;
+    } finally {
+      if (epoch === generation) {
+        setBusy(false);
+        setClearing(false);
+      }
+    }
+  }
   function reset() {
+    setClearing(false);
+    addition++;
+    setAppending(false);
     progress.reset();
     lifetime++;
     cancelDiscovery();
@@ -456,7 +728,13 @@ export function createPlayback(
     if (!ready() || busy() || !Number.isSafeInteger(occurrence)) return;
     const ordered = orderedQueue(),
       index = ordered.findIndex((row) => row.index === occurrence);
-    if (index < 0 || !ordered.length || ordered.length > 4096) return;
+    if (
+      index < 0 ||
+      !ordered.length ||
+      ordered.length > 4096 ||
+      !canStart(ordered[index]?.reference ?? "")
+    )
+      return;
     beforeStart();
     setBusy(true);
     setError("");
@@ -480,8 +758,17 @@ export function createPlayback(
       (reference) => !!reference && referenceSource(reference) === source,
     );
   return {
+    canStart,
+    clearing,
+    clearQueue,
+    removeOccurrence,
+    appending,
+    appendSelection,
+    appendReference,
     ownsSource,
     playQueueOccurrence,
+    togglePlayback,
+    canTogglePlayback,
     seek: progress.seek,
     previewSeek: progress.preview,
     clearSeekPreview: progress.clearPreview,

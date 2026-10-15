@@ -166,7 +166,12 @@ export function LabelsPage(props: { query: string }) {
                       <small>{t("{0} albums", label.releaseCount)}</small>
                       <SourceBadge reference={label.reference} />
                     </a>
-                    <CoverPlay reference={label.reference} title={label.name} class="label-play" />
+                    <CoverPlay
+                      reference={label.reference}
+                      title={label.name}
+                      class="label-play"
+                      append
+                    />
                   </div>
                 )}
               </For>

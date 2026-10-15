@@ -1,3 +1,4 @@
+import { QueueAppend } from "../components/QueueAppend";
 import { CatalogActions } from "../components/CatalogActions";
 import { CoverFlow } from "../components/CoverFlow";
 import { createCoverPosition } from "../visualizer/cover-position";
@@ -48,7 +49,7 @@ interface Playlist {
   duplicates?: number;
 }
 /** Existing owner-scoped services, with explicit save and download actions. */
-export function PersonalPage(props: { section: Section; query: string }) {
+export function PersonalPage(props: { section: Section; query: string; catalogCompact: boolean }) {
   const library = useLibrary(),
     [editingCollection, setEditingCollection] = createSignal(false),
     [name, setName] = createSignal(""),
@@ -233,7 +234,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
             class="personal-albums"
             classList={{ "density-compact": compact(), "personal-flow": flow() }}
           >
-            <Show when={flow()} fallback={<AlbumGrid albums={favourites()} />}>
+            <Show when={flow()} fallback={<AlbumGrid albums={favourites()} compact={compact()} />}>
               <CoverFlow albums={favourites()} position={position} reverse={reverse()} />
             </Show>
           </div>
@@ -352,6 +353,25 @@ export function PersonalPage(props: { section: Section; query: string }) {
                     void refetch();
                   }}
                 />
+                <QueueAppend
+                  reference={`track:@phemios/${library.source()}/queue`}
+                  title={row.name}
+                  disabled={!!playingCollection()}
+                  load={(current) => {
+                    const session = library.session(),
+                      source = library.source(),
+                      admitted = actions.capture();
+                    if (!session) throw new Error(t("Lecture indisponible."));
+                    return readCollectionPlayback(
+                      row.name,
+                      source,
+                      session,
+                      library.albums(),
+                      library.trackSources().find((entry) => entry.source === source)?.scannedAt,
+                      () => admitted() && current(),
+                    );
+                  }}
+                />
                 <button
                   type="button"
                   class="icon-button quiet"
@@ -359,8 +379,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   title={t("Lire {0}", row.name)}
                   aria-busy={playingCollection() === row.name || undefined}
                   disabled={
-                    !library.session() ||
-                    library.session()?.account.role === "auditor" ||
+                    !library.player.canStart(`track:@phemios/${library.source()}/queue`) ||
                     library.player.busy() ||
                     !!playingCollection()
                   }
@@ -376,7 +395,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
         </ul>
       </Show>
       <Show when={props.section === "collections" && openedCollection()}>
-        <CollectionAlbums name={openedCollection()} />
+        <CollectionAlbums name={openedCollection()} compact={props.catalogCompact} />
       </Show>
       <Show when={props.section === "analysis" || props.section === "playlists"}>
         <label class="album-selection">
@@ -460,7 +479,12 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   {row().artist} · {row().album?.title}
                 </small>
               </div>
-              <CoverPlay reference={row().reference} title={row().title} class="history-play" />
+              <CoverPlay
+                reference={row().reference}
+                title={row().title}
+                class="history-play"
+                append
+              />
             </div>
           )}
         </Show>
@@ -491,6 +515,7 @@ export function PersonalPage(props: { section: Section; query: string }) {
                   title={row.title}
                   disabled={historyTrackAction(row).disabled}
                   class="history-play"
+                  append
                 />
               </li>
             )}

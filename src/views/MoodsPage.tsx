@@ -1,3 +1,4 @@
+import { QueueAppend } from "../components/QueueAppend";
 import { retainedMoodPage } from "../library/retained-mood-page";
 import { MoodFeatures } from "../components/MoodFeatures";
 import { Feedback } from "../components/Feedback";
@@ -367,7 +368,11 @@ export function MoodsPage() {
                 </Show>
                 <button
                   class="icon-button"
-                  disabled={busy() || !current()?.total || !library.player.ready()}
+                  disabled={
+                    busy() ||
+                    !current()?.total ||
+                    !library.player.canStart(`track:@phemios/${library.source()}/queue`)
+                  }
                   aria-label={t("Lire cette ambiance")}
                   title={t("Lire cette ambiance")}
                   onClick={() => void play()}
@@ -391,10 +396,11 @@ export function MoodsPage() {
                         <small>{moodReason(item.reason)}</small>
                       </span>
                     </a>
+                    <QueueAppend reference={item.reference} title={item.title} />
                     <button
                       class="icon-button"
                       aria-label={t("Lire {0}", item.title)}
-                      disabled={library.player.busy()}
+                      disabled={!library.player.canStart(item.reference) || library.player.busy()}
                       onClick={() => void library.player.startReference(item.reference)}
                     >
                       <Icon name="play" />

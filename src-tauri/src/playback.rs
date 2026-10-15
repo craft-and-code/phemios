@@ -127,17 +127,45 @@ pub(crate) async fn playback_control(
     action: String,
     value: Value,
     player: State<'_, Arc<Player>>,
+    state: State<'_, Aede>,
     hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<Value, String> {
     bridge(version)?;
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
-    if action == "stop" {
-        hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    }
+    let source = state.playback_source.clone();
+    let epoch = hq.epoch.clone();
+    let generation = if matches!(action.as_str(), "stop" | "clear") {
+        Some(epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1)
+    } else {
+        None
+    };
     blocking(move || {
         let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        if action == "clear" {
+            if generation != Some(epoch.load(std::sync::atomic::Ordering::SeqCst)) {
+                return Err("La liste de lecture a changé.".into());
+            }
+            controller.clear()?;
+            player.clear()?;
+            return player.snapshot();
+        }
+        if action == "remove" {
+            if controller.active() {
+                return Err("Le retrait de piste HQPlayer n’est pas pris en charge.".into());
+            }
+            let id = value["queue_id"]
+                .as_u64()
+                .ok_or("File de lecture invalide.")?;
+            let occurrence = value["index"]
+                .as_u64()
+                .filter(|index| *index < 4096)
+                .ok_or("File de lecture invalide.")? as usize;
+            player.remove(id, occurrence)?;
+            let origin = *source.lock().map_err(|_| "État audio indisponible.")?;
+            return crate::aede::public(player.snapshot()?, origin);
+        }
         if controller.active() {
             if action == "stop" {
                 controller.halt()?;
@@ -156,6 +184,57 @@ pub(crate) async fn playback_control(
             player.control(&action, value)?;
         }
         Ok(Value::Null)
+    })
+    .await
+}
+
+/// Append only to the captured queue and authenticated source, without rerouting output.
+#[tauri::command]
+pub(crate) async fn playback_append(
+    version: u32,
+    tracks: Vec<String>,
+    queue_id: u64,
+    expected_total: usize,
+    expected_session: Option<String>,
+    player: State<'_, Arc<Player>>,
+    state: State<'_, Aede>,
+    hq: State<'_, crate::hqplayer::HqPlayer>,
+) -> Result<(), String> {
+    bridge(version)?;
+    let (origin, _) = phemios_core::federation::resolve(tracks.first().ok_or("Sélection vide.")?)?;
+    let tracks = tracks
+        .iter()
+        .map(|r| {
+            let (source, raw) = phemios_core::federation::resolve(r)?;
+            if source != origin {
+                return Err(
+                    "Lecture de plusieurs origines non prise en charge dans une seule file.".into(),
+                );
+            }
+            Ok(raw)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let ticket = expected_session.ok_or("Session invalide.")?;
+    let client = client(state.owner(origin))?;
+    let owner = state.owner(origin).session.clone();
+    let owner_generation = state.owner(origin).generation.clone();
+    let source = state.playback_source.clone();
+    let player = player.inner().clone();
+    let routing = hq.routing.clone();
+    let controller = hq.controller.clone();
+    blocking(move || {
+        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        if controller.active() {
+            return Err("L’ajout à la file HQPlayer n’est pas pris en charge.".into());
+        }
+        if *source.lock().map_err(|_| "État audio indisponible.")? != origin {
+            return Err(
+                "Lecture de plusieurs origines non prise en charge dans une seule file.".into(),
+            );
+        }
+        crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || {
+            player.append(queue_id, expected_total, tracks)
+        })
     })
     .await
 }

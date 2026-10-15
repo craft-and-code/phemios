@@ -6,7 +6,6 @@ export type Section =
   | "artists"
   | "albums"
   | "tracks"
-  | "recent"
   | "compilations"
   | "countries"
   | "genres"
@@ -34,7 +33,6 @@ export type Route =
   | { kind: "not-found" };
 
 export const sections: readonly { id: Section; label: string; symbol: string }[] = [
-  { id: "recent", label: t("Nouveautés"), symbol: "sparkles" },
   { id: "artists", label: t("Artistes"), symbol: "users" },
   { id: "albums", label: t("Albums"), symbol: "disc" },
   { id: "tracks", label: t("Pistes"), symbol: "list" },
@@ -48,7 +46,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "tags", label: t("Tags"), symbol: "tags" },
   { id: "collections", label: t("Collections"), symbol: "library" },
   { id: "history", label: t("Historique"), symbol: "history" },
-  { id: "playlists", label: t("Listes M3U"), symbol: "playlist" },
+  { id: "playlists", label: t("Listes de lecture"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
   { id: "concerts", label: t("Concerts"), symbol: "concerts" },
@@ -65,6 +63,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#\/?/, "");
   if (!path) return { kind: "section", section: "artists" };
+  if (path === "recent") return { kind: "section", section: "albums" };
   if (path === "playback") return { kind: "section", section: "playback" };
   if (path === "advanced-search") return { kind: "section", section: "advanced-search" };
   if (path === "settings/services")

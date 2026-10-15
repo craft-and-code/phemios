@@ -69,3 +69,18 @@
 .component-frame:has(.player-bar) {
   max-width: 1200px;
 }
+
+/* The component explorer gives the same bounded viewport as the application shell. */
+.playlist-story {
+  display: flex;
+  flex-direction: column;
+  height: 620px;
+  min-height: 0;
+}
+.playlist-story > .playlist-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+}

@@ -5,7 +5,7 @@ export function moveQueueOccurrence(order: readonly number[], from: number, to: 
     !order.length ||
     order.length > 4096 ||
     new Set(order).size !== order.length ||
-    order.some((index) => !Number.isSafeInteger(index) || index < 0 || index >= order.length) ||
+    order.some((index) => !Number.isSafeInteger(index) || index < 0 || index >= 4096) ||
     !order.includes(from) ||
     !order.includes(to)
   )
@@ -23,4 +23,17 @@ export function originalQueueOrder(order: readonly number[]): number[] {
   if (!order.length) return [];
   moveQueueOccurrence(order, order[0]!, order[0]!);
   return [...order].sort((a, b) => a - b);
+}
+
+/** The insertion edge follows edited list positions, never numeric occurrence ids. */
+export function queueDropEdge(
+  order: readonly number[],
+  from: number | undefined,
+  to: number | undefined,
+): "before" | "after" | undefined {
+  if (from === undefined || to === undefined || from === to) return;
+  const source = order.indexOf(from),
+    target = order.indexOf(to);
+  if (source < 0 || target < 0) return;
+  return source < target ? "after" : "before";
 }

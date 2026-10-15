@@ -28,7 +28,7 @@ fn shuffle_keeps_current_and_played_occurrences_and_restores_only_future_order()
 #[test]
 fn repeat_restarts_one_naturally_and_wraps_all_without_losing_edited_order() {
     let mut queue = Queue::new(3, 1);
-    queue.synchronize(&[2, 1, 0], false).unwrap();
+    queue.synchronize(&[2, 1, 0], false, 3).unwrap();
     assert!(queue.advance("one", true));
     assert_eq!(queue.index(), 1);
     assert!(queue.advance("one", false));
@@ -36,4 +36,19 @@ fn repeat_restarts_one_naturally_and_wraps_all_without_losing_edited_order() {
     assert!(!queue.advance("off", true));
     assert!(queue.advance("all", true));
     assert_eq!(queue.index(), 2);
+}
+#[test]
+fn sparse_occurrences_keep_current_order_and_choose_the_following_survivor() {
+    let mut queue = Queue::new(5, 2);
+    queue.synchronize(&[4, 2, 0], false, 5).unwrap();
+    assert_eq!(queue.index(), 2);
+    assert!(queue.synchronize(&[4, 0], false, 5).is_err());
+    assert!(queue.jump(0));
+    queue.synchronize(&[4, 0], false, 5).unwrap();
+    assert_eq!(queue.index(), 0);
+    assert!(!queue.next());
+    assert!(queue.advance("all", false));
+    assert_eq!(queue.index(), 4);
+    assert!(queue.synchronize(&[4, 5], false, 5).is_err());
+    assert!(queue.synchronize(&[4, 4], false, 5).is_err());
 }

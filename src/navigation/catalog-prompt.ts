@@ -11,6 +11,6 @@ export function needsCatalogPrompt(
     artists === 0 &&
     !busy &&
     route.kind === "section" &&
-    ["artists", "albums", "compilations", "countries", "genres", "recent"].includes(route.section)
+    ["artists", "albums", "compilations", "countries", "genres"].includes(route.section)
   );
 }

@@ -1,7 +1,7 @@
+import { CoverPlay } from "../components/CoverPlay";
 import { PageLoader } from "../components/PageLoader";
 import { TrackMetadataValue } from "../components/TrackMetadataValue";
 import type { MetadataBrowse } from "../library/track-metadata-links";
-import { Icon } from "../components/Icon";
 import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
 import { t } from "../i18n";
@@ -79,19 +79,13 @@ export function TrackPage(props: {
                     {t("Pistes indisponibles :")} {String(siblings.error)}
                   </small>
                 </Show>
-                <button
-                  class="icon-button detail-play"
-                  aria-label={t("Lire ce titre")}
-                  title={t("Lire ce titre")}
-                  disabled={
-                    !library.sessionFor(props.reference) ||
-                    library.sessionFor(props.reference)?.account.role === "auditor" ||
-                    library.player.busy()
-                  }
-                  onClick={() => void library.player.startReference(props.reference)}
-                >
-                  <Icon name="play" />
-                </button>
+                <CoverPlay
+                  detail
+                  append="badge"
+                  reference={props.reference}
+                  title={row().title}
+                  label={t("Lire ce titre")}
+                />
               </div>
             </div>
             <section>

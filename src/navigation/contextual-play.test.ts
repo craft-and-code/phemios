@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { contextualReference, repeatDisabled } from "./contextual-play";
+import {
+  contextualReference,
+  repeatDisabled,
+  footerTransport,
+  isQueueWorkspace,
+} from "./contextual-play";
 it("prefers the detail target, then the front cover, then the first enabled visible result", () => {
   const rows = [
     { reference: "track:first", disabled: false, central: false, visible: true },
@@ -17,4 +22,35 @@ it("repeat is unavailable until audio is actually active", () => {
     expect(repeatDisabled(status, false, true, false)).toBe(false);
   expect(repeatDisabled("playing", true, true, false)).toBe(true);
   expect(repeatDisabled("playing", false, true, true)).toBe(true);
+});
+
+it("lets a prepared playlist own footer Play without changing other views or empty queues", () => {
+  expect(footerTransport({ queueView: true, queued: true, podcast: true, radio: true })).toBe(
+    "catalog",
+  );
+  expect(footerTransport({ queueView: true, queued: true, podcast: false, radio: true })).toBe(
+    "catalog",
+  );
+  expect(footerTransport({ queueView: true, queued: false, podcast: true, radio: true })).toBe(
+    "podcast",
+  );
+  expect(footerTransport({ queueView: true, queued: false, podcast: false, radio: true })).toBe(
+    "radio",
+  );
+  expect(footerTransport({ queueView: false, queued: true, podcast: true, radio: true })).toBe(
+    "podcast",
+  );
+  expect(footerTransport({ queueView: false, queued: true, podcast: false, radio: true })).toBe(
+    "radio",
+  );
+  expect(footerTransport({ queueView: false, queued: true, podcast: false, radio: false })).toBe(
+    "catalog",
+  );
+});
+
+it("limits queue-footer priority to the workspace route, not a detail opened from it", () => {
+  expect(isQueueWorkspace({ kind: "section", section: "playlists" })).toBe(true);
+  expect(isQueueWorkspace({ kind: "album", reference: "release:one" })).toBe(false);
+  expect(isQueueWorkspace({ kind: "track", reference: "track:one" })).toBe(false);
+  expect(isQueueWorkspace({ kind: "section", section: "playback" })).toBe(false);
 });

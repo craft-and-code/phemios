@@ -1,0 +1,92 @@
+.circular-play-actions,
+.play-control {
+  --play-corner-size: 22px;
+}
+/* The primary circle keeps its size/centre; the badge never participates in row layout. */
+.circular-play-actions {
+  position: relative;
+  display: inline-grid;
+  width: max-content;
+  height: max-content;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.circular-play-actions > button.detail-play {
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.circular-play-actions > button.detail-play:not(:disabled):hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.circular-play-actions > .queue-append.icon-button,
+.play-control > .transport-stop.icon-button {
+  position: absolute;
+  right: -7px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--play-corner-size);
+  height: var(--play-corner-size);
+  min-height: 0;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--surface);
+  color: var(--text);
+  opacity: 1;
+  pointer-events: auto;
+}
+.circular-play-actions > .queue-append.icon-button {
+  top: -5px;
+}
+.play-control > .transport-stop.icon-button {
+  top: auto;
+  bottom: -5px;
+}
+.circular-play-actions > .queue-append.icon-button.download-complete {
+  color: var(--accent);
+}
+.circular-play-actions > .queue-append.icon-button:not(:disabled):hover,
+.play-control > .transport-stop.icon-button:not(:disabled):hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.circular-play-actions > .queue-append.icon-button:disabled,
+.play-control > .transport-stop.icon-button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+/* Keep the badge opaque over Play; only its unavailable glyph is dimmed. */
+.circular-play-actions > .queue-append.icon-button:disabled > svg,
+.play-control > .transport-stop.icon-button:disabled > svg {
+  opacity: 0.5;
+}
+.circular-play-actions > .queue-append.icon-button > svg,
+.play-control > .transport-stop.icon-button > svg {
+  width: 14px;
+  height: 14px;
+  transform: none;
+}
+.circular-play-actions > .queue-append.icon-button:focus-visible,
+.play-control > .transport-stop.icon-button:focus-visible {
+  outline-offset: 0;
+}
+.artist-presentation-play .circular-play-actions > button.cover-play {
+  opacity: 1;
+}
+
+.circular-play-actions > button.detail-play > svg {
+  width: 19px;
+  height: 19px;
+  transform: translateX(-1px);
+}

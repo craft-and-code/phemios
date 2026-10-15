@@ -6,9 +6,11 @@ export interface PlaybackState {
   shuffled: boolean;
   repeat: "off" | "one" | "all";
   queue: readonly number[];
+  protected_occurrences?: readonly number[];
   status: "idle" | "connecting" | "playing" | "paused" | "ended" | "error";
   reference: string;
   index: number;
+  /** Slot bound for stable occurrence ids; visible queue size is queue.length. */
   total: number;
   position_ms: number;
   duration_ms: number | null;
@@ -108,9 +110,16 @@ export function parsePlayback(value: unknown): PlaybackState {
     v.queue !== undefined &&
     (!Array.isArray(v.queue) ||
       v.queue.length > 4096 ||
-      (v.queue.length && v.queue.length !== v.total) ||
+      v.queue.length > Number(v.total) ||
       new Set(v.queue).size !== v.queue.length ||
       !v.queue.every((index) => count(index) && index < Number(v.total)))
+  )
+    throw new Error(t("File de lecture invalide."));
+  if (
+    v.protected_occurrences !== undefined &&
+    (!Array.isArray(v.protected_occurrences) ||
+      v.protected_occurrences.length > 3 ||
+      v.protected_occurrences.some((index) => !count(index) || index >= Number(v.total)))
   )
     throw new Error(t("File de lecture invalide."));
   return {

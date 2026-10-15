@@ -10,7 +10,7 @@ import { t } from "../i18n";
 const ConcertsPage = lazy(() =>
   import("./ConcertsPage").then((module) => ({ default: module.ConcertsPage })),
 );
-const M3UPage = lazy(() => import("./M3UPage").then((module) => ({ default: module.M3UPage })));
+import { PlaylistsPage } from "./PlaylistsPage";
 const MoodsPage = lazy(() =>
   import("./MoodsPage").then((module) => ({ default: module.MoodsPage })),
 );
@@ -28,6 +28,7 @@ import { AnalysisPage } from "./AnalysisPage";
 export function WorkspacePage(props: {
   section: Section;
   query: string;
+  compact: boolean;
   onStatisticsBrowse: Parameters<typeof StatisticsPage>[0]["onBrowse"];
 }) {
   return (
@@ -51,7 +52,7 @@ export function WorkspacePage(props: {
           <AdvancedSearchPage />
         </Match>
         <Match when={props.section === "playlists"}>
-          <M3UPage query={props.query} />
+          <PlaylistsPage query={props.query} />
         </Match>
         <Match when={props.section === "playback"}>
           <PlaybackPage />
@@ -78,7 +79,7 @@ export function WorkspacePage(props: {
           <StatisticsPage onBrowse={props.onStatisticsBrowse} />
         </Match>
         <Match when={props.section === "relations"}>
-          <RelationsPage query={props.query} />
+          <RelationsPage query={props.query} compact={props.compact} />
         </Match>
         <Match when={props.section === "analysis"}>
           <AnalysisPage query={props.query} />
@@ -87,7 +88,11 @@ export function WorkspacePage(props: {
           <PlayersPage />
         </Match>
         <Match when={["favourites", "collections", "history"].includes(props.section)}>
-          <PersonalPage section={props.section} query={props.query} />
+          <PersonalPage
+            section={props.section}
+            query={props.query}
+            catalogCompact={props.compact}
+          />
         </Match>
       </Switch>
     </Suspense>

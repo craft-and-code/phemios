@@ -189,7 +189,13 @@ export function LabelPage(props: {
                   />
                 </div>
               </StickyHeader>
-              <AlbumGrid albums={selected()} reverse={reverse()} chronological emptyIcon="label" />
+              <AlbumGrid
+                compact={props.compact}
+                albums={selected()}
+                reverse={reverse()}
+                chronological
+                emptyIcon="label"
+              />
               <Show when={row().releases.length > albums().length}>
                 <p class="notice">
                   {t(

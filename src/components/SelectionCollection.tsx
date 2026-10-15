@@ -12,6 +12,7 @@ export function SelectionCollection(props: {
   filters?: Filters;
   expression?: string;
   disabled?: boolean;
+  reason?: string | undefined;
   source?: SourceId;
 }) {
   const library = useLibrary(),
@@ -55,7 +56,7 @@ export function SelectionCollection(props: {
         class="icon-button"
         disabled={!writable() || props.disabled}
         aria-label={t("Créer une collection depuis cette sélection")}
-        title={t("Créer une collection depuis ces filtres")}
+        title={props.reason ?? t("Créer une collection depuis ces filtres")}
         onClick={() => {
           setDraftSource(source());
           setDraftAccount(session(source()));
@@ -63,6 +64,7 @@ export function SelectionCollection(props: {
           setError("");
           setMessage("");
           const criteria = { ...props.filters, view: props.section };
+          delete criteria.recentOnly;
           if (!criteria.genres?.length) delete criteria.genres;
           setDraft(props.expression ?? `browse-v1:${JSON.stringify(criteria)}`);
         }}

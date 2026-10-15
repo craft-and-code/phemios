@@ -418,7 +418,7 @@ main > .playback-page {
 }
 .playback-page .playback-queue li {
   display: grid;
-  grid-template-columns: 20px 34px minmax(0, 1fr);
+  grid-template-columns: 20px 34px 24px minmax(0, 1fr);
   gap: 4px;
 }
 .playback-page .playback-queue li .queue-grip {
@@ -428,12 +428,12 @@ main > .playback-page {
 .playback-page .playback-queue .queue-track-number {
   width: 34px;
   justify-content: center;
-  cursor: pointer;
+  cursor: default;
 }
 .playback-page .playback-queue .queue-track {
   grid-template-columns: minmax(0, 1fr) 16px;
   gap: 4px;
-  padding: 8px 2px;
+  padding: var(--queue-leading-inset) 2px;
 }
 .playback-page .playback-queue .queue-track-description {
   gap: 2px;
@@ -516,7 +516,7 @@ button:is(:hover, :focus-visible) .activity-glyph > .activity-stop {
   display: grid;
   grid-template-rows: 20px 20px;
   justify-items: center;
-  padding-top: 8px;
+  padding-top: var(--queue-leading-inset);
 }
 .playback-page .playback-queue .queue-track-leading .queue-lyrics-track {
   width: 24px;

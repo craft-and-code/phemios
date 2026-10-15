@@ -86,6 +86,13 @@ impl Controller {
     }
     /// Stop only this controller's queue; unrelated HQPlayer playback is untouched.
     pub fn halt(&self) -> Result<(), String> {
+        self.stop(false)
+    }
+    /// Stop an owned selection and drop its retained metadata without disconnecting the output.
+    pub fn clear(&self) -> Result<(), String> {
+        self.stop(true)
+    }
+    fn stop(&self, clear: bool) -> Result<(), String> {
         let mut held = self.session.lock().map_err(|_| "HQPlayer occupé.")?;
         if let Some(s) = held.as_mut()
             && s.active
@@ -96,6 +103,13 @@ impl Controller {
                 *held = None;
             }
             result?;
+        }
+        if clear && let Some(s) = held.as_mut() {
+            s.tracks.clear();
+            s.uris.clear();
+            s.snapshot = Value::Null;
+            s.seek = 0;
+            s.seek_pending = None;
         }
         Ok(())
     }
@@ -224,3 +238,7 @@ impl Controller {
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "clear_tests.rs"]
+mod clear_tests;

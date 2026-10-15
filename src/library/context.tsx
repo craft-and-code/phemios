@@ -217,6 +217,8 @@ export function LibraryProvider(props: ParentProps) {
       radio.stop();
       podcast.stop();
     },
+    sessionFor,
+    (reference) => referenceSource(reference) === "local" || connected(),
   );
   const radio = createRadioPlayback(
     resolveRadio,

@@ -24,6 +24,8 @@ import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
   section: Section;
+  compact: boolean;
+  now: number;
   artistView: ArtistView;
   filters: Filters;
   setFilters: (filters: Filters) => void;
@@ -76,7 +78,7 @@ export function LibraryPage(props: {
     return [...matched].sort((a, b) => compare(a.name, b.name));
   });
   const albums = createMemo(() =>
-    [...filterAlbums(library.albums(), library.artists(), props.filters)]
+    [...filterAlbums(library.albums(), library.artists(), props.filters, props.now)]
       .filter((item) => props.section !== "compilations" || item.compilation)
       .sort((a, b) => compare(a.title, b.title)),
   );
@@ -115,6 +117,7 @@ export function LibraryPage(props: {
                 fallback={
                   <AlbumGrid
                     albums={albums()}
+                    compact={props.compact}
                     unplayed={unplayed}
                     coverSize={props.coverSize}
                     reverse={props.reverse}
@@ -193,6 +196,7 @@ export function LibraryPage(props: {
                             </a>
                             <CoverPlay
                               class="artist-list-play"
+                              append
                               reference={selection.reference}
                               title={selection.title}
                             />

@@ -1,0 +1,234 @@
+/* Removing one queue action releases one 36px control plus its shared gap. */
+.playback-page {
+  --queue-action-slot: calc(36px + var(--control-gap));
+}
+main > .playback-page.queue-open {
+  grid-template-columns: minmax(0, 1fr) clamp(
+      calc(390px - var(--queue-action-slot)),
+      calc(34vw - var(--queue-action-slot)),
+      calc(520px - var(--queue-action-slot))
+    );
+}
+.playback-page .playback-queue {
+  --queue-leading-inset: 8px;
+  padding: 18px;
+}
+.queue-count {
+  margin-top: -4px;
+}
+.queue-add-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 350px;
+  max-height: 58%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  gap: 10px;
+}
+.playback-queue > .queue-add-panel {
+  flex-shrink: 1;
+}
+.queue-add-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.queue-add-heading h3 {
+  font-size: 15px;
+  margin: 0;
+}
+.queue-add-panel input {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.queue-add-categories {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.queue-add-categories button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 6px 7px;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.queue-add-categories button[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+.queue-add-results {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 64px;
+  overscroll-behavior: contain;
+}
+.queue-add-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  padding-block: 6px;
+}
+.queue-add-art {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.queue-add-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.queue-add-description {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.queue-add-description strong,
+.queue-add-description small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.queue-add-description strong {
+  font-size: 13px;
+}
+.queue-add-description small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.queue-add-row > .icon-button {
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+}
+.queue-add-loading {
+  display: grid;
+  place-items: center;
+  min-height: 80px;
+}
+.queue-add-results:has(> .queue-add-empty) {
+  display: grid;
+  place-items: center;
+}
+.queue-add-empty {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+}
+.queue-add-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.queue-add-footer small {
+  font-size: 11px;
+}
+.queue-add-footer > div {
+  display: flex;
+  gap: 4px;
+}
+.queue-add-panel .feedback {
+  flex-shrink: 0;
+  max-height: 90px;
+  overflow: auto;
+}
+@media (max-width: 1100px) {
+  main > .playback-page.queue-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  main > .playback-page > .playback-queue {
+    position: absolute;
+    inset: 24px 24px 24px auto;
+    width: min(calc(460px - var(--queue-action-slot)), calc(100% - 48px));
+    z-index: 8;
+    background: var(--surface);
+    box-shadow: -12px 0 36px #0005;
+  }
+}
+
+.playback-page .playback-queue li .queue-remove {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  padding: 4px;
+  align-self: start;
+  margin-top: calc(var(--queue-leading-inset) + 1px);
+  color: var(--error);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.playback-queue li .queue-remove > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.playback-page .playback-queue li .queue-remove:not(:disabled):hover {
+  color: var(--error);
+  background: transparent;
+  opacity: 0.75;
+}
+.playback-queue li .queue-grip:disabled {
+  cursor: default;
+}
+.playback-queue li.queue-drag-source {
+  opacity: 0.35;
+}
+.queue-drag-preview.playback-page {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 100;
+  pointer-events: none;
+  user-select: none;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  display: block;
+  will-change: transform;
+}
+.queue-drag-preview.playback-page .playback-queue {
+  position: static;
+  width: 100%;
+  max-height: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+}
+.queue-drag-preview.playback-page .playback-queue > ol {
+  margin: 0;
+  overflow: visible;
+}
+.queue-drag-preview.playback-page .playback-queue li {
+  background: var(--surface);
+  box-shadow:
+    0 14px 30px #0009,
+    0 2px 8px #0007;
+  outline: 1px solid var(--border);
+}
+
+.queue-add-description .queue-add-reason {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
