@@ -254,6 +254,7 @@ impl Client {
         self.read_artwork(reference, kind, Some(size))
     }
     /// Read an unowned group's cached cover or explicitly request archive acquisition on Aède.
+    /// Retain the session's TLS identity while allowing a longer per-request timeout.
     pub fn missing_cover(
         &self,
         artist: &str,
@@ -273,26 +274,26 @@ impl Client {
         {
             return Err("Album manquant Aède invalide.".into());
         }
-        let agent: ureq::Agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(60)))
-            .max_redirects(0)
-            .http_status_as_error(false)
-            .build()
-            .into();
         let url = format!("{}/api/me/v1/missing/cover", self.server);
         let response = if download {
-            agent
+            self.agent
                 .post(url)
                 .query("artist", artist)
                 .query("release_group", group)
                 .header("Authorization", format!("Bearer {}", self.token))
+                .config()
+                .timeout_global(Some(Duration::from_secs(60)))
+                .build()
                 .send_empty()
         } else {
-            agent
+            self.agent
                 .get(url)
                 .query("artist", artist)
                 .query("release_group", group)
                 .header("Authorization", format!("Bearer {}", self.token))
+                .config()
+                .timeout_global(Some(Duration::from_secs(60)))
+                .build()
                 .call()
         }
         .map_err(|_| "Image Aède inaccessible.".to_string())?;
