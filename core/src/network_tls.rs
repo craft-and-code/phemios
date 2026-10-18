@@ -1,9 +1,11 @@
-//! Exact-process certificate trust for the owned loopback engine; never a webview option.
+//! Certificate trust for owned or explicitly imported loopback servers; never a global TLS bypass.
 use super::Client;
 use std::sync::Arc;
 
 impl Client {
-    pub(crate) fn login_pinned(
+    /// Authenticate a trusted, explicitly imported or process-owned loopback identity.
+    /// The exact supplied certificate is the sole HTTPS/WSS trust root; remote overrides are refused.
+    pub fn login_pinned(
         server: &str,
         username: &str,
         password: &str,

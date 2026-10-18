@@ -15,6 +15,7 @@ mod personal_backup;
 mod playback;
 mod podcast;
 mod radio;
+mod server_profile;
 mod sessions;
 mod snapshots;
 mod themes;
@@ -84,6 +85,7 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            server_profile::aede_import_profile,
             concerts::concerts_config,
             concerts::concerts_events,
             commands::external_open,

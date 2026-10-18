@@ -21,7 +21,9 @@
     "docs:ts": "node scripts/typescript-docs.mjs",
     "components:dev": "node scripts/component-explorer.mjs dev",
     "components:build": "node scripts/component-explorer.mjs build",
-    "components:check": "tsc --noEmit -p docs/components/tsconfig.json && npm run components:build"
+    "components:check": "tsc --noEmit -p docs/components/tsconfig.json && npm run components:build",
+    "engines:check": "node scripts/update-engines.mjs --check",
+    "engines:update": "node scripts/update-engines.mjs"
   },
   "dependencies": {
     "@milkdown/kit": "7.22.2",

@@ -1,3 +1,5 @@
+import { ActionButton } from "./ActionButton";
+import { importLocalServerProfile, type LocalServerProfile } from "../platform/desktop";
 import { ConnectionActions } from "./ConnectionActions";
 import { Feedback } from "./Feedback";
 import { t } from "../i18n";
@@ -54,6 +56,26 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
     remembered?.server === initialServer ? remembered.username : "",
   );
   const [password, setPassword] = createSignal("");
+  const [localProfile, setLocalProfile] = createSignal<LocalServerProfile>();
+  const [importing, setImporting] = createSignal(false);
+  async function importProfile() {
+    if (importing()) return;
+    setImporting(true);
+    setPreferenceError("");
+    try {
+      const value = await importLocalServerProfile();
+      if (value) {
+        setLocalProfile(value);
+        setServer(value.address);
+        setUsername(value.username);
+        setPassword("");
+      }
+    } catch (error) {
+      setPreferenceError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setImporting(false);
+    }
+  }
   const [disconnecting, setDisconnecting] = createSignal(false);
   const [syncMessage, setSyncMessage] = createSignal("");
   createEffect(on(library.serverSession, () => setSyncMessage("")));
@@ -112,7 +134,12 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
                 event.preventDefault();
                 const secret = password();
                 setPassword("");
-                await library.connect(server(), username(), secret);
+                await library.connect(
+                  server(),
+                  username(),
+                  secret,
+                  localProfile()?.address === server() ? localProfile()?.certificate : undefined,
+                );
                 const session = library.serverSession();
                 if (session) {
                   try {
@@ -129,13 +156,30 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
               }}
             >
               <p class="eyebrow">{t("VOTRE SERVEUR AÈDE")}</p>
+              <ActionButton
+                type="button"
+                icon="download"
+                busy={importing()}
+                disabled={library.busy() || library.demo}
+                onClick={() => void importProfile()}
+              >
+                {t("Importer la connexion de l’application Aède")}
+              </ActionButton>
+              <Show when={localProfile()}>
+                <small>
+                  {t("Certificat public local importé. Le mot de passe reste nécessaire.")}
+                </small>
+              </Show>
               <label>
                 {t("Serveur")}{" "}
                 <input
                   required
                   type="url"
                   value={server()}
-                  onInput={(event) => setServer(event.currentTarget.value)}
+                  onInput={(event) => {
+                    setServer(event.currentTarget.value);
+                    setLocalProfile(undefined);
+                  }}
                 />
               </label>
               <label>

@@ -113,3 +113,9 @@ The separate bilingual project website lives in [`site/`](site/README.md). Previ
 ### Concert discovery
 
 Concerts groups the catalogue’s principal artists and explicitly searches Ticketmaster Discovery after a developer key is configured in Settings → External sources. Dates, venues, sale status, notices, prices and ticket links retain attribution and retrieval time. Each completed artist answer is cached immediately; no navigation launches provider requests. The key stays in the native device-private configuration, separate from browser/account preferences and Aède service keys. Coverage follows the provider’s inventory and pagination limits; live acceptance requires a valid key. See [Concert discovery](docs/design/concerts.md).
+
+## Engine releases and the separate Aède app
+
+The embedded development engine is prepared with `--locked --offline`. It now requires Aède 0.5.0 and FlacCompagnon 0.9.6. Aède 0.5.0 is being prepared in the reviewed sibling repository; it is not claimed as already published. `npm run engines:check` checks official releases explicitly. Once a compatible Aède release is published, `npm run engines:update` builds a locked release cache with the latest published analysis core. Ordinary launch performs no release lookup or package download. Explicit `PHEMIOS_AEDE_BINARY` / `PHEMIOS_AEDE_SOURCE` overrides remain available.
+
+To use the separate Aède Tauri server on the same computer, export its public connection JSON and import it under Settings → Aède server. Enter its displayed account/password separately. The import pins only that exact loopback certificate, including audio WSS; it never disables TLS verification or imports a private key. See [the local-engine design](docs/design/local-engine.md).

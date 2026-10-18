@@ -10,3 +10,5 @@ coverage/
 src-tauri/binaries/
 
 dist-docs/
+
+.engine-cache/

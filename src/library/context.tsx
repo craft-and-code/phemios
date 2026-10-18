@@ -89,7 +89,12 @@ interface Library {
   snapshot: Accessor<Snapshot | undefined>;
   /** Public projection remains readable after logout, without private annotations. */
   publicSnapshot: (source: SourceId) => Snapshot | undefined;
-  connect: (server: string, username: string, password: string) => Promise<void>;
+  connect: (
+    server: string,
+    username: string,
+    password: string,
+    certificate?: number[],
+  ) => Promise<void>;
   sync: (source?: SourceId) => Promise<void>;
   disconnect: () => Promise<void>;
   image: (reference: string, kind: string) => string | undefined;
@@ -524,7 +529,12 @@ export function LibraryProvider(props: ParentProps) {
     }
   });
   let disconnectingServer = false;
-  async function connect(server: string, username: string, password: string) {
+  async function connect(
+    server: string,
+    username: string,
+    password: string,
+    certificate?: number[],
+  ) {
     if (busy() || disconnectingServer) return;
     bootstrap.invalidate("server");
     setBusy(true);
@@ -532,7 +542,7 @@ export function LibraryProvider(props: ParentProps) {
     try {
       // Revoke and halt the previous server account before admitting new credentials.
       if (serverSession()) await releaseServer();
-      setSession(await loginAede(server, username, password));
+      setSession(await loginAede(server, username, password, certificate));
       connection.start();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : t("Connexion impossible."));

@@ -10,3 +10,5 @@ LICENSE
 licenses/
 
 src-tauri/binaries/
+
+.engine-cache/

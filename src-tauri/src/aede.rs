@@ -64,6 +64,7 @@ pub(crate) async fn aede_login(
     server: String,
     username: String,
     password: String,
+    certificate: Option<Vec<u8>>,
     state: State<'_, Aede>,
 ) -> Result<Value, String> {
     bridge(version)?;
@@ -71,7 +72,11 @@ pub(crate) async fn aede_login(
         .server
         .generation
         .load(std::sync::atomic::Ordering::SeqCst);
-    let client = blocking(move || Client::login(&server, &username, &password)).await?;
+    let client = blocking(move || match certificate {
+        Some(certificate) => Client::login_pinned(&server, &username, &password, &certificate),
+        None => Client::login(&server, &username, &password),
+    })
+    .await?;
     let account = crate::sessions::publish_login(
         &state.server.session,
         &state.server.generation,

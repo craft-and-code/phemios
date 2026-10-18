@@ -44,11 +44,27 @@ function rememberNativeSession(
   if (typeof account.nativeSession === "string") nativeSessions[source] = account.nativeSession;
   else delete nativeSessions[source];
 }
-export async function loginAede(server: string, username: string, password: string) {
+/** An imported public certificate applies only to this explicit local login. */
+export interface LocalServerProfile {
+  format: "aede-local-server";
+  version: 1;
+  address: string;
+  username: string;
+  certificate: number[];
+}
+export const importLocalServerProfile = () =>
+  nativeCall<LocalServerProfile | null>("aede_import_profile");
+export async function loginAede(
+  server: string,
+  username: string,
+  password: string,
+  certificate?: number[],
+) {
   const account = await nativeCall<import("../library/server").AccountSession>("aede_login", {
     server,
     username,
     password,
+    ...(certificate ? { certificate } : {}),
   });
   rememberNativeSession("server", account);
   return account;

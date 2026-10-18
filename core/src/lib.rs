@@ -64,3 +64,6 @@ mod private_store_test_support;
 
 /// Explicit portable backups of account-private podcast and article documents.
 pub mod personal_backup;
+
+/// Public local server connection profiles, admitted before certificate trust.
+pub mod server_profile;

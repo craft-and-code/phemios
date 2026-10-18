@@ -1808,5 +1808,21 @@
   "Versions verrouillées à la compilation. Les composants Rust peuvent dépendre de la plateforme.": "Versions locked at build time. Rust components may depend on the platform.",
   "{0} durées inconnues": "{0} unknown durations",
   "Un téléchargement de paroles d’album est déjà en cours.": "An album lyrics download is already in progress.",
-  "Inconnue": "Unknown"
+  "Inconnue": "Unknown",
+  "Importer la connexion de l’application Aède": "Import the Aède app connection",
+  "Certificat public local importé. Le mot de passe reste nécessaire.": "Local public certificate imported. Your password is still required.",
+  "Profil de connexion trop volumineux.": "Connection profile is too large.",
+  "Profil de connexion Aède illisible.": "Cannot read the Aède connection profile.",
+  "Profil de connexion Aède invalide.": "Invalid Aède connection profile.",
+  "Profil de connexion Aède incompatible ou contenant des champs privés.": "The Aède connection profile is incompatible or contains private fields.",
+  "Adresse absente.": "Missing address.",
+  "Adresse locale invalide.": "Invalid local address.",
+  "Ce certificat est réservé à un serveur HTTPS sur cet ordinateur.": "This certificate is restricted to an HTTPS server on this computer.",
+  "Compte absent.": "Missing account.",
+  "Compte du profil invalide.": "Invalid profile account.",
+  "Certificat local invalide.": "Invalid local certificate.",
+  "Certificat local illisible.": "Cannot read the local certificate.",
+  "Fichier de connexion invalide.": "Invalid connection file.",
+  "Profil de connexion illisible.": "Cannot read the connection profile.",
+  "Profil de connexion invalide ou trop volumineux.": "Connection profile is invalid or too large."
 }

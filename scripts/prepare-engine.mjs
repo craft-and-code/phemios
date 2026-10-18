@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, copyFileSync, chmodSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  copyFileSync,
+  chmodSync,
+  writeFileSync,
+  existsSync,
+  readFileSync,
+} from "node:fs";
+import { createHash } from "node:crypto";
+import { requireEngineVersions } from "./engine-policy.mjs";
 import { resolve, join } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 function run(command, args, cwd) {
@@ -19,6 +28,17 @@ const triple = run("rustc", ["-vV"], root)
 if (!triple) throw new Error("Rust host target is unavailable.");
 const extension = process.platform === "win32" ? ".exe" : "";
 let binary = process.env.PHEMIOS_AEDE_BINARY;
+if (!binary && !process.env.PHEMIOS_AEDE_SOURCE) {
+  const release = join(root, ".engine-cache", "release");
+  const candidate = join(release, `aede${extension}`);
+  if (existsSync(candidate)) {
+    const metadata = JSON.parse(readFileSync(join(release, "versions.json"), "utf8"));
+    const hash = createHash("sha256").update(readFileSync(candidate)).digest("hex");
+    if (hash !== metadata.sha256)
+      throw new Error("Cached published engine checksum mismatch. Update explicitly.");
+    binary = candidate;
+  }
+}
 if (!binary) {
   const source = resolve(process.env.PHEMIOS_AEDE_SOURCE ?? join(root, "..", "aede"));
   run("cargo", ["build", "--release", "--locked", "--offline", "-p", "aede-cli"], source);
@@ -36,6 +56,10 @@ for (const key of ["aede", "flaccompagnon"])
     !/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(versions[key])
   )
     throw new Error("Embedded engine version metadata is invalid.");
+requireEngineVersions(
+  versions,
+  JSON.parse(readFileSync(join(root, "engines.required.json"), "utf8")),
+);
 copyFileSync(binary, output);
 writeFileSync(
   join(folder, "versions.json"),
