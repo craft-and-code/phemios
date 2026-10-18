@@ -1,7 +1,8 @@
 .app {
   height: 100dvh;
   display: grid;
-  grid-template: 70px minmax(0, 1fr) 80px / 220px minmax(0, 1fr);
+  --player-bar-height: 96px;
+  grid-template: 70px minmax(0, 1fr) var(--player-bar-height) / 220px minmax(0, 1fr);
 }
 .topbar {
   grid-column: 1 / -1;
@@ -554,7 +555,8 @@ legend {
 .player-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(300px, 39vw, 620px) minmax(0, 1fr);
-  height: 80px;
+  height: var(--player-bar-height, 96px);
+  padding-block: 10px;
 }
 .player-bar .transport {
   display: grid;

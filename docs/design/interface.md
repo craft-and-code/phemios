@@ -87,3 +87,7 @@ Cover Flow side-cover taps retain their original anchor target and animate that 
 Playback-footer album/track links use the same origin history as catalogue links. Returning restores the exact preceding page and its scroll, including the Playback workspace; utility pages have their own translated names rather than a generic catalogue label. Track detail keeps its independent title Play action beside the metadata and no playback overlay on its album cover.
 
 Themed choice popups reveal the selected row on opening and keep keyboard destinations visible. A bounded accent-insensitive prefix expires after a brief pause; repeated letters cycle enabled matches. Composing input and modified keys retain their platform behavior. Radio failed country searches clear previous-country results rather than presenting them as current answers.
+
+## Shared footer clearance
+
+All three transports use a shared 96 px footer grid row with centred outer columns and unchanged 38 px controls / 28 px timeline rows. The content-height fallback follows the same footer variable so artist backgrounds and full-height views stop above it. Browser acceptance measures at least 10 px below the timeline and aligned left/right centres.

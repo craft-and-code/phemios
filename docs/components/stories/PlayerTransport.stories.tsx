@@ -128,3 +128,48 @@ export const StopBadge: Story = {
     expect(getComputedStyle(stop.querySelector("svg")!).opacity).toBe("0.5");
   },
 };
+
+/** Both timeline clearance and outer column centres belong to the shared footer contract. */
+export const FooterClearance: Story = {
+  render: () => (
+    <footer class="player-bar">
+      <div class="now-playing">
+        <div class="idle-cover" />
+        <span>
+          Example artist
+          <br />
+          <small>Example album</small>
+        </span>
+      </div>
+      <PlayerTransport
+        controls={
+          <button class="play-button" aria-label="Play">
+            <Icon name="play" />
+          </button>
+        }
+        timeline={
+          <div class="playback-progress">
+            <small>0:00</small>
+            <div class="waveform-seek" />
+            <small>4:00</small>
+          </div>
+        }
+      />
+      <div class="player-options">
+        <button class="icon-button" aria-label="Volume">
+          <Icon name="volume" />
+        </button>
+      </div>
+    </footer>
+  ),
+  play: async ({ canvasElement }) => {
+    const footer = canvasElement.querySelector("footer")!.getBoundingClientRect();
+    const centre = (rect: DOMRect) => rect.y + rect.height / 2;
+    const timeline = canvasElement.querySelector(".playback-progress")!.getBoundingClientRect();
+    expect(footer.bottom - timeline.bottom).toBeGreaterThanOrEqual(10);
+    for (const selector of [".now-playing", ".player-options"]) {
+      const rect = canvasElement.querySelector(selector)!.getBoundingClientRect();
+      expect(Math.abs(centre(rect) - centre(footer))).toBeLessThanOrEqual(1);
+    }
+  },
+};

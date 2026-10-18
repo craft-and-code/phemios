@@ -856,8 +856,14 @@ pre {
 .artist-backdrop {
   position: sticky;
   top: var(--catalog-header-height, 0px);
-  height: calc(var(--content-height, 100dvh - 150px) - var(--catalog-header-height, 0px));
-  margin-bottom: calc(var(--catalog-header-height, 0px) - var(--content-height, 100dvh - 150px));
+  height: calc(
+    var(--content-height, 100dvh - 70px - var(--player-bar-height, 96px)) -
+      var(--catalog-header-height, 0px)
+  );
+  margin-bottom: calc(
+    var(--catalog-header-height, 0px) -
+      var(--content-height, 100dvh - 70px - var(--player-bar-height, 96px))
+  );
   background-size: cover;
   background-position: center;
   pointer-events: none;
