@@ -1886,3 +1886,18 @@ button.biography-more .biography-more-icon .spinner,
   background: var(--surface);
   box-shadow: 0 4px 14px #0005;
 }
+
+.biography-reader-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--control-gap);
+}
+.biography-reader-heading h1 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.biography-reader-heading > button {
+  flex-shrink: 0;
+}

@@ -3,7 +3,12 @@ import type { BiographyNavigation } from "../library/biography-navigation";
 import { biographyLinker } from "../library/biography-links";
 import { ArtistBiography } from "../components/ArtistBiography";
 import { createBiographyReading } from "../library/biography-reading-state";
-import { readEncyclopediaTitle, readCachedBiography, isNative } from "../platform/desktop";
+import {
+  downloadEncyclopedia,
+  readEncyclopediaTitle,
+  readCachedBiography,
+  isNative,
+} from "../platform/desktop";
 import { Feedback } from "../components/Feedback";
 import { AlbumCount } from "../components/AlbumCount";
 import { artistCatalogue } from "../library/artist-catalogue";
@@ -238,6 +243,7 @@ export function ArtistPage(props: {
       {(article) => (
         <ArtistBiography
           article={article()}
+          onDownload={isNative() ? downloadEncyclopedia : undefined}
           renderText={(text) => (
             <BiographyText reference={props.artist.reference} text={text} linker={linker()} />
           )}

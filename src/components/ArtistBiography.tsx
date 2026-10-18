@@ -1,4 +1,5 @@
-import { createMemo, For, Show, type JSX } from "solid-js";
+import { DownloadButton } from "./DownloadButton";
+import { createEffect, createMemo, createSignal, on, For, Show, type JSX } from "solid-js";
 import { t, locale } from "../i18n";
 import { ScrollToTop } from "./ScrollToTop";
 import { Feedback } from "./Feedback";
@@ -12,8 +13,16 @@ export function ArtistBiography(props: {
   photos: readonly string[];
   error?: string;
   onDismissError?: () => void;
+  onDownload?: ((article: WikipediaArticle) => Promise<unknown>) | undefined;
 }) {
   let reader!: HTMLElement;
+  const [downloadError, setDownloadError] = createSignal("");
+  createEffect(
+    on(
+      () => props.article,
+      () => setDownloadError(""),
+    ),
+  );
   const links = () => wikipediaLinks(props.article);
   const blocks = createMemo(() => wikipediaBlocks(props.article.text));
   const headings: (HTMLHeadingElement | undefined)[] = [];
@@ -28,7 +37,21 @@ export function ArtistBiography(props: {
       class="artist-biography-reader"
     >
       <p class="eyebrow">{t("BIOGRAPHIE")}</p>
-      <h1 tabindex="-1">{props.article.title}</h1>
+      <div class="biography-reader-heading">
+        <h1 tabindex="-1">{props.article.title}</h1>
+        <DownloadButton
+          label={t("Télécharger la biographie complète")}
+          identity={props.article}
+          disabled={!props.onDownload}
+          onClick={() => {
+            setDownloadError("");
+            return props.onDownload?.(props.article);
+          }}
+          onError={(failure) =>
+            setDownloadError(failure instanceof Error ? failure.message : String(failure))
+          }
+        />
+      </div>
       <div class="wikipedia-attribution">
         <a href={links().article} target="_blank" rel="noreferrer">
           {t("Article original")}
@@ -52,6 +75,7 @@ export function ArtistBiography(props: {
         )}
       </p>
       <Feedback error message={props.error ?? ""} onClose={() => props.onDismissError?.()} />
+      <Feedback error message={downloadError()} onClose={() => setDownloadError("")} />
       <Show when={sections().length > 1}>
         <nav class="biography-toc" aria-label={t("Sommaire")}>
           <h2>{t("Sommaire")}</h2>

@@ -2,7 +2,12 @@ import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
 import { ArtistBiography } from "../components/ArtistBiography";
 import { createBiographyReading } from "../library/biography-reading-state";
-import { readEncyclopediaTitle, readCachedBiography, isNative } from "../platform/desktop";
+import {
+  downloadEncyclopedia,
+  readEncyclopediaTitle,
+  readCachedBiography,
+  isNative,
+} from "../platform/desktop";
 import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
@@ -258,6 +263,7 @@ export function LabelPage(props: {
       {(article) => (
         <ArtistBiography
           article={article()}
+          onDownload={isNative() ? downloadEncyclopedia : undefined}
           artist={detail()?.name ?? ""}
           photos={[]}
           error={biography.error()}

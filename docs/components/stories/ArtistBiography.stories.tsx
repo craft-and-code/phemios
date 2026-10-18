@@ -1,12 +1,13 @@
 import landscape from "../../../public/demo/landscape.svg";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
-import { expect, userEvent, within, waitFor } from "storybook/test";
+import { expect, fn, userEvent, within, waitFor } from "storybook/test";
 import { StickyHeader } from "../../../src/components/StickyHeader";
 import { ArtistBiography } from "../../../src/components/ArtistBiography";
 const meta = {
   title: "Catalog/ArtistBiography",
   component: ArtistBiography,
   args: {
+    onDownload: fn(async () => "/Downloads/Phémios/Encyclopédie/wikipedia-fr-42.txt"),
     artist: "The Northern Lights",
     article: {
       title: "The Northern Lights",
@@ -82,5 +83,20 @@ export const LongReading: Story = {
     await waitFor(() => expect(scroller.scrollTop).toBeLessThan(1), { timeout: 3000 });
     expect(canvas.getByRole("heading", { name: "The Northern Lights" })).toHaveFocus();
     expect(canvas.queryByRole("button", { name: "Retour en haut" })).toBeNull();
+  },
+};
+
+export const Download: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Télécharger la biographie complète" }),
+    );
+    await waitFor(() => expect(args.onDownload).toHaveBeenCalledTimes(1));
+    expect(args.onDownload).toHaveBeenCalledWith(args.article);
+    expect(canvas.getByRole("button", { name: "Télécharger la biographie complète" })).toHaveClass(
+      "download-complete",
+    );
+    expect(canvas.getByRole("heading", { name: args.article.title })).toBeVisible();
   },
 };
