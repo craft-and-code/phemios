@@ -10,7 +10,7 @@ import { type QueueSearchItem } from "../library/queue-search";
 import { QueueAddView } from "./QueueAddView";
 /** Search lifetime is independent of the queue and audio-clock polls. */
 export function QueueAdd(props: {
-  onClose: () => void;
+  onClose?: () => void;
   onSelect?: (rows: readonly PlayableSelection[]) => void;
   disabled?: boolean;
 }) {
@@ -95,7 +95,7 @@ export function QueueAdd(props: {
       let count = 0;
       if (props.onSelect) {
         const value = await resolve(current);
-        if (!current() || value === undefined) return;
+        if (!current() || value === undefined || props.disabled) return;
         const rows = queueAdditionSelection(
           value,
           library.albums(),

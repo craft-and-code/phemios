@@ -54,6 +54,29 @@ impl Mounted {
             rockbox,
         })
     }
+    /// Capture an explicitly OS-picked folder, retaining identity and refusing stock-iPod ancestors.
+    /// A plain folder cannot bypass the Apple database adapter by selecting an iPod subdirectory.
+    pub fn capture_folder(path: PathBuf) -> Result<Self, String> {
+        let original = Self::capture(path)?;
+        let canonical = original
+            .path
+            .canonicalize()
+            .map_err(|_| "Dossier de destination indisponible.")?;
+        if canonical.to_str().is_none_or(|s| s.len() > 4096) {
+            return Err("Chemin du dossier de destination invalide.".into());
+        }
+        let target = Self::capture(canonical)?;
+        original.confirm()?;
+        if original.identity != target.identity {
+            return Err("Le dossier de destination a changé.".into());
+        }
+        for parent in target.path.ancestors() {
+            if parent.join("iPod_Control").is_dir() && !parent.join(".rockbox").is_dir() {
+                return Err("Sélectionnez l’iPod dans la liste des lecteurs pour utiliser son adaptateur dédié.".into());
+            }
+        }
+        Ok(target)
+    }
     /// Native destination root; never obtained directly from a webview argument.
     pub fn path(&self) -> &Path {
         &self.path

@@ -34,6 +34,26 @@ fn retired_session_hides_personal_transfer_names_and_cancels_future_work() {
 
 #[test]
 fn real_engine_copies_and_verifies_a_streamed_original_without_touching_source_or_other_files() {
+    streamed_copy("original", "wav");
+}
+#[test]
+fn real_engine_converts_streamed_audio_to_mp3_without_modifying_the_source() {
+    if ["ffmpeg", "ffprobe"].iter().any(|tool| {
+        std::process::Command::new(tool)
+            .arg("-version")
+            .output()
+            .is_err()
+    }) {
+        assert!(
+            std::env::var_os("PHEMIOS_REQUIRE_FFMPEG").is_none(),
+            "MP3 acceptance requires installed FFmpeg and FFprobe"
+        );
+        eprintln!("MP3 transfer acceptance not run: FFmpeg/FFprobe unavailable");
+        return;
+    }
+    streamed_copy("mp3", "mp3");
+}
+fn streamed_copy(format: &str, extension: &str) {
     use std::io::{Read, Write};
     let executable = std::env::var_os("PHEMIOS_TRANSFER_ENGINE")
         .expect("run tools/check.sh or set PHEMIOS_TRANSFER_ENGINE to the tested Aède binary");
@@ -121,7 +141,7 @@ fn real_engine_copies_and_verifies_a_streamed_original_without_touching_source_o
         .join("01.wav");
     let preview = Preview {
         id: "test".into(),
-        target: Target::Mounted(Mounted::capture(destination.clone()).unwrap()),
+        target: Target::Mounted(Mounted::capture_folder(destination.clone()).unwrap()),
         items: vec![Item {
             owner,
             reference: "track:fixture".into(),
@@ -129,7 +149,7 @@ fn real_engine_copies_and_verifies_a_streamed_original_without_touching_source_o
             relative: relative.clone(),
             bytes: original.len() as u64,
         }],
-        options: json!({"format":"original","verify":true,"replace":false}),
+        options: json!({"format":format,"verify":true,"replace":false}),
         bytes: original.len() as u64,
     };
     let state = Transfers::default();
@@ -141,7 +161,30 @@ fn real_engine_copies_and_verifies_a_streamed_original_without_touching_source_o
     )
     .unwrap();
     worker.join().unwrap();
-    assert_eq!(fs::read(destination.join(relative)).unwrap(), original);
+    let final_path = destination.join(relative.with_extension(extension));
+    let written = fs::read(&final_path).unwrap();
+    if format == "original" {
+        assert_eq!(written, original);
+    } else {
+        assert_ne!(written, original);
+        assert!(!destination.join(&relative).exists());
+        let probe = std::process::Command::new("ffprobe")
+            .args([
+                "-v",
+                "error",
+                "-select_streams",
+                "a:0",
+                "-show_entries",
+                "stream=codec_name",
+                "-of",
+                "default=nw=1:nk=1",
+            ])
+            .arg(&final_path)
+            .output()
+            .unwrap();
+        assert!(probe.status.success());
+        assert_eq!(String::from_utf8_lossy(&probe.stdout).trim(), "mp3");
+    }
     assert_eq!(
         fs::read(destination.join("existing.txt")).unwrap(),
         b"retain"

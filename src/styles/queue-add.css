@@ -143,7 +143,11 @@ main > .playback-page.queue-open {
 }
 .queue-add-footer > div {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.queue-add-footer .pagination-controls {
+  margin: 0;
 }
 .queue-add-panel .feedback {
   flex-shrink: 0;

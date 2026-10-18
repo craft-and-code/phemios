@@ -1,6 +1,25 @@
 use super::*;
 #[test]
 fn embedded_https_export_runs_through_the_real_copy_pipeline() {
+    live_export("original");
+}
+#[test]
+fn embedded_https_flac_preview_matches_the_actual_mp3_output() {
+    if ["ffmpeg", "ffprobe"].iter().any(|tool| {
+        std::process::Command::new(tool)
+            .arg("-version")
+            .output()
+            .is_err()
+    }) {
+        assert!(
+            std::env::var_os("PHEMIOS_REQUIRE_FFMPEG").is_none(),
+            "MP3 acceptance requires FFmpeg/FFprobe"
+        );
+        return;
+    }
+    live_export("mp3");
+}
+fn live_export(format: &str) {
     let executable = PathBuf::from(
         std::env::var_os("PHEMIOS_TRANSFER_ENGINE")
             .expect("run tools/check.sh or supply PHEMIOS_TRANSFER_ENGINE"),
@@ -57,13 +76,12 @@ fn embedded_https_export_runs_through_the_real_copy_pipeline() {
         )
         .unwrap();
     let reference = tracks["items"][0]["reference"].as_str().unwrap().to_owned();
+    let mut payload = json!({"references":[reference]});
+    if format != "original" {
+        payload["format"] = json!(format);
+    }
     let plan = client
-        .request(
-            "POST",
-            "/api/me/v1/exports/plan",
-            &[],
-            Some(&json!({"references":[reference]})),
-        )
+        .request("POST", "/api/me/v1/exports/plan", &[], Some(&payload))
         .unwrap();
     let row = &plan["items"][0];
     let parts: Vec<String> = row["components"]
@@ -73,6 +91,11 @@ fn embedded_https_export_runs_through_the_real_copy_pipeline() {
         .map(|v| v.as_str().unwrap().to_owned())
         .collect();
     let relative = phemios_transfer::relative(&parts).unwrap();
+    let (planned, _) = plan::output(row, &parts, format != "original").unwrap();
+    assert_eq!(
+        planned,
+        relative.with_extension(if format == "original" { "flac" } else { "mp3" })
+    );
     let owner = Owner {
         client: client.clone(),
         session: Arc::new(Mutex::new(Some(client))),
@@ -91,12 +114,35 @@ fn embedded_https_export_runs_through_the_real_copy_pipeline() {
             relative: relative.clone(),
             bytes: bytes.len() as u64,
         }],
-        options: json!({"format":"original","verify":true,"replace":false}),
+        options: json!({"format":format,"verify":true,"replace":false}),
         bytes: bytes.len() as u64,
     };
     let transfer = Transfers::default();
     execute(&transfer, &preview, &executable, &root.join("staging")).unwrap();
-    assert_eq!(fs::read(destination.join(&relative)).unwrap(), bytes);
+    let final_path = destination.join(&planned);
+    if format == "original" {
+        assert_eq!(fs::read(&final_path).unwrap(), bytes);
+    } else {
+        assert!(!destination.join(&relative).exists());
+        let encoded = std::fs::read(&final_path).unwrap();
+        assert!(!encoded.is_empty());
+        let probe = std::process::Command::new("ffprobe")
+            .args([
+                "-v",
+                "error",
+                "-select_streams",
+                "a:0",
+                "-show_entries",
+                "stream=codec_name",
+                "-of",
+                "default=nw=1:nk=1",
+            ])
+            .arg(&final_path)
+            .output()
+            .unwrap();
+        assert!(probe.status.success());
+        assert_eq!(String::from_utf8_lossy(&probe.stdout).trim(), "mp3");
+    }
     assert_eq!(fs::read(album.join("01.flac")).unwrap(), bytes);
     engine.stop().unwrap();
 }

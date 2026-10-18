@@ -1975,7 +1975,6 @@
   "Un transfert est déjà en cours.": "A transfer is already running.",
   "Connectez-vous pour sélectionner des fichiers.": "Connect to select files.",
   "L’export audio est indisponible pour ce compte.": "Audio export is unavailable for this account.",
-  "Aucun fichier n’a encore été écrit sur le lecteur. Les chemins sont relatifs à sa racine.": "No files have been written to the player yet. Paths are relative to its root.",
   "Aucun fichier n’a encore été écrit sur l’iPod. podkit organisera ces pistes dans sa base musicale.": "No files have been written to the iPod yet. podkit will organize these tracks in its music database.",
   "Aède copie les originaux et convertit seulement les sources sans perte. FFmpeg est nécessaire pour convertir. FAT/exFAT peut nécessiter l’autorisation de remplacement.": "Aède copies originals and only converts lossless sources. FFmpeg is required for conversion. FAT/exFAT may require permission to replace files.",
   "podkit gère la compatibilité et la base musicale de l’iPod. Les morceaux existants sont conservés. La vérification octet par octet n’est pas disponible pour cet adaptateur.": "podkit handles iPod compatibility and its music database. Existing tracks are retained. Byte-for-byte verification is unavailable for this adapter.",
@@ -1989,5 +1988,18 @@
   "Plusieurs pistes partagent le même chemin de destination. Réduisez la sélection.": "Several tracks share the same destination path. Reduce the selection.",
   "Sélectionner {0}": "Select {0}",
   "{0} piste sélectionnée": "{0} selected track",
-  "{0} piste · {1}": "{0} track · {1}"
+  "{0} piste · {1}": "{0} track · {1}",
+  "Options de transfert": "Transfer options",
+  "Périphérique de destination": "Destination device",
+  "Éjecter {0}": "Eject {0}",
+  "Ce modèle d’iPod n’est pas pris en charge par podkit.": "This iPod model is not supported by podkit.",
+  "Base iTunesDB compatible absente. Aucune initialisation automatique.": "No compatible iTunesDB found. No automatic initialization.",
+  "Choisir un dossier…": "Choose a folder…",
+  "Dossier": "Folder",
+  "Dossier de destination indisponible.": "Destination folder unavailable.",
+  "Aucun fichier n’a encore été écrit sur le lecteur. Les noms affichés correspondent aux fichiers de destination.": "No file has been written to the player. Displayed names refer to destination files.",
+  "Le volume indiqué est celui des sources ; la taille finale dépend de la conversion.": "The displayed size is the source size; the final size depends on conversion.",
+  "Plan de conversion invalide ; mettez à jour Aède.": "Invalid conversion plan; update Aède.",
+  "Mettez à jour puis redémarrez Aède pour afficher les noms après conversion.": "Update and restart Aède to preview converted filenames.",
+  "Plusieurs pistes partagent le même chemin de destination après conversion. Réduisez la sélection.": "Several tracks share the same output path after conversion. Reduce the selection."
 }

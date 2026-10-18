@@ -4,6 +4,7 @@ import type { PlayerVolume } from "../library/players";
 import { EmptyState } from "./EmptyState";
 import { Icon } from "./Icon";
 import { PageLoader } from "./PageLoader";
+import { ActionButton } from "./ActionButton";
 /** Initial discovery and refresh share one page-centred activity; canceled reads can reveal retained volumes. */
 export function PlayersContent(props: {
   busy: boolean;
@@ -12,6 +13,8 @@ export function PlayersContent(props: {
   selected: string;
   disabled?: boolean;
   onSelect: (path: string) => void;
+  ejecting?: string;
+  onEject?: (id: string) => void;
 }) {
   return (
     <Show when={!props.busy} fallback={<PageLoader label={t("Détection des lecteurs…")} />}>
@@ -29,31 +32,65 @@ export function PlayersContent(props: {
       <ul class="personal-list">
         <For each={props.volumes}>
           {(volume) => (
-            <li>
-              <Icon name="drive" />
+            <li class="player-destination-row">
+              <span class="player-device-icon">
+                <Icon
+                  name={
+                    volume.adapter === "ipod" && (!volume.icon || volume.icon === "drive")
+                      ? "ipod"
+                      : (volume.icon ?? "drive")
+                  }
+                />
+              </span>
               <div>
                 <strong>{volume.name}</strong>
                 <small>
-                  {volume.path} · {volume.format} ·{" "}
+                  {volume.path}
+                  <Show when={volume.format}> · {volume.format}</Show> ·{" "}
                   {volume.kind === "network"
                     ? t("Réseau")
                     : volume.kind === "removable"
                       ? t("Amovible")
-                      : t("Volume monté")}
+                      : volume.kind === "folder"
+                        ? t("Dossier")
+                        : t("Volume monté")}
                 </small>
+                <Show when={volume.model}>
+                  <small>{volume.model}</small>
+                </Show>
+                <Show when={volume.unavailableReason}>
+                  <small class="player-unavailable">{t(volume.unavailableReason!)}</small>
+                </Show>
               </div>
-              <Show when={volume.adapter === "ipod"}>
+              <Show when={volume.adapter === "ipod" && !volume.unavailableReason}>
                 <small>
                   {volume.available === false ? t("podkit requis") : t("iPod Apple · podkit")}
                 </small>
               </Show>
-              <button
-                aria-pressed={props.selected === (volume.id ?? volume.path)}
-                disabled={props.disabled || volume.available === false}
-                onClick={() => props.onSelect(volume.id ?? volume.path)}
-              >
-                {t("Sélectionner")}
-              </button>
+              <div class="player-destination-actions">
+                <ActionButton
+                  aria-pressed={props.selected === (volume.id ?? volume.path)}
+                  disabled={props.disabled || !!props.ejecting || volume.available === false}
+                  onClick={() => props.onSelect(volume.id ?? volume.path)}
+                >
+                  {t("Sélectionner")}
+                </ActionButton>
+                <Show when={props.onEject && volume.id && volume.ejectable}>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    aria-label={t("Éjecter {0}", volume.name)}
+                    title={t("Éjecter {0}", volume.name)}
+                    aria-busy={props.ejecting === volume.id || undefined}
+                    disabled={props.disabled || !!props.ejecting}
+                    onClick={() => props.onEject?.(volume.id!)}
+                  >
+                    <Show when={props.ejecting === volume.id} fallback={<Icon name="eject" />}>
+                      <span class="spinner" aria-hidden="true" />
+                    </Show>
+                  </button>
+                </Show>
+              </div>
             </li>
           )}
         </For>

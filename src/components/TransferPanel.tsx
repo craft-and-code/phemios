@@ -23,62 +23,17 @@ export function TransferPanel(props: {
   preview: TransferPreview | undefined;
   status: TransferStatus;
   preparing: boolean;
+  disabled?: boolean;
   error: string;
   onOptions: (value: TransferOptions) => void;
-  onChoose: () => void;
-  onRemove: (reference: string) => void;
   onPreview: () => void;
   onStart: () => void;
   onCancel: () => void;
 }) {
-  const locked = () => props.status.running || props.preparing;
+  const locked = () => props.status.running || props.preparing || !!props.disabled;
   return (
     <section class="transfer-panel">
-      <div class="page-heading">
-        <h3>{t("Musique à transférer")}</h3>
-        <button
-          class="icon-button quiet"
-          disabled={locked()}
-          onClick={props.onChoose}
-          title={t("Ajouter à la sélection")}
-          aria-label={t("Ajouter à la sélection")}
-        >
-          <Icon name="plus" />
-        </button>
-      </div>
-      <Show when={!props.rows.length}>
-        <p class="muted">{t("Ajoutez des pistes, albums, artistes, collections ou listes M3U.")}</p>
-      </Show>
-      <ul class="transfer-selection">
-        <For each={props.rows}>
-          {(row) => (
-            <li>
-              <span>
-                <strong>{row.title}</strong>
-                <small>
-                  {row.artist}
-                  <Show when={row.album}> · {row.album?.title}</Show>
-                </small>
-              </span>
-              <button
-                class="icon-button quiet icon-close"
-                disabled={locked()}
-                title={t("Retirer {0}", row.title)}
-                aria-label={t("Retirer {0}", row.title)}
-                onClick={() => props.onRemove(row.reference)}
-              >
-                <Icon name="close" />
-              </button>
-            </li>
-          )}
-        </For>
-      </ul>
-      <p class="muted">
-        {t(
-          props.rows.length === 1 ? "{0} piste sélectionnée" : "{0} pistes sélectionnées",
-          props.rows.length,
-        )}
-      </p>
+      <h3>{t("Options de transfert")}</h3>
       <div class="transfer-options">
         <label>
           <span>{t("Format de destination")}</span>
@@ -173,9 +128,16 @@ export function TransferPanel(props: {
                     "Aucun fichier n’a encore été écrit sur l’iPod. podkit organisera ces pistes dans sa base musicale.",
                   )
                 : t(
-                    "Aucun fichier n’a encore été écrit sur le lecteur. Les chemins sont relatifs à sa racine.",
+                    "Aucun fichier n’a encore été écrit sur le lecteur. Les noms affichés correspondent aux fichiers de destination.",
                   )}
             </p>
+            <Show when={props.options.format !== "original" && !props.ipod}>
+              <p class="muted">
+                {t(
+                  "Le volume indiqué est celui des sources ; la taille finale dépend de la conversion.",
+                )}
+              </p>
+            </Show>
             <ul>
               <For each={preview().files}>{(path) => <li>{path}</li>}</For>
             </ul>

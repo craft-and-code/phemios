@@ -22,6 +22,7 @@ mod sessions;
 mod snapshots;
 mod themes;
 mod transfer;
+mod transfer_folder;
 mod volumes;
 use tauri::Manager;
 
@@ -112,7 +113,9 @@ pub fn run() -> Result<(), tauri::Error> {
             exports::preferences_export,
             themes::theme_import,
             themes::theme_export,
+            transfer_folder::transfer_pick_folder,
             volumes::players_discover,
+            volumes::players_eject,
             transfer::transfer_prepare,
             transfer::transfer_start,
             transfer::transfer_status,

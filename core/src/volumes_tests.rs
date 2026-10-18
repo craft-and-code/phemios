@@ -1,17 +1,5 @@
 use super::*;
 #[test]
-fn mac_discovery_excludes_recovery_volumes_and_disk_images_using_os_metadata() {
-    assert!(!external_from_info("<dict><key>Internal</key><true/><key>BusProtocol</key><string>Apple Fabric</string></dict>").unwrap());
-    assert!(!external_from_info("<dict><key>Internal</key><false/><key>BusProtocol</key><string>Disk Image</string></dict>").unwrap());
-    assert!(
-        external_from_info(
-            "<dict><key>Internal</key>\n<false/><key>BusProtocol</key><string>USB</string></dict>"
-        )
-        .unwrap()
-    );
-    assert!(external_from_info("<dict><key>Internal</key><string>false</string></dict>").is_err());
-}
-#[test]
 fn mounted_media_are_distinguished_from_system_volumes_and_network_shares() {
     let mac = "/dev/disk1s1 on / (apfs, local)\n/dev/disk2s1 on /Volumes/Player Card (exfat, local)\n//user@host/Music on /Volumes/Music (smbfs, nodev)\n";
     let rows = parse_mounts(mac, true);

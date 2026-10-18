@@ -202,6 +202,10 @@ export const missingCoverAede = (artist: string, group: string, download: boolea
 
 /** Read mounted player/card/drive destinations; this command cannot mount or write them. */
 export const discoverPlayers = () => nativeCall<unknown>("players_discover");
+/** Grant a destination through the native dialog only; cancellation leaves the current selection intact. */
+export const pickTransferFolder = () => nativeCall<unknown | null>("transfer_pick_folder");
+/** Eject only an opaque native-discovered destination; never accepts an OS path. */
+export const ejectPlayer = (id: string) => nativeCall<void>("players_eject", { id });
 
 /** Explicit, bounded public RSS retrieval has no access to Aède credentials. */
 export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed", { url });

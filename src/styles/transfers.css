@@ -1,17 +1,37 @@
-/* External transfer selection reuses the queue library picker without constraining its height. */
+/* Both permanent music panes share a bounded height and independent result scrollers. */
 .transfer-workspace {
+  --transfer-pane-height: 560px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
   margin-block: 24px;
 }
 .transfer-workspace:has(> :only-child) {
   grid-template-columns: minmax(0, 1fr);
 }
-.transfer-workspace .queue-add-panel {
-  height: 560px;
+.transfer-workspace > :is(.queue-add-panel, .transfer-selection-panel) {
+  height: var(--transfer-pane-height);
   max-height: none;
+  min-height: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.transfer-workspace .transfer-selection-panel > .page-heading {
+  margin-bottom: 10px;
+}
+.transfer-workspace .transfer-selection-panel > .transfer-selection {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  margin-inline-end: -6px;
+  padding-inline-end: 6px;
+  scrollbar-gutter: stable;
+}
+.transfer-workspace .transfer-selection-panel > p:last-child {
+  margin-block: 0;
+  font-size: 11px;
 }
 .transfer-panel {
   border: 1px solid var(--border);
@@ -101,4 +121,74 @@
   .transfer-workspace {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.transfer-destination {
+  position: relative;
+  min-height: 200px;
+  margin-bottom: 24px;
+}
+/* Let overflowing transfer content contribute its real height, including the common end padding. */
+.page.result-page.players-page {
+  flex: 1 0 auto;
+  min-height: min-content;
+}
+.transfer-workspace .queue-add-results {
+  margin-inline-end: -6px;
+  padding-inline-end: 6px;
+  scrollbar-gutter: stable;
+}
+.player-destination-row:last-child {
+  border-bottom: 0;
+}
+.player-destination-actions > button {
+  height: var(--form-control-height);
+  min-height: var(--form-control-height);
+}
+.player-destination-actions > .icon-button {
+  width: var(--form-control-height);
+}
+.player-destination-actions .action-button {
+  font-size: 12px;
+}
+
+.player-destination-row > div:first-of-type {
+  overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.player-device-icon {
+  display: flex;
+  align-items: center;
+  flex: 0 0 36px;
+}
+.player-device-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.player-destination-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+  flex: 0 0 auto;
+}
+.player-destination-row .player-unavailable {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .player-destination-row {
+    flex-wrap: wrap;
+  }
+  .player-destination-actions {
+    margin-left: auto;
+  }
+}
+
+.transfer-destination > .page-heading {
+  flex-wrap: wrap;
+  gap: var(--control-gap);
 }

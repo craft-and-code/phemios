@@ -122,3 +122,54 @@ export const Empty: Story = {
     expect(Math.abs((a.left + a.right) / 2 - (b.left + b.right) / 2)).toBeLessThan(1);
   },
 };
+
+export const TransferPickerGutter: Story = {
+  args: {
+    title: "Choisir la musique à copier",
+    rows: Array.from({ length: 25 }, (_, index) => ({
+      ...rows[0]!,
+      key: String(index),
+      title: `Selected track ${index + 1}`,
+    })),
+  },
+  render: (args) => (
+    <div class="transfer-workspace" style={{ width: "880px", "max-width": "100%" }}>
+      <section class="transfer-panel">
+        <h3>Musique à transférer</h3>
+      </section>
+      <QueueAddView {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const results = canvasElement.querySelector(".queue-add-results")!;
+    const field = within(canvasElement).getByRole("searchbox");
+    expect(results.scrollHeight).toBeGreaterThan(results.clientHeight);
+    expect(
+      results.getBoundingClientRect().right - field.getBoundingClientRect().right,
+    ).toBeGreaterThanOrEqual(5);
+    expect(parseFloat(getComputedStyle(results).paddingInlineEnd)).toBeGreaterThanOrEqual(6);
+  },
+};
+
+export const PagingHelp: Story = {
+  render: (args) => {
+    const [offset, setOffset] = createSignal(0);
+    return <QueueAddView {...args} offset={offset()} more={offset() < 100} onOffset={setOffset} />;
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement),
+      previous = canvas.getByRole("button", { name: "Précédent" }),
+      next = canvas.getByRole("button", { name: "Suivant" });
+    expect(previous).toBeDisabled();
+    expect(next).toBeEnabled();
+    await userEvent.click(next);
+    expect(previous).toBeEnabled();
+    expect(next).toBeEnabled();
+    await userEvent.click(next);
+    expect(previous).toBeEnabled();
+    expect(next).toBeDisabled();
+    await userEvent.click(previous);
+    expect(next).toBeEnabled();
+    expect(canvas.getByRole("navigation", { name: "Pagination" })).toBeVisible();
+  },
+};

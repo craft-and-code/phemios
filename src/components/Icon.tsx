@@ -1,4 +1,13 @@
 const paths: Record<string, string> = {
+  ipod: "M6 2h12a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1ZM8 5h8v6H8V5Zm8 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z",
+  "ipod-nano":
+    "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm1 3h6v7H9V5Zm6 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
+  "ipod-touch":
+    "M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm1 3h8v11H8V5Zm5 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z",
+  "ipod-square":
+    "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm2 3h10v10H7V7ZM7 2h3m3 0h3",
+  "ipod-shuffle":
+    "M4 7h16v11H4V7ZM7 4h10v3m-1 5a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z",
   folder: "M3 20V5h6l2 3h10v4M3 20h16l3-8H8l-5 8Z",
   integrity: "M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6l-9-4Zm-4 10 3 3 5-6",
   "cover-size": "M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4M9 9h6v6H9V9Z",

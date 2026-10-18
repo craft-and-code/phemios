@@ -16,6 +16,8 @@ use std::{
 use tauri::{AppHandle, Manager, State};
 #[path = "transfer_job.rs"]
 mod job;
+#[path = "transfer_plan.rs"]
+mod plan;
 #[derive(Clone)]
 pub(crate) enum Target {
     Mounted(Mounted),
@@ -57,6 +59,8 @@ pub(crate) struct Preview {
 #[derive(Default)]
 pub(crate) struct Transfers {
     pub(crate) targets: Mutex<Vec<(String, Target)>>,
+    pub(crate) volumes: Mutex<Vec<(String, phemios_core::volumes::Volume)>>,
+    pub(crate) folder: Mutex<Option<Mounted>>,
     pub(crate) discovery: Mutex<()>,
     pub(crate) inventory: Mutex<Value>,
     preview: Mutex<Option<Preview>>,
@@ -67,6 +71,23 @@ pub(crate) struct Transfers {
     pub(crate) serial: AtomicU64,
 }
 impl Transfers {
+    /// Serialize discovery, preview, start and ejection; running work owns every destination.
+    pub(crate) fn idle_destinations(&self) -> Result<std::sync::MutexGuard<'_, ()>, String> {
+        let lease = self
+            .discovery
+            .try_lock()
+            .map_err(|_| "Lecteurs occupés. Attendez la fin de l’action en cours.")?;
+        if self.running.load(Ordering::Acquire) {
+            return Err(
+                "Attendez la fin du transfert avant d’éjecter ou modifier les lecteurs.".into(),
+            );
+        }
+        Ok(lease)
+    }
+    pub(crate) fn retire_preview(&self) -> Result<(), String> {
+        *self.preview.lock().map_err(|_| "Aperçu occupé.")? = None;
+        Ok(())
+    }
     fn status(&self) -> Result<Value, String> {
         if self
             .owners
@@ -107,6 +128,19 @@ pub(crate) async fn transfer_prepare(
         return Err("Sélection vide, trop grande ou transfert en cours.".into());
     }
     job::options(&options)?;
+    if let Some(row) = transfer
+        .inventory
+        .lock()
+        .map_err(|_| "Lecteurs indisponibles.")?["volumes"]
+        .as_array()
+        .and_then(|rows| rows.iter().find(|row| row["id"] == destination))
+        && row["available"] == false
+    {
+        return Err(row["unavailableReason"]
+            .as_str()
+            .unwrap_or("Ce lecteur n’est pas compatible avec le transfert.")
+            .into());
+    }
     let target = transfer
         .targets
         .lock()
@@ -141,6 +175,7 @@ pub(crate) async fn transfer_prepare(
     }
     let transfer = transfer.inner().clone();
     blocking(move || {
+        let _destinations = transfer.idle_destinations()?;
         if let Target::Mounted(mount) = &target {
             mount.confirm()?;
             if mount.apple_ipod() && !phemios_transfer::podkit_available() { return Err("Installez podkit pour transférer vers un iPod Apple compatible.".into()); }
@@ -148,6 +183,8 @@ pub(crate) async fn transfer_prepare(
         if matches!(&target,Target::Mtp(_)) && options["replace"] == true { return Err("Le remplacement de fichiers MTP existants n’est pas disponible.".into()); }
         if matches!(&target,Target::Mounted(m) if m.apple_ipod()) && (options["format"] != "original" || options["verify"] != false || options["replace"] != false) { return Err("Utilisez le profil automatique iPod sans remplacement ni vérification octet par octet.".into()); }
         let mut items = Vec::new(); let mut bytes = 0u64; let mut paths = std::collections::BTreeSet::new();
+        let mut output_paths = std::collections::BTreeSet::new(); let mut display_paths = Vec::new();
+        let converted = options["format"] != "original";
         for source in [Source::Local, Source::Server] {
             let rows: Vec<_> = selected.iter().filter(|(s,_,_)| *s == source).collect();
             let mut scanned_at = None;
@@ -167,9 +204,12 @@ pub(crate) async fn transfer_prepare(
                 if scanned_at.is_none() {
                     let status = owner.client.request("GET", "/api/v1/status", &[], None)?;
                     if !status["capabilities"].as_array().is_some_and(|v| v.iter().any(|v| v == "original_exports")) { return Err("Mettez à jour puis redémarrez Aède pour transférer les originaux audio.".into()); }
+                    if converted && !status["capabilities"].as_array().is_some_and(|v| v.iter().any(|v| v == "export_conversion_plans")) { return Err("Mettez à jour puis redémarrez Aède pour afficher les noms après conversion.".into()); }
                 }
                 let references: Vec<_> = batch.iter().map(|(_,r,_)| r.as_str()).collect();
-                let value = owner.client.request("POST", "/api/me/v1/exports/plan", &[], Some(&json!({"references":references})))?;
+                let mut payload = json!({"references":references});
+                if converted { payload["format"] = options["format"].clone(); }
+                let value = owner.client.request("POST", "/api/me/v1/exports/plan", &[], Some(&payload))?;
                 owner.confirm()?;
                 let stamp = value["scanned_at"].as_u64().ok_or("Plan de copie invalide ; mettez à jour Aède.")?;
                 if scanned_at.is_some_and(|previous| previous != stamp) { return Err("Le catalogue a changé ; recommencez l’aperçu.".into()); }
@@ -181,6 +221,10 @@ pub(crate) async fn transfer_prepare(
                     if row["reference"] != expected.1 { return Err("Identité de copie invalide.".into()); }
                     let parts: Vec<String> = row["components"].as_array().ok_or("Chemin de copie absent.")?.iter().map(|v| v.as_str().map(str::to_owned).ok_or("Chemin de copie invalide.")).collect::<Result<_,_>>()?;
                     let mut relative = phemios_transfer::relative(&parts)?;
+                    let (mut output, mut output_key) = plan::output(row, &parts, converted)?;
+                    if selected.iter().any(|(s,_,_)| *s != source) { output = PathBuf::from(source.name()).join(output); output_key.insert(0,source.name().into()); }
+                    plan::admit(&mut output_paths, output_key)?;
+                    display_paths.push(output);
                     // Both libraries may contain identically named releases; keep the origins separate.
                     if selected.iter().any(|(s,_,_)| *s != source) { relative = PathBuf::from(source.name()).join(relative); }
                     let mut key:Vec<String>=row["key"].as_array().filter(|v| v.len()==parts.len()).ok_or("Clé de copie invalide.")?.iter().map(|v|v.as_str().filter(|v|v.len()<=1024).map(str::to_owned).ok_or("Clé de copie invalide.")).collect::<Result<_,_>>()?;
@@ -193,7 +237,7 @@ pub(crate) async fn transfer_prepare(
             }
         }
         let id = transfer.serial.fetch_add(1, Ordering::Relaxed).to_string();
-        let result = json!({"id":id,"tracks":items.len(),"bytes":bytes,"destination":destination,"ipod":matches!(&target, Target::Mounted(m) if m.apple_ipod()),"files":items.iter().take(30).map(|i| i.relative.to_string_lossy()).collect::<Vec<_>>()});
+        let result = json!({"id":id,"tracks":items.len(),"bytes":bytes,"destination":destination,"ipod":matches!(&target, Target::Mounted(m) if m.apple_ipod()),"files":display_paths.iter().take(30).map(|path| path.to_string_lossy()).collect::<Vec<_>>()});
         *transfer.preview.lock().map_err(|_| "Aperçu occupé.")? = Some(Preview { id, target, items, options, bytes });
         Ok(result)
     }).await
@@ -207,10 +251,7 @@ pub(crate) async fn transfer_start(
     transfer: State<'_, Arc<Transfers>>,
 ) -> Result<Value, String> {
     bridge(version)?;
-    let _discovery = transfer
-        .discovery
-        .try_lock()
-        .map_err(|_| "Attendez la fin de la détection des lecteurs.")?;
+    let _discovery = transfer.idle_destinations()?;
     let preview = transfer
         .preview
         .lock()
@@ -274,3 +315,7 @@ pub(crate) fn transfer_cancel(
     transfer.cancel.store(true, Ordering::Release);
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "transfer_tests.rs"]
+mod tests;

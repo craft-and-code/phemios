@@ -19,7 +19,7 @@ export const Navigation: Story = {
       <Pagination
         {...args}
         offset={offset()}
-        count={Math.min(args.size, args.total - offset())}
+        count={Math.min(args.size, (args.total ?? 0) - offset())}
         onOffset={setOffset}
       />
     );

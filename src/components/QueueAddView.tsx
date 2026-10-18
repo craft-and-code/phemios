@@ -1,3 +1,4 @@
+import { Pagination } from "./Pagination";
 import { LibraryPickerRow } from "./LibraryPickerRow";
 import { For, Show, onMount, createMemo } from "solid-js";
 import { t } from "../i18n";
@@ -31,7 +32,7 @@ export function QueueAddView(props: {
   onCategory: (value: QueueCategory) => void;
   onAdd: (row: QueueSearchItem) => void;
   onOffset: (offset: number) => void;
-  onClose: () => void;
+  onClose?: (() => void) | undefined;
   onRefresh: () => void;
   onCancel: () => void;
 }) {
@@ -42,13 +43,15 @@ export function QueueAddView(props: {
     <section class="queue-add-panel" aria-label={props.title ?? t("Ajouter à la suite")}>
       <div class="queue-add-heading">
         <h3>{props.title ?? t("Ajouter à la suite")}</h3>
-        <button
-          class="icon-button quiet icon-close"
-          aria-label={t("Fermer la recherche")}
-          onClick={props.onClose}
-        >
-          <Icon name="close" />
-        </button>
+        <Show when={props.onClose}>
+          <button
+            class="icon-button quiet icon-close"
+            aria-label={t("Fermer la recherche")}
+            onClick={props.onClose}
+          >
+            <Icon name="close" />
+          </button>
+        </Show>
       </div>
       <input
         ref={(element) => {
@@ -68,7 +71,7 @@ export function QueueAddView(props: {
           }
           if (e.key === "Escape") {
             e.stopPropagation();
-            props.onClose();
+            props.onClose?.();
           }
         }}
       />
@@ -161,26 +164,15 @@ export function QueueAddView(props: {
       <div class="queue-add-footer">
         <small class="muted">{props.footer ?? t("Ajout à la fin de la liste")}</small>
         <div>
-          <Show when={props.offset > 0}>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Précédent")}
-              disabled={props.loading}
-              onClick={() => props.onOffset(Math.max(0, props.offset - 50))}
-            >
-              <Icon name="chevron-left" />
-            </button>
-          </Show>
-          <Show when={props.more}>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Suivant")}
-              disabled={props.loading}
-              onClick={() => props.onOffset(props.offset + 50)}
-            >
-              <Icon name="chevron-right" />
-            </button>
-          </Show>
+          <Pagination
+            compact
+            offset={props.offset}
+            size={50}
+            count={props.rows.length}
+            more={props.more}
+            busy={props.loading}
+            onOffset={props.onOffset}
+          />
           <Show when={props.error}>
             <RefreshButton
               busy={props.loading}

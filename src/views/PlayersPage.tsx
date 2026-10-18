@@ -1,20 +1,23 @@
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
-import { PlayersContent } from "../components/PlayersContent";
+import { TransferDestination } from "../components/TransferDestination";
+import { TransferSelection } from "../components/TransferSelection";
 import { TransferPanel } from "../components/TransferPanel";
 import { QueueAdd } from "../components/QueueAdd";
-import { Show, createSignal, createEffect, onCleanup, onMount } from "solid-js";
+import { createSignal, createEffect, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
 import {
   discoverPlayers,
+  ejectPlayer,
+  pickTransferFolder,
   isNative,
   prepareTransfer,
   startTransfer,
   transferStatus,
   cancelTransfer,
 } from "../platform/desktop";
-import { parsePlayerDiscovery } from "../library/players";
+import { parsePlayerDiscovery, parsePlayers } from "../library/players";
 import { useLibrary } from "../library/context";
 import type { PlayableSelection } from "../library/playback-selection";
 import {
@@ -23,13 +26,13 @@ import {
   type TransferPreview,
   type TransferStatus,
 } from "../library/transfers";
-import { Feedback } from "../components/Feedback";
 /** Discovery is public; transfer sources remain bound to their exact native account sessions. */
 export function PlayersPage() {
   const library = useLibrary();
   const [selected, setSelected] = createSignal(""),
     [rows, setRows] = createSignal<PlayableSelection[]>([]),
-    [picker, setPicker] = createSignal(false),
+    [choosing, setChoosing] = createSignal(false),
+    [folderError, setFolderError] = createSignal(""),
     [options, setOptions] = createSignal<TransferOptions>({
       format: "original",
       verify: true,
@@ -37,6 +40,7 @@ export function PlayersPage() {
     }),
     [preview, setPreview] = createSignal<TransferPreview>(),
     [preparing, setPreparing] = createSignal(false),
+    [ejecting, setEjecting] = createSignal(""),
     [error, setError] = createSignal(""),
     [status, setStatus] = createSignal<TransferStatus>({ phase: "idle", running: false });
   let disposed = false,
@@ -78,8 +82,51 @@ export function PlayersPage() {
     disposed = true;
     operation++;
   });
+  async function chooseFolder() {
+    if (status().running || preparing() || ejecting() || choosing() || read.pending()) return;
+    const ticket = ++operation;
+    setChoosing(true);
+    setFolderError("");
+    try {
+      const raw = await pickTransferFolder();
+      if (disposed || ticket !== operation || raw === null) return;
+      const folder = parsePlayers([raw])[0]!;
+      setPreview(undefined);
+      setSelected("");
+      await read.refetch();
+      if (disposed || ticket !== operation) return;
+      const registered = read.current()?.volumes.find((row) => row.path === folder.path);
+      if (!registered?.id || registered.available === false)
+        throw Error(
+          read.error() ||
+            registered?.unavailableReason ||
+            t("Dossier de destination indisponible."),
+        );
+      setSelected(registered.id);
+    } catch (failure) {
+      if (!disposed && ticket === operation) setFolderError(String(failure));
+    } finally {
+      if (!disposed) setChoosing(false);
+    }
+  }
+  async function eject(id: string) {
+    if (status().running || preparing() || ejecting() || choosing()) return;
+    setEjecting(id);
+    reset();
+    try {
+      await ejectPlayer(id);
+      if (!disposed) {
+        setSelected("");
+        await read.refetch();
+      }
+    } catch (failure) {
+      if (!disposed) setError(String(failure));
+    } finally {
+      if (!disposed) setEjecting("");
+    }
+  }
   async function prepare() {
-    if (status().running || preparing()) return;
+    if (status().running || preparing() || !!ejecting() || choosing()) return;
     const ticket = ++operation;
     setPreparing(true);
     setPreview(undefined);
@@ -100,7 +147,7 @@ export function PlayersPage() {
   }
   async function start() {
     const value = preview();
-    if (!value || status().running) return;
+    if (!value || status().running || preparing() || ejecting() || choosing()) return;
     setPreparing(true);
     setError("");
     try {
@@ -121,7 +168,7 @@ export function PlayersPage() {
           <RefreshButton
             rotate
             busy={read.loading()}
-            disabled={!isNative() || status().running || preparing()}
+            disabled={!isNative() || status().running || preparing() || !!ejecting() || choosing()}
             onRefresh={() => {
               reset();
               setSelected("");
@@ -131,12 +178,39 @@ export function PlayersPage() {
           />
         </div>
       </StickyHeader>
-      <PlayersContent
+      <div class="transfer-workspace">
+        <QueueAdd
+          disabled={status().running || preparing() || !!ejecting() || choosing()}
+          onSelect={(added) => {
+            setRows((existing) => addTransferSelection(existing, added));
+            reset();
+          }}
+        />
+        <TransferSelection
+          rows={rows()}
+          disabled={status().running || preparing() || !!ejecting() || choosing()}
+          onRemove={(reference) => {
+            setRows((value) => value.filter((row) => row.reference !== reference));
+            reset();
+          }}
+        />
+      </div>
+      <TransferDestination
+        canChoose={
+          isNative() && !status().running && !preparing() && !ejecting() && !read.pending()
+        }
+        choosing={choosing()}
+        chooseError={folderError()}
+        onChoose={() => void chooseFolder()}
+        onDismissError={() => setFolderError("")}
+        warning={read.current()?.warning ?? ""}
         busy={read.loading()}
         error={read.error()}
         volumes={read.current()?.volumes}
         selected={selected()}
-        disabled={status().running || preparing()}
+        ejecting={ejecting()}
+        onEject={(id) => void eject(id)}
+        disabled={status().running || preparing() || !!ejecting() || choosing()}
         onSelect={(value) => {
           setSelected(value);
           const adapter = read.current()?.volumes.find((row) => row.id === value)?.adapter;
@@ -145,48 +219,29 @@ export function PlayersPage() {
           reset();
         }}
       />
-      <Show when={read.current()?.warning}>
-        <Feedback error persistent message={read.current()!.warning} />
-      </Show>
-      <div class="transfer-workspace">
-        <TransferPanel
-          rows={rows()}
-          destination={selected()}
-          mtp={read.current()?.volumes.find((row) => row.id === selected())?.adapter === "mtp"}
-          ipod={read.current()?.volumes.find((row) => row.id === selected())?.adapter === "ipod"}
-          options={options()}
-          preview={preview()}
-          status={status()}
-          preparing={preparing()}
-          error={error()}
-          onOptions={(value) => {
-            setOptions(value);
-            reset();
-          }}
-          onChoose={() => setPicker(!picker())}
-          onRemove={(reference) => {
-            setRows((value) => value.filter((row) => row.reference !== reference));
-            reset();
-          }}
-          onPreview={() => void prepare()}
-          onStart={() => void start()}
-          onCancel={() =>
-            void cancelTransfer()
-              .then(poll)
-              .catch((failure) => setError(String(failure)))
-          }
-        />
-        <Show when={picker()}>
-          <QueueAdd
-            disabled={status().running || preparing()}
-            onClose={() => setPicker(false)}
-            onSelect={(added) => {
-              setRows((existing) => addTransferSelection(existing, added));
-              reset();
-            }}
-          />
-        </Show>
-      </div>
+      <TransferPanel
+        rows={rows()}
+        destination={selected()}
+        mtp={read.current()?.volumes.find((row) => row.id === selected())?.adapter === "mtp"}
+        ipod={read.current()?.volumes.find((row) => row.id === selected())?.adapter === "ipod"}
+        options={options()}
+        preview={preview()}
+        status={status()}
+        preparing={preparing()}
+        disabled={!!ejecting() || choosing()}
+        error={error()}
+        onOptions={(value) => {
+          setOptions(value);
+          reset();
+        }}
+        onPreview={() => void prepare()}
+        onStart={() => void start()}
+        onCancel={() =>
+          void cancelTransfer()
+            .then(poll)
+            .catch((failure) => setError(String(failure)))
+        }
+      />
     </section>
   );
 }

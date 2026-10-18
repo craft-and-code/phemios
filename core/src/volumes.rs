@@ -5,6 +5,15 @@ use std::io::Read;
 use std::process::{Command, Stdio};
 #[cfg(any(target_os = "macos", windows))]
 use std::time::{Duration, Instant};
+#[cfg(any(target_os = "macos", test))]
+#[path = "volumes_ipod.rs"]
+mod ipod;
+#[cfg(target_os = "macos")]
+#[path = "volumes_macos.rs"]
+mod macos;
+#[cfg(any(target_os = "macos", test))]
+#[path = "volumes_plist.rs"]
+mod plist;
 /// An OS mount candidate, not a certified music-player model or conversion profile.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Volume {
@@ -16,11 +25,34 @@ pub struct Volume {
     pub format: String,
     /// Mounted volume, removable drive or network share.
     pub kind: String,
+    /// Optional model established by exact OS USB-to-volume association.
+    pub model: Option<&'static str>,
+    /// Local outline icon; generic drive when the model is unknown.
+    pub icon: &'static str,
+    /// Known podkit compatibility; unknown is not a positive compatibility claim.
+    pub ipod_supported: Option<bool>,
+    /// The native OS can safely eject this mounted device.
+    pub ejectable: bool,
+    #[cfg(target_os = "macos")]
+    device: Option<String>,
 }
 impl Volume {
     /// Only public destination facts cross IPC.
     pub fn json(&self) -> Value {
-        json!({"name":self.name,"path":self.path,"format":self.format,"kind":self.kind})
+        json!({"name":self.name,"path":self.path,"format":self.format,"kind":self.kind,"model":self.model,"icon":self.icon,"ipodSupported":self.ipod_supported,"ejectable":self.ejectable})
+    }
+    /// Revalidate OS identity and a caller's captured mount before requesting non-forced ejection.
+    /// Unsupported platforms fail explicitly; no arbitrary command or browser-provided path is admitted.
+    pub fn eject(&self, confirm: impl Fn() -> Result<(), String>) -> Result<(), String> {
+        #[cfg(target_os = "macos")]
+        {
+            macos::eject(self, confirm)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = confirm;
+            Err("Éjectez ce lecteur depuis votre système d’exploitation.".into())
+        }
     }
 }
 fn volume(path: &str, format: &str, kind: &str) -> Volume {
@@ -33,6 +65,12 @@ fn volume(path: &str, format: &str, kind: &str) -> Volume {
         path: path.into(),
         format: format.into(),
         kind: kind.into(),
+        model: None,
+        icon: "drive",
+        ipod_supported: None,
+        ejectable: false,
+        #[cfg(target_os = "macos")]
+        device: None,
     }
 }
 #[cfg(any(target_os = "macos", target_os = "linux", test))]
@@ -91,33 +129,6 @@ fn parse_mounts(text: &str, mac: bool) -> Vec<Volume> {
         }
     }
     rows
-}
-#[cfg(any(target_os = "macos", test))]
-fn external_from_info(plist: &str) -> Result<bool, String> {
-    // This reads two typed keys emitted by diskutil, not arbitrary user-supplied XML.
-    let internal = plist
-        .split_once("<key>Internal</key>")
-        .ok_or("Métadonnées des lecteurs invalides.")?
-        .1
-        .trim_start();
-    if internal.starts_with("<true/>") {
-        return Ok(false);
-    }
-    if !internal.starts_with("<false/>") {
-        return Err("Métadonnées des lecteurs invalides.".into());
-    }
-    let protocol = plist
-        .split_once("<key>BusProtocol</key>")
-        .ok_or("Métadonnées des lecteurs invalides.")?
-        .1
-        .trim_start()
-        .strip_prefix("<string>")
-        .and_then(|tail| tail.split_once("</string>").map(|(value, _)| value))
-        .ok_or("Métadonnées des lecteurs invalides.")?;
-    if protocol.is_empty() || protocol.len() > 128 || protocol.contains(['<', '>']) {
-        return Err("Métadonnées des lecteurs invalides.".into());
-    }
-    Ok(protocol != "Disk Image")
 }
 #[cfg(any(windows, test))]
 fn parse_windows(bytes: &[u8]) -> Result<Vec<Volume>, String> {
@@ -189,8 +200,9 @@ pub fn discover() -> Result<Vec<Volume>, String> {
             std::str::from_utf8(&bytes).map_err(|_| "Détection des lecteurs illisible.")?,
             true,
         );
+        let usb = macos::usb_tree();
         let mut rows = Vec::new();
-        for row in candidates {
+        for mut row in candidates {
             if row.kind == "network" {
                 rows.push(row);
                 continue;
@@ -199,14 +211,7 @@ pub fn discover() -> Result<Vec<Volume>, String> {
             if remaining.is_zero() {
                 return Err("La détection des lecteurs a expiré.".into());
             }
-            let info = output(
-                "/usr/sbin/diskutil",
-                &["info", "-plist", &row.path],
-                remaining,
-            )?;
-            if external_from_info(
-                std::str::from_utf8(&info).map_err(|_| "Métadonnées des lecteurs invalides.")?,
-            )? {
+            if macos::decorate(&mut row, usb.as_ref(), remaining)? {
                 rows.push(row);
             }
         }
