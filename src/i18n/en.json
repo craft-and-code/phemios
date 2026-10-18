@@ -2012,5 +2012,10 @@
   "Prochaine place libérée le {0}": "Next slot available on {0}",
   "La clé reste sur cet appareil. Aucun compte Aède n’est nécessaire. Offre Developer : usage non commercial, concerts à venir sur six mois.": "The key stays on this device. No Aède account required. Developer plan: non-commercial use, upcoming concerts within six months.",
   "Plafond de 1 000 recherches sur 32 jours glissants, conservé après redémarrage ou remplacement de la clé. Le quota JamBase est vérifié avant chaque recherche ; son contrôle ne consomme pas le quota. Le compteur inclut l’usage JamBase déjà constaté.": "A ceiling of 1,000 searches over a rolling 32 days survives restarts and key replacement. JamBase quota is checked before every search; the check is not metered. The counter also includes already observed JamBase usage.",
-  "Réservez votre compte JamBase à cette installation de Phémios : les autres applications et appareils partagent son quota et peuvent entraîner des frais JamBase.": "Dedicate your JamBase account to this Phémios installation: other applications and devices share its quota and may incur JamBase charges."
+  "Réservez votre compte JamBase à cette installation de Phémios : les autres applications et appareils partagent son quota et peuvent entraîner des frais JamBase.": "Dedicate your JamBase account to this Phémios installation: other applications and devices share its quota and may incur JamBase charges.",
+  "Lire plus": "Read more",
+  "BIOGRAPHIE": "BIOGRAPHY",
+  "Image du catalogue Aède": "Image from the Aède catalogue",
+  "Sommaire": "Contents",
+  "Retour en haut": "Back to top"
 }

@@ -45,7 +45,41 @@ fn counterpart_result(value: &Value, target: &str, at: u64) -> Result<Value, Str
     )?;
     article_result(value, target, id, at)
 }
+pub(super) fn checked_article_title(name: &str) -> Result<&str, String> {
+    if name.trim().is_empty()
+        || name.len() > 2048
+        || name.chars().any(char::is_control)
+        || name.contains(['|', '#'])
+    {
+        return Err("Titre Wikipédia invalide.".into());
+    }
+    Ok(name)
+}
 impl Client {
+    /// Read one exact attributed title through fixed FR/EN hosts; never perform a name search.
+    pub fn named_article(&self, lang: &str, name: &str) -> Result<Value, String> {
+        language(lang)?;
+        let name = checked_article_title(name)?;
+        let article = self.request(
+            lang,
+            &[
+                ("titles", name),
+                ("redirects", "1"),
+                ("prop", "extracts|info"),
+                ("explaintext", "1"),
+                ("exsectionformat", "wiki"),
+            ],
+        )?;
+        let at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|_| "Horloge système invalide.")?
+            .as_millis();
+        counterpart_result(
+            &article,
+            lang,
+            u64::try_from(at).map_err(|_| "Horloge système invalide.")?,
+        )
+    }
     /// Explicitly follow one FR/EN interlanguage link and read its canonical main-namespace page.
     /// Both requests retain fixed public hosts, limits and provenance, without executing returned URLs.
     pub fn translated_article(&self, source: &str, id: u64, target: &str) -> Result<Value, String> {

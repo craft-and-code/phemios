@@ -1,3 +1,4 @@
+import type { BiographyReturn } from "./library/biography-navigation";
 import { CatalogSearch } from "./components/CatalogSearch";
 import { AlbumCount } from "./components/AlbumCount";
 import { parentalRouteAllowed } from "./library/parental-route";
@@ -259,6 +260,7 @@ export function App() {
     );
   };
   const backLink = navigation.backLink;
+  const [biographyReturn, setBiographyReturn] = createSignal<BiographyReturn>();
   const context = () =>
     artistCatalog(section()) && current().kind === "section"
       ? t("Initiale de l’artiste · année de ses albums")
@@ -455,22 +457,45 @@ export function App() {
               }
             />
           </Show>
-          <Show when={(hasFilters() || backLink()) && library.artists().length}>
+          <Show
+            when={(hasFilters() || backLink() || biographyReturn()) && library.artists().length}
+          >
             <div class="catalog-tools">
-              <Show when={backLink()}>
-                {(link) => (
-                  <a
-                    class="back"
-                    href={link().href}
-                    data-navigation-back
-                    aria-label={t(
-                      "Retour à {0}",
-                      parseRoute(link().href).kind === "section" ? t(link().label) : link().label,
+              <Show
+                when={biographyReturn()}
+                fallback={
+                  <Show when={backLink()}>
+                    {(link) => (
+                      <a
+                        class="back"
+                        href={link().href}
+                        data-navigation-back
+                        aria-label={t(
+                          "Retour à {0}",
+                          parseRoute(link().href).kind === "section"
+                            ? t(link().label)
+                            : link().label,
+                        )}
+                      >
+                        <Icon name="back" />{" "}
+                        {parseRoute(link().href).kind === "section"
+                          ? t(link().label)
+                          : link().label}
+                      </a>
                     )}
+                  </Show>
+                }
+              >
+                {(destination) => (
+                  <button
+                    type="button"
+                    class="back metadata-link"
+                    aria-label={t("Retour à {0}", destination().label)}
+                    onClick={destination().back}
                   >
-                    <Icon name="back" />{" "}
-                    {parseRoute(link().href).kind === "section" ? t(link().label) : link().label}
-                  </a>
+                    <Icon name="back" />
+                    {destination().label}
+                  </button>
                 )}
               </Show>
               <Show when={hasFilters() && section() === "albums"}>
@@ -703,6 +728,7 @@ export function App() {
                   >
                     {(artist) => (
                       <ArtistPage
+                        onBiographyNavigation={(value) => setBiographyReturn(value)}
                         artist={artist()}
                         compact={compact() && section() !== "artists"}
                         onGenres={(genres) => {
@@ -767,6 +793,7 @@ export function App() {
                 </Show>
                 <Show when={route.kind === "label"}>
                   <LabelPage
+                    onBiographyNavigation={(value) => setBiographyReturn(value)}
                     reference={(route as { reference: string }).reference}
                     onTitle={setLabelTitle}
                     compact={compact()}

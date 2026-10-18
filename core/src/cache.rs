@@ -153,7 +153,7 @@ pub fn validate(snapshot: &Value) -> Result<(), String> {
         Ok(())
     }
 }
-fn read(path: &Path, limit: u64) -> Result<Option<Vec<u8>>, String> {
+pub(crate) fn read(path: &Path, limit: u64) -> Result<Option<Vec<u8>>, String> {
     let metadata = match fs::symlink_metadata(path) {
         Ok(value) => value,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
@@ -172,7 +172,7 @@ fn read(path: &Path, limit: u64) -> Result<Option<Vec<u8>>, String> {
     }
     Ok(Some(bytes))
 }
-fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
+pub(crate) fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
     static NEXT: AtomicU64 = AtomicU64::new(1);
     let folder = path.parent().ok_or("Emplacement du cache invalide.")?;
     fs::create_dir_all(folder).map_err(|_| "Dossier du cache inaccessible.".to_string())?;

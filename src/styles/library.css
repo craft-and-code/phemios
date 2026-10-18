@@ -1790,3 +1790,93 @@ button.metadata-link:hover {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+button.biography-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: baseline;
+  padding: 0;
+  line-height: inherit;
+}
+.biography-more-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+button.biography-more .biography-more-icon .spinner,
+.biography-more-icon svg {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.biography-toc {
+  margin: 24px 0;
+  padding: 16px;
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+}
+.artist-biography-reader .biography-toc h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.biography-toc ol {
+  margin: 0;
+  padding-left: 24px;
+  columns: 2 22ch;
+  column-gap: 24px;
+}
+.biography-toc li {
+  break-inside: avoid;
+  margin: 6px 0;
+}
+.biography-toc button {
+  text-align: left;
+}
+.artist-biography-reader .wikipedia-prose h2 {
+  scroll-margin-top: 90px;
+}
+.artist-biography-reader {
+  width: min(100%, 80ch);
+  margin: 0 auto;
+  padding: 24px;
+}
+.artist-biography-reader .wikipedia-prose {
+  max-width: 80ch;
+}
+.artist-biography-reader h2 {
+  margin-top: 2em;
+}
+.biography-photo {
+  margin: 28px 0;
+}
+.biography-photo img {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.biography-photo figcaption {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.catalog-tools button.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.biography-scroll-top {
+  position: fixed;
+  right: 24px;
+  bottom: calc(var(--player-bar-height, 96px) + 20px);
+  z-index: 5;
+  background: var(--surface);
+  box-shadow: 0 4px 14px #0005;
+}

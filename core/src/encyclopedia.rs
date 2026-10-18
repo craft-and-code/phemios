@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ureq::unversioned::transport::DefaultConnector;
 
+pub mod biography_cache;
 mod translation;
 
 const MAX_ID: u64 = 9_007_199_254_740_991;

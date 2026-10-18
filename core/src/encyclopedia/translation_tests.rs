@@ -45,3 +45,24 @@ fn accepts_the_counterparts_own_identity_and_provenance_but_never_missing_or_mul
     assert!(client.translated_article("de", 42, "en").is_err());
     assert!(client.translated_article("fr", 42, "de").is_err());
 }
+
+#[test]
+fn exact_biography_titles_refuse_multiple_pages_fragments_controls_and_unsupported_editions() {
+    assert_eq!(
+        checked_article_title("Music & art (group)").unwrap(),
+        "Music & art (group)"
+    );
+    let client = Client::default();
+    for name in [
+        "",
+        " ",
+        "A|B",
+        "A#Section",
+        "bad\nquery",
+        "bad\0query",
+        &"a".repeat(2049),
+    ] {
+        assert!(client.named_article("fr", name).is_err());
+    }
+    assert!(client.named_article("de", "Music").is_err());
+}

@@ -4,11 +4,10 @@ export interface BiographyPart {
   reference?: string;
 }
 /** Link unambiguous full artist names only within this source; prose stays plain, escaped text. */
-export function biographyLinks(
-  text: string,
+export function biographyLinker(
   artists: readonly { name: string; reference: string }[],
   current: string,
-): BiographyPart[] {
+): (text: string) => BiographyPart[] {
   const names = new Map<string, { name: string; reference: string }[]>();
   for (const artist of artists) {
     if (
@@ -24,7 +23,7 @@ export function biographyLinks(
   const targets = [...names.values()]
     .filter((rows) => rows.length === 1 && rows[0]!.reference !== current)
     .map((rows) => rows[0]!);
-  if (!targets.length) return [{ text }];
+  if (!targets.length) return (text) => [{ text }];
   const lookup = new Map(targets.map((row) => [row.name.toLocaleLowerCase(), row.reference]));
   const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(
@@ -34,14 +33,25 @@ export function biographyLinks(
       .join("|")})(?![\\p{L}\\p{N}])`,
     "giu",
   );
-  const result: BiographyPart[] = [];
-  let end = 0;
-  for (const match of text.matchAll(pattern)) {
-    if (match.index > end) result.push({ text: text.slice(end, match.index) });
-    const reference = lookup.get(match[0].toLocaleLowerCase());
-    result.push({ text: match[0], ...(reference ? { reference } : {}) });
-    end = match.index + match[0].length;
-  }
-  if (end < text.length) result.push({ text: text.slice(end) });
-  return result;
+  return (text: string) => {
+    const result: BiographyPart[] = [];
+    let end = 0;
+    for (const match of text.matchAll(pattern)) {
+      if (match.index > end) result.push({ text: text.slice(end, match.index) });
+      const reference = lookup.get(match[0].toLocaleLowerCase());
+      result.push({ text: match[0], ...(reference ? { reference } : {}) });
+      end = match.index + match[0].length;
+    }
+    if (end < text.length) result.push({ text: text.slice(end) });
+    return result;
+  };
+}
+
+/** Single-paragraph convenience; long readers retain one compiled linker for all paragraphs. */
+export function biographyLinks(
+  text: string,
+  artists: readonly { name: string; reference: string }[],
+  current: string,
+): BiographyPart[] {
+  return biographyLinker(artists, current)(text);
 }

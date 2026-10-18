@@ -248,6 +248,13 @@ export const searchEncyclopedia = (language: import("../i18n").Language, query: 
 export const readEncyclopedia = (language: import("../i18n").Language, pageId: number) =>
   nativeCall<unknown>("encyclopedia_article", { language, pageId });
 
+/** Read only a public retained biography; never dispatch a network request. */
+export const readCachedBiography = (language: import("../i18n").Language, title: string) =>
+  nativeCall<unknown | null>("biography_cached", { language, title });
+/** Read the exact attributed title, resolving canonical redirects without a name search. */
+export const readEncyclopediaTitle = (language: import("../i18n").Language, title: string) =>
+  nativeCall<unknown>("encyclopedia_title", { language, title });
+
 /** Explicit source-link activation uses a bounded HTTPS-only native browser handoff. */
 export const openExternalLink = (url: string) => nativeCall<void>("external_open", { url });
 

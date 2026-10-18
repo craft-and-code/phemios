@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { biographyLinks } from "./biography-links";
+import { biographyLinks, biographyLinker } from "./biography-links";
 it("links complete longest known names in the same catalogue without changing prose", () => {
   const artists = [
     { name: "Black Sabbath", reference: "artist:@phemios/server/black sabbath" },
@@ -24,4 +24,15 @@ it("does not guess ambiguous names or link the current artist", () => {
       "artist:signal",
     ).some((part) => part.reference),
   ).toBe(false);
+});
+
+it("retains one source-bound linker across multiple paragraphs without regex cursor leakage", () => {
+  const link = biographyLinker(
+    [{ name: "Other Ensemble", reference: "artist:other" }],
+    "artist:current",
+  );
+  const expected = [{ text: "Other Ensemble", reference: "artist:other" }];
+  expect(link("Other Ensemble")).toEqual(expected);
+  expect(link("Unrelated paragraph")).toEqual([{ text: "Unrelated paragraph" }]);
+  expect(link("Other Ensemble")).toEqual(expected);
 });

@@ -76,7 +76,9 @@ pub fn run() -> Result<(), tauri::Error> {
             app.manage(hqplayer::HqPlayer::default());
             app.manage(cd::Cd::default());
             app.manage(std::sync::Arc::new(transfer::Transfers::default()));
-            app.manage(encyclopedia::Encyclopedia::default());
+            app.manage(encyclopedia::Encyclopedia::new(
+                app.path().app_data_dir()?.join("public-biographies"),
+            ));
             app.manage(concerts::Concerts::default());
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
                 phemios_core::radio::Directory::default(),
@@ -101,6 +103,8 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::external_open,
             encyclopedia::encyclopedia_search,
             encyclopedia::encyclopedia_article,
+            encyclopedia::encyclopedia_title,
+            encyclopedia::biography_cached,
             encyclopedia::encyclopedia_translate,
             encyclopedia::encyclopedia_export,
             hqplayer::hqplayer_connect,
