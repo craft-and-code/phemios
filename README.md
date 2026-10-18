@@ -38,6 +38,8 @@ Enable local Aède in Settings → Libraries, select folders with the native pic
 
 The same Settings view hosts accounts, existing roots/exclusions, shared private external-service keys and explicit enrichment operations on both eligible libraries by default. Key changes take effect on the next job; the remote server retains its own defaults and requires the `fetch_service_keys` capability for app-owned keys. Settings → Language changes French/English; Appearance retains eight colours with Reset and portable theme files. Navigation and Shortcuts retain editable menus and key bindings; Backup exports/imports presentation preferences plus podcasts/listened episodes and saved articles of the selected connected account after review, excluding credentials. The language changes live without interrupting playback; catalog titles, notes and tags retain their original text. See [managed local engine](docs/design/local-engine.md) and [localization](docs/design/localization.md).
 
+Settings → Playback also retains **Keep the screen active during playback**, enabled by default for music, audio CDs, radios and podcasts. Pausing, stopping or closing Phémios releases the temporary native request. This private presentation choice is included in preference backups. See [display and idle inhibition](docs/design/native-integration.md#display-and-idle-inhibition-during-playback) for OS support, failure handling and verification limits.
+
 ## Native connection and storage
 
 Start Aède with its existing catalog and an initialized account (see Aède's account instructions):
