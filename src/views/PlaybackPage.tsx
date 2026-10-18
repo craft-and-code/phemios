@@ -1,16 +1,16 @@
 import { cdReference } from "../cd/model";
 import { UntimedLyricsControls } from "../components/UntimedLyricsControls";
 import { createUntimedLyrics } from "../visualizer/untimed-lyrics";
-import { LyricsIcon } from "../components/LyricsIcon";
+import { PlaybackVisualControls } from "../components/PlaybackVisualControls";
 import { interfacePreferences } from "../library/account-preferences";
 import { lyricAct } from "../visualizer/lyric-treatment";
-import { createMemo, createSignal, For, Show, onMount, onCleanup } from "solid-js";
+import { createMemo, createSignal, Show, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createTrackLyrics } from "../library/track-lyrics";
 import { announceSetting } from "../library/saved-settings";
 import { currentLyricText, activeLyricTime } from "../library/lyrics";
-import { playbackLayers, playbackWords } from "../visualizer/layers";
+import { playbackLayers, playbackWords, nextFrequencyMode } from "../visualizer/layers";
 import { FrequencyBars } from "../components/FrequencyBars";
 import { PlaybackLyrics } from "../components/PlaybackLyrics";
 import { PlaybackQueue } from "../components/PlaybackQueue";
@@ -26,6 +26,7 @@ export function PlaybackPage() {
     [queue, setQueue] = createSignal(false),
     [spectrum, setSpectrum] = createSignal(false),
     [ordinaryLyrics, setOrdinaryLyrics] = createSignal(true),
+    [floatingLyrics, setFloatingLyrics] = createSignal(true),
     [barStyle, setBarStyle] = createSignal<"gradient" | "terminal">("gradient"),
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
@@ -36,6 +37,7 @@ export function PlaybackPage() {
     function restore() {
       setSpectrum(false);
       setOrdinaryLyrics(true);
+      setFloatingLyrics(true);
       setBarStyle("gradient");
       setScene("sphere");
       setError("");
@@ -152,80 +154,39 @@ export function PlaybackPage() {
             </div>
           </header>
           <div class="playback-visuals">
-            <div class="scene-controls">
-              <For
-                each={[
-                  { id: "floating" as const, icon: "sparkles", label: t("Paroles flottantes") },
-                  { id: "sphere" as const, icon: "globe", label: t("Sphère") },
-                  { id: "waves" as const, icon: "wave", label: t("Vagues") },
-                  { id: "landscape" as const, icon: "landscape", label: t("Relief") },
-                ]}
-              >
-                {(item) => (
-                  <button
-                    class="icon-button quiet"
-                    title={item.label}
-                    aria-label={item.label}
-                    aria-pressed={scene() === item.id}
-                    onClick={() => choose(scene() === item.id ? "off" : item.id)}
-                  >
-                    <Icon name={item.icon} />
-                  </button>
-                )}
-              </For>
-              <button
-                class="icon-button quiet"
-                title={t("Afficher ou masquer les paroles normales")}
-                aria-label={t("Afficher ou masquer les paroles normales")}
-                aria-pressed={ordinaryLyrics()}
-                onClick={() => setOrdinaryLyrics(!ordinaryLyrics())}
-              >
-                <LyricsIcon synced={lyrics()?.synced} />
-              </button>
-              <button
-                class="icon-button quiet"
-                title={t("Afficher les fréquences")}
-                aria-label={t("Afficher les fréquences")}
-                aria-pressed={spectrum()}
-                disabled={!player.state().spectrum_hz || player.state().device === "@hqplayer"}
-                onClick={() => {
-                  try {
-                    const value = !spectrum();
-                    interfacePreferences.setItem("phemios.spectrum", JSON.stringify(value));
-                    announceSetting("phemios.spectrum", JSON.stringify(value));
-                    setSpectrum(value);
-                  } catch (failure) {
-                    setError(String(failure));
-                  }
-                }}
-              >
-                <Icon name="spectrum" />
-              </button>
-              <Show when={spectrum()}>
-                <button
-                  class="icon-button quiet"
-                  title={
-                    barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
-                  }
-                  aria-label={
-                    barStyle() === "gradient" ? t("Barres du terminal Aède") : t("Barres dégradées")
-                  }
-                  aria-pressed={barStyle() === "terminal"}
-                  onClick={() => {
-                    try {
-                      const next = barStyle() === "gradient" ? "terminal" : "gradient";
-                      interfacePreferences.setItem("phemios.spectrum-style", JSON.stringify(next));
-                      announceSetting("phemios.spectrum-style", JSON.stringify(next));
-                      setBarStyle(next);
-                    } catch (failure) {
-                      setError(String(failure));
-                    }
-                  }}
-                >
-                  <Icon name="terminal" />
-                </button>
-              </Show>
-            </div>
+            <PlaybackVisualControls
+              scene={scene()}
+              lyricsVisible={playbackWords(scene(), ordinaryLyrics(), floatingLyrics())}
+              synced={lyrics()?.synced}
+              spectrum={spectrum()}
+              barStyle={barStyle()}
+              bandsAvailable={
+                !!player.state().spectrum_hz?.length && player.state().device !== "@hqplayer"
+              }
+              onScene={choose}
+              onLyrics={() =>
+                scene() === "floating"
+                  ? setFloatingLyrics(!floatingLyrics())
+                  : setOrdinaryLyrics(!ordinaryLyrics())
+              }
+              onBands={() => {
+                try {
+                  const next = nextFrequencyMode(spectrum(), barStyle());
+                  interfacePreferences.setItem(
+                    "phemios.spectrum-style",
+                    JSON.stringify(next.style),
+                  );
+                  interfacePreferences.setItem("phemios.spectrum", JSON.stringify(next.visible));
+                  announceSetting("phemios.spectrum-style", JSON.stringify(next.style));
+                  announceSetting("phemios.spectrum", JSON.stringify(next.visible));
+                  setBarStyle(next.style);
+                  setSpectrum(next.visible);
+                  setError("");
+                } catch (failure) {
+                  setError(String(failure));
+                }
+              }}
+            />
             <Show
               when={
                 playbackLayers(scene(), spectrum(), !!player.state().spectrum_hz?.length)
@@ -249,7 +210,9 @@ export function PlaybackPage() {
                 levels={player.state().levels}
               />
             </Show>
-            <Show when={plain().length && playbackWords(scene(), ordinaryLyrics())}>
+            <Show
+              when={plain().length && playbackWords(scene(), ordinaryLyrics(), floatingLyrics())}
+            >
               <UntimedLyricsControls
                 index={phrase()}
                 total={plain().length}
@@ -258,7 +221,14 @@ export function PlaybackPage() {
               />
             </Show>
             <PlaybackLyrics
-              hidden={!playbackWords(scene(), ordinaryLyrics())}
+              audio={{
+                levels: player.state().spectrum ?? [],
+                frequencies: player.state().spectrum_hz ?? [],
+                position: player.state().position_ms,
+                reference: player.state().reference,
+              }}
+              playing={player.state().status === "playing"}
+              hidden={!playbackWords(scene(), ordinaryLyrics(), floatingLyrics())}
               floating={scene() === "floating"}
               typography={{
                 track: player.current()?.reference ?? "",

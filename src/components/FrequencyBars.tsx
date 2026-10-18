@@ -51,7 +51,10 @@ export function FrequencyBars(props: {
                     <i
                       classList={{
                         lit: row < Math.round(band().level * 10),
-                        peak: band().peak > 0 && row === Math.min(9, Math.floor(band().peak * 10)),
+                        peak:
+                          Math.round(band().level * 10) > 0 &&
+                          band().peak > 0 &&
+                          row === Math.min(9, Math.floor(band().peak * 10)),
                       }}
                     />
                   )}

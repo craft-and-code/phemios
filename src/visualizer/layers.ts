@@ -4,7 +4,16 @@ export function playbackLayers(scene: Scene, spectrum: boolean, available: boole
   return { canvas: scene !== "off", frequencies: spectrum && available };
 }
 
-/** The ordinary-words switch does not disable the separately selected floating-lyrics scene. */
-export function playbackWords(scene: Scene, ordinary: boolean): boolean {
-  return scene === "floating" || ordinary;
+/** Each lyric presentation retains its own visibility when switching decorative scenes. */
+export function playbackWords(scene: Scene, ordinary: boolean, floating = true): boolean {
+  return scene === "floating" ? floating : ordinary;
+}
+
+/** One control cycles both retained styles before hiding the independent frequency layer. */
+export function nextFrequencyMode(visible: boolean, style: "gradient" | "terminal") {
+  return !visible
+    ? { visible: true, style: "gradient" as const }
+    : style === "gradient"
+      ? { visible: true, style: "terminal" as const }
+      : { visible: false, style: "terminal" as const };
 }

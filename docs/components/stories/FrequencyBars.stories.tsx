@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
+import { createSignal } from "solid-js";
+import { expect, userEvent, within } from "storybook/test";
 import { FrequencyBars } from "../../../src/components/FrequencyBars";
 const meta = {
   title: "Media/FrequencyBars",
@@ -31,3 +33,45 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Terminal: Story = { args: { style: "terminal" } };
 export const Paused: Story = { args: { playing: false, style: "terminal" } };
+
+export const QuietBands: Story = {
+  args: { style: "terminal" },
+  render: (args) => {
+    const [level, setLevel] = createSignal(0.01),
+      [position, setPosition] = createSignal(0);
+    return (
+      <>
+        <div class="component-scene">
+          <FrequencyBars {...args} levels={Array(24).fill(level())} position={position()} />
+        </div>
+        <button
+          onClick={() => {
+            setLevel(0.7);
+            setPosition(100);
+          }}
+        >
+          Signal
+        </button>
+        <button
+          onClick={() => {
+            setLevel(0);
+            setPosition(200);
+          }}
+        >
+          Silence
+        </button>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const c = within(canvasElement);
+    expect(canvasElement.querySelectorAll(".terminal-band i.lit")).toHaveLength(0);
+    expect(canvasElement.querySelectorAll(".terminal-band i.peak")).toHaveLength(0);
+    await userEvent.click(c.getByRole("button", { name: "Signal" }));
+    expect(canvasElement.querySelectorAll(".terminal-band i.lit").length).toBeGreaterThan(0);
+    expect(canvasElement.querySelectorAll(".terminal-band i.peak").length).toBeGreaterThan(0);
+    await userEvent.click(c.getByRole("button", { name: "Silence" }));
+    expect(canvasElement.querySelectorAll(".terminal-band i.lit")).toHaveLength(0);
+    expect(canvasElement.querySelectorAll(".terminal-band i.peak")).toHaveLength(0);
+  },
+};

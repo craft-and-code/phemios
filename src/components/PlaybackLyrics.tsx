@@ -1,3 +1,5 @@
+import type { BassSample } from "../visualizer/bass-pulse";
+import { createLyricEcho } from "../visualizer/lyric-echo";
 import { createLyricReadiness } from "../visualizer/lyric-readiness";
 import type { LyricTypography, lyricTreatment } from "../visualizer/lyric-treatment";
 import { createLyricPhrase } from "../visualizer/lyric-motion";
@@ -11,6 +13,8 @@ export function PlaybackLyrics(props: {
   floating?: boolean;
   hidden?: boolean;
   typography?: LyricTypography;
+  audio?: BassSample;
+  playing?: boolean;
 }) {
   const [position, setPosition] = createSignal({ x: 50, y: 50 }),
     [dragging, setDragging] = createSignal(false),
@@ -23,6 +27,12 @@ export function PlaybackLyrics(props: {
     () => props.typography ?? { track: "", phase: 0 },
   );
   const readiness = createLyricReadiness(phrase);
+  const echo = createLyricEcho({
+    phrase,
+    ready: readiness.ready,
+    enabled: () => !!props.floating && !props.hidden && !hidden() && !dragging() && !!props.playing,
+    audio: () => props.audio,
+  });
   let offset = { x: 0, y: 0 },
     element: HTMLParagraphElement | undefined,
     scheduled = false,
@@ -156,9 +166,14 @@ export function PlaybackLyrics(props: {
             >
               <Show when={value.treatment} fallback={value.text}>
                 {(treatment) => (
-                  <span class="lyric-foreground">
-                    <LyricWords treatment={treatment()} />
-                  </span>
+                  <>
+                    <span class="lyric-foreground">
+                      <LyricWords treatment={treatment()} />
+                    </span>
+                    <span class="lyric-bass-echo" aria-hidden="true" ref={echo}>
+                      <LyricWords treatment={treatment()} />
+                    </span>
+                  </>
                 )}
               </Show>
             </span>
