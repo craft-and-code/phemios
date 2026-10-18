@@ -1,6 +1,7 @@
 import type { BiographyReturn } from "./library/biography-navigation";
 import { CatalogSearch } from "./components/CatalogSearch";
 import { AlbumCount } from "./components/AlbumCount";
+import { BrandWordmark } from "./components/BrandWordmark";
 import { parentalRouteAllowed } from "./library/parental-route";
 import { EmptyState } from "./components/EmptyState";
 import { ParentalNotice } from "./components/ParentalNotice";
@@ -307,8 +308,7 @@ export function App() {
           <Icon name="menu" />
         </button>
         <a class="wordmark" href="#/artists">
-          {t("phémios")}
-          <span>.</span>
+          <BrandWordmark />
         </a>
         <CatalogSearch
           section={current().kind === "section" ? section() : undefined}

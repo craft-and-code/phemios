@@ -20,3 +20,5 @@ Use the palette SVG for print/layout preparation. The app allows user-custom col
 ## Editorial asset permission
 
 Project-authored logos, illustrations and screenshots in this kit may be reproduced to report on or review Phémios, with attribution “Phémios / Craft & Code”. This is permission for editorial reproduction, not transfer of the name or an endorsement. Font assets keep their separate OFL licence. Do not imply that third-party album art or artist photography is licensed by this kit; supplied visuals use fictional data or original illustrations. Confirm publication timing, public downloads and supported release platforms with the maintainer rather than inferring them from development screenshots.
+
+The documentation wordmark is the shape reference across the site, App and press kit. Outlined Helvetica Neue Bold preserves its heavier rendering without distributing the proprietary font. The wordmarks share this weight; the Phémios app icon retains its original approved initial, accent dot and background.

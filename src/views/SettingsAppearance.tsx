@@ -1,3 +1,4 @@
+import { BrandWordmark } from "../components/BrandWordmark";
 import { interfacePreferences, interfaceProfileIdentity } from "../library/account-preferences";
 import { Feedback } from "../components/Feedback";
 import { Icon } from "../components/Icon";
@@ -73,7 +74,7 @@ export function SettingsAppearance() {
           <aside>
             <img src="/favicon.svg" alt="Phémios" width="44" height="44" />
             <span class="wordmark">
-              phémios<span class="brand-dot">.</span>
+              <BrandWordmark />
             </span>
             <span class="theme-preview-menu">
               <Icon name="disc" />
