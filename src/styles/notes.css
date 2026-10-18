@@ -279,3 +279,21 @@
   font-size: 14px;
   font-weight: 500;
 }
+
+.annotation-reading .tag-pills {
+  margin-top: 0;
+}
+.annotation-reading .tag-pills > p {
+  margin-block: 0;
+}
+.annotation-text-heading {
+  margin-bottom: 8px;
+}
+
+.annotation-panel .annotation-text-heading,
+.annotation-panel .annotation-note-heading {
+  margin-bottom: var(--control-gap);
+}
+.annotation-reading > p.muted {
+  margin-block: 0;
+}

@@ -1,3 +1,7 @@
+import { AccountNotice } from "./AccountNotice";
+import { collectionDuration } from "../library/detail-format";
+import { queueDuration } from "../library/queue-duration";
+import { createMemo } from "solid-js";
 import { PlaybackQueueView } from "./PlaybackQueueView";
 import { QueueTrackRow } from "./QueueTrackRow";
 import { createQueueDrag } from "./queue-drag";
@@ -24,6 +28,23 @@ export function PlaybackQueue(props: {
     [feedbackHost, setFeedbackHost] = createSignal<HTMLElement>(),
     [visible, setVisible] = createSignal(100),
     [adding, setAdding] = createSignal(false);
+  const durations = createMemo(
+    () =>
+      new Map(
+        (["local", "server"] as const).flatMap((source) =>
+          (library.publicSnapshot(source)?.tracks ?? []).map(
+            (row) => [row.reference, row.duration_ms] as const,
+          ),
+        ),
+      ),
+  );
+  const connected = () => !!library.localSession() || !!library.serverSession();
+  const duration = createMemo(() => queueDuration(player.queue(), durations()));
+  const durationLabel = () => {
+    const total = duration();
+    const label = collectionDuration(total.milliseconds);
+    return total.unknown ? `${label} · ${t("{0} durées inconnues", total.unknown)}` : label;
+  };
   const grips = new Map<number, HTMLButtonElement>();
   let disposed = false;
   onCleanup(() => {
@@ -57,7 +78,9 @@ export function PlaybackQueue(props: {
   return (
     <PlaybackQueueView
       standalone={props.standalone}
+      headerVisible={connected()}
       count={player.queue().length}
+      duration={durationLabel()}
       onClose={props.onClose}
       navigation={props.navigation}
       actions={
@@ -130,6 +153,9 @@ export function PlaybackQueue(props: {
       }
       notices={
         <>
+          <Show when={props.standalone}>
+            <AccountNotice connected={connected()} />
+          </Show>
           <div class="queue-notices" ref={setFeedbackHost} />
           <Show when={player.error()}>
             <Feedback error message={player.error()} />
@@ -169,6 +195,9 @@ export function PlaybackQueue(props: {
               }}
               onPlay={() => void player.playQueueOccurrence(row.index)}
               words={{
+                get synced() {
+                  return lyrics.synced(row.reference);
+                },
                 get available() {
                   return lyrics.available(row.reference) === true;
                 },

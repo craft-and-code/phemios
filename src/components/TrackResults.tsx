@@ -1,3 +1,4 @@
+import { LyricsIcon } from "./LyricsIcon";
 import { CoverPlay } from "./CoverPlay";
 import { createIntegrityDisclosure, type IntegrityResult } from "../library/album-integrity";
 import { TrackIntegrityError } from "./TrackIntegrityError";
@@ -69,7 +70,6 @@ export function TrackResults(props: {
       <div class="track-main-row">
         <div class="track-heading">
           <span class="track-number">{props.number}.</span>
-          <PlayingBars reference={props.track.reference} />
           <TrackIntegrity
             result={props.integrity}
             id={`${id}-integrity-toggle`}
@@ -77,6 +77,7 @@ export function TrackResults(props: {
             expanded={integrityDetails.open()}
             onToggle={integrityDetails.toggle}
           />
+          <PlayingBars reference={props.track.reference} />
           <a class="track-title" href={`#/track/${encodeURIComponent(props.track.reference)}`}>
             {props.track.title}
           </a>
@@ -124,7 +125,7 @@ export function TrackResults(props: {
             >
               <button
                 class="icon-button quiet"
-                title={t("Afficher ou masquer les paroles")}
+                title={`${t("Afficher ou masquer les paroles")} · ${words.lyrics()?.synced === true ? t("Paroles synchronisées") : words.lyrics()?.synced === false ? t("Paroles non synchronisées") : t("Synchronisation à vérifier")}`}
                 aria-label={t("Paroles de {0}", props.track.title)}
                 disabled={!library.sessionFor(props.track.reference) && !words.visible()}
                 aria-expanded={words.visible()}
@@ -132,7 +133,7 @@ export function TrackResults(props: {
                 aria-pressed={words.visible()}
                 onClick={words.toggle}
               >
-                <Icon name="lyrics" />
+                <LyricsIcon synced={words.lyrics()?.synced} />
               </button>
             </Show>
             <CoverPlay

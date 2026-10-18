@@ -1,3 +1,4 @@
+import type { createQueueLyrics } from "../library/queue-lyrics-controller";
 import { ActivityGlyph } from "./ActivityGlyph";
 import { Portal } from "solid-js/web";
 import { createEffect, createMemo, on, Show } from "solid-js";
@@ -7,15 +8,21 @@ import { useLibrary } from "../library/context";
 import { Icon } from "./Icon";
 import { Feedback } from "./Feedback";
 /** This drawer displays the shared download operation without owning its lifetime. */
-export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined }) {
+export function QueueLyrics(props: {
+  feedbackHost: () => HTMLElement | undefined;
+  controller?: ReturnType<typeof createQueueLyrics>;
+  tracks?: readonly { reference: string }[];
+  label?: string;
+}) {
   const library = useLibrary(),
-    job = library.queueLyrics;
+    job = props.controller ?? library.queueLyrics;
   const feedback = createDownloadFeedback();
   const identity = createMemo(
     () =>
-      library.player
-        .queue()
-        .map((row) => ({ reference: row.reference, owner: library.sessionFor(row.reference) })),
+      (props.tracks ?? library.player.queue()).map((row) => ({
+        reference: row.reference,
+        owner: library.sessionFor(row.reference),
+      })),
     undefined,
     {
       equals: (a, b) =>
@@ -47,12 +54,12 @@ export function QueueLyrics(props: { feedbackHost: () => HTMLElement | undefined
         aria-label={
           job.bulkBusy()
             ? t("Arrêter le téléchargement des paroles")
-            : t("Télécharger les paroles de la liste")
+            : (props.label ?? t("Télécharger les paroles de la liste"))
         }
         title={
           job.bulkBusy()
             ? t("Arrêter le téléchargement des paroles")
-            : t("Télécharger les paroles de la liste")
+            : (props.label ?? t("Télécharger les paroles de la liste"))
         }
         disabled={
           (job.busy() && !job.bulkBusy()) ||

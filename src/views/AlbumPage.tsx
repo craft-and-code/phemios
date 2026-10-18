@@ -1,3 +1,6 @@
+import { TrackDurationTotal } from "../components/TrackDurationTotal";
+import { Icon } from "../components/Icon";
+import { QueueLyrics } from "../components/QueueLyrics";
 import { createAlbumIntegrity, integrityPath } from "../library/album-integrity";
 import { CoverPlay } from "../components/CoverPlay";
 import { AlbumIntegrity } from "../components/AlbumIntegrity";
@@ -32,6 +35,12 @@ export function AlbumPage(props: {
     () => (library.sessionFor(props.album.reference) ? props.album.reference : false),
     albumTracks,
   );
+  const [lyricFeedbackHost, setLyricFeedbackHost] = createSignal<HTMLElement>();
+  const lyrics = library.albumLyrics;
+  createEffect(() => {
+    const rows = tracks.latest;
+    if (rows) lyrics.select(props.album.reference, rows);
+  });
   const integrity = createAlbumIntegrity({
     release: () => props.album.reference,
     session: () => library.sessionFor(props.album.reference),
@@ -115,7 +124,12 @@ export function AlbumPage(props: {
       <AnnotationPanel reference={props.album.reference} kind="album" />
       <section>
         <div class="section-heading">
-          <h2>{t("Pistes")}</h2>
+          <div class="album-track-summary">
+            <h2>{t("Pistes")}</h2>
+            <TrackDurationTotal
+              tracks={tracks.loading || tracks.error ? undefined : tracks.latest}
+            />
+          </div>
           <div class="detail-export-actions">
             <AlbumIntegrity
               busy={integrity.busy()}
@@ -124,6 +138,30 @@ export function AlbumPage(props: {
               onStart={() => void integrity.start()}
               onCancel={() => void integrity.cancel()}
             />
+            <Show
+              when={lyrics.target() === props.album.reference}
+              fallback={
+                <button
+                  class="icon-button quiet"
+                  disabled
+                  title={
+                    lyrics.controller.busy()
+                      ? t("Un téléchargement de paroles d’album est déjà en cours.")
+                      : t("Télécharger les paroles de l’album")
+                  }
+                  aria-label={t("Télécharger les paroles de l’album")}
+                >
+                  <Icon name="lyrics-download" />
+                </button>
+              }
+            >
+              <QueueLyrics
+                controller={lyrics.controller}
+                tracks={tracks.latest ?? []}
+                feedbackHost={lyricFeedbackHost}
+                label={t("Télécharger les paroles de l’album")}
+              />
+            </Show>
             <M3UExport
               release={props.album.reference}
               title={props.album.title}
@@ -132,6 +170,7 @@ export function AlbumPage(props: {
           </div>
         </div>
         <Feedback error persistent message={integrity.error()} />
+        <div ref={setLyricFeedbackHost} class="album-lyrics-feedback" />
         <Feedback
           message={m3uStatus().message}
           error={m3uStatus().failed}
@@ -191,7 +230,18 @@ export function AlbumPage(props: {
             />
           </div>
         </div>
-        <JobControls release={props.album.reference} />
+        <JobControls
+          release={props.album.reference}
+          coverage={
+            tracks()
+              ? {
+                  tracks: tracks()!.length,
+                  current: tracks()!.filter((track) => track.analysis_available).length,
+                  spectra: tracks()!.filter((track) => track.spectrum_available).length,
+                }
+              : undefined
+          }
+        />
       </section>
     </article>
   );

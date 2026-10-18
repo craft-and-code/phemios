@@ -44,6 +44,11 @@ export const Interactive: Story = {
     const canvas = within(canvasElement);
     await waitFor(() => expect(canvas.getByRole("combobox", { name: t("Pays") })).toBeVisible());
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
+    const summary = canvasElement.querySelector(".globe-help summary")!;
+    const arrow = summary.querySelector("svg")!.getBoundingClientRect();
+    const label = summary.querySelector("span")!.getBoundingClientRect();
+    expect(Math.abs(arrow.top + arrow.height / 2 - (label.top + label.height / 2))).toBeLessThan(1);
+    expect(label.left - arrow.right).toBe(6);
     expect(getComputedStyle(canvasElement.querySelector(".globe-panel")!).userSelect).toBe("none");
     expect(getComputedStyle(canvas.getByRole("img", { name: /Globe/ })).userSelect).toBe("none");
   },

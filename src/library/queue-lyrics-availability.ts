@@ -27,7 +27,7 @@ export function createQueueLyricAvailability(library: {
   type Identity = ReturnType<typeof identity>;
   const [state, setState] = createSignal<{
     held: Identity;
-    entries: Map<string, boolean>;
+    entries: Map<string, { available: boolean; synced: boolean | undefined }>;
     error: string;
   }>();
   let disposed = false,
@@ -49,7 +49,7 @@ export function createQueueLyricAvailability(library: {
       latestIdentity = held;
     }
     if (held.references.includes(reference)) latest.set(reference, ticket);
-    const available = !!parseLyrics(
+    const lyrics = parseLyrics(
       await requestAede(
         "/api/v1/lyrics",
         { track: reference },
@@ -59,7 +59,8 @@ export function createQueueLyricAvailability(library: {
         owner,
       ),
       reference,
-    )?.lines.some((line) => line.text.trim());
+    );
+    const available = !!lyrics?.lines.some((line) => line.text.trim());
     if (
       current(held) &&
       held.references.includes(reference) &&
@@ -67,8 +68,11 @@ export function createQueueLyricAvailability(library: {
       latest.get(reference) === ticket
     ) {
       setState((previous) => {
-        const entries = previous?.held === held ? previous.entries : new Map<string, boolean>();
-        entries.set(reference, available);
+        const entries =
+          previous?.held === held
+            ? previous.entries
+            : new Map<string, { available: boolean; synced: boolean | undefined }>();
+        entries.set(reference, { available, synced: lyrics?.synced });
         return { held, entries, error: previous?.held === held ? previous.error : "" };
       });
     }
@@ -144,7 +148,7 @@ export function createQueueLyricAvailability(library: {
       ? {
           complete:
             value.entries.size === held.references.length &&
-            [...value.entries.values()].every(Boolean),
+            [...value.entries.values()].every((entry) => entry.available),
           error: value.error,
         }
       : undefined;
@@ -154,7 +158,16 @@ export function createQueueLyricAvailability(library: {
     available: (reference: string) => {
       const held = identity(),
         value = state();
-      return current(held) && value?.held === held ? value.entries.get(reference) : undefined;
+      return current(held) && value?.held === held
+        ? value.entries.get(reference)?.available
+        : undefined;
+    },
+    synced: (reference: string) => {
+      const held = identity(),
+        value = state();
+      return current(held) && value?.held === held
+        ? value.entries.get(reference)?.synced
+        : undefined;
     },
     retained,
     loading: () => current(identity()) && result.loading,

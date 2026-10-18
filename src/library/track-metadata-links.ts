@@ -59,6 +59,9 @@ export function trackMetadataTarget(
       "trackartists",
       "albumartist",
       "albumartists",
+      "artistsort",
+      "albumartistsort",
+      "trackartistsort",
       "performer",
       "performers",
       "lyricist",
@@ -72,25 +75,56 @@ export function trackMetadataTarget(
       "engineer",
       "mixingengineer",
       "masteringengineer",
+      "choir",
+      "mixer",
+      "editor",
       "orchestra",
       "ensemble",
       "band",
+      "soloist",
+      "soloists",
+      "writer",
+      "writers",
+      "vocals",
+      "vocalist",
+      "backgroundvocals",
+      "executiveproducer",
+      "coproducer",
+      "recordingengineer",
+      "assistantengineer",
+      "soundengineer",
+      "albumproducer",
+      "albumengineer",
+      "albummixer",
+      "albumarranger",
+      "albummasteringengineer",
+      "djmixer",
     ].includes(field) ||
     field.startsWith("performer")
   ) {
-    const credited = detail.credits.filter(
-      (credit) =>
-        referenceSource(credit.reference) === source && normalizeName(credit.name) === name,
-    );
-    const matches = new Set([
-      ...credited.map((credit) => credit.reference),
-      ...artists
-        .filter(
-          (artist) =>
-            referenceSource(artist.reference) === source && normalizeName(artist.name) === name,
-        )
-        .map((artist) => artist.reference),
-    ]);
+    const matchesFor = (candidate: string) =>
+      new Set([
+        ...detail.credits
+          .filter(
+            (credit) =>
+              referenceSource(credit.reference) === source &&
+              normalizeName(credit.name) === candidate,
+          )
+          .map((credit) => credit.reference),
+        ...artists
+          .filter(
+            (artist) =>
+              referenceSource(artist.reference) === source &&
+              normalizeName(artist.name) === candidate,
+          )
+          .map((artist) => artist.reference),
+      ]);
+    let matches = matchesFor(name);
+    if (!matches.size && ["artistsort", "albumartistsort", "trackartistsort"].includes(field)) {
+      const parts = value.split(",").map((part) => part.trim());
+      if (parts.length === 2 && parts.every(Boolean))
+        matches = matchesFor(normalizeName(`${parts[1]} ${parts[0]}`));
+    }
     return matches.size === 1 ? link("artist", [...matches][0]!) : browse("artists");
   }
 }

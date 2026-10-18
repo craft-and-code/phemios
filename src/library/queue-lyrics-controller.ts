@@ -176,6 +176,7 @@ export function createQueueLyrics(library: {
     failed: () => feedbackCurrent() && failed(),
     eligible,
     available: availability.available,
+    synced: availability.synced,
     acquiring: () => (feedbackCurrent() ? acquiring() : ""),
     retained: availability.retained,
     retainedLoading: availability.loading,

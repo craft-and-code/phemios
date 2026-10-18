@@ -78,3 +78,59 @@ it("never picks another origin or fabricates an identity from raw text", () => {
   ).toBe("browse");
   expect(trackMetadataTarget("COMMENT", "Guest", detail, [person], [])).toBeUndefined();
 });
+
+it("links all canonical person and ensemble credits emitted by Aède", () => {
+  for (const key of [
+    "choir",
+    "mixer",
+    "editor",
+    "soloist",
+    "writer",
+    "vocals",
+    "background_vocals",
+    "executive_producer",
+    "co_producer",
+    "recording_engineer",
+    "assistant_engineer",
+    "sound_engineer",
+    "albumproducer",
+    "albumengineer",
+    "albummixer",
+    "albumarranger",
+    "albummasteringengineer",
+    "djmixer",
+  ])
+    expect(trackMetadataTarget(key, "Guest", detail, [person], [album]), key).toEqual({
+      kind: "route",
+      href: "#/artist/artist%3Aguest",
+    });
+});
+
+it("opens sort-name fields through exact source-owned names before reordered aliases", () => {
+  const named = { ...person, name: "The Guest" };
+  const row = { ...detail, credits: [{ ...detail.credits[0]!, name: "The Guest" }] };
+  for (const key of ["artistsort", "albumartistsort", "artist_sort"])
+    expect(trackMetadataTarget(key, "Guest, The", row, [named], [])).toEqual({
+      kind: "route",
+      href: "#/artist/artist%3Aguest",
+    });
+  expect(
+    trackMetadataTarget(
+      "artistsort",
+      "Guest, The",
+      { ...detail, credits: [] },
+      [{ ...named, reference: "artist:@phemios/local/guest" }],
+      [],
+    )?.kind,
+  ).toBe("browse");
+  expect(
+    trackMetadataTarget(
+      "artistsort",
+      "Guest, The",
+      row,
+      [{ ...person, name: "Guest, The", reference: "artist:literal" }, named],
+      [],
+    ),
+  ).toEqual({ kind: "route", href: "#/artist/artist%3Aliteral" });
+  expect(trackMetadataTarget("COMMENT", "Guest, The", row, [named], [])).toBeUndefined();
+});

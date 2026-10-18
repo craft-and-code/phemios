@@ -4,6 +4,7 @@
   background: #161819;
 }
 .filter-options {
+  --filter-control-height: 30px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -20,6 +21,11 @@
   padding: 5px 7px;
 }
 .filter-options button {
+  height: var(--filter-control-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   padding: 5px 8px;
   font-size: 11px;
 }
@@ -179,8 +185,8 @@
   gap: 6px;
 }
 .filter-options .icon-button {
-  width: 30px;
-  height: 30px;
+  width: var(--filter-control-height);
+  height: var(--filter-control-height);
   padding: 5px;
 }
 .filter-facet {
@@ -220,4 +226,54 @@
 .personal-selection-actions > .result-count {
   margin-right: auto;
   align-self: center;
+}
+
+/* Keep the explanation beside its switches and the count at the centre. */
+.filter-details {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.filter-options:has(> .result-count) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.filter-options > .result-count {
+  justify-self: center;
+}
+.globe-help summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.globe-help summary::-webkit-details-marker {
+  display: none;
+}
+.globe-help summary > svg {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+}
+.globe-help[open] summary > svg {
+  transform: rotate(90deg);
+}
+.filter-leading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.filter-leading .rail-switches {
+  flex-shrink: 0;
+}
+.filter-leading .filter-context {
+  margin: 0;
+  flex-basis: auto;
+  order: initial;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

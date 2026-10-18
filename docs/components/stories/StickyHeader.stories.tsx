@@ -1,4 +1,5 @@
-import { expect } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
+import { createSignal } from "solid-js";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { ResultCount } from "../../../src/components/ResultCount";
 import { StarRating } from "../../../src/components/StarRating";
@@ -221,5 +222,49 @@ export const BottomSpacing: Story = {
         !page.classList.contains("achievements-page") ? 24 : 36,
       );
     }
+  },
+};
+
+export const AccountVisibility: Story = {
+  render: () => {
+    const [connected, setConnected] = createSignal(false);
+    return (
+      <>
+        <button onClick={() => setConnected(!connected())}>Toggle account</button>
+        {[
+          "moods",
+          "favourites",
+          "rated",
+          "tags",
+          "collections",
+          "podcasts",
+          "concerts",
+          "achievements",
+          "doctor",
+          "analysis",
+        ].map((view) => (
+          <section class={`page result-page ${view}-page`} data-account-view={view}>
+            <StickyHeader shell={false} visible={connected()}>
+              <span>{view}</span>
+              <button>Account action</button>
+            </StickyHeader>
+            <p class="notice">Fictional account result</p>
+          </section>
+        ))}
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const headers = [...canvasElement.querySelectorAll("[data-account-view] > header")];
+    expect(headers).toHaveLength(10);
+    for (const header of headers) expect(header.getBoundingClientRect().height).toBe(0);
+    expect(canvas.queryByRole("button", { name: "Account action" })).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "Toggle account" }));
+    for (const header of headers)
+      expect(header.getBoundingClientRect().height).toBeGreaterThanOrEqual(61);
+    expect(canvas.getAllByRole("button", { name: "Account action" })).toHaveLength(10);
+    await userEvent.click(canvas.getByRole("button", { name: "Toggle account" }));
+    for (const header of headers) expect(header.getBoundingClientRect().height).toBe(0);
   },
 };

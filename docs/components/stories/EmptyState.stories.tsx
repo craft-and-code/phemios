@@ -75,3 +75,63 @@ export const Layout: Story = {
     for (const center of rows) expect(Math.abs(center - rows[0]!)).toBeLessThan(0.6);
   },
 };
+
+export const DisconnectedHistory: Story = {
+  render: () => (
+    <div>
+      <main data-history-state="disconnected" style={{ height: "500px" }}>
+        <section class="page result-page personal-page history-page">
+          <StickyHeader separator={false}>
+            <div class="personal-selection-actions history-selection-actions" />
+          </StickyHeader>
+          <div class="history-results">
+            <p class="notice account-notice">
+              Connectez-vous pour accéder aux données de votre compte.
+            </p>
+            <ul class="personal-list" />
+          </div>
+          <EmptyState icon="history">Aucun élément enregistré dans cette rubrique.</EmptyState>
+        </section>
+      </main>
+      <main data-history-state="reference" style={{ height: "500px" }}>
+        <section class="page result-page">
+          <p class="notice account-notice">
+            Connectez-vous pour accéder aux données de votre compte.
+          </p>
+          <EmptyState icon="history">Aucun élément enregistré dans cette rubrique.</EmptyState>
+        </section>
+      </main>
+      <main data-history-state="connected-empty" style={{ height: "500px" }}>
+        <section class="page result-page personal-page history-page">
+          <StickyHeader separator={false}>
+            <div class="personal-selection-actions history-selection-actions" />
+          </StickyHeader>
+          <div class="history-results">
+            <ul class="personal-list" />
+          </div>
+          <EmptyState icon="history">Aucun élément enregistré dans cette rubrique.</EmptyState>
+        </section>
+      </main>
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    const disconnected = canvasElement.querySelector<HTMLElement>(
+      '[data-history-state="disconnected"]',
+    )!;
+    const reference = canvasElement.querySelector<HTMLElement>('[data-history-state="reference"]')!;
+    const connected = canvasElement.querySelector<HTMLElement>(
+      '[data-history-state="connected-empty"]',
+    )!;
+    expect(disconnected.querySelector("header")!.getBoundingClientRect().height).toBe(0);
+    const center = (page: HTMLElement) => {
+      const icon = page.querySelector(".empty-state > svg")!.getBoundingClientRect();
+      const text = page.querySelector(".empty-state > p")!.getBoundingClientRect();
+      return (icon.top + text.bottom) / 2 - page.getBoundingClientRect().top;
+    };
+    expect(Math.abs(center(disconnected) - center(reference))).toBeLessThan(0.6);
+    expect(
+      connected.querySelector("header")!.getBoundingClientRect().height,
+    ).toBeGreaterThanOrEqual(61);
+    expect(connected.querySelector(".history-results")!.getBoundingClientRect().height).toBe(0);
+  },
+};

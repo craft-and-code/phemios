@@ -95,7 +95,7 @@ export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
   }
   return (
     <section class="page m3u-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="m3u-toolbar">
           {props.navigation}
           <div class="choices" aria-label={t("Origine des listes M3U")}>

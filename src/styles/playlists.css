@@ -79,3 +79,51 @@ main > .playlist-page {
   height: 100%;
   object-fit: cover;
 }
+
+.playlist-files-toggle.metadata-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.collection-album-content {
+  position: relative;
+  min-height: 220px;
+}
+main:has(> .history-page) {
+  overflow: hidden;
+}
+.history-page {
+  padding-bottom: var(--page-end-gap);
+}
+.history-page > .page-sticky-header {
+  position: static;
+}
+.history-page > .history-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.history-page > .pagination-controls {
+  flex-shrink: 0;
+}
+
+/* Empty results own the remaining height; a vacant list must not push them down. */
+.history-page:has(> .empty-state) > .history-results {
+  flex: 0 0 auto;
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+/* The disconnected account notice has no history actions to reserve a header for. */
+.history-page:has(> .history-results > .account-notice) > .page-sticky-header {
+  display: none;
+}
+
+.tracks-heading > .catalog-actions {
+  margin-left: auto;
+}
+.tracks-page .page-sticky-header > .filters {
+  padding: 12px 0 0;
+  border: 0;
+  background: transparent;
+}

@@ -1,7 +1,7 @@
 import { ConnectionActions } from "./ConnectionActions";
 import { Feedback } from "./Feedback";
 import { t } from "../i18n";
-import { createSignal, Show, onMount, onCleanup } from "solid-js";
+import { createSignal, Show, onMount, onCleanup, createEffect, on } from "solid-js";
 import { readLoginPreference, saveLoginPreference } from "../library/login-preference";
 import { useLibrary } from "../library/context";
 /** Successful login names are remembered; passwords and bearer credentials stay ephemeral. */
@@ -55,6 +55,21 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
   );
   const [password, setPassword] = createSignal("");
   const [disconnecting, setDisconnecting] = createSignal(false);
+  const [syncMessage, setSyncMessage] = createSignal("");
+  createEffect(on(library.serverSession, () => setSyncMessage("")));
+  async function synchronize() {
+    const session = library.serverSession();
+    if (!session || library.busy()) return;
+    setSyncMessage("");
+    await library.sync("server");
+    if (session === library.serverSession() && !library.error())
+      setSyncMessage(
+        t(
+          "Catalogue connu rechargé : {0} albums. Pour découvrir des fichiers déplacés ou ajoutés, lancez un scan des dossiers.",
+          library.publicSnapshot("server")?.albums.length ?? 0,
+        ),
+      );
+  }
   async function disconnect() {
     if (disconnecting()) return;
     setDisconnecting(true);
@@ -173,10 +188,14 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
           <ConnectionActions
             syncing={library.busy()}
             disconnecting={disconnecting()}
-            onSync={() => void library.sync("server")}
+            onSync={() => void synchronize()}
             onDisconnect={() => void disconnect()}
           />
         </Show>
+        <Feedback
+          message={library.serverSession() ? syncMessage() : ""}
+          onClose={() => setSyncMessage("")}
+        />
         <Feedback error message={preferenceError()} />
         <Feedback error message={library.error()} />
       </section>

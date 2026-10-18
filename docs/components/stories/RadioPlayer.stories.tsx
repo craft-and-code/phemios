@@ -107,7 +107,7 @@ export const StableGeometry: Story = {
       await userEvent.click(canvas.getByRole("button", { name }));
       const actual = geometry(radio);
       if (name === "Error") {
-        const message = radio.querySelector<HTMLElement>(".playback-error")!;
+        const message = radio.querySelector<HTMLElement>(".radio-playback-feedback > span")!;
         expect(message.clientWidth).toBeGreaterThan(100);
         expect(message.clientHeight).toBeGreaterThan(20);
         expect(getComputedStyle(message).textOverflow).not.toBe("ellipsis");

@@ -78,7 +78,7 @@ export function TagsPage(props: {
   };
   return (
     <section class="page result-page tags-page" classList={{ "density-compact": compact() }}>
-      <StickyHeader>
+      <StickyHeader visible={!!library.localSession() || !!library.serverSession()}>
         <div class="selection-filter-row">
           <ResultCount value={entries().length} />
           <Show when={vocabulary().length}>

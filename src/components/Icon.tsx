@@ -23,6 +23,8 @@ const paths: Record<string, string> = {
   "lyrics-download": "M3 4h10M3 8h10M3 12h7M3 16h7M18 3v14m-4-4 4 4 4-4M14 21h8",
   disconnect: "m7 3 4 4m3-4 4 4M4 8l5-5 6 6-5 5-6-6Zm-1 5 8 8m-5-5-4 4M15 15l6 6",
   landscape: "M2 20 9 7l4 7 3-5 6 11H2Z",
+  "lyrics-timed":
+    "M3 3h12v5M3 3v18h12M6 7h5M6 11h5M6 15h3M23 15a6 6 0 1 1-12 0 6 6 0 0 1 12 0ZM17 11v4l3 1",
   lyrics: "M5 4h14v16H5V4ZM8 8h8M8 12h8M8 16h5",
   plus: "M5 12h14M12 5v14",
   minus: "M5 12h14",

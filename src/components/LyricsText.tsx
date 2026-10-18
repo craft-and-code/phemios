@@ -17,7 +17,10 @@ export function LyricsText(props: { lyrics: Lyrics; reference: string }) {
         : props.lyrics.source;
   return (
     <>
-      <small class="muted">{t("Source : {0}", source())}</small>
+      <small class="muted">
+        {t("Source : {0}", source())} ·{" "}
+        {props.lyrics.synced ? t("Paroles synchronisées") : t("Paroles non synchronisées")}
+      </small>
       <div class="lyrics-lines">
         <For each={props.lyrics.lines}>
           {(line) => (

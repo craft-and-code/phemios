@@ -15,7 +15,7 @@ export function AchievementsPage() {
   const rows = loaded.current;
   return (
     <section class="page result-page achievements-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="section-heading">
           <p>{rows() ? t("{0} / {1} dévoilés", rows()!.unlocked, rows()!.total) : ""}</p>
           <RefreshButton

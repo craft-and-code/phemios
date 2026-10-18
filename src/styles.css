@@ -38,6 +38,8 @@
   --header-summary-size: 0.85rem;
   --error: #d47777;
   --compact-control-gap: 4px;
+  --row-action-size: 30px;
+  --row-action-icon-size: 18px;
   --sidebar: #151718;
   --player: #1a1c1d;
   font-synthesis: none;
@@ -2455,4 +2457,48 @@ main:has(> .tracks-page) {
 
 .page.analysis-page {
   min-height: auto;
+}
+
+/* Media list actions share the Tracks hit area, glyph size and gap. */
+:is(
+    .track-actions,
+    .coverage-actions,
+    .detail-export-actions,
+    .label-row,
+    .collection-row,
+    .history-row,
+    .density-compact .album-card,
+    .density-compact .tagged-playable
+  )
+  button.icon-button {
+  width: var(--row-action-size);
+  height: var(--row-action-size);
+  padding: 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+:is(
+    .track-actions,
+    .coverage-actions,
+    .detail-export-actions,
+    .label-row,
+    .collection-row,
+    .history-row,
+    .density-compact .album-card,
+    .density-compact .tagged-playable
+  )
+  button.icon-button
+  > svg {
+  width: var(--row-action-icon-size);
+  height: var(--row-action-icon-size);
+}
+:is(.track-actions, .coverage-actions, .label-row, .collection-row, .history-row) .media-actions,
+.coverage-actions,
+.detail-export-actions {
+  gap: var(--compact-control-gap);
+}
+
+/* Hidden headers expose no controls, border, margins or empty reserved row. */
+.sticky-header[hidden] {
+  display: none;
 }

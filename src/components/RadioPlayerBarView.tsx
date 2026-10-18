@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { PlayerTransport } from "./PlayerTransport";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
@@ -32,11 +33,15 @@ export function RadioPlayerBarView(props: {
           <small>
             {props.station?.country} · {status()}
           </small>
-          <small class="playback-error" role="alert" title={props.error}>
-            {props.error}
-          </small>
         </span>
       </div>
+      <Feedback
+        error
+        class="radio-playback-feedback"
+        message={props.error}
+        durationMs={5000}
+        pauseOnInteraction={false}
+      />
       <PlayerTransport
         controls={
           <>

@@ -3,6 +3,7 @@ import { CatalogActions } from "../components/CatalogActions";
 import { CoverFlow } from "../components/CoverFlow";
 import { createCoverPosition } from "../visualizer/cover-position";
 import { readCollectionPlayback } from "../library/collection-playback";
+import { Pagination } from "../components/Pagination";
 import { ActivityGlyph } from "../components/ActivityGlyph";
 import { PageLoader } from "../components/PageLoader";
 import { CoverPlay } from "../components/CoverPlay";
@@ -195,9 +196,12 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
       (a, b) => normalizeName(a.title).localeCompare(normalizeName(b.title)) * (reverse() ? -1 : 1),
     );
   return (
-    <section class="page result-page personal-page">
+    <section
+      class="page result-page personal-page"
+      classList={{ "history-page": props.section === "history" }}
+    >
       <Show when={props.section === "favourites"}>
-        <StickyHeader>
+        <StickyHeader visible={!!library.session()}>
           <div class="personal-selection-actions">
             <ResultCount value={favourites().length} />
             <CatalogActions
@@ -221,7 +225,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
             </CatalogActions>
           </div>
         </StickyHeader>
-        <AccountNotice connected={!!library.session() || library.demo} />
+        <AccountNotice connected={!!library.session()} />
         <Show
           when={favourites().length}
           fallback={
@@ -241,7 +245,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
         </Show>
       </Show>
       <Show when={props.section === "collections"}>
-        <StickyHeader>
+        <StickyHeader visible={!!library.session()}>
           <div class="personal-selection-actions">
             <button
               class="icon-button collection-create"
@@ -261,7 +265,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
             </button>
           </div>
         </StickyHeader>
-        <AccountNotice connected={!!library.session() || library.demo} />
+        <AccountNotice connected={!!library.session()} />
         <Show when={editingCollection()}>
           <form
             id="collection-editor"
@@ -453,7 +457,10 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
         </ul>
       </Show>
       <Show when={props.section === "history"}>
-        <StickyHeader separator={(page()?.total ?? 0) > 0 || !!listening()}>
+        <StickyHeader
+          visible={!!library.session()}
+          separator={(page()?.total ?? 0) > 0 || !!listening()}
+        >
           <div class="personal-selection-actions history-selection-actions">
             <Show when={(page()?.total ?? 0) > 0}>
               <div class="history-reset">
@@ -467,60 +474,56 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
             </Show>
           </div>
         </StickyHeader>
-        <AccountNotice connected={!!library.session() || library.demo} />
-        <Show when={listening()}>
-          {(row) => (
-            <div class="history-current">
-              <Icon name={library.player.state().status === "playing" ? "volume" : "pause"} />
-              <div>
-                <small>{t("Écoute en cours")}</small>
-                <a href={`#/track/${encodeURIComponent(row().reference)}`}>{row().title}</a>
-                <small>
-                  {row().artist} · {row().album?.title}
-                </small>
-              </div>
-              <CoverPlay
-                reference={row().reference}
-                title={row().title}
-                class="history-play"
-                append
-              />
-            </div>
-          )}
-        </Show>
-        <ul class="personal-list">
-          <For
-            each={history()?.filter((row) =>
-              matches(`${row.title} ${new Date(row.at * 1000).toLocaleString(locale())}`),
-            )}
-          >
+        <div class="history-results">
+          <AccountNotice connected={!!library.session()} />
+          <Show when={listening()}>
             {(row) => (
-              <li class="history-row">
-                <a href={historyTrackAction(row).href} title={row.title}>
-                  {row.title}
-                </a>
-                <div class="history-visit">
+              <div class="history-current">
+                <Icon name={library.player.state().status === "playing" ? "volume" : "pause"} />
+                <div>
+                  <small>{t("Écoute en cours")}</small>
+                  <a href={`#/track/${encodeURIComponent(row().reference)}`}>{row().title}</a>
                   <small>
-                    {new Date(row.at * 1000).toLocaleString(locale())} ·{" "}
-                    {row.ms_played === null
-                      ? t("Durée inconnue")
-                      : t("{0} s écoutées", Math.round(row.ms_played / 1000))}
+                    {row().artist} · {row().album?.title}
                   </small>
-                  <Show when={row.error}>
-                    <small>{row.error}</small>
-                  </Show>
                 </div>
-                <CoverPlay
-                  reference={historyTrackAction(row).reference}
-                  title={row.title}
-                  disabled={historyTrackAction(row).disabled}
-                  class="history-play"
-                  append
-                />
-              </li>
+              </div>
             )}
-          </For>
-        </ul>
+          </Show>
+          <ul class="personal-list">
+            <For
+              each={history()?.filter((row) =>
+                matches(`${row.title} ${new Date(row.at * 1000).toLocaleString(locale())}`),
+              )}
+            >
+              {(row) => (
+                <li class="history-row">
+                  <a href={historyTrackAction(row).href} title={row.title}>
+                    {row.title}
+                  </a>
+                  <div class="history-visit">
+                    <small>
+                      {new Date(row.at * 1000).toLocaleString(locale())} ·{" "}
+                      {row.ms_played === null
+                        ? t("Durée inconnue")
+                        : t("{0} s écoutées", Math.round(row.ms_played / 1000))}
+                    </small>
+                    <Show when={row.error}>
+                      <small>{row.error}</small>
+                    </Show>
+                  </div>
+                  <CoverPlay
+                    reference={historyTrackAction(row).reference}
+                    title={row.title}
+                    disabled={historyTrackAction(row).disabled}
+                    class="history-play"
+                    append
+                  />
+                </li>
+              )}
+            </For>
+          </ul>
+        </div>
       </Show>
       <Show when={reads.loading() && !reads.page()}>
         <PageLoader />
@@ -530,9 +533,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
       </Show>
       <Show
         when={
-          (!library.session() &&
-            !library.demo &&
-            ["collections", "history"].includes(props.section)) ||
+          (!library.session() && ["collections", "history"].includes(props.section)) ||
           (page() && !page()?.items.length && (props.section !== "history" || !listening()))
         }
       >
@@ -541,23 +542,14 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
         </EmptyState>
       </Show>
       <Show when={(page()?.total ?? 0) > 50}>
-        <div class="choices">
-          <button
-            disabled={!offset()}
-            onClick={() => setOffset((value) => Math.max(0, value - 50))}
-          >
-            {t("Précédent")}{" "}
-          </button>
-          <span>
-            {offset() + 1} / {page()?.total}
-          </span>
-          <button
-            disabled={offset() + 50 >= (page()?.total ?? 0)}
-            onClick={() => setOffset((value) => value + 50)}
-          >
-            {t("Suivant")}{" "}
-          </button>
-        </div>
+        <Pagination
+          offset={offset()}
+          size={50}
+          total={page()?.total ?? 0}
+          count={page()?.items.length ?? 0}
+          busy={reads.loading()}
+          onOffset={setOffset}
+        />
       </Show>
       <Feedback message={message()} />
     </section>

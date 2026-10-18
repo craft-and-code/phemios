@@ -54,3 +54,14 @@ it("limits queue-footer priority to the workspace route, not a detail opened fro
   expect(isQueueWorkspace({ kind: "track", reference: "track:one" })).toBe(false);
   expect(isQueueWorkspace({ kind: "section", section: "playback" })).toBe(false);
 });
+
+it("Space uses prepared queue priority even outside the queue workspace", () => {
+  const route = { kind: "section" as const, section: "settings" as const };
+  expect(isQueueWorkspace(route)).toBe(false);
+  expect(footerTransport({ queueView: true, queued: true, radio: true, podcast: true })).toBe(
+    "catalog",
+  );
+  expect(footerTransport({ queueView: true, queued: false, radio: true, podcast: false })).toBe(
+    "radio",
+  );
+});

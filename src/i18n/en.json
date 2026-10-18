@@ -1791,5 +1791,22 @@
   "Connectez un compte administrateur Aède pour lancer une tâche.": "Sign in as an Aède administrator to start a task.",
   "Ce compte est verrouillé par son administrateur responsable.": "This account is locked by its supervising administrator.",
   "Connectez un compte administrateur pour verrouiller ces règles.": "Sign in as an administrator to lock these rules.",
-  "L’accès à ce podcast est interdit pour ce compte.": "This account is not allowed to access this podcast."
+  "L’accès à ce podcast est interdit pour ce compte.": "This account is not allowed to access this podcast.",
+  "Bibliothèques externes": "Third-party libraries",
+  "Catalogue connu rechargé : {0} albums. Pour découvrir des fichiers déplacés ou ajoutés, lancez un scan des dossiers.": "Known catalog reloaded: {0} albums. Scan folders to discover moved or added files.",
+  "Dossiers surveillés rechargés : {0}. Aucun scan n’a été lancé.": "Watched folders reloaded: {0}. No scan was started.",
+  "Initiale de la piste · année de l’album": "Track initial · album year",
+  "Inverser l’ordre des pistes": "Reverse track order",
+  "Mettez à jour puis redémarrez Aède pour conserver les filtres de pistes.": "Update and restart Aède to save track filters.",
+  "Mettez à jour puis redémarrez Aède pour les filtres de pistes.": "Update and restart Aède to use track filters.",
+  "Paroles synchronisées": "Synchronized lyrics",
+  "Recharger le catalogue connu": "Reload the known catalog",
+  "Relire la liste des dossiers, sans scanner": "Reload the folder list without scanning",
+  "Services externes": "External services",
+  "Synchronisation à vérifier": "Timing not yet verified",
+  "Télécharger les paroles de l’album": "Download album lyrics",
+  "Versions verrouillées à la compilation. Les composants Rust peuvent dépendre de la plateforme.": "Versions locked at build time. Rust components may depend on the platform.",
+  "{0} durées inconnues": "{0} unknown durations",
+  "Un téléchargement de paroles d’album est déjà en cours.": "An album lyrics download is already in progress.",
+  "Inconnue": "Unknown"
 }

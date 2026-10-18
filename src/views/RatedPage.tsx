@@ -41,7 +41,7 @@ export function RatedPage(props: { query: string }) {
       );
   return (
     <section class="page result-page rated-page" classList={{ "density-compact": compact() }}>
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="selection-filter-row">
           <ResultCount value={albums().length} />
           <span>{t("Note minimale")}</span>

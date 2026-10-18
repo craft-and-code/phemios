@@ -16,7 +16,7 @@ export function ConnectionActions(props: {
         disabled={props.disconnecting}
         onClick={props.onSync}
       >
-        {props.syncing ? t("Synchronisation…") : t("Synchroniser la bibliothèque")}
+        {props.syncing ? t("Synchronisation…") : t("Recharger le catalogue connu")}
       </ActionButton>
       <ActionButton
         type="button"

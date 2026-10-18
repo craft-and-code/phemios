@@ -245,6 +245,10 @@
 .radio-world {
   position: sticky;
   top: 16px;
+  max-height: calc(100dvh - 192px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .radio-globe-country {
   display: grid;
@@ -277,6 +281,8 @@
   }
   .radio-world {
     position: static;
+    max-height: none;
+    overflow: visible;
     max-width: 360px;
     width: 100%;
     margin: auto;
@@ -288,4 +294,29 @@
 
 .radio-scale .radio-wave[data-signal="measured"] {
   opacity: 0.6;
+}
+
+/* The whole country column scrolls as one surface, including the globe. */
+.radio-world .radio-favourites {
+  margin: 20px 0 0;
+  min-width: 0;
+}
+.radio-world .radio-favourites .radio-stations {
+  grid-template-columns: minmax(0, 1fr);
+}
+.radio-world .radio-station {
+  min-width: 0;
+}
+.radio-world .radio-station strong {
+  overflow-wrap: anywhere;
+}
+
+/* Floating feedback never changes the footer transport footprint. */
+.feedback.radio-playback-feedback {
+  position: fixed;
+  bottom: 92px;
+  right: 24px;
+  width: min(560px, calc(100vw - 48px));
+  margin: 0;
+  z-index: 40;
 }

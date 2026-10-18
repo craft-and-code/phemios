@@ -3,7 +3,7 @@ import { createSignal, For, onMount, onCleanup, Show } from "solid-js";
 import { expect, userEvent, within, fireEvent } from "storybook/test";
 import { QueueTrackRow } from "../../../src/components/QueueTrackRow";
 import { createQueueDrag } from "../../../src/components/queue-drag";
-function Demo(props: { count: number; covers?: boolean }) {
+function Demo(props: { count: number; covers?: boolean; download?: boolean }) {
   const [rows, setRows] = createSignal(
       Array.from({ length: props.count }, (_, index) => ({
         index,
@@ -16,6 +16,8 @@ function Demo(props: { count: number; covers?: boolean }) {
       })),
     ),
     [starts, setStarts] = createSignal(0),
+    [downloads, setDownloads] = createSignal(0),
+    [downloading, setDownloading] = createSignal(false),
     [artworkMounts, setArtworkMounts] = createSignal(0),
     [liveArtwork, setLiveArtwork] = createSignal(0),
     [alternateArtwork, setAlternateArtwork] = createSignal(false);
@@ -58,7 +60,19 @@ function Demo(props: { count: number; covers?: boolean }) {
                 drag={drag}
                 onGrip={() => () => {}}
                 onPlay={() => setStarts(starts() + 1)}
-                words={{ available: true, busy: false, disabled: true, onAction: () => {} }}
+                words={{
+                  get available() {
+                    return !props.download;
+                  },
+                  get busy() {
+                    return downloading();
+                  },
+                  disabled: !props.download,
+                  onAction: () => {
+                    setDownloads((value) => value + 1);
+                    setDownloading(true);
+                  },
+                }}
                 removeDisabled={false}
                 onRemove={() => setRows(rows().filter((item) => item.index !== row.index))}
               />
@@ -66,6 +80,7 @@ function Demo(props: { count: number; covers?: boolean }) {
           </For>
         </ol>
         <output aria-label="Starts">{starts()}</output>
+        <output aria-label="Downloads">{downloads()}</output>
         <output aria-label="Artwork mounts">{artworkMounts()}</output>
         <Show when={props.covers}>
           <output aria-label="Active artwork">{liveArtwork()}</output>
@@ -235,5 +250,19 @@ export const StableArtwork: Story = {
       canvas.getByRole("button", { name: "Retirer Northern Lights de la liste de lecture" }),
     );
     expect(canvas.getByLabelText("Active artwork")).toHaveTextContent("1");
+  },
+};
+
+export const DownloadDoesNotPlay: Story = {
+  args: { count: 1, download: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole("button", { name: "Télécharger les paroles" });
+    await userEvent.click(button.querySelector("path")!);
+    expect(canvas.getByLabelText("Downloads")).toHaveTextContent("1");
+    expect(canvas.getByLabelText("Starts")).toHaveTextContent("0");
+    expect(
+      canvas.getByRole("button", { name: "Arrêter le téléchargement des paroles" }),
+    ).toBeEnabled();
   },
 };

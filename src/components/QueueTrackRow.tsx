@@ -19,7 +19,13 @@ export function QueueTrackRow(props: {
   removeDisabled: boolean;
   removeReason?: string | undefined;
   onRemove: () => void;
-  words: { available: boolean; busy: boolean; disabled: boolean; onAction: () => void };
+  words: {
+    synced?: boolean | undefined;
+    available: boolean;
+    busy: boolean;
+    disabled: boolean;
+    onAction: () => void;
+  };
 }) {
   // JSX-valued props are getters; resolve once so layout probes do not mount hidden artwork copies.
   const cover = children(() => props.cover);

@@ -5,7 +5,7 @@ import { useLibrary } from "../library/context";
 /** Explicit launch, force option and cancellable server status. */
 export function JobControls(props: {
   release: string;
-  coverage?: { tracks: number; current: number; spectra: number };
+  coverage?: { tracks: number; current: number; spectra: number } | undefined;
 }) {
   const library = useLibrary(),
     [force, setForce] = createSignal(false),

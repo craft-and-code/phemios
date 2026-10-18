@@ -287,7 +287,10 @@ export function CountryGlobe(props: {
           {hover() ? displayCountry(hover()!.code, hover()!.name) : t("Explorez les pays")}
         </p>
         <details class="globe-help">
-          <summary>{t("Comment utiliser le globe")}</summary>
+          <summary>
+            <Icon name="chevron-right" />
+            <span>{t("Comment utiliser le globe")}</span>
+          </summary>
           <p>
             {t(
               "Tournez le globe, zoomez et choisissez un pays. Les pays représentés dans la bibliothèque sont illuminés.",

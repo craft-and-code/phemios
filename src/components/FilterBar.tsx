@@ -25,58 +25,64 @@ export function FilterBar(props: {
   return (
     <div class="filters">
       <div class="filter-options">
-        <div class="rail-switches" role="group" aria-label={t("Réglettes visibles")}>
-          <button
-            class="icon-button"
-            title={t("Réglette des années")}
-            aria-label={t("Réglette des années")}
-            aria-pressed={["years", "both"].includes(props.value.mode)}
-            onClick={() => update({ mode: toggleRail(props.value.mode, "years") })}
-          >
-            <Icon name="calendar" />
-          </button>
-          <button
-            class="icon-button"
-            title={t("Réglette alphabétique")}
-            aria-label={t("Réglette alphabétique")}
-            aria-pressed={["alphabet", "both"].includes(props.value.mode)}
-            onClick={() => update({ mode: toggleRail(props.value.mode, "alphabet") })}
-          >
-            <Icon name="alphabet" />
-          </button>
+        <div class="filter-leading">
+          <div class="rail-switches" role="group" aria-label={t("Réglettes visibles")}>
+            <button
+              class="icon-button"
+              title={t("Réglette des années")}
+              aria-label={t("Réglette des années")}
+              aria-pressed={["years", "both"].includes(props.value.mode)}
+              onClick={() => update({ mode: toggleRail(props.value.mode, "years") })}
+            >
+              <Icon name="calendar" />
+            </button>
+            <button
+              class="icon-button"
+              title={t("Réglette alphabétique")}
+              aria-label={t("Réglette alphabétique")}
+              aria-pressed={["alphabet", "both"].includes(props.value.mode)}
+              onClick={() => update({ mode: toggleRail(props.value.mode, "alphabet") })}
+            >
+              <Icon name="alphabet" />
+            </button>
+          </div>
+          <span class="filter-context" title={props.context}>
+            {props.context}
+          </span>
         </div>
         <Show when={props.value.mode === "none"}>
           <ResultCount value={props.resultCount} />
         </Show>
-        <span class="filter-context">{props.context}</span>
-        <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
-          <label title={t("Inclure les albums dont l’année de sortie n’est pas renseignée.")}>
-            <input
-              type="checkbox"
-              checked={props.value.includeUnknownYear}
-              onChange={(e) => update({ includeUnknownYear: e.currentTarget.checked })}
-            />
-            {t("Inclure les dates inconnues")}{" "}
-          </label>
-        </Show>
-        <button
-          type="button"
-          class="quiet"
-          onClick={() =>
-            update({
-              recentOnly: false,
-              years: props.yearDomain,
-              alphabet: [0, 26],
-              includeUnknownYear: true,
-              query: "",
-              countries: [],
-              genre: undefined,
-              genres: [],
-            })
-          }
-        >
-          {t("Tout afficher")}{" "}
-        </button>
+        <div class="filter-details">
+          <Show when={["years", "both"].includes(props.value.mode) && props.hasUnknownYear}>
+            <label title={t("Inclure les albums dont l’année de sortie n’est pas renseignée.")}>
+              <input
+                type="checkbox"
+                checked={props.value.includeUnknownYear}
+                onChange={(e) => update({ includeUnknownYear: e.currentTarget.checked })}
+              />
+              {t("Inclure les dates inconnues")}{" "}
+            </label>
+          </Show>
+          <button
+            type="button"
+            class="quiet"
+            onClick={() =>
+              update({
+                recentOnly: false,
+                years: props.yearDomain,
+                alphabet: [0, 26],
+                includeUnknownYear: true,
+                query: "",
+                countries: [],
+                genre: undefined,
+                genres: [],
+              })
+            }
+          >
+            {t("Tout afficher")}{" "}
+          </button>
+        </div>
       </div>
       <Show when={["years", "both"].includes(props.value.mode)}>
         <RangeRail

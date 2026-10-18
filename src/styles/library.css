@@ -1776,3 +1776,17 @@ button.metadata-link:hover {
   overflow: auto;
   white-space: pre-wrap;
 }
+
+.album-track-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.album-track-summary h2 {
+  margin: 0;
+}
+.track-duration-total {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

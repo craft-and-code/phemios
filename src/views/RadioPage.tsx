@@ -183,6 +183,19 @@ export function RadioPage(props: { query: string }) {
             if (isNative()) void search(0, true);
           }}
         />
+        <Show when={library.session()}>
+          <RadioFavourites
+            favourites={favourites}
+            play={(station) => void radio.start(station)}
+            busy={radio.status() === "connecting"}
+            writable={writable()}
+          />
+        </Show>
+        <Show when={writable() && !favourites.stations().length && legacy().length}>
+          <button onClick={() => void favourites.importDevice(legacy())}>
+            {t("Importer les radios favorites de cet appareil")}
+          </button>
+        </Show>
       </aside>
       <div class="radio-results">
         <p class="intro">{t("Explorez les radios Internet du monde entier.")}</p>
@@ -198,19 +211,6 @@ export function RadioPage(props: { query: string }) {
           busy={busy()}
           available={isNative()}
         />
-        <Show when={library.session()}>
-          <RadioFavourites
-            favourites={favourites}
-            play={(station) => void radio.start(station)}
-            busy={radio.status() === "connecting"}
-            writable={writable()}
-          />
-        </Show>
-        <Show when={writable() && !favourites.stations().length && legacy().length}>
-          <button onClick={() => void favourites.importDevice(legacy())}>
-            {t("Importer les radios favorites de cet appareil")}
-          </button>
-        </Show>
 
         <Show when={!isNative()}>
           <p class="notice">
@@ -218,10 +218,22 @@ export function RadioPage(props: { query: string }) {
           </p>
         </Show>
         <Show when={preferenceError()}>
-          <Feedback error message={preferenceError()} onClose={() => setPreferenceError("")} />
+          <Feedback
+            error
+            durationMs={5000}
+            pauseOnInteraction={false}
+            message={preferenceError()}
+            onClose={() => setPreferenceError("")}
+          />
         </Show>
         <Show when={error()}>
-          <Feedback error message={error()} onClose={directory.clearError} />
+          <Feedback
+            error
+            durationMs={5000}
+            pauseOnInteraction={false}
+            message={error()}
+            onClose={directory.clearError}
+          />
         </Show>
         <Show when={count()}>
           <p class="muted">
@@ -232,7 +244,7 @@ export function RadioPage(props: { query: string }) {
           </p>
         </Show>
         <Show when={countError()}>
-          <small>{countError()}</small>
+          <Feedback error durationMs={5000} pauseOnInteraction={false} message={countError()} />
         </Show>
         <Show when={stations().length}>
           <div class="radio-tuner">

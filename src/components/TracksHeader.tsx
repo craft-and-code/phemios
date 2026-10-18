@@ -1,3 +1,4 @@
+import type { JSX } from "solid-js";
 import { t } from "../i18n";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { RefreshButton } from "./RefreshButton";
@@ -5,6 +6,8 @@ import { StickyHeader } from "./StickyHeader";
 /** Page size and read admission stay above the independent track scroller. */
 export function TracksHeader(props: {
   total: number;
+  children?: JSX.Element;
+  filters?: JSX.Element;
   offset: number;
   size: number;
   sizes: readonly number[];
@@ -38,7 +41,9 @@ export function TracksHeader(props: {
           {props.total} {t("piste")} · {props.total ? props.offset + 1 : 0}–
           {Math.min(props.offset + props.size, props.total)}
         </span>
+        {props.children}
       </div>
+      {props.filters}
     </StickyHeader>
   );
 }

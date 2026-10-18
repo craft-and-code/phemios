@@ -204,6 +204,7 @@ main > .playback-page.queue-open {
   margin: 0;
   display: block;
   will-change: transform;
+  opacity: 0.65;
 }
 .queue-drag-preview.playback-page .playback-queue {
   position: static;

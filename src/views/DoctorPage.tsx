@@ -43,7 +43,7 @@ export function DoctorPage() {
   );
   return (
     <section class="page result-page doctor-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="doctor-toolbar">
           <div class="choices" aria-label={t("Sévérité des diagnostics")}>
             <button

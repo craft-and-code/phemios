@@ -1,3 +1,4 @@
+import { createAlbumLyrics } from "./album-lyrics";
 import { createParentalAccess } from "./parental-access";
 import { createParentalMedia } from "./parental-media";
 import { createBackgroundPriority } from "./background-priority";
@@ -51,6 +52,7 @@ import type { Artist, Album } from "./types";
 interface Library {
   parental: ReturnType<typeof createParentalAccess>;
   queueLyrics: ReturnType<typeof createQueueLyrics>;
+  albumLyrics: ReturnType<typeof createAlbumLyrics>;
   savedSettings: ReturnType<typeof createSavedSettings>;
   missing: ReturnType<typeof createMissingCatalog>;
   missingArtwork: {
@@ -340,6 +342,7 @@ export function LibraryProvider(props: ParentProps) {
       ["playing", "connecting"].includes(podcast.status()),
   });
   const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
+  const albumLyrics = createAlbumLyrics({ sessionFor, tasks });
   const pending = new Map<string, Promise<void>>(),
     resident = new Map<string, HTMLImageElement>();
   let generation = 0;
@@ -633,6 +636,7 @@ export function LibraryProvider(props: ParentProps) {
     parental,
     savedSettings,
     queueLyrics,
+    albumLyrics,
     missing,
     missingArtwork: {
       image: (row) => {

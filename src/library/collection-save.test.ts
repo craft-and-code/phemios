@@ -133,3 +133,12 @@ it("refuses a colliding new collection without overwriting its existing rule", a
   expect(await createSavedCollection("Road", "genre:Rock", () => false, "local")).toBe(false);
   expect(requestAede).not.toHaveBeenCalled();
 });
+
+it("refuses track-filter collections on older engines before any write", async () => {
+  vi.mocked(requestAede).mockReset();
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  await expect(
+    saveBrowsingCollection("Tracks", 'browse-v1:{"view":"tracks"}', () => true),
+  ).rejects.toThrow("filtres de pistes");
+  expect(vi.mocked(requestAede).mock.calls.some((call) => call[2] === "PUT")).toBe(false);
+});

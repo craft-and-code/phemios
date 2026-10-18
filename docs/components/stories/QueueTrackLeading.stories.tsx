@@ -65,3 +65,19 @@ export const Downloading: Story = {
       throw Error("Stopped action retained its loader");
   },
 };
+
+export const Timed: Story = {
+  args: { available: true, synced: true },
+  play: async ({ canvasElement }) => {
+    const marker = canvasElement.querySelector('[aria-label="Paroles synchronisées"]');
+    if (!marker || !marker.querySelector("svg path")?.getAttribute("d")?.includes("M17 11v4"))
+      throw new Error("Timed lyric clock is absent");
+  },
+};
+export const Plain: Story = {
+  args: { available: true, synced: false },
+  play: async ({ canvasElement }) => {
+    if (!canvasElement.querySelector('[aria-label="Paroles non synchronisées"]'))
+      throw new Error("Plain lyrics are not distinguished");
+  },
+};

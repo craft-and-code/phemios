@@ -54,7 +54,7 @@ it("starts Artists with both rails hidden while retaining explicit choices on re
     expect(filters.value().mode).toBe("none");
     filters.set({ ...filters.value(), mode: "years" });
     setSection("albums");
-    expect(filters.value().mode).toBe("years");
+    expect(filters.value().mode).toBe("none");
     setSection("artists");
     expect(filters.value().mode).toBe("years");
     dispose();
@@ -78,6 +78,19 @@ it("keeps the recent-only flag inside Albums and clears it independently of othe
       recentOnly: false,
       query: "live",
     });
+    dispose();
+  });
+});
+
+it("starts Albums without rails and keeps an explicit year selection visible", () => {
+  createRoot((dispose) => {
+    const filters = createScopedFilters(
+      () => "albums",
+      () => [1970, 2026],
+    );
+    expect(filters.value().mode).toBe("none");
+    filters.select("albums", { mode: "years", years: [2016, 2016] });
+    expect(filters.value()).toMatchObject({ mode: "years", years: [2016, 2016] });
     dispose();
   });
 });

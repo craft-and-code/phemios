@@ -100,7 +100,7 @@ export function AnalysisPage(props: { query: string }) {
       : undefined;
   return (
     <section class="page result-page analysis-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="page-heading">
           <span>{t("Résultats enregistrés · état du dernier catalogue")}</span>
           <RefreshButton

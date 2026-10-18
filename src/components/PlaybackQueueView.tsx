@@ -6,7 +6,10 @@ import { StickyHeader } from "./StickyHeader";
 /** Drawer and dedicated workspace share controls and occurrence rows, never queue ownership. */
 export function PlaybackQueueView(props: {
   standalone?: boolean | undefined;
+  /** Only the dedicated workspace header follows connection visibility; drawer controls stay available. */
+  headerVisible?: boolean | undefined;
   count: number;
+  duration?: string;
   actions: JSX.Element;
   search?: JSX.Element;
   notices?: JSX.Element;
@@ -14,12 +17,11 @@ export function PlaybackQueueView(props: {
   navigation?: JSX.Element;
   onClose?: (() => void) | undefined;
 }) {
+  const summary = () =>
+    `${t("{0} pistes", props.count)}${props.duration ? ` · ${props.duration}` : ""}`;
   const heading = () => (
     <div class="page-heading">
-      <Show
-        when={!props.standalone}
-        fallback={<span class="result-count">{t("{0} pistes", props.count)}</span>}
-      >
+      <Show when={!props.standalone} fallback={<span class="result-count">{summary()}</span>}>
         <h2>{t("Liste de lecture")}</h2>
       </Show>
       {props.navigation}
@@ -45,17 +47,17 @@ export function PlaybackQueueView(props: {
         fallback={
           <>
             {heading()}
-            <small class="muted queue-count">{t("{0} pistes", props.count)}</small>
+            <small class="muted queue-count">{summary()}</small>
             <div class="queue-actions">{props.actions}</div>
           </>
         }
       >
-        <StickyHeader class="queue-workspace-header">
+        <StickyHeader class="queue-workspace-header" visible={props.headerVisible}>
           {heading()}
           <div class="queue-actions">{props.actions}</div>
         </StickyHeader>
       </Show>
-      {props.search}
+      <Show when={!props.standalone || props.headerVisible !== false}>{props.search}</Show>
       {props.notices}
       <Show
         when={props.count}

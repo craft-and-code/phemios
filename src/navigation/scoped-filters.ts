@@ -9,7 +9,7 @@ export function createScopedFilters(section: Accessor<Section>, domain: Accessor
     Partial<Record<Section, { value: Filters; domain: Interval }>>
   >({});
   const defaults = (scope: Section): Filters => ({
-    mode: ["countries", "artists"].includes(scope) ? "none" : "years",
+    mode: ["countries", "artists", "albums"].includes(scope) ? "none" : "years",
     years: domain(),
     alphabet: [0, 26],
     includeUnknownYear: true,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, within, waitFor } from "storybook/test";
 import { Feedback } from "../../../src/components/Feedback";
 import { t } from "../../../src/i18n";
 
@@ -31,5 +31,25 @@ export const Dismissible: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: t("Masquer la notification") }));
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
+  },
+};
+
+export const RadioTimeout: Story = {
+  args: {
+    message: "La connexion à Radio Browser a expiré. Réessayez.",
+    durationMs: 5000,
+    pauseOnInteraction: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const alert = canvas.getByRole("alert");
+    const close = canvas.getByRole("button", { name: t("Masquer la notification") });
+    expect(close.getBoundingClientRect().right).toBeLessThanOrEqual(
+      alert.getBoundingClientRect().right,
+    );
+    await userEvent.hover(alert);
+    await waitFor(() => expect(canvas.queryByRole("alert")).not.toBeInTheDocument(), {
+      timeout: 6000,
+    });
   },
 };

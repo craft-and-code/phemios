@@ -224,7 +224,7 @@ export function MoodsPage() {
   }
   return (
     <section class="page result-page moods-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="page-heading">
           <ResultCount
             value={selected() ? (current()?.total ?? 0) : (current()?.moods.length ?? 0)}

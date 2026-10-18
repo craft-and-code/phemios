@@ -1,15 +1,9 @@
+import { UntimedLyricsControls } from "../components/UntimedLyricsControls";
+import { createUntimedLyrics } from "../visualizer/untimed-lyrics";
+import { LyricsIcon } from "../components/LyricsIcon";
 import { interfacePreferences } from "../library/account-preferences";
 import { lyricAct } from "../visualizer/lyric-treatment";
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  Show,
-  onMount,
-  onCleanup,
-  on,
-} from "solid-js";
+import { createMemo, createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createTrackLyrics } from "../library/track-lyrics";
@@ -81,26 +75,15 @@ export function PlaybackPage() {
     detail: true,
   });
   const lyrics = words.lyrics;
-  const [phrase, setPhrase] = createSignal(0);
+  const manual = createUntimedLyrics(() => player.current()?.reference, lyrics),
+    phrase = manual.index,
+    plain = manual.lines;
   const cueTimes = createMemo(() =>
     [
       ...new Set(
         lyrics()?.lines.flatMap((line) => (line.at_ms === null ? [] : [line.at_ms])) ?? [],
       ),
     ].sort((a, b) => a - b),
-  );
-  createEffect(
-    on(
-      () => player.current()?.reference,
-      () => setPhrase(0),
-    ),
-  );
-  const plain = createMemo(() =>
-    lyrics()?.synced === false
-      ? lyrics()!
-          .lines.map((row) => row.text)
-          .filter((text) => text.trim())
-      : [],
   );
   const active = () =>
     !!player.current() && ["playing", "paused", "connecting"].includes(player.state().status);
@@ -116,7 +99,7 @@ export function PlaybackPage() {
   }
   return (
     <section class="playback-page" classList={{ "queue-open": queue() }}>
-      <Show when={!queue() && player.queue().length > 0}>
+      <Show when={!queue()}>
         <button
           class="icon-button quiet playback-queue-toggle"
           aria-label={t("Afficher ou masquer la liste de lecture")}
@@ -190,7 +173,7 @@ export function PlaybackPage() {
                 aria-pressed={ordinaryLyrics()}
                 onClick={() => setOrdinaryLyrics(!ordinaryLyrics())}
               >
-                <Icon name="lyrics" />
+                <LyricsIcon synced={lyrics()?.synced} />
               </button>
               <button
                 class="icon-button quiet"
@@ -260,27 +243,12 @@ export function PlaybackPage() {
               />
             </Show>
             <Show when={plain().length && playbackWords(scene(), ordinaryLyrics())}>
-              <div class="untimed-lyrics-controls">
-                <button
-                  class="icon-button quiet"
-                  disabled={phrase() === 0}
-                  aria-label={t("Phrase précédente")}
-                  onClick={() => setPhrase((value) => value - 1)}
-                >
-                  <Icon name="previous" />
-                </button>
-                <small>
-                  {t("Paroles non synchronisées")} · {phrase() + 1}/{plain().length}
-                </small>
-                <button
-                  class="icon-button quiet"
-                  disabled={phrase() + 1 >= plain().length}
-                  aria-label={t("Phrase suivante")}
-                  onClick={() => setPhrase((value) => value + 1)}
-                >
-                  <Icon name="next" />
-                </button>
-              </div>
+              <UntimedLyricsControls
+                index={phrase()}
+                total={plain().length}
+                previous={manual.previous}
+                next={manual.next}
+              />
             </Show>
             <PlaybackLyrics
               hidden={!playbackWords(scene(), ordinaryLyrics())}

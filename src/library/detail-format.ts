@@ -18,9 +18,10 @@ export function trackDuration(ms: number | null): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-/** Unknown collection aggregates stay blank; confirmed milliseconds retain the existing truncated clock. */
+/** Unknown aggregates stay blank; complete hours use H:MM:SS without wrapping at 24 hours. */
 export function collectionDuration(ms: number | null | undefined): string {
   if (ms == null || !Number.isSafeInteger(ms) || ms < 0) return "";
   const seconds = Math.floor(ms / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const clock = `${Math.floor(seconds / 60) % 60}:${String(seconds % 60).padStart(2, "0")}`;
+  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}:${clock.padStart(5, "0")}` : clock;
 }

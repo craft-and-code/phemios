@@ -125,7 +125,7 @@ export function App() {
   const [selectedTag, setSelectedTag] = createSignal<readonly string[]>([]);
   const [tagOffset, setTagOffset] = createSignal(0);
   const [reverse, setReverse] = createSignal(false);
-  const [coverFlow, setCoverFlow] = createSignal(false);
+  const [coverFlow, setCoverFlow] = createSignal(true);
   const coverPosition = createCoverPosition();
   const [compact, setCompact] = createSignal(false);
   const current = navigation.route,
@@ -202,10 +202,16 @@ export function App() {
               visible: button.getClientRects().length > 0,
             })),
           );
+          const keyboardTransport = footerTransport({
+            queueView: true,
+            queued: player.queue().length > 0,
+            podcast: !!library.podcast.episode(),
+            radio: !!library.radio.station(),
+          });
           const media =
-            footer() === "podcast"
+            keyboardTransport === "podcast"
               ? library.podcast
-              : footer() === "radio"
+              : keyboardTransport === "radio"
                 ? library.radio
                 : undefined;
           if (media?.status() === "playing") {
@@ -216,7 +222,7 @@ export function App() {
             void media.resume();
             return;
           }
-          if (isQueueWorkspace(current()) && player.queue().length) {
+          if (player.queue().length) {
             void player.togglePlayback();
             return;
           }
@@ -655,6 +661,17 @@ export function App() {
                       >
                         <TracksPage
                           query={filters().query}
+                          filters={filters()}
+                          onFilters={(value) => {
+                            setFilters(value);
+                            trackPaging.setOffset(0);
+                          }}
+                          reverse={reverse()}
+                          onReverse={() => {
+                            setReverse(!reverse());
+                            trackPaging.setOffset(0);
+                          }}
+                          yearDomain={yearDomain()}
                           size={browsing.value().trackPageSize}
                           setSize={(size) => browsing.update({ trackPageSize: size })}
                           preferenceError={browsing.error()}

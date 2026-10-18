@@ -1,3 +1,13 @@
+import { FilterBar } from "../components/FilterBar";
+import { Icon } from "../components/Icon";
+import { SelectionCollection } from "../components/SelectionCollection";
+import {
+  trackBrowsePage,
+  trackBrowseRows,
+  trackCollectionExpression,
+} from "../library/track-browsing";
+import { initialIndex } from "../library/filtering";
+import type { Filters, Interval } from "../library/types";
 import { Feedback } from "../components/Feedback";
 import { restoreTrackCache } from "../library/track-recovery";
 import type { SourceId } from "../library/sources";
@@ -19,6 +29,11 @@ import { TrackResults } from "../components/TrackResults";
 /** All catalog placements, including albumless tracks, use bounded server search pages. */
 export function TracksPage(props: {
   query: string;
+  filters: Filters;
+  onFilters: (value: Filters) => void;
+  reverse: boolean;
+  onReverse: () => void;
+  yearDomain: Interval;
   size: number;
   setSize: (size: number) => void;
   preferenceError: string;
@@ -50,13 +65,50 @@ export function TracksPage(props: {
   const reader = createMemo(() => {
     revision();
     const choices = sources(),
-      query = props.query;
+      query = props.query,
+      filters = { ...props.filters, query },
+      reverse = props.reverse;
+    const restricted =
+      reverse ||
+      (["years", "both"].includes(filters.mode) &&
+        (filters.years[0] !== props.yearDomain[0] ||
+          filters.years[1] !== props.yearDomain[1] ||
+          !filters.includeUnknownYear)) ||
+      (["alphabet", "both"].includes(filters.mode) &&
+        (filters.alphabet[0] !== 0 || filters.alphabet[1] !== 26));
     if (!choices.length) return undefined;
     const cached = new Set<string>();
+    const capabilities = new Map<SourceId, Promise<boolean>>();
     const read = combinedTrackReader(choices, async (source, at) => {
       const choice = choices.find((row) => row.source === source)!;
       if (choice.online) {
         try {
+          if (restricted) {
+            if (!capabilities.has(source))
+              capabilities.set(
+                source,
+                requestAede<{ capabilities?: string[] }>(
+                  "/api/v1/status",
+                  {},
+                  "GET",
+                  null,
+                  source,
+                ).then((status) => status.capabilities?.includes("dynamic_browse_tracks") === true),
+              );
+            if (!(await capabilities.get(source)))
+              throw new Error(t("Mettez à jour puis redémarrez Aède pour les filtres de pistes."));
+            return await requestAede(
+              "/api/me/v1/search",
+              {
+                expression: trackCollectionExpression(filters, reverse),
+                offset: String(at),
+                limit: "50",
+              },
+              "GET",
+              null,
+              source,
+            );
+          }
           return await requestAede(
             "/api/v1/presentation/tracks",
             { offset: String(at), limit: "50", q: query },
@@ -69,7 +121,13 @@ export function TracksPage(props: {
         }
       }
       cached.add(source);
-      return cachedTrackPage(choice.snapshot, query, at);
+      if (!choice.snapshot?.tracks) return cachedTrackPage(choice.snapshot, query, at);
+      return {
+        ...trackBrowsePage(choice.snapshot.tracks, choice.snapshot.albums, filters, reverse, at),
+        offset: at,
+        limit: 50,
+        scanned_at: choice.snapshot.scannedAt,
+      };
     });
     return async (offset: number, size: number) => ({
       ...(await read(offset, size)),
@@ -81,9 +139,48 @@ export function TracksPage(props: {
     (key) => key.read(key.offset, key.size),
   );
   const page = read.current;
+  const histogram = createMemo(() => {
+    const years = new Map<number, number>(),
+      letters = new Map<number, number>();
+    for (const choice of sources()) {
+      const tracks = choice.snapshot?.tracks ?? [],
+        albums = choice.snapshot?.albums ?? [];
+      const dated = new Map(albums.map((album) => [album.reference, album.year]));
+      for (const row of trackBrowseRows(tracks, albums, {
+        ...props.filters,
+        mode: ["alphabet", "both"].includes(props.filters.mode) ? "alphabet" : "none",
+      })) {
+        const year = dated.get(row.release ?? "");
+        if (year !== null && year !== undefined) years.set(year, (years.get(year) ?? 0) + 1);
+      }
+      for (const row of trackBrowseRows(tracks, albums, {
+        ...props.filters,
+        mode: ["years", "both"].includes(props.filters.mode) ? "years" : "none",
+      })) {
+        const index = initialIndex(row.title);
+        letters.set(index, (letters.get(index) ?? 0) + 1);
+      }
+    }
+    return {
+      years: [...years].map(([value, count]) => ({ value, count })),
+      alphabet: [...letters].map(([value, count]) => ({ value, count })),
+    };
+  });
   return (
     <section class="page result-page tracks-page">
       <TracksHeader
+        filters={
+          <FilterBar
+            yearDomain={props.yearDomain}
+            value={props.filters}
+            setValue={props.onFilters}
+            context={t("Initiale de la piste · année de l’album")}
+            histogram={histogram()}
+            countLabel={t("pistes")}
+            resultCount={page()?.total ?? 0}
+            hasUnknownYear
+          />
+        }
         total={page()?.total ?? 0}
         offset={offset()}
         size={props.size}
@@ -100,7 +197,24 @@ export function TracksPage(props: {
           if (missing) setRetry({ source: missing.source });
           else setRevision((value) => value + 1);
         }}
-      />
+      >
+        <div class="catalog-actions">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label={t("Inverser l’ordre des pistes")}
+            title={t("Inverser l’ordre des pistes")}
+            aria-pressed={props.reverse}
+            onClick={props.onReverse}
+          >
+            <Icon name="sort" />
+          </button>
+          <SelectionCollection
+            expression={trackCollectionExpression(props.filters, props.reverse)}
+            disabled={!page()?.total}
+          />
+        </div>
+      </TracksHeader>
       <div class="tracks-results">
         <Show when={props.preferenceError}>
           <p role="alert">{props.preferenceError}</p>

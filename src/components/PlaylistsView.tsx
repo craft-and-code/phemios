@@ -1,7 +1,7 @@
 import { createSignal, Show, type JSX } from "solid-js";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
-import { ActionButton } from "./ActionButton";
+
 /** File browsing is secondary; switching presentations never resets or owns the session queue. */
 export function PlaylistsView(props: {
   queue: (navigation: JSX.Element) => JSX.Element;
@@ -12,14 +12,15 @@ export function PlaylistsView(props: {
     <Show
       when={files()}
       fallback={props.queue(
-        <ActionButton
-          class="playlist-files-toggle"
+        <button
+          type="button"
+          class="metadata-link playlist-files-toggle"
           aria-label={t("Parcourir les fichiers M3U")}
           title={t("Parcourir les fichiers M3U")}
           onClick={() => setFiles(true)}
         >
-          {t("Parcourir les fichiers M3U")}
-        </ActionButton>,
+          {t("Parcourir les fichiers M3U")} <Icon name="forward" />
+        </button>,
       )}
     >
       {props.files(

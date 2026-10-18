@@ -1,3 +1,4 @@
+import { LyricsIcon } from "./LyricsIcon";
 import { Show } from "solid-js";
 import { t } from "../i18n";
 import { ActivityGlyph } from "./ActivityGlyph";
@@ -7,6 +8,7 @@ export function QueueTrackLeading(props: {
   number: number;
   albumTotal: number;
   available: boolean;
+  synced?: boolean | undefined;
   busy: boolean;
   disabled: boolean;
   onAction: () => void;
@@ -26,7 +28,11 @@ export function QueueTrackLeading(props: {
             title={label()}
             aria-label={label()}
             disabled={props.disabled}
-            onClick={props.onAction}
+            onClick={(event) => {
+              // Swapping the icon for activity can detach the original SVG target before row delegation.
+              event.stopPropagation();
+              props.onAction();
+            }}
           >
             <Show when={props.busy} fallback={<Icon name="lyrics-download" />}>
               <ActivityGlyph cancellable />
@@ -36,11 +42,23 @@ export function QueueTrackLeading(props: {
       >
         <span
           class="queue-lyrics-track queue-lyrics-retained"
-          title={t("Paroles disponibles")}
+          title={
+            props.synced === true
+              ? t("Paroles synchronisées")
+              : props.synced === false
+                ? t("Paroles non synchronisées")
+                : t("Paroles disponibles")
+          }
           role="img"
-          aria-label={t("Paroles disponibles")}
+          aria-label={
+            props.synced === true
+              ? t("Paroles synchronisées")
+              : props.synced === false
+                ? t("Paroles non synchronisées")
+                : t("Paroles disponibles")
+          }
         >
-          <Icon name="lyrics" />
+          <LyricsIcon synced={props.synced} />
         </span>
       </Show>
     </div>

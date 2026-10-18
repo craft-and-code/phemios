@@ -15,3 +15,9 @@ it("leaves unknown collection duration blank without hiding a confirmed zero", (
   expect(collectionDuration(0)).toBe("0:00");
   expect(collectionDuration(125600)).toBe("2:05");
 });
+
+it("shows hours in long collection and album totals", () => {
+  expect(collectionDuration((812 * 60 + 17) * 1000)).toBe("13:32:17");
+  expect(collectionDuration(3_600_000)).toBe("1:00:00");
+  expect(collectionDuration(86_400_000)).toBe("24:00:00");
+});

@@ -9,14 +9,17 @@ export function Feedback(props: {
   onClose?: () => void;
   class?: string;
   persistent?: boolean;
+  durationMs?: number;
+  pauseOnInteraction?: boolean;
 }) {
   const state = createFeedback(
     () => props.message,
-    () => (props.error ? 15000 : 10000),
+    () => props.durationMs ?? (props.error ? 15000 : 10000),
   );
   let hovered = false,
     focused = false;
-  const pause = () => state.pause(!!props.persistent || hovered || focused);
+  const pause = () =>
+    state.pause(!!props.persistent || (props.pauseOnInteraction !== false && (hovered || focused)));
   createEffect(() => {
     void props.message;
     pause();

@@ -93,7 +93,7 @@ export function PodcastsPage(props: { query: string }) {
       <Show when={subscriptions.loading()}>
         <PageLoader />
       </Show>
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <PodcastSubscribeForm
           url={url()}
           busy={busy() === "subscribe"}

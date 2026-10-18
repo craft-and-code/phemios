@@ -5,7 +5,10 @@ import type { Station } from "../radio/directory";
 import type { createAccountRadioFavourites } from "../radio/account-favourites";
 /** Saved stations play by UUID without searching the directory first. */
 export function RadioFavourites(props: {
-  favourites: ReturnType<typeof createAccountRadioFavourites>;
+  favourites: Pick<
+    ReturnType<typeof createAccountRadioFavourites>,
+    "error" | "stations" | "toggle"
+  >;
   play: (station: Station) => void;
   busy: boolean;
   writable: boolean;

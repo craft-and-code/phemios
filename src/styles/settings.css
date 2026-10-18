@@ -744,3 +744,21 @@
 .product-version strong {
   font-weight: inherit;
 }
+
+.settings-credits {
+  display: grid;
+  gap: var(--control-gap);
+}
+.settings-credits details {
+  margin-top: 12px;
+}
+.settings-credits summary {
+  cursor: pointer;
+}
+.settings-credits .product-version {
+  min-width: 0;
+  gap: 12px;
+}
+.settings-credits .product-version a {
+  overflow-wrap: anywhere;
+}

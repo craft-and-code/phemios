@@ -8,7 +8,7 @@ import { createQueueDrag } from "../../../src/components/queue-drag";
 import { Icon } from "../../../src/components/Icon";
 import { StickyHeader } from "../../../src/components/StickyHeader";
 /** Fictional metadata replaces IO; both presentations observe one owner outside the switched view. */
-function Demo(props: { count: number }) {
+function Demo(props: { count: number; connected?: boolean }) {
   const [order, setOrder] = createSignal(Array.from({ length: props.count }, (_, index) => index)),
     [starts, setStarts] = createSignal(0);
   const drag = createQueueDrag({
@@ -62,7 +62,9 @@ function Demo(props: { count: number }) {
           <section class="playback-page playlist-page">
             <PlaybackQueueView
               standalone
+              headerVisible={props.connected}
               count={order().length}
+              duration={`${order().length}:00`}
               navigation={navigation}
               actions={
                 <>
@@ -128,12 +130,13 @@ export const EmptyAndBuild: Story = {
     expect(canvas.getByLabelText("Starts")).toHaveTextContent("0");
     const files = canvas.getByRole("button", { name: "Parcourir les fichiers M3U" });
     expect(files).toHaveTextContent("Parcourir les fichiers M3U");
-    expect(files.querySelector("svg")).toBeNull();
+    expect(files.querySelector("svg path")?.getAttribute("d")).toBe("M5 12h14m-7-7 7 7-7 7");
+    expect(files.classList.contains("metadata-link")).toBe(true);
     await userEvent.click(files);
     expect(canvas.getByText("Existing list.m3u")).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Revenir à la liste de lecture" }));
     expect(canvas.getByText("Track 1", { exact: true })).toBeVisible();
-    expect(canvas.getByText("1 pistes")).toBeVisible();
+    expect(canvas.getByText("1 pistes · 1:00")).toBeVisible();
     expect(canvas.getByLabelText("Starts")).toHaveTextContent("0");
     await userEvent.click(canvas.getByRole("button", { name: "Vider la liste" }));
     expect(canvas.getByText("La liste de lecture est vide.")).toBeVisible();
@@ -182,5 +185,38 @@ export const CoverPlacement: Story = {
     await userEvent.click(rows[0]!.querySelector(".queue-remove")!);
     expect(canvas.queryByText("Track 1", { exact: true })).toBeNull();
     expect(canvas.getByLabelText("Starts")).toHaveTextContent("0");
+  },
+};
+
+export const Disconnected: Story = {
+  args: { count: 0, connected: false },
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector(".standalone-queue > header")!;
+    expect(header.getBoundingClientRect().height).toBe(0);
+    expect(
+      within(canvasElement).queryByRole("button", { name: "Ajouter une piste" }),
+    ).not.toBeInTheDocument();
+    expect(within(canvasElement).getByText("La liste de lecture est vide.")).toBeVisible();
+  },
+};
+export const DisconnectedDrawer: Story = {
+  render: () => (
+    <section class="playback-page" style={{ height: "400px" }}>
+      <PlaybackQueueView
+        count={0}
+        headerVisible={false}
+        actions={<button>Queue action</button>}
+        onClose={() => {}}
+        search={<button>Queue search</button>}
+      >
+        <ol />
+      </PlaybackQueueView>
+    </section>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByRole("button", { name: "Queue action" })).toBeVisible();
+    expect(canvas.getByRole("button", { name: "Queue search" })).toBeVisible();
+    expect(canvas.getByRole("button", { name: "Fermer" })).toBeVisible();
   },
 };

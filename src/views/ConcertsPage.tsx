@@ -116,7 +116,7 @@ export function ConcertsPage(props: { query: string }) {
   }
   return (
     <section class="page result-page concerts-page">
-      <StickyHeader>
+      <StickyHeader visible={!!library.session()}>
         <div class="concerts-toolbar">
           <span>
             {t("{0} artistes de votre CDthèque", artists().length)} ·{" "}
