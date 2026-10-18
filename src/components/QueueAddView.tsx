@@ -11,6 +11,9 @@ import { Feedback } from "./Feedback";
 import { RefreshButton } from "./RefreshButton";
 /** Compact queue composer presentation; admission and authenticated reads belong to its controller. */
 export function QueueAddView(props: {
+  title?: string | undefined;
+  footer?: string | undefined;
+  actionLabel?: ((row: QueueSearchItem) => string) | undefined;
   category: QueueCategory;
   query: string;
   rows: readonly QueueSearchItem[];
@@ -36,9 +39,9 @@ export function QueueAddView(props: {
   onMount(() => input?.focus());
   const categories = Object.entries(queueCategoryLabels) as [QueueCategory, string][];
   return (
-    <section class="queue-add-panel" aria-label={t("Ajouter à la suite")}>
+    <section class="queue-add-panel" aria-label={props.title ?? t("Ajouter à la suite")}>
       <div class="queue-add-heading">
-        <h3>{t("Ajouter à la suite")}</h3>
+        <h3>{props.title ?? t("Ajouter à la suite")}</h3>
         <button
           class="icon-button quiet icon-close"
           aria-label={t("Fermer la recherche")}
@@ -128,8 +131,13 @@ export function QueueAddView(props: {
                       class="icon-button quiet"
                       classList={{ "download-complete": props.added === row.key }}
                       disabled={!!props.pending || !!reason()}
-                      title={reason() || t("Ajouter {0} à la suite", row.title)}
-                      aria-label={t("Ajouter {0} à la suite", row.title)}
+                      title={
+                        reason() ||
+                        (props.actionLabel?.(row) ?? t("Ajouter {0} à la suite", row.title))
+                      }
+                      aria-label={
+                        props.actionLabel?.(row) ?? t("Ajouter {0} à la suite", row.title)
+                      }
                       aria-busy={props.pending === row.key}
                       onClick={() => props.onAdd(row)}
                     >
@@ -151,7 +159,7 @@ export function QueueAddView(props: {
         </Show>
       </div>
       <div class="queue-add-footer">
-        <small class="muted">{t("Ajout à la fin de la liste")}</small>
+        <small class="muted">{props.footer ?? t("Ajout à la fin de la liste")}</small>
         <div>
           <Show when={props.offset > 0}>
             <button

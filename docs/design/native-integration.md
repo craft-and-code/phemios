@@ -360,3 +360,7 @@ Explicit synchronization now retains complete lightweight track rows and labels 
 Only public track/label contract fields are cached. Owner annotations, favourites, notes, credentials and preference data remain outside this projection. Source-qualified identities and albumless tracks are preserved. Tracks and Labels browse cached pages after logout or a failed live read; playback/annotation permissions remain authenticated. Label details render their retained biography and exact albums without inferring links from names or counts.
 
 Legacy caches without optional tracks/labels stay readable and retain albums/artists; their missing projection displays an explicit synchronization hint. Complete empty arrays mean a known empty catalog. Offline track queries match retained track/album titles only and display that limited scope, since existing lightweight server rows do not carry raw tag/credit search fields. Connected reads retain Aède's complete query semantics. Cached label sorting applies to the whole retained label list before taking a page.
+
+## Portable-player transfers
+
+The retained external-transfer job reuses queue selection, authenticated Aède original exports and the existing scan/copy/conversion engine. Mounted storage, Rockbox, optional podkit for supported Apple iPods and native MTP have distinct admission and verification boundaries. See [external transfers](external-transfers.md).

@@ -21,6 +21,7 @@ mod server_profile;
 mod sessions;
 mod snapshots;
 mod themes;
+mod transfer;
 mod volumes;
 use tauri::Manager;
 
@@ -73,6 +74,7 @@ pub fn run() -> Result<(), tauri::Error> {
             ));
             app.manage(hqplayer::HqPlayer::default());
             app.manage(cd::Cd::default());
+            app.manage(std::sync::Arc::new(transfer::Transfers::default()));
             app.manage(encyclopedia::Encyclopedia::default());
             app.manage(concerts::Concerts::default());
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
@@ -111,6 +113,10 @@ pub fn run() -> Result<(), tauri::Error> {
             themes::theme_import,
             themes::theme_export,
             volumes::players_discover,
+            transfer::transfer_prepare,
+            transfer::transfer_start,
+            transfer::transfer_status,
+            transfer::transfer_cancel,
             local::local_status,
             local::local_start,
             local::local_stop,

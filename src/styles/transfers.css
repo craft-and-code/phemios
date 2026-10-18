@@ -1,0 +1,104 @@
+/* External transfer selection reuses the queue library picker without constraining its height. */
+.transfer-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-block: 24px;
+}
+.transfer-workspace:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.transfer-workspace .queue-add-panel {
+  height: 560px;
+  max-height: none;
+}
+.transfer-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 0;
+}
+.transfer-panel h3 {
+  margin: 0;
+}
+.transfer-selection {
+  padding: 0;
+  margin-block: 16px;
+  list-style: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.transfer-selection li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--control-gap);
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.transfer-selection li > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.transfer-selection strong,
+.transfer-selection small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.transfer-selection small {
+  color: var(--muted);
+}
+.transfer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-block: 20px;
+}
+.transfer-options > label:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: var(--control-gap);
+}
+.transfer-options .check-label {
+  display: flex;
+  align-items: center;
+  gap: var(--control-gap);
+}
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--control-gap);
+  margin-block: 20px;
+}
+.transfer-explanation {
+  line-height: 1.5;
+}
+.transfer-preview,
+.transfer-progress {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+.transfer-preview ul {
+  max-height: 180px;
+  overflow: auto;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.transfer-progress progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.transfer-current {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+@media (max-width: 1050px) {
+  .transfer-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

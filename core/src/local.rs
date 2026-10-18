@@ -34,6 +34,10 @@ impl Engine {
             certificate: None,
         }
     }
+    /// Fixed bundled engine for read-only staging scans and explicit destination copies.
+    pub fn copy_executable(&self) -> PathBuf {
+        self.executable.clone()
+    }
     fn file(&self) -> PathBuf {
         self.root.join("desktop.json")
     }

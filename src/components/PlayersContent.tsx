@@ -10,6 +10,7 @@ export function PlayersContent(props: {
   error?: unknown;
   volumes: readonly PlayerVolume[] | undefined;
   selected: string;
+  disabled?: boolean;
   onSelect: (path: string) => void;
 }) {
   return (
@@ -41,9 +42,15 @@ export function PlayersContent(props: {
                       : t("Volume monté")}
                 </small>
               </div>
+              <Show when={volume.adapter === "ipod"}>
+                <small>
+                  {volume.available === false ? t("podkit requis") : t("iPod Apple · podkit")}
+                </small>
+              </Show>
               <button
-                aria-pressed={props.selected === volume.path}
-                onClick={() => props.onSelect(volume.path)}
+                aria-pressed={props.selected === (volume.id ?? volume.path)}
+                disabled={props.disabled || volume.available === false}
+                onClick={() => props.onSelect(volume.id ?? volume.path)}
               >
                 {t("Sélectionner")}
               </button>
@@ -51,14 +58,14 @@ export function PlayersContent(props: {
           )}
         </For>
       </ul>
-      <Show when={props.volumes?.some((row) => row.path === props.selected)}>
-        <p class="notice">{t("Destination sélectionnée : {0}", props.selected)}</p>
+      <Show when={props.volumes?.some((row) => (row.id ?? row.path) === props.selected)}>
+        <p class="notice">
+          {t(
+            "Destination sélectionnée : {0}",
+            props.volumes?.find((row) => (row.id ?? row.path) === props.selected)?.name,
+          )}
+        </p>
       </Show>
-      <p class="muted">
-        {t(
-          "La détection est connectée. Le transfert avec vérification et conversion reste à raccorder ; aucune copie n’est lancée ici.",
-        )}
-      </p>
     </Show>
   );
 }

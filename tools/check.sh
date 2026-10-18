@@ -9,6 +9,10 @@ npm run docs:ts
 npm run components:check
 npm run check:tauri
 node scripts/prepare-engine.mjs
+transfer_engine_triple="$(rustc -vV | sed -n 's/^host: //p')"
+transfer_engine_suffix=""
+if [[ "$transfer_engine_triple" == *-windows-* ]]; then transfer_engine_suffix=".exe"; fi
+export PHEMIOS_TRANSFER_ENGINE="$PWD/src-tauri/binaries/phemios-aede-$transfer_engine_triple$transfer_engine_suffix"
 cargo fmt --all -- --check
 if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
     export PHEMIOS_REQUIRE_FFMPEG=1

@@ -67,3 +67,11 @@ pub mod personal_backup;
 
 /// Public local server connection profiles, admitted before certificate trust.
 pub mod server_profile;
+
+/// Fill a bounded native-only transfer token without exposing a randomness command to the webview.
+pub fn transfer_random(bytes: &mut [u8]) -> Result<(), String> {
+    if bytes.len() > 64 {
+        return Err("Jeton de transfert invalide.".into());
+    }
+    getrandom::fill(bytes).map_err(|_| "Générateur de jeton indisponible.".into())
+}

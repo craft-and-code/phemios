@@ -451,6 +451,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/admin/v1/scan"
                     | "/api/admin/v1/fetch"
                     | "/api/admin/v1/lyrics"
+                    | "/api/me/v1/exports/plan"
                     | "/api/admin/v1/accounts"
             ) || task_path(path, true)
         }
@@ -513,3 +514,6 @@ fn m3u_playback_path(path: &str) -> bool {
     path.strip_suffix("/playback")
         .is_some_and(|base| playlist_path(base) || library_playlist_path(base))
 }
+
+#[path = "network_export.rs"]
+mod exporter;

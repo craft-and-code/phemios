@@ -359,3 +359,21 @@ export function downloadNoteAede(reference: string) {
   const source = referenceSource(reference);
   return nativeCall<string>("note_export", { reference, expectedSession: nativeSessions[source] });
 }
+
+/** Destination selectors and preview tickets are issued natively; source files never enter JavaScript. */
+export const prepareTransfer = (
+  destination: string,
+  references: readonly string[],
+  options: import("../library/transfers").TransferOptions,
+) =>
+  nativeCall<import("../library/transfers").TransferPreview>("transfer_prepare", {
+    destination,
+    references,
+    options,
+    expectedSessions: { ...nativeSessions },
+  });
+/** Only a reviewed preview can start one retained native transfer. */
+export const startTransfer = (id: string) => nativeCall<unknown>("transfer_start", { id });
+export const transferStatus = () =>
+  nativeCall<import("../library/transfers").TransferStatus>("transfer_status");
+export const cancelTransfer = () => nativeCall<void>("transfer_cancel");

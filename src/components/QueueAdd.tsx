@@ -3,12 +3,17 @@ import { batch, createEffect, createMemo, createSignal, onCleanup } from "solid-
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
+import { readLibrarySelection } from "../library/selection-read";
+import { queueAdditionSelection, type PlayableSelection } from "../library/playback-selection";
 import { createQueueSearch } from "../library/queue-search-controller";
 import { type QueueSearchItem } from "../library/queue-search";
-import { readCollectionPlayback } from "../library/collection-playback";
 import { QueueAddView } from "./QueueAddView";
 /** Search lifetime is independent of the queue and audio-clock polls. */
-export function QueueAdd(props: { onClose: () => void }) {
+export function QueueAdd(props: {
+  onClose: () => void;
+  onSelect?: (rows: readonly PlayableSelection[]) => void;
+  disabled?: boolean;
+}) {
   const library = useLibrary(),
     [pending, setPending] = createSignal(""),
     [added, setAdded] = createSignal(""),
@@ -44,6 +49,14 @@ export function QueueAdd(props: { onClose: () => void }) {
   const disabled = (row: QueueSearchItem) => {
     const reference = row.reference ?? `track:@phemios/${row.source}/queue`,
       owner = owners().find((o) => o.source === row.source)?.session;
+    if (props.onSelect)
+      return props.disabled
+        ? t("Un transfert est déjà en cours.")
+        : !owner
+          ? t("Connectez-vous pour sélectionner des fichiers.")
+          : owner.account.parental_enabled || owner.account.role === "auditor"
+            ? t("L’export audio est indisponible pour ce compte.")
+            : "";
     return (
       queueAppendReason(reference, {
         role: owner?.account.role,
@@ -59,7 +72,7 @@ export function QueueAdd(props: { onClose: () => void }) {
       !owner ||
       pending() ||
       disabled(row) ||
-      library.player.busy() ||
+      (!props.onSelect && library.player.busy()) ||
       search.waiting() ||
       !read.current()?.items.includes(row)
     )
@@ -71,54 +84,27 @@ export function QueueAdd(props: { onClose: () => void }) {
     setError("");
     setAdded("");
     try {
-      const count = await library.player.appendSelection(
-        async (admitted) => {
-          const valid = () => ownerCurrent() && admitted();
-          if (!valid()) return;
-          let value: unknown;
-          if (row.collection)
-            value = await readCollectionPlayback(
-              row.collection,
-              row.source,
-              owner,
-              library.albums(),
-              library.trackSources().find((o) => o.source === row.source)?.scannedAt,
-              valid,
-            );
-          else if (row.playlist) {
-            const status = await requestAede<{ capabilities: string[] }>(
-              "/api/v1/status",
-              {},
-              "GET",
-              null,
-              row.source,
-              owner,
-            );
-            if (!valid()) return;
-            if (!status.capabilities?.includes("m3u_playback_selection"))
-              throw Error(t("Mettez à jour puis redémarrez Aède pour ajouter les listes M3U."));
-            value = await requestAede(
-              `${row.playlist.kind === "files" ? "/api/me/v1/m3u-files" : "/api/me/v1/m3u"}/${row.playlist.id}/playback`,
-              {},
-              "GET",
-              null,
-              row.source,
-              owner,
-            );
-          } else
-            value = await requestAede(
-              "/api/v1/presentation/playback",
-              { ref: row.reference! },
-              "GET",
-              null,
-              row.source,
-              owner,
-            );
-          return valid() ? value : undefined;
-        },
-        row.source,
-        row.reference,
-      );
+      const resolve = (admitted: () => boolean) =>
+        readLibrarySelection(
+          row,
+          owner,
+          library.albums(),
+          library.trackSources().find((o) => o.source === row.source)?.scannedAt,
+          () => ownerCurrent() && admitted(),
+        );
+      let count = 0;
+      if (props.onSelect) {
+        const value = await resolve(current);
+        if (!current() || value === undefined) return;
+        const rows = queueAdditionSelection(
+          value,
+          library.albums(),
+          library.artists(),
+          row.reference,
+        );
+        props.onSelect(rows);
+        count = rows.length;
+      } else count = await library.player.appendSelection(resolve, row.source, row.reference);
       if (current() && count) {
         setAdded(row.key);
         clearTimeout(clear);
@@ -132,6 +118,9 @@ export function QueueAdd(props: { onClose: () => void }) {
   }
   return (
     <QueueAddView
+      title={props.onSelect ? t("Choisir la musique à copier") : undefined}
+      footer={props.onSelect ? t("Ajout à la sélection de transfert") : undefined}
+      actionLabel={props.onSelect ? (row) => t("Sélectionner {0}", row.title) : undefined}
       category={search.category()}
       query={search.query()}
       rows={read.current()?.items ?? []}
