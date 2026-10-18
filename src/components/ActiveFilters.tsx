@@ -41,6 +41,7 @@ export function ActiveFilters(props: {
               countries: [],
               genre: undefined,
               genres: [],
+              composers: [],
             })
           }
         >

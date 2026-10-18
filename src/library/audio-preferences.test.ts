@@ -6,6 +6,7 @@ describe("retained audio policies", () => {
       crossfadeMs: 0,
       repeat: "off",
       policy: "without-effects",
+      volume: 0.5,
     });
     expect(
       parseAudioPreferences('{"crossfadeMs":2500,"repeat":"all","policy":"dsp"}').crossfadeMs,
@@ -20,4 +21,12 @@ describe("retained audio policies", () => {
       parseAudioPreferences('{"crossfadeMs":0,"repeat":"random","policy":"dsp"}'),
     ).toThrow();
   });
+});
+
+it("migrates old audio preferences and rejects invalid retained volumes", () => {
+  const old = { crossfadeMs: 0, repeat: "off", policy: "without-effects" };
+  expect(parseAudioPreferences(JSON.stringify(old)).volume).toBe(0.5);
+  expect(parseAudioPreferences(JSON.stringify({ ...old, volume: 0 })).volume).toBe(0);
+  for (const volume of [-0.1, 1.01, "0.5", null])
+    expect(() => parseAudioPreferences(JSON.stringify({ ...old, volume }))).toThrow();
 });

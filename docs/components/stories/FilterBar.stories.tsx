@@ -1,4 +1,4 @@
-import { expect } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { FilterBar } from "../../../src/components/FilterBar";
 import { controlledValue } from "../fixtures/controlled";
@@ -45,6 +45,13 @@ export const HiddenRails: Story = {
   args: { value: { ...filters, mode: "none" } },
   play: async ({ canvasElement }) => {
     const bar = canvasElement.querySelector(".filter-options")!.getBoundingClientRect();
+    const surface = canvasElement.querySelector(".filters")!.getBoundingClientRect();
+    for (const button of canvasElement.querySelectorAll(".filter-options button")) {
+      const box = button.getBoundingClientRect();
+      expect(
+        Math.abs(box.top + box.height / 2 - (surface.top + (surface.height - 1) / 2)),
+      ).toBeLessThan(1);
+    }
     const switches = canvasElement.querySelector(".rail-switches")!.getBoundingClientRect();
     const context = canvasElement.querySelector(".filter-context")!.getBoundingClientRect();
     const count = canvasElement
@@ -53,4 +60,43 @@ export const HiddenRails: Story = {
     expect(context.left).toBeGreaterThan(switches.right);
     expect(Math.abs(count.left + count.width / 2 - (bar.left + bar.width / 2))).toBeLessThan(1);
   },
+};
+
+export const ToggleWithoutMovingControls: Story = {
+  args: { value: { ...filters, mode: "none" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const measure = () =>
+      [...canvasElement.querySelectorAll(".filter-options button")].map((element) => {
+        const box = element.getBoundingClientRect();
+        return [box.left, box.top, box.width, box.height];
+      });
+    const initial = measure();
+    for (const name of [
+      "Réglette des années",
+      "Réglette alphabétique",
+      "Réglette des années",
+      "Réglette alphabétique",
+      "Réglette alphabétique",
+      "Réglette des années",
+      "Réglette alphabétique",
+      "Réglette des années",
+    ]) {
+      await userEvent.click(canvas.getByRole("button", { name }));
+      const next = measure();
+      for (let i = 0; i < initial.length; i++)
+        for (let j = 0; j < 4; j++)
+          expect(Math.abs(next[i]![j]! - initial[i]![j]!)).toBeLessThan(1);
+    }
+  },
+};
+export const NarrowToggle: Story = {
+  ...ToggleWithoutMovingControls,
+  decorators: [
+    (Story) => (
+      <div style={{ width: "420px" }}>
+        <Story />
+      </div>
+    ),
+  ],
 };

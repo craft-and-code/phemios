@@ -15,6 +15,8 @@ export function CoverFlow(props: {
   albums: readonly Album[];
   position: CoverPosition;
   reverse: boolean;
+  alphabetTitle?: ((album: Album) => string) | undefined;
+  caption?: ((album: Album) => string) | undefined;
   unplayed?: ((album: Album) => boolean) | undefined;
 }) {
   const [selected, setSelected] = createSignal(""),
@@ -27,6 +29,10 @@ export function CoverFlow(props: {
   );
   const { index, positions } = catalog;
   const album = () => props.albums[index()];
+  const alphabetName = (row: Album) => props.alphabetTitle?.(row) ?? row.title;
+  const letterStops = createMemo(() => coverLetterStops(props.albums, alphabetName));
+  const currentLetter = () =>
+    album() ? coverLetterStops([album()!], alphabetName)[0]?.letter : undefined;
   const window = createMemo(() =>
     coverWindow(visualIndex(), props.albums.length).map((at) => props.albums[at]!),
   );
@@ -178,19 +184,26 @@ export function CoverFlow(props: {
         <div class="cover-flow-controls">
           <div class="cover-flow-caption" aria-live="polite">
             <a href={`#/album/${encodeURIComponent(album()!.reference)}`}>{album()!.title}</a>
+            <Show when={props.caption?.(album()!)}>
+              {(text) => (
+                <small class="cover-flow-detail" title={text()}>
+                  {text()}
+                </small>
+              )}
+            </Show>
             <small>
               {album()!.year ?? t("Année inconnue")} · {index() + 1}/{props.albums.length}
             </small>
           </div>
         </div>
         <div class="cover-flow-alphabet" role="group" aria-label={t("Parcourir les pochettes")}>
-          <For each={coverLetterStops(props.albums)}>
+          <For each={letterStops()}>
             {(stop) => (
               <button
                 type="button"
-                classList={{ current: stop.letter === coverLetterStops([album()!])[0]?.letter }}
-                aria-label={`${stop.letter} · ${props.albums[stop.index]?.title ?? ""}`}
-                aria-pressed={stop.letter === coverLetterStops([album()!])[0]?.letter}
+                classList={{ current: stop.letter === currentLetter() }}
+                aria-label={`${stop.letter} · ${props.albums[stop.index] ? alphabetName(props.albums[stop.index]!) : ""}`}
+                aria-pressed={stop.letter === currentLetter()}
                 onClick={() => {
                   scrub.cancel();
                   choose(stop.index);

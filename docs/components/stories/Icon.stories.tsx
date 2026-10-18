@@ -19,3 +19,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Lyrics: Story = { args: { name: "lyrics" } };
 export const Playlist: Story = { args: { name: "playlist" } };
+
+export const Genres: Story = { args: { name: "genres" } };
+export const Composers: Story = { args: { name: "note" } };

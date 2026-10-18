@@ -70,6 +70,7 @@ export function createPodcastPlayback(
   initialVolume?: () => number,
   captureOwner: () => () => boolean = () => () => true,
   authorize?: (media: ExternalParentalMedia) => Promise<void>,
+  rememberVolume?: (value: number) => void,
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -118,7 +119,7 @@ export function createPodcastPlayback(
     const ownerCurrent = captureOwner();
     if (!ownerCurrent()) return;
     if (["idle", "ended", "error"].includes(status()) && initialVolume)
-      changeVolume(initialVolume());
+      changeVolume(initialVolume(), false);
     release();
     const held = epoch,
       attempt = ++playAttempt;
@@ -211,11 +212,12 @@ export function createPodcastPlayback(
       }
     }
   }
-  function changeVolume(n: number) {
+  function changeVolume(n: number, remember = true) {
     if (!Number.isFinite(n) || n < 0 || n > 1) return;
     setVolume(n);
     media?.volume(n);
     if (n > 0) audible = n;
+    if (remember) rememberVolume?.(n);
   }
   function seek(n: number) {
     if (!media || !Number.isFinite(n) || n < 0 || !duration() || n > duration()) return;

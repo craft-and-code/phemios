@@ -180,3 +180,18 @@ it("retains an optional artist logo hint without inventing assets for older snap
     parseSnapshot({ ...fixture, artists: [{ ...artist, media: {} }] }).artists[0]?.media?.logo,
   ).toBeUndefined();
 });
+
+it("retains composer identities while distinguishing an old projection from no credits", () => {
+  const snapshot = { ...publicSnapshot(), albums: [album] };
+  expect(parseSnapshot(snapshot).albums[0]?.composers).toBeUndefined();
+  expect(
+    parseSnapshot({ ...snapshot, albums: [{ ...album, composers: [] }] }).albums[0]?.composers,
+  ).toEqual([]);
+  expect(
+    parseSnapshot({
+      ...snapshot,
+      albums: [{ ...album, composers: [{ reference: "artist:writer" }] }],
+    }).albums[0]?.composers,
+  ).toEqual(["artist:writer"]);
+  expect(() => parseSnapshot({ ...snapshot, albums: [{ ...album, composers: [42] }] })).toThrow();
+});

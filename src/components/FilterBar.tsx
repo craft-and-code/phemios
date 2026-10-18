@@ -77,6 +77,7 @@ export function FilterBar(props: {
                 countries: [],
                 genre: undefined,
                 genres: [],
+                composers: [],
               })
             }
           >

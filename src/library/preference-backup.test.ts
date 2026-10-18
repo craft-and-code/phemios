@@ -88,3 +88,17 @@ it("round-trips default and per-view cover sizes in the account-safe backup", ()
     coverSizes: { albums: 240, genres: 120 },
   });
 });
+
+it("includes the saved volume in portable preferences and accepts older backups without it", () => {
+  const storage = store();
+  storage.setItem(
+    "phemios.audio.v1",
+    JSON.stringify({ crossfadeMs: 0, repeat: "off", policy: "without-effects", volume: 0.18 }),
+  );
+  const backup = JSON.parse(exportPreferenceBackup(storage));
+  expect(parsePreferenceBackup(JSON.stringify(backup))["phemios.audio.v1"]).toMatchObject({
+    volume: 0.18,
+  });
+  delete backup.values["phemios.audio.v1"].volume;
+  expect(() => parsePreferenceBackup(JSON.stringify(backup))).not.toThrow();
+});

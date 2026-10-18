@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  folder: "M3 20V5h6l2 3h10v4M3 20h16l3-8H8l-5 8Z",
   integrity: "M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6l-9-4Zm-4 10 3 3 5-6",
   "cover-size": "M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4M9 9h6v6H9V9Z",
   external: "M14 3h7v7M21 3 10 14M10 3H3v18h18v-7",
@@ -72,6 +73,8 @@ const paths: Record<string, string> = {
   menu: "M3 6h18M3 12h18M3 18h18",
   sort: "M4 6h16M4 12h10M4 18h4m10-4 3 4 3-4M21 3v15",
   users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87",
+  cd: "M12 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4ZM4 22h16M5 4l2 2m10 10 2 2",
+  eject: "M5 19h14M5 14l7-10 7 10H5Z",
   disc: "M9 9a4.2 4.2 0 0 0-3 3M15 15a4.2 4.2 0 0 0 3-3",
   layers: "m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5",
   globe: "M2 12h20M12 2c-6 6-6 14 0 20M12 2c6 6 6 14 0 20",
@@ -80,8 +83,10 @@ const paths: Record<string, string> = {
   "eye-off":
     "m3 3 18 18M9.5 9.5a3.5 3.5 0 0 0 5 5M6 6C4 8 2 12 2 12s4 7 10 7c2 0 4-1 6-3M10 5h2c6 0 10 7 10 7s-1 2-3 4",
   label: "M4 3h16v18l-8-4-8 4zM8 7h8M8 11h8",
+  note: "M9 18V5l12-2v13M9 8l12-2M9 18a3 2 0 1 1-6 0 3 2 0 0 1 6 0ZM21 16a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
+  // Lucide piano (ISC), vendored as SVG only; see public/licenses/lucide.txt.
   genres:
-    "M9 18V5l12-2v13M9 8l12-2M9 18a3 2 0 1 1-6 0 3 2 0 0 1 6 0ZM21 16a3 2 0 1 1-6 0 3 2 0 0 1 6 0Z",
+    "M10 13v4 M14 13v4 M18 13v4 M2 13h20 M22 11.5A3.5 3.5 0 0018.5 8a3.52 3.52 0 01-3.173-2A7 7 0 002 9v10a2 2 0 002 2h16a2 2 0 002-2z M6 13v4",
   tags: "M20 13 13 20l-11-11V2h7l11 11ZM7 7h.01",
   heart:
     "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z",

@@ -1,3 +1,4 @@
+import { cdReference } from "../cd/model";
 import { createMemo, createResource, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
@@ -10,7 +11,8 @@ export function WaveformSeek() {
   const player = useLibrary().player;
   const [result] = createResource(
     () =>
-      (["playing", "paused", "connecting"].includes(player.state().status) &&
+      (!cdReference(player.state().reference) &&
+        ["playing", "paused", "connecting"].includes(player.state().status) &&
         player.state().reference) ||
       false,
     async (reference) => {

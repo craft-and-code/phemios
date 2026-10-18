@@ -1,3 +1,4 @@
+import { cdReference } from "../cd/model";
 import { createAlbumLyrics } from "./album-lyrics";
 import { createParentalAccess } from "./parental-access";
 import { createParentalMedia } from "./parental-media";
@@ -211,7 +212,11 @@ export function LibraryProvider(props: ParentProps) {
   createEffect(() => setRequestSource(source()));
   const session = () => (source() === "local" ? localSession() : serverSession());
   const sessionFor = (reference: string) =>
-    referenceSource(reference) === "local" ? localSession() : serverSession();
+    cdReference(reference)
+      ? undefined
+      : referenceSource(reference) === "local"
+        ? localSession()
+        : serverSession();
   const snapshot = createMemo<Snapshot | undefined>(() => {
     const remote = admittedSnapshot("server"),
       local = admittedSnapshot("local");
@@ -264,6 +269,16 @@ export function LibraryProvider(props: ParentProps) {
       throw new Error(t("Session invalide."));
   }, setConnected);
   const savedSettings = createSavedSettings(session, source);
+  const cdAllowed = () =>
+    (["local", "server"] as const).every((owner) => {
+      const account = sessionAt(owner);
+      return (
+        !account ||
+        (["user", "admin"].includes(account.account.role) &&
+          parental.available(owner) &&
+          !parental.status(owner)?.policy.enabled)
+      );
+    });
   const player = createPlayback(
     () =>
       [localSession(), serverSession()].some(
@@ -276,7 +291,11 @@ export function LibraryProvider(props: ParentProps) {
     },
     sessionFor,
     (reference) => referenceSource(reference) === "local" || connected(),
+    { native: isNative, allowed: cdAllowed },
   );
+  createEffect(() => {
+    if (!cdAllowed() && player.isCd()) void player.revoke();
+  });
   const radioGuard = createParentalMedia({
     access: parental,
     source,
@@ -304,6 +323,7 @@ export function LibraryProvider(props: ParentProps) {
     browserRadioMedia,
     () => player.state().volume,
     radioGuard.authorize,
+    player.rememberVolume,
   );
   const podcastListened = createAccountPodcasts(session, source);
   const podcast = createPodcastPlayback(
@@ -322,6 +342,7 @@ export function LibraryProvider(props: ParentProps) {
     () => player.state().volume,
     () => podcastListened.capture().current,
     podcastGuard.authorize,
+    player.rememberVolume,
   );
   createEffect(() => radioGuard.observe(radio.status()));
   createEffect(() => podcastGuard.observe(podcast.status()));

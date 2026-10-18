@@ -44,3 +44,5 @@ Media-row consistency is checked by `Controls/RowActions`: Tracks, analysis cove
 The compact follow-up adds complete/partial/unknown album duration scenarios, the real radio favourites/globe scrolling column and an individual lyric download that must not start playback. Radio timeout feedback is tested with its five-second, non-pausing lifetime; ordinary feedback keeps its existing readability policy.
 
 `Foundation/StickyHeader/AccountVisibility` verifies zero header footprint and no accessible actions while disconnected, restoration after connection and removal after logout. `Media/Playlists/Disconnected` covers the dedicated workspace; `DisconnectedDrawer` preserves the independently usable Playback drawer. These presentation checks do not authenticate a native account.
+
+`Media/DurationToggle` checks the inert dash/default pointer and unchanged finite-duration toggle. These scenarios neither mount a library provider nor invoke native capabilities.

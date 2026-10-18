@@ -6,7 +6,7 @@ export function CoverPlayView(props: {
   reference: string;
   title: string;
   class?: string | undefined;
-  variant?: "cover" | "detail" | undefined;
+  variant?: "cover" | "detail" | "row" | undefined;
   label?: string | undefined;
   disabled?: boolean | undefined;
   onPlay: () => Promise<void>;
@@ -25,7 +25,7 @@ export function CoverPlayView(props: {
   }
   return (
     <button
-      class={`icon-button ${props.variant === "detail" ? "detail-play" : "cover-play"} ${props.class ?? ""}`}
+      class={`icon-button play-action ${props.variant === "detail" ? "detail-play" : props.variant === "row" ? "row-play" : "cover-play"} ${props.class ?? ""}`}
       aria-label={props.label ?? t("Lire {0}", props.title)}
       title={props.label ?? t("Lire {0}", props.title)}
       data-play-reference={props.reference}

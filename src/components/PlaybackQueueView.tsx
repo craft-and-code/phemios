@@ -9,6 +9,7 @@ export function PlaybackQueueView(props: {
   /** Only the dedicated workspace header follows connection visibility; drawer controls stay available. */
   headerVisible?: boolean | undefined;
   count: number;
+  matchedCount?: number | undefined;
   duration?: string;
   actions: JSX.Element;
   search?: JSX.Element;
@@ -18,7 +19,7 @@ export function PlaybackQueueView(props: {
   onClose?: (() => void) | undefined;
 }) {
   const summary = () =>
-    `${t("{0} pistes", props.count)}${props.duration ? ` · ${props.duration}` : ""}`;
+    `${props.matchedCount === undefined ? t("{0} pistes", props.count) : t("{0} / {1} pistes", props.matchedCount, props.count)}${props.duration ? ` · ${props.duration}` : ""}`;
   const heading = () => (
     <div class="page-heading">
       <Show when={!props.standalone} fallback={<span class="result-count">{summary()}</span>}>
@@ -60,8 +61,14 @@ export function PlaybackQueueView(props: {
       <Show when={!props.standalone || props.headerVisible !== false}>{props.search}</Show>
       {props.notices}
       <Show
-        when={props.count}
-        fallback={<EmptyState icon="playlist">{t("La liste de lecture est vide.")}</EmptyState>}
+        when={props.matchedCount ?? props.count}
+        fallback={
+          <EmptyState icon="playlist">
+            {props.count
+              ? t("Aucun résultat dans cette sélection.")
+              : t("La liste de lecture est vide.")}
+          </EmptyState>
+        }
       >
         {props.children}
       </Show>

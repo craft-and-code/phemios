@@ -111,7 +111,7 @@ main {
   grid-column: 2;
 }
 .page {
-  padding: 24px 36px 36px;
+  padding: 24px var(--page-inline-padding) var(--page-bottom-padding);
 }
 .page-heading,
 .section-heading {
@@ -223,8 +223,9 @@ legend {
   }
   .page,
   .catalog-tools {
-    padding-left: 24px;
-    padding-right: 24px;
+    --page-inline-padding: 24px;
+    padding-left: var(--page-inline-padding);
+    padding-right: var(--page-inline-padding);
   }
   .demo-badge {
     display: none;

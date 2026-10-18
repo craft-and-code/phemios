@@ -32,6 +32,10 @@ export async function saveBrowsingCollection(
     genres?: unknown;
     view?: string;
   };
+  if (criteria.view === "composers" && !capabilities.includes("dynamic_browse_composers"))
+    throw new Error(
+      t("Mettez à jour puis redémarrez Aède pour conserver les compositeurs dans une collection."),
+    );
   if (criteria.view === "tracks" && !capabilities.includes("dynamic_browse_tracks"))
     throw new Error(t("Mettez à jour puis redémarrez Aède pour conserver les filtres de pistes."));
   if (criteria.view === "label" && !capabilities.includes("dynamic_browse_label"))

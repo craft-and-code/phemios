@@ -1,3 +1,4 @@
+import { cdReference } from "../cd/model";
 import { UntimedLyricsControls } from "../components/UntimedLyricsControls";
 import { createUntimedLyrics } from "../visualizer/untimed-lyrics";
 import { LyricsIcon } from "../components/LyricsIcon";
@@ -129,7 +130,13 @@ export function PlaybackPage() {
             </Show>
             <div>
               <h1>
-                <a href={`#/track/${encodeURIComponent(player.current()?.reference ?? "")}`}>
+                <a
+                  href={
+                    cdReference(player.current()?.reference ?? "")
+                      ? "#/cd"
+                      : `#/track/${encodeURIComponent(player.current()?.reference ?? "")}`
+                  }
+                >
                   {player.current()?.title}
                 </a>
               </h1>

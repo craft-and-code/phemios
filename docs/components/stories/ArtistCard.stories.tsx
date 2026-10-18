@@ -268,3 +268,12 @@ export const NarrowEditorial: Story = {
     expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth);
   },
 };
+
+export const SingleAlbum: Story = {
+  args: { albumCount: 1 },
+  play: ({ canvasElement }) => {
+    expect(canvasElement.querySelector(".artist-presentation-name small")).toHaveTextContent(
+      /^1 album$/,
+    );
+  },
+};

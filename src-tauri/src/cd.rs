@@ -1,0 +1,245 @@
+//! Versioned optical operations accept only native-discovered tokens, never source paths.
+use crate::aede::{Aede, blocking, bridge};
+use phemios_core::playback::Player;
+use serde_json::{Value, json};
+use std::sync::{Arc, Mutex, atomic::Ordering};
+use tauri::State;
+#[derive(Default)]
+pub(crate) struct Cd(pub(crate) Arc<Mutex<phemios_cd::Library>>);
+fn snapshot(library: &phemios_cd::Library) -> Value {
+    json!({"drives":library.snapshot().iter().map(|d| json!({"id":d.id,"name":d.name,"image":d.image,"error":d.error,"disc":d.disc.as_ref().map(|disc|json!({"token":disc.token,"title":disc.title(),"artist":disc.performer(),"tracks":disc.tracks.iter().map(|t|json!({"reference":disc.reference(t.number),"number":t.number,"duration_ms":t.duration_ms(),"title":disc.track_names(t.number).0,"artist":disc.track_names(t.number).1})).collect::<Vec<_>>()}))})).collect::<Vec<_>>()})
+}
+#[tauri::command]
+pub(crate) async fn cd_scan(
+    version: u32,
+    id: Option<String>,
+    cd: State<'_, Cd>,
+    player: State<'_, Arc<Player>>,
+) -> Result<Value, String> {
+    bridge(version)?;
+    let cd = cd.0.clone();
+    let player = player.inner().clone();
+    blocking(move || {
+        let mut library = cd.lock().map_err(|_| "Lecteurs CD indisponibles.")?;
+        let state = player.snapshot()?;
+        // Do not probe the same physical device while its dedicated reader owns it.
+        let reading = state["source"] == "cd"
+            && matches!(
+                state["status"].as_str(),
+                Some("playing" | "paused" | "connecting")
+            );
+        if !reading
+            && !id
+                .as_deref()
+                .map(|id| library.refresh_image(id))
+                .transpose()?
+                .unwrap_or(false)
+        {
+            library.scan()?;
+        }
+        Ok(snapshot(&library))
+    })
+    .await
+}
+type Stamp = (
+    Arc<Mutex<Option<phemios_core::network::Client>>>,
+    Arc<std::sync::atomic::AtomicU64>,
+    u64,
+    Option<phemios_core::network::Client>,
+);
+fn capture(sources: &[&crate::aede::SourceState]) -> Result<Vec<Stamp>, String> {
+    sources
+        .iter()
+        .map(|source| {
+            let slot = source.session.clone();
+            let generation = source.generation.clone();
+            let client = slot
+                .lock()
+                .map_err(|_| "Session native indisponible.")?
+                .clone();
+            let ticket = generation.load(Ordering::SeqCst);
+            Ok((slot, generation, ticket, client))
+        })
+        .collect()
+}
+// Recheck and hold only short-lived native session guards after policy I/O and before audio publication.
+fn admit<T>(stamps: &[Stamp], work: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
+    let guards = stamps
+        .iter()
+        .map(|(slot, _, _, _)| slot.lock().map_err(|_| "Session native indisponible."))
+        .collect::<Result<Vec<_>, _>>()?;
+    for ((_, generation, ticket, held), current) in stamps.iter().zip(&guards) {
+        let same = match (held, current.as_ref()) {
+            (None, None) => true,
+            (Some(a), Some(b)) => a.same_session(b),
+            _ => false,
+        };
+        if !same || generation.load(Ordering::SeqCst) != *ticket {
+            return Err("Le compte a changé. Relancez la lecture du CD.".into());
+        }
+    }
+    work()
+}
+
+// The anonymous source has no credentials; active accounts may not bypass supervision through it.
+fn permission(
+    sources: &[&crate::aede::SourceState],
+) -> Result<Box<dyn Fn() -> Result<(), String> + Send>, String> {
+    let owners = sources
+        .iter()
+        .map(|owner| {
+            let slot = owner.session.clone();
+            let generation = owner.generation.clone();
+            let held = slot
+                .lock()
+                .map_err(|_| "Session native indisponible.")?
+                .clone();
+            let ticket = generation.load(Ordering::SeqCst);
+            Ok((slot, generation, ticket, held))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok(Box::new(move || {
+        for (slot, generation, ticket, held) in &owners {
+            let current = slot
+                .lock()
+                .map_err(|_| "Session native indisponible.")?
+                .clone();
+            let same = match (held, &current) {
+                (None, None) => true,
+                (Some(a), Some(b)) => a.same_session(b),
+                _ => false,
+            };
+            if !same || generation.load(Ordering::SeqCst) != *ticket {
+                return Err("Le compte a changé. Relancez la lecture du CD.".into());
+            }
+            if let Some(client) = held {
+                if !matches!(
+                    client.account()["account"]["role"].as_str(),
+                    Some("admin" | "user")
+                ) {
+                    return Err("Votre compte ne permet pas la lecture.".into());
+                }
+                if client
+                    .parental_status()?
+                    .is_some_and(|s| s["policy"]["enabled"] == true)
+                {
+                    return Err("La lecture CD est indisponible pour un compte supervisé.".into());
+                }
+            }
+            if generation.load(Ordering::SeqCst) != *ticket {
+                return Err("Le compte a changé. Relancez la lecture du CD.".into());
+            }
+        }
+        Ok(())
+    }))
+}
+#[tauri::command]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Flat versioned CD selection with the existing audio States."
+)]
+pub(crate) async fn cd_start(
+    version: u32,
+    token: String,
+    tracks: Vec<String>,
+    device: String,
+    index: usize,
+    cd: State<'_, Cd>,
+    player: State<'_, Arc<Player>>,
+    state: State<'_, Aede>,
+    hq: State<'_, crate::hqplayer::HqPlayer>,
+) -> Result<(), String> {
+    bridge(version)?;
+    let stamps = capture(&[&state.local, &state.server])?;
+    let permission = permission(&[&state.local, &state.server])?;
+    let cd = cd.0.clone();
+    let player = player.inner().clone();
+    let controller = hq.controller.clone();
+    let routing = hq.routing.clone();
+    let epoch = hq.epoch.clone();
+    let generation = epoch.fetch_add(1, Ordering::SeqCst) + 1;
+    blocking(move || {
+        let disc = cd
+            .lock()
+            .map_err(|_| "Lecteurs CD indisponibles.")?
+            .disc(&token)?;
+        // Resolve every requested occurrence before stopping any existing source.
+        if tracks.is_empty()
+            || tracks.len() > 4096
+            || index >= tracks.len()
+            || device == phemios_core::hqplayer::OUTPUT
+            || device.len() > 2048
+        {
+            return Err("Sélection CD ou sortie audio invalide.".into());
+        }
+        for reference in &tracks {
+            disc.track(reference)?;
+        }
+        permission()?;
+        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        if epoch.load(Ordering::SeqCst) != generation {
+            return Err("Lecture CD annulée.".into());
+        }
+        admit(&stamps, || {
+            player.halt()?;
+            controller.halt()?;
+            player.start_cd(disc, tracks, device, index, Some(permission))
+        })
+    })
+    .await
+}
+// A queued Play may win the UI race; enforce the ejection boundary under native routing too.
+fn require_eject_idle(current: &Value, token: Option<&str>) -> Result<(), String> {
+    if current["source"] == "cd"
+        && token.is_some_and(|token| current["cd_disc"] == token)
+        && matches!(current["status"].as_str(), Some("playing" | "connecting"))
+    {
+        return Err("Arrêtez la lecture du CD avant de l’éjecter.".into());
+    }
+    Ok(())
+}
+#[tauri::command]
+pub(crate) async fn cd_eject(
+    version: u32,
+    id: String,
+    cd: State<'_, Cd>,
+    player: State<'_, Arc<Player>>,
+    hq: State<'_, crate::hqplayer::HqPlayer>,
+) -> Result<Value, String> {
+    bridge(version)?;
+    let cd = cd.0.clone();
+    let player = player.inner().clone();
+    let routing = hq.routing.clone();
+    let epoch = hq.epoch.clone();
+    blocking(move || {
+        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+        let mut library = cd.lock().map_err(|_| "Lecteurs CD indisponibles.")?;
+        if !library.snapshot().iter().any(|d| d.id == id) {
+            return Err("Lecteur CD inconnu.".into());
+        }
+        let disc_token = library
+            .snapshot()
+            .iter()
+            .find(|drive| drive.id == id)
+            .and_then(|drive| drive.disc.as_ref())
+            .map(|disc| disc.token.as_str());
+        let current = player.snapshot()?;
+        require_eject_idle(&current, disc_token)?;
+        epoch.fetch_add(1, Ordering::SeqCst);
+        let owns_disc = current["source"] == "cd"
+            && disc_token.is_some_and(|token| current["cd_disc"] == token);
+        if owns_disc {
+            player.halt()?;
+        }
+        library.eject(&id)?;
+        if owns_disc {
+            player.clear()?;
+        }
+        Ok(snapshot(&library))
+    })
+    .await
+}
+
+#[cfg(test)]
+#[path = "cd_tests.rs"]
+mod tests;

@@ -1,3 +1,4 @@
+@import "./styles/cd.css";
 @import "./styles/parental.css";
 @import "./styles/playlists.css";
 @import "./styles/circular-play-actions.css";
@@ -32,6 +33,8 @@
   --control-gap: 8px;
   --pagination-gap: 16px;
   --page-end-gap: 24px;
+  --page-inline-padding: 36px;
+  --page-bottom-padding: 36px;
   --detail-heading-offset: 6px;
   --unplayed-color: #d54646;
   --album-unplayed-size: 30px;
@@ -917,6 +920,12 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
 .cover-flow-caption small {
   color: var(--muted);
 }
+.cover-flow-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cover-flow > input {
   display: block;
   width: min(460px, 80%);

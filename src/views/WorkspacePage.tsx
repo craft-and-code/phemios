@@ -9,6 +9,7 @@ import { PlaybackPage } from "./PlaybackPage";
 
 import { Switch, Match, lazy, Suspense, Show } from "solid-js";
 import { t } from "../i18n";
+const CdPage = lazy(() => import("./CdPage").then((module) => ({ default: module.CdPage })));
 const ConcertsPage = lazy(() =>
   import("./ConcertsPage").then((module) => ({ default: module.ConcertsPage })),
 );
@@ -61,7 +62,7 @@ export function WorkspacePage(props: {
           <PlaybackPage />
         </Match>
         <Match when={props.section === "moods"}>
-          <MoodsPage />
+          <MoodsPage query={props.query} />
         </Match>
         <Match when={props.section === "rated"}>
           <RatedPage query={props.query} />
@@ -77,6 +78,9 @@ export function WorkspacePage(props: {
           >
             <PodcastsPage query={props.query} />
           </Show>
+        </Match>
+        <Match when={props.section === "cd"}>
+          <CdPage />
         </Match>
         <Match when={props.section === "concerts"}>
           <ConcertsPage query={props.query} />

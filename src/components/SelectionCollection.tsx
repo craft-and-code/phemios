@@ -1,3 +1,5 @@
+import { composerExpression } from "../library/composers";
+import { referenceSource } from "../library/sources";
 import { Feedback } from "./Feedback";
 import { t } from "../i18n";
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
@@ -54,7 +56,14 @@ export function SelectionCollection(props: {
     <div class="selection-collection">
       <button
         class="icon-button"
-        disabled={!writable() || props.disabled}
+        disabled={
+          !writable() ||
+          props.disabled ||
+          (props.section === "composers" &&
+            !!props.filters?.composers?.some(
+              (reference) => referenceSource(reference) !== source(),
+            ))
+        }
         aria-label={t("Créer une collection depuis cette sélection")}
         title={props.reason ?? t("Créer une collection depuis ces filtres")}
         onClick={() => {
@@ -66,7 +75,12 @@ export function SelectionCollection(props: {
           const criteria = { ...props.filters, view: props.section };
           delete criteria.recentOnly;
           if (!criteria.genres?.length) delete criteria.genres;
-          setDraft(props.expression ?? `browse-v1:${JSON.stringify(criteria)}`);
+          setDraft(
+            props.expression ??
+              (props.section === "composers" && props.filters
+                ? composerExpression(props.filters, source())
+                : `browse-v1:${JSON.stringify(criteria)}`),
+          );
         }}
       >
         <Icon name="library" />

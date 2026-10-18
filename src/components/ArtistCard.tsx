@@ -1,3 +1,4 @@
+import { AlbumCount } from "./AlbumCount";
 import { Show, type JSX } from "solid-js";
 import { t } from "../i18n";
 import type { ArtistView } from "../library/tool-preferences";
@@ -42,7 +43,7 @@ export function ArtistCard(props: {
           </h2>
           <p>{props.metadata}</p>
           <small>
-            {props.albumCount} {t("albums")}
+            <AlbumCount value={props.albumCount} />
           </small>
         </a>
         <Show when={props.view === "discography"}>

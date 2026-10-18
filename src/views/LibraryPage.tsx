@@ -1,3 +1,5 @@
+import { composerAlbumOrder, composerAlbumNames } from "../library/composers";
+import { AlbumCount } from "../components/AlbumCount";
 import { ArtistGallery } from "../components/ArtistGallery";
 import type { ArtistView } from "../library/tool-preferences";
 import { createAlbumListening } from "../library/album-listening";
@@ -77,11 +79,19 @@ export function LibraryPage(props: {
     const matched = filterArtists(principals(), library.albums(), props.filters);
     return [...matched].sort((a, b) => compare(a.name, b.name));
   });
-  const albums = createMemo(() =>
-    [...filterAlbums(library.albums(), library.artists(), props.filters, props.now)]
-      .filter((item) => props.section !== "compilations" || item.compilation)
-      .sort((a, b) => compare(a.title, b.title)),
+  const composerNames = createMemo(() =>
+    props.section === "composers"
+      ? composerAlbumNames(library.albums(), library.artists(), props.filters.composers)
+      : undefined,
   );
+  const albums = createMemo(() => {
+    const matched = filterAlbums(library.albums(), library.artists(), props.filters, props.now)
+      .filter((item) => props.section !== "compilations" || item.compilation)
+      .filter((item) => props.section !== "composers" || !!item.composers?.length);
+    return props.section === "composers"
+      ? composerAlbumOrder(matched, library.artists(), props.filters.composers, props.reverse)
+      : [...matched].sort((a, b) => compare(a.title, b.title));
+  });
   const artistView = () => artistCatalog(props.section);
   return (
     <section
@@ -99,6 +109,15 @@ export function LibraryPage(props: {
         </Show>
         <div class="library-results">
           <Feedback error persistent message={listening.error()} />
+          <Show when={props.section === "composers"}>
+            <Show when={library.albums().some((album) => album.composers === undefined)}>
+              <p class="notice">
+                {t(
+                  "Le moteur Aède utilisé ne fournit pas encore les compositeurs. Mettez-le à jour et redémarrez-le, puis synchronisez Phémios.",
+                )}
+              </p>
+            </Show>
+          </Show>
           <Show when={props.section === "genres"}>
             <ChoiceChips
               label={t("Genres")}
@@ -113,7 +132,7 @@ export function LibraryPage(props: {
             when={artistView()}
             fallback={
               <Show
-                when={props.section === "albums" && props.coverFlow}
+                when={["albums", "composers"].includes(props.section) && props.coverFlow}
                 fallback={
                   <AlbumGrid
                     albums={albums()}
@@ -130,6 +149,17 @@ export function LibraryPage(props: {
                   unplayed={unplayed}
                   position={props.coverPosition}
                   reverse={props.reverse}
+                  alphabetTitle={
+                    props.section === "composers"
+                      ? (album) => composerNames()?.get(album.reference) ?? ""
+                      : undefined
+                  }
+                  caption={
+                    props.section === "composers"
+                      ? (album) =>
+                          t("Compositeur : {0}", composerNames()?.get(album.reference) ?? "")
+                      : undefined
+                  }
                 />
               </Show>
             }
@@ -190,7 +220,7 @@ export function LibraryPage(props: {
                                   {artist.genre} · {countryName(artist.countryCode, artist.country)}
                                 </p>
                                 <small>
-                                  {releases.length} {t("albums")}
+                                  <AlbumCount value={releases.length} />
                                 </small>
                               </div>
                             </a>

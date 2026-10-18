@@ -393,7 +393,7 @@ main:has(.m3u-page) > .library-source {
 }
 
 /* Match the drawer's top, right and bottom margins to the scene's available grid row. */
-main > .playback-page {
+main > .playback-page:not(.playlist-page) {
   padding: 24px;
 }
 .playback-page > .playback-queue {

@@ -349,3 +349,26 @@ it("never plays after a refused or retired parental admission", async () => {
     }
   });
 });
+
+it("restores shared volume without writing it back, then remembers user volume and mute", async () => {
+  await createRoot(async (dispose) => {
+    const remember = vi.fn(),
+      audio = media();
+    const player = createRadioPlayback(
+      async () => ({ stationuuid: station.uuid, url: "https://radio.example.org/live.mp3" }),
+      async () => {},
+      () => audio,
+      () => 0.27,
+      undefined,
+      remember,
+    );
+    await player.start(station);
+    expect(player.volume()).toBe(0.27);
+    expect(remember).not.toHaveBeenCalled();
+    player.changeVolume(0.31);
+    expect(remember).toHaveBeenLastCalledWith(0.31);
+    player.mute();
+    expect(remember).toHaveBeenLastCalledWith(0);
+    dispose();
+  });
+});

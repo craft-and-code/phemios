@@ -33,6 +33,8 @@ export interface Album {
   /** Sourced genre labels in Aède’s presentation; owner tags belong to annotations/search fields. */
   tags: readonly string[];
   contributors?: readonly string[];
+  /** Exact composer credit identities projected by Aède; absent in older caches. */
+  composers?: readonly string[];
   searchFields?: readonly string[];
   cover?: boolean;
   trackCount?: number;
@@ -48,6 +50,7 @@ export type RailMode = "years" | "alphabet" | "both" | "none";
 /** Both active intervals intersect; hidden rails do not filter results. */
 export interface Filters {
   recentOnly?: boolean | undefined;
+  composers?: readonly string[];
   mode: RailMode;
   years: Interval;
   alphabet: Interval;

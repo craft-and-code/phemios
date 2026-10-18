@@ -18,7 +18,7 @@ export interface ToolPreferences {
   trackPageSize: number;
   showMissingAlbums: boolean;
   coverSize: number;
-  coverSizes: Partial<Record<"albums" | "compilations" | "genres", number>>;
+  coverSizes: Partial<Record<"albums" | "compilations" | "genres" | "composers", number>>;
 }
 export const defaultToolPreferences: ToolPreferences = {
   artistView: "discography",
@@ -51,7 +51,8 @@ function validCoverOverrides(value: unknown): boolean {
     typeof value === "object" &&
     !Array.isArray(value) &&
     Object.entries(value).every(
-      ([key, size]) => ["albums", "compilations", "genres"].includes(key) && validCoverSize(size),
+      ([key, size]) =>
+        ["albums", "compilations", "genres", "composers"].includes(key) && validCoverSize(size),
     )
   );
 }

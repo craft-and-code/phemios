@@ -1,3 +1,4 @@
+import { queueSearch } from "../library/personal-search";
 import { AccountNotice } from "./AccountNotice";
 import { collectionDuration } from "../library/detail-format";
 import { queueDuration } from "../library/queue-duration";
@@ -20,6 +21,7 @@ import { Icon } from "./Icon";
 export function PlaybackQueue(props: {
   onClose?: (() => void) | undefined;
   standalone?: boolean;
+  query?: string;
   navigation?: JSX.Element;
 }) {
   const library = useLibrary(),
@@ -38,8 +40,14 @@ export function PlaybackQueue(props: {
         ),
       ),
   );
-  const connected = () => !!library.localSession() || !!library.serverSession();
-  const duration = createMemo(() => queueDuration(player.queue(), durations()));
+  const connected = () => !!library.localSession() || !!library.serverSession() || player.isCd();
+  const matched = createMemo(() => queueSearch(player.queue(), props.query ?? ""));
+  const duration = createMemo(() => {
+    const known = new Map(durations());
+    for (const row of player.queue())
+      if (row.durationMs !== undefined) known.set(row.reference, row.durationMs);
+    return queueDuration(player.queue(), known);
+  });
   const durationLabel = () => {
     const total = duration();
     const label = collectionDuration(total.milliseconds);
@@ -52,7 +60,12 @@ export function PlaybackQueue(props: {
     grips.clear();
   });
   const reorderable = () =>
-    !player.busy() && player.state().device !== "@hqplayer" && player.queue().length > 1;
+    !props.query?.trim() &&
+    !player.busy() &&
+    player.state().device !== "@hqplayer" &&
+    player.queue().length > 1;
+  const orderHint = (label: string) =>
+    props.query?.trim() ? t("Effacez la recherche pour réorganiser la liste.") : label;
   const order = () => player.queue().map((row) => row.index);
   const drag = createQueueDrag({
     enabled: reorderable,
@@ -80,6 +93,7 @@ export function PlaybackQueue(props: {
       standalone={props.standalone}
       headerVisible={connected()}
       count={player.queue().length}
+      matchedCount={props.query?.trim() ? matched().length : undefined}
       duration={durationLabel()}
       onClose={props.onClose}
       navigation={props.navigation}
@@ -89,6 +103,7 @@ export function PlaybackQueue(props: {
             class="icon-button quiet"
             aria-label={t("Ajouter à la liste de lecture")}
             title={t("Ajouter à la liste de lecture")}
+            disabled={player.isCd()}
             aria-expanded={adding()}
             aria-pressed={adding()}
             onClick={() => setAdding(!adding())}
@@ -99,7 +114,7 @@ export function PlaybackQueue(props: {
             class="icon-button quiet"
             disabled={!reorderable() || player.queue().length < 2}
             aria-label={t("Rétablir l’ordre initial de la liste de lecture")}
-            title={t("Rétablir l’ordre initial de la liste de lecture")}
+            title={orderHint(t("Rétablir l’ordre initial de la liste de lecture"))}
             onClick={() => reorder(originalQueueOrder(order()))}
           >
             <Icon name="ordered" />
@@ -108,7 +123,7 @@ export function PlaybackQueue(props: {
             class="icon-button quiet"
             disabled={!reorderable() || player.queue().length < 2}
             aria-label={t("Trier la liste de lecture par titre")}
-            title={t("Trier la liste de lecture par titre")}
+            title={orderHint(t("Trier la liste de lecture par titre"))}
             onClick={() =>
               reorder(
                 [...player.queue()]
@@ -123,7 +138,7 @@ export function PlaybackQueue(props: {
             class="icon-button quiet"
             disabled={!reorderable() || player.queue().length < 2}
             aria-label={t("Inverser la liste de lecture")}
-            title={t("Inverser la liste de lecture")}
+            title={orderHint(t("Inverser la liste de lecture"))}
             onClick={() => reorder(order().reverse())}
           >
             <Icon name="reverse" />
@@ -164,7 +179,7 @@ export function PlaybackQueue(props: {
       }
     >
       <ol>
-        <For each={player.queue().slice(0, visible())}>
+        <For each={matched().slice(0, visible())}>
           {(row) => (
             <QueueTrackRow
               row={row}
@@ -236,7 +251,7 @@ export function PlaybackQueue(props: {
           )}
         </For>
       </ol>
-      <Show when={player.queue().length > visible()}>
+      <Show when={matched().length > visible()}>
         <button onClick={() => setVisible(visible() + 100)}>{t("Afficher davantage")}</button>
       </Show>
     </PlaybackQueueView>

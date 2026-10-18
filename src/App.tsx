@@ -1,3 +1,5 @@
+import { CatalogSearch } from "./components/CatalogSearch";
+import { AlbumCount } from "./components/AlbumCount";
 import { parentalRouteAllowed } from "./library/parental-route";
 import { EmptyState } from "./components/EmptyState";
 import { ParentalNotice } from "./components/ParentalNotice";
@@ -306,38 +308,17 @@ export function App() {
           {t("phémios")}
           <span>.</span>
         </a>
-        <div class="search">
-          <a
-            class="advanced-search-action"
-            href="#/advanced-search"
-            title={t("Recherche avancée")}
-            aria-label={t("Recherche avancée")}
-          >
-            <Icon name="search" />
-            <span>{t("Avancée")}</span>
-          </a>
-          <input
-            type="search"
-            aria-label={
-              current().kind === "section" && section() === "tags"
-                ? t("Rechercher un tag")
-                : t("Rechercher dans tous les champs du catalogue")
+        <CatalogSearch
+          section={current().kind === "section" ? section() : undefined}
+          value={filters().query}
+          onInput={(value) => {
+            setFilters({ ...filters(), query: value });
+            if (section() === "tags") {
+              setSelectedTag([]);
+              setTagOffset(0);
             }
-            placeholder={
-              current().kind === "section" && section() === "tags"
-                ? t("Rechercher un tag")
-                : t("Artiste, titre, pays, genre, tag…")
-            }
-            value={filters().query}
-            onInput={(event) => {
-              setFilters({ ...filters(), query: event.currentTarget.value });
-              if (section() === "tags") {
-                setSelectedTag([]);
-                setTagOffset(0);
-              }
-            }}
-          />
-        </div>
+          }}
+        />
         <a
           class="server-button settings-button"
           href="#/settings"
@@ -388,8 +369,8 @@ export function App() {
                 ? t("Bibliothèque Aède")
                 : t("Cache local · hors ligne")}
             <small>
-              {principalArtists().length} {t("artistes d’album ·")} {library.albums().length}{" "}
-              {t("albums")}{" "}
+              {principalArtists().length} {t("artistes d’album ·")}{" "}
+              <AlbumCount value={library.albums().length} />
             </small>
             <Show when={library.mediaProgress()[1]}>
               <small>
@@ -445,7 +426,9 @@ export function App() {
                 artistCatalog(section())
                   ? filterArtists(principalArtists(), library.albums(), filters()).length
                   : filterAlbums(
-                      library.albums(),
+                      section() === "composers"
+                        ? library.albums().filter((album) => album.composers?.length)
+                        : library.albums(),
                       library.artists(),
                       filters(),
                       filters().recentOnly ? recentNow() : 0,
@@ -460,7 +443,9 @@ export function App() {
                 current().kind === "section" && artistCatalog(section())
                   ? principalArtists()
                   : library.artists(),
-                library.albums(),
+                section() === "composers"
+                  ? library.albums().filter((album) => album.composers?.length)
+                  : library.albums(),
                 filters(),
                 current().kind === "section" && artistCatalog(section()),
                 filters().recentOnly ? recentNow() : 0,
@@ -494,15 +479,20 @@ export function App() {
                   onToggle={() => setFilters({ ...filters(), recentOnly: !filters().recentOnly })}
                 />
               </Show>
-              <Show when={hasFilters() && ["albums", "compilations", "genres"].includes(section())}>
+              <Show
+                when={
+                  hasFilters() &&
+                  ["albums", "compilations", "genres", "composers"].includes(section())
+                }
+              >
                 <CoverSize
                   value={
                     browsing.value().coverSizes[
-                      section() as "albums" | "compilations" | "genres"
+                      section() as "albums" | "compilations" | "genres" | "composers"
                     ] ?? browsing.value().coverSize
                   }
                   resetValue={browsing.value().coverSize}
-                  disabled={section() === "albums" && coverFlow()}
+                  disabled={["albums", "composers"].includes(section()) && coverFlow()}
                   onChange={(value) =>
                     browsing.update({
                       coverSizes: { ...browsing.value().coverSizes, [section()]: value },
@@ -530,7 +520,7 @@ export function App() {
                     setCompact(!compact());
                   }}
                   onCoverFlow={
-                    current().kind === "section" && section() === "albums"
+                    current().kind === "section" && ["albums", "composers"].includes(section())
                       ? () => {
                           setCompact(false);
                           setCoverFlow(!coverFlow());
@@ -564,11 +554,13 @@ export function App() {
               "compilations",
               "countries",
               "genres",
+              "composers",
               "tracks",
               "tags",
               "labels",
               "radio",
               "concerts",
+              "cd",
               "settings",
               "relations",
               "players",
@@ -614,9 +606,14 @@ export function App() {
                 </Show>
                 <Show when={route.kind === "section" && section() !== "labels"}>
                   <Show
-                    when={["artists", "albums", "compilations", "countries", "genres"].includes(
-                      section(),
-                    )}
+                    when={[
+                      "artists",
+                      "albums",
+                      "compilations",
+                      "countries",
+                      "genres",
+                      "composers",
+                    ].includes(section())}
                     fallback={
                       <Show
                         when={section() === "tracks"}
@@ -687,7 +684,7 @@ export function App() {
                       compact={compact()}
                       coverSize={
                         browsing.value().coverSizes[
-                          section() as "albums" | "compilations" | "genres"
+                          section() as "albums" | "compilations" | "genres" | "composers"
                         ] ?? browsing.value().coverSize
                       }
                       section={section()}

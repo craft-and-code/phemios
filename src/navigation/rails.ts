@@ -3,6 +3,8 @@ import type { Route } from "./routes";
 export function catalogRails(route: Route): boolean {
   return (
     route.kind === "section" &&
-    ["artists", "albums", "compilations", "countries", "genres"].includes(route.section)
+    ["artists", "albums", "compilations", "countries", "genres", "composers"].includes(
+      route.section,
+    )
   );
 }

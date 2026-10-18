@@ -1,3 +1,4 @@
+import { AlbumCount } from "../components/AlbumCount";
 import { StickyHeader } from "../components/StickyHeader";
 import { PageLoader } from "../components/PageLoader";
 import { EmptyState } from "../components/EmptyState";
@@ -163,7 +164,9 @@ export function LabelsPage(props: { query: string }) {
                   <div class="label-row">
                     <a class="label-link" href={`#/label/${encodeURIComponent(label.reference)}`}>
                       <strong title={label.name}>{label.name}</strong>
-                      <small>{t("{0} albums", label.releaseCount)}</small>
+                      <small>
+                        <AlbumCount value={label.releaseCount} />
+                      </small>
                       <SourceBadge reference={label.reference} />
                     </a>
                     <CoverPlay

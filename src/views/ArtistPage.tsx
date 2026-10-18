@@ -1,3 +1,4 @@
+import { AlbumCount } from "../components/AlbumCount";
 import { artistCatalogue } from "../library/artist-catalogue";
 import { createToolPreferences } from "../library/tool-preferences";
 import { BiographyText } from "../components/BiographyText";
@@ -136,7 +137,7 @@ export function ArtistPage(props: {
           <div class="section-heading">
             <h2>{catalogue().credited ? t("Albums crédités") : t("Discographie")}</h2>
             <span role="status">
-              {albums().length} {t("albums dans la sélection")}
+              <AlbumCount value={albums().length} /> {t("dans la sélection")}
             </span>
           </div>
           <AlbumGrid

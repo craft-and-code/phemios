@@ -1,6 +1,8 @@
 import { t } from "../i18n";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
+  /** Physical CD playback never inherits a remote account/reference namespace. */
+  source?: "aede" | "cd";
   spectrum?: readonly number[];
   spectrum_hz?: readonly number[];
   shuffled: boolean;
@@ -59,6 +61,7 @@ const count = (v: unknown) => typeof v === "number" && Number.isSafeInteger(v) &
 export function parsePlayback(value: unknown): PlaybackState {
   const v = object(value);
   if (
+    (v.source !== undefined && v.source !== "aede" && v.source !== "cd") ||
     !(["idle", "connecting", "playing", "paused", "ended", "error"] as unknown[]).includes(
       v.status,
     ) ||

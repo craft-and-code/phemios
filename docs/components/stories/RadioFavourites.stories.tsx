@@ -46,6 +46,7 @@ export const WholeColumnScroll: Story = {
     const column = canvasElement.querySelector<HTMLElement>(".radio-world")!;
     const list = canvasElement.querySelector<HTMLElement>(".radio-favourites .radio-stations")!;
     expect(getComputedStyle(column).overflowY).toBe("auto");
+    expect(parseFloat(getComputedStyle(column).paddingInlineEnd)).toBeGreaterThanOrEqual(8);
     expect(column.scrollHeight).toBeGreaterThan(column.clientHeight);
     expect(getComputedStyle(list).overflowY).toBe("visible");
     expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight + 1);

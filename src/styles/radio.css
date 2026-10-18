@@ -249,6 +249,8 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  padding-inline-end: var(--control-gap);
+  margin-inline-end: calc(-1 * var(--control-gap));
 }
 .radio-globe-country {
   display: grid;
@@ -286,6 +288,7 @@
     max-width: 360px;
     width: 100%;
     margin: auto;
+    padding-inline-end: 0;
   }
   .radio-world .globe-display {
     height: 260px;

@@ -38,7 +38,7 @@ pub(crate) async fn playback_state(
         Ok((snapshot, origin))
     })
     .await?;
-    crate::aede::public(snapshot, origin)
+    public_snapshot(snapshot, origin)
 }
 #[tauri::command]
 #[expect(
@@ -165,7 +165,7 @@ pub(crate) async fn playback_control(
                 .ok_or("File de lecture invalide.")? as usize;
             player.remove(id, occurrence)?;
             let origin = *source.lock().map_err(|_| "État audio indisponible.")?;
-            return crate::aede::public(player.snapshot()?, origin);
+            return public_snapshot(player.snapshot()?, origin);
         }
         if controller.active() {
             if action == "stop" {
@@ -239,3 +239,19 @@ pub(crate) async fn playback_append(
     })
     .await
 }
+
+// CD references belong to an anonymous local source, never the selected Aède authority.
+fn public_snapshot(
+    value: Value,
+    origin: phemios_core::federation::Source,
+) -> Result<Value, String> {
+    if value["source"] == "cd" {
+        Ok(value)
+    } else {
+        crate::aede::public(value, origin)
+    }
+}
+
+#[cfg(test)]
+#[path = "playback_cd_tests.rs"]
+mod cd_tests;

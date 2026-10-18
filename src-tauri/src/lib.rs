@@ -4,6 +4,8 @@
 mod account_test_support;
 mod aede;
 mod articles;
+mod cd;
+mod cd_image;
 mod commands;
 mod concerts;
 mod encyclopedia;
@@ -70,6 +72,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 phemios_core::playback::Player::default(),
             ));
             app.manage(hqplayer::HqPlayer::default());
+            app.manage(cd::Cd::default());
             app.manage(encyclopedia::Encyclopedia::default());
             app.manage(concerts::Concerts::default());
             app.manage(radio::Radio(std::sync::Arc::new(std::sync::Mutex::new(
@@ -85,6 +88,10 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            cd::cd_scan,
+            cd_image::cd_open_image,
+            cd::cd_start,
+            cd::cd_eject,
             server_profile::aede_import_profile,
             concerts::concerts_config,
             concerts::concerts_events,

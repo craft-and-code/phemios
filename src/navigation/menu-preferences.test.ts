@@ -198,3 +198,25 @@ it("migrates old flat recent-menu preferences and still rejects duplicated legac
     }),
   ).toThrow();
 });
+
+it("inserts the new composers menu between existing genres and labels without resetting custom order", () => {
+  const value = readMenuPreferences({
+    getItem: () =>
+      JSON.stringify({ version: 6, order: ["albums", "genres", "labels", "artists"], hidden: [] }),
+  });
+  expect(
+    value.order.slice(value.order.indexOf("genres"), value.order.indexOf("genres") + 3),
+  ).toEqual(["genres", "composers", "labels"]);
+});
+
+it("inserts local CD playback before Concerts in default and existing source menus", () => {
+  const defaults = defaultMenuOrder();
+  expect(defaults.indexOf("cd")).toBe(defaults.indexOf("concerts") - 1);
+  const store = {
+    getItem: () =>
+      JSON.stringify({ version: 6, order: defaults.filter((id) => id !== "cd"), hidden: [] }),
+  };
+  const next = readMenuPreferences(store);
+  expect(next.order.indexOf("cd")).toBe(next.order.indexOf("concerts") - 1);
+  expect(next.order.filter((id) => id === "cd")).toHaveLength(1);
+});

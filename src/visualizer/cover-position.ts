@@ -20,10 +20,13 @@ export function createCoverPosition() {
   };
 }
 /** Letter landmarks reflect the real order, including reverse and nonalphabetical sorting. */
-export function coverLetterStops(rows: readonly Pick<Cover, "title">[]) {
+export function coverLetterStops<Row extends Pick<Cover, "title">>(
+  rows: readonly Row[],
+  name: (row: Row) => string = (row) => row.title,
+) {
   let previous = "";
   return rows.flatMap((row, index) => {
-    const initial = normalizeName(row.title).slice(0, 1).toUpperCase();
+    const initial = normalizeName(name(row)).slice(0, 1).toUpperCase();
     const letter = /^[A-Z]$/.test(initial) ? initial : "#";
     if (letter === previous) return [];
     previous = letter;

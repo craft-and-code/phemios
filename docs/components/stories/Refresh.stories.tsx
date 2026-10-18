@@ -49,3 +49,25 @@ export const Cancel: Story = {
     await expect(button).not.toHaveAttribute("aria-busy");
   },
 };
+
+/** A synchronous read still gets one full turn without delaying the actual result. */
+export const ImmediateRotation: Story = {
+  args: { rotate: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole("button", { name: "Actualiser" });
+    await userEvent.click(button);
+    expect(button.querySelector(".refresh-rotating")).not.toBeNull();
+    expect(getComputedStyle(button.querySelector(".refresh-glyph")!).animationDirection).toBe(
+      "reverse",
+    );
+    expect(button.querySelector(".spinner")).toBeNull();
+    expect(button).toBeDisabled();
+    // A completed animation cycle, rather than request duration, retires the visual action.
+    button
+      .querySelector(".refresh-glyph")!
+      .dispatchEvent(new Event("animationiteration", { bubbles: true }));
+    expect(button.querySelector(".refresh-rotating")).toBeNull();
+    expect(button).toBeEnabled();
+  },
+};

@@ -73,3 +73,38 @@
 .track-actions .cover-play.icon-button {
   border-radius: 8px;
 }
+
+/* The shared Play control centres the triangle bounds, including standalone CD/detail buttons. */
+.play-action.icon-button {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+}
+.play-action > svg {
+  display: block;
+  transform: translateX(-1px);
+}
+.row-play.icon-button {
+  width: var(--row-action-size);
+  height: var(--row-action-size);
+  border-radius: 8px;
+}
+.row-play.icon-button > svg {
+  width: var(--row-action-icon-size);
+  height: var(--row-action-icon-size);
+}
+.refresh-glyph {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+.refresh-glyph.refresh-rotating {
+  animation: activity-spin 0.65s linear infinite reverse;
+}
+@media (prefers-reduced-motion: reduce) {
+  .refresh-glyph.refresh-rotating {
+    animation: none;
+  }
+}

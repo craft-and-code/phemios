@@ -9,7 +9,7 @@ export function createScopedFilters(section: Accessor<Section>, domain: Accessor
     Partial<Record<Section, { value: Filters; domain: Interval }>>
   >({});
   const defaults = (scope: Section): Filters => ({
-    mode: ["countries", "artists", "albums"].includes(scope) ? "none" : "years",
+    mode: ["countries", "artists", "albums", "composers"].includes(scope) ? "none" : "years",
     years: domain(),
     alphabet: [0, 26],
     includeUnknownYear: true,
@@ -74,11 +74,15 @@ export function activeFilters(value: Filters, domain: Interval): ActiveFilter[] 
       key: `country:${country ?? ""}`,
       label: country === null ? t("Origine inconnue") : countryName(country, country),
     });
+  for (const reference of value.composers ?? [])
+    out.push({ key: `composer:${reference}`, label: t("Compositeur sélectionné") });
   for (const genre of selectedGenres(value)) out.push({ key: `genre:${genre}`, label: genre });
   return out;
 }
 /** Remove only the chosen restriction, retaining rail visibility and unrelated selections. */
 export function clearFilter(value: Filters, key: string, domain: Interval): Filters {
+  if (key.startsWith("composer:"))
+    return { ...value, composers: value.composers?.filter((v) => `composer:${v}` !== key) ?? [] };
   if (key === "recent") return { ...value, recentOnly: false };
   if (key === "query") return { ...value, query: "" };
   if (key === "years") return { ...value, years: domain };

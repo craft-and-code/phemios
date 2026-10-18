@@ -2,9 +2,22 @@ use super::output::Signals;
 use super::stream::stream;
 use super::{Command, State, update};
 use crate::network::Client;
+/// Native source substitution retains the existing transport and queue state machine.
+pub(super) enum Source {
+    Remote(Client),
+    Disc(phemios_cd::Disc, Arc<Mutex<Option<String>>>),
+}
+impl Source {
+    pub(super) fn failure(&self) -> Option<Arc<Mutex<Option<String>>>> {
+        match self {
+            Self::Disc(_, error) => Some(error.clone()),
+            Self::Remote(_) => None,
+        }
+    }
+}
 use std::sync::{Arc, Mutex, mpsc::Receiver};
 pub(super) fn run(
-    client: Client,
+    source: Source,
     index: usize,
     output: (String, super::Policy),
     commands: Receiver<Command>,
@@ -39,26 +52,34 @@ pub(super) fn run(
                 .crossfade_ms;
             let reference =
                 state.lock().map_err(|_| "État audio indisponible.")?.tracks[index].clone();
-            let result = if crossfade_ms > 0 && matches!(policy, super::Policy::Dsp) {
-                super::crossfade::stream(
-                    &client,
-                    (index, position),
-                    &device,
-                    crossfade_ms,
-                    &commands,
-                    state,
-                    signals,
+            let result = if let Source::Disc(disc, denied) = &source {
+                super::cd_stream::stream(
+                    disc, &reference, position, &device, &commands, state, signals, denied,
                 )
+            } else if let Source::Remote(client) = &source {
+                if crossfade_ms > 0 && matches!(policy, super::Policy::Dsp) {
+                    super::crossfade::stream(
+                        client,
+                        (index, position),
+                        &device,
+                        crossfade_ms,
+                        &commands,
+                        state,
+                        signals,
+                    )
+                } else {
+                    stream(
+                        client,
+                        &reference,
+                        position,
+                        (&device, policy),
+                        &commands,
+                        state,
+                        signals,
+                    )
+                }
             } else {
-                stream(
-                    &client,
-                    &reference,
-                    position,
-                    (&device, policy),
-                    &commands,
-                    state,
-                    signals,
-                )
+                return Err("Source audio invalide.".into());
             }?;
             queue.jump(state.lock().map_err(|_| "État audio indisponible.")?.index);
             match result {
@@ -82,6 +103,9 @@ pub(super) fn run(
             .lock()
             .map_err(|_| "État audio indisponible.")?
             .position;
+        if matches!(source, Source::Disc(..)) {
+            paused = state.lock().map_err(|_| "État audio indisponible.")?.status == "paused";
+        }
         synchronize(&mut queue, state)?;
         match action {
             Command::Jump(value) => {

@@ -22,6 +22,7 @@ export function createRadioPlayback(
   createMedia = browserRadioMedia,
   initialVolume?: () => number,
   authorize?: (media: ExternalParentalMedia) => Promise<void>,
+  rememberVolume?: (value: number) => void,
 ) {
   const [station, setStation] = createSignal<Station>(),
     [status, setStatus] = createSignal<"idle" | "connecting" | "playing" | "paused" | "error">(
@@ -58,7 +59,7 @@ export function createRadioPlayback(
   async function start(selected: Station) {
     if (!alive) return;
     setRevision((value) => value + 1);
-    if (status() === "idle" && initialVolume) changeVolume(initialVolume());
+    if (status() === "idle" && initialVolume) changeVolume(initialVolume(), false);
     release();
     const held = epoch;
     setStation(selected);
@@ -137,11 +138,12 @@ export function createRadioPlayback(
       );
     }
   }
-  function changeVolume(value: number) {
+  function changeVolume(value: number, remember = true) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
     setVolume(value);
     media?.volume(value);
     if (value > 0) audible = value;
+    if (remember) rememberVolume?.(value);
   }
   onCleanup(() => {
     alive = false;

@@ -36,9 +36,15 @@ const tracks = [
 beforeEach(() => {
   vi.useFakeTimers();
   vi.resetAllMocks();
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 it("does not poll or play offline and sends the complete queue with the selected start index", async () => {
   await createRoot(async (dispose) => {
@@ -2070,4 +2076,32 @@ it("does not stop a replacement playback when an earlier revocation fails late",
     expect(player.error()).toBe("");
     dispose();
   });
+});
+
+it("restores the saved volume on reopening and keeps accounts separate", async () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
+  try {
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => false);
+      await player.volume(0.27);
+      dispose();
+    });
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => false);
+      expect(player.state().volume).toBe(0.27);
+      dispose();
+    });
+    activateInterfaceProfile("other-owner", (values) => values);
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => false);
+      expect(player.state().volume).toBe(0.5);
+      dispose();
+    });
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

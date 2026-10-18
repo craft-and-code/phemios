@@ -5,6 +5,8 @@ export interface PlayableSelection {
   title: string;
   album: Album | null;
   artist: string;
+  /** Known duration for temporary native sources outside the catalogue. */
+  durationMs?: number;
   number: number;
   albumTotal: number;
 }

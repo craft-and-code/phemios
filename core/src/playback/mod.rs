@@ -1,5 +1,9 @@
 //! Native consumed-frame PCM client for Aède's authenticated playback contract.
 mod actor;
+mod cd;
+mod cd_authority;
+mod cd_reader;
+mod cd_stream;
 mod crossfade;
 mod crossfade_feedback;
 mod crossfade_mix;
@@ -62,6 +66,8 @@ struct Worker {
 }
 #[derive(Default)]
 struct State {
+    local_cd: bool,
+    cd_disc: Option<String>,
     status: &'static str,
     reference: String,
     index: usize,
@@ -147,7 +153,7 @@ impl Player {
             [0.; 24]
         };
         Ok(
-            json!({"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"protected_occurrences":s.protected,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"source":if s.local_cd { "cd" } else { "aede" },"cd_disc":s.cd_disc,"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"protected_occurrences":s.protected,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.
@@ -178,6 +184,29 @@ impl Player {
         ) {
             return Err("Votre compte ne permet pas la lecture.".into());
         }
+        self.launch(
+            actor::Source::Remote(client),
+            tracks,
+            device,
+            index,
+            policy,
+            None,
+        )
+    }
+    fn launch(
+        &self,
+        source: actor::Source,
+        tracks: Vec<String>,
+        device: String,
+        index: usize,
+        policy: Policy,
+        permission: Option<cd_authority::Check>,
+    ) -> Result<(), String> {
+        let local_cd = matches!(source, actor::Source::Disc(..));
+        let cd_disc = match &source {
+            actor::Source::Disc(disc, _) => Some(disc.token.clone()),
+            actor::Source::Remote(_) => None,
+        };
         let mut slot = self.worker.lock().map_err(|_| "Lecteur indisponible.")?;
         self.signals.paused.store(true, Ordering::Relaxed);
         if let Some(old) = slot.take() {
@@ -200,6 +229,8 @@ impl Player {
             .map_err(|_| "État audio indisponible.")?
             .repeat;
         *self.state.lock().map_err(|_| "État audio indisponible.")? = State {
+            local_cd,
+            cd_disc,
             repeat,
             crossfade_ms,
             status: "connecting",
@@ -213,7 +244,8 @@ impl Player {
             ..State::default()
         };
         let handle = std::thread::spawn(move || {
-            if let Err(error) = actor::run(client, index, (device, policy), rx, &state, &signals) {
+            let _authority = cd_authority::Guard::new(permission, source.failure());
+            if let Err(error) = actor::run(source, index, (device, policy), rx, &state, &signals) {
                 signals.paused.store(true, Ordering::Relaxed);
                 if let Ok(mut s) = state.lock() {
                     s.status = "error";
@@ -250,6 +282,9 @@ impl Player {
             return Err("Aucune lecture active.".into());
         }
         let mut state = self.state.lock().map_err(|_| "État audio indisponible.")?;
+        if state.local_cd {
+            return Err("Une file CD ne peut pas recevoir de pistes du catalogue.".into());
+        }
         if state.queue_id != id
             || state.total != expected_total
             || state.total == 0
@@ -431,6 +466,12 @@ impl Player {
             state.shuffled = queue.shuffled();
             return Ok(());
         }
+        if action == "policy" && self.is_cd()? {
+            if value == "without-effects" {
+                return Ok(());
+            }
+            return Err("Le traitement DSP n’est pas disponible pour les CD.".into());
+        }
         let command = match action {
             "policy" => Command::Policy(Policy::parse(value.as_str().ok_or("Mode invalide.")?)?),
             "pause" => Command::Pause,
@@ -502,3 +543,7 @@ mod append_tests;
 #[cfg(test)]
 #[path = "clear_tests.rs"]
 mod clear_tests;
+
+#[cfg(test)]
+#[path = "cd_tests.rs"]
+mod cd_tests;

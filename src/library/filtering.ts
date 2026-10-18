@@ -151,6 +151,7 @@ export function filterAlbums(
   const index = catalogIndex(artists, albums);
   return albums.filter((album) => {
     if (filters.recentOnly && !isRecentAlbum(album, nowSeconds)) return false;
+    if (!matchesComposers(album, filters)) return false;
     const related = index.artistsByAlbum.get(album.reference) ?? [];
     const fallback: Artist = {
       reference: "",
@@ -177,4 +178,12 @@ export function filterAlbums(
 /** Legacy scalar and current multi-selection share union semantics. */
 export function selectedGenres(filters: Filters): readonly string[] {
   return [...new Set([...(filters.genres ?? []), ...(filters.genre ? [filters.genre] : [])])];
+}
+
+/** A union of exact, source-qualified composer identities; never inferred from album artists. */
+export function matchesComposers(album: Album, filters: Filters): boolean {
+  return (
+    !filters.composers?.length ||
+    filters.composers.some((reference) => album.composers?.includes(reference))
+  );
 }

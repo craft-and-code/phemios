@@ -44,6 +44,15 @@ export function SettingsAbout() {
         />
       </section>
       <section class="settings-card">
+        <h2>{t("Ressources graphiques")}</h2>
+        <ProductVersions
+          rows={[
+            { name: "Lucide · piano", version: "SVG · ISC", url: "https://lucide.dev/icons/piano" },
+          ]}
+          onOpen={open}
+        />
+      </section>
+      <section class="settings-card">
         <h2>{t("Bibliothèques externes")}</h2>
         <p class="muted">
           {t(

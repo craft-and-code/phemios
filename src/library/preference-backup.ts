@@ -55,7 +55,7 @@ export function parsePreferenceBackup(raw: string): PreferenceBackup {
   const parsed = parseAccountSettings({ values });
   for (const [key, allowed] of [
     ["phemios.navigation.v1", ["version", "order", "hidden", "labels"]],
-    ["phemios.audio.v1", ["crossfadeMs", "repeat", "policy"]],
+    ["phemios.audio.v1", ["crossfadeMs", "repeat", "policy", "volume"]],
   ] as const)
     if (Object.keys(parsed[key] as object).some((field) => !allowed.some((name) => name === field)))
       throw new Error(t("Sauvegarde des préférences invalide."));

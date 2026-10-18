@@ -1,5 +1,6 @@
 import { t } from "../i18n";
 export type Section =
+  | "cd"
   | "concerts"
   | "encyclopedia"
   | "achievements"
@@ -9,6 +10,7 @@ export type Section =
   | "compilations"
   | "countries"
   | "genres"
+  | "composers"
   | "labels"
   | "moods"
   | "playback"
@@ -39,6 +41,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "compilations", label: t("Compilations"), symbol: "layers" },
   { id: "countries", label: t("Pays"), symbol: "globe" },
   { id: "genres", label: t("Genres"), symbol: "genres" },
+  { id: "composers", label: t("Compositeurs"), symbol: "note" },
   { id: "labels", label: t("Labels"), symbol: "label" },
   { id: "moods", label: t("Ambiances"), symbol: "moods" },
   { id: "favourites", label: t("Favoris"), symbol: "heart" },
@@ -49,6 +52,7 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
   { id: "playlists", label: t("Listes de lecture"), symbol: "playlist" },
   { id: "radio", label: t("Radio"), symbol: "radio" },
   { id: "podcasts", label: t("Podcasts"), symbol: "podcast" },
+  { id: "cd", label: t("CD audio"), symbol: "cd" },
   { id: "concerts", label: t("Concerts"), symbol: "concerts" },
   { id: "relations", label: t("Relations"), symbol: "graph" },
   { id: "encyclopedia", label: t("Encyclopédie"), symbol: "book" },

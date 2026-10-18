@@ -113,6 +113,14 @@ export function requestAede<T>(
   });
 }
 
+/** Optical access uses only opaque, previously discovered native selectors. */
+export const scanCd = (id?: string) => nativeCall<unknown>("cd_scan", { id });
+/** Only the native file dialog can choose a CUE path and admit its bounded relative BIN files. */
+export const openCdImage = () => nativeCall<string | null>("cd_open_image");
+export const ejectCd = (id: string) => nativeCall<unknown>("cd_eject", { id });
+export const startCd = (token: string, tracks: readonly string[], device: string, index: number) =>
+  nativeCall<void>("cd_start", { token, tracks, device, index });
+
 /** PCM credentials and device callbacks stay native; only bounded transport controls cross IPC. */
 export const playbackState = () => nativeCall<unknown>("playback_state");
 export const playbackOutputs = () => nativeCall<unknown>("playback_devices");

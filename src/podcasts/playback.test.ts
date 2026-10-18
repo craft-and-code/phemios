@@ -289,3 +289,27 @@ it("does not resume a retained podcast after owner replacement or a late cancell
     }
   });
 });
+
+it("restores shared volume without writing it back, then remembers user volume and mute", async () => {
+  await createRoot(async (dispose) => {
+    const remember = vi.fn(),
+      f = fixture();
+    const player = createPodcastPlayback(
+      async () => {},
+      () => f.media,
+      () => {},
+      () => 0.27,
+      undefined,
+      undefined,
+      remember,
+    );
+    await player.start(feed, feed.episodes[0]!);
+    expect(player.volume()).toBe(0.27);
+    expect(remember).not.toHaveBeenCalled();
+    player.changeVolume(0.31);
+    expect(remember).toHaveBeenLastCalledWith(0.31);
+    player.mute();
+    expect(remember).toHaveBeenLastCalledWith(0);
+    dispose();
+  });
+});

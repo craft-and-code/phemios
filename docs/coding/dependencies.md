@@ -27,3 +27,11 @@ The approved network dependencies are recorded in Cargo.lock. ureq uses its stan
 The current lockfiles also include the explicitly approved `d3-geo` for bounded local globe projection, CPAL/rtrb for the native consumed-frame output, tungstenite for authenticated Aède PCM, getrandom for the owned engine's secret, quick-xml for bounded RSS parsing and tauri-plugin-dialog for selected native folder/file dialogs. No general shell, filesystem or HTTP plugin is granted to the WebView. These dependencies serve existing features; this hardening lot introduces no product dependency.
 
 The security review and platform-specific residuals are recorded in [the hardening checkpoint](hardening.md). A clean advisory check is a statement about the checked lockfile and database at that time, not a proof that the application has no vulnerabilities.
+
+## Vendored icon artwork
+
+The Genres glyph uses the Lucide `piano` SVG (Lucide Icons and Contributors, ISC). Its original source is retained at `public/icons/lucide-piano.svg`, its complete license at `public/licenses/lucide.txt`, and Settings → About credits links to the official icon page. Icon embeds only its path data in the existing local SVG renderer, using the shared stroke/size/color. No icon runtime package, font or network loading is added. The remaining icon vocabulary stays local. Source: https://github.com/lucide-icons/lucide/blob/main/icons/piano.svg .
+
+## Local audio CD source
+
+The explicitly approved `cd-da-reader` 1.0.0 (MIT, complete license retained at `public/licenses/cd-da-reader.txt`) is isolated in `crates/phemios-cd`. It uses native macOS/Linux/Windows CD-drive APIs, with libc/cc or windows-sys as platform dependencies. Phémios adds no unsafe block, decoder, resampler, privilege-escalation helper or external CD service. The existing CPAL/rtrb transport remains responsible for output. Cargo.lock retains all dependency versions and About's generated Cargo credits include the new library. See [CD playback](../design/cd-playback.md) for device rights, bounded streaming, account restrictions and physical acceptance limits.

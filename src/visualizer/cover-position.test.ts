@@ -39,3 +39,20 @@ it("places letter landmarks at their actual visible positions in either order", 
     { letter: "A", index: 2 },
   ]);
 });
+
+it("uses the actual composer ordering for letter landmarks instead of repeating album initials", () => {
+  const rows = [
+    { title: "Zebra", composer: "Aaron" },
+    { title: "Alpha", composer: "Aaron" },
+    { title: "Zigzag", composer: "Björk" },
+    { title: "Omega", composer: "Björk" },
+  ];
+  expect(coverLetterStops(rows, (row) => row.composer)).toEqual([
+    { letter: "A", index: 0 },
+    { letter: "B", index: 2 },
+  ]);
+  expect(coverLetterStops([...rows].reverse(), (row) => row.composer)).toEqual([
+    { letter: "B", index: 0 },
+    { letter: "A", index: 2 },
+  ]);
+});

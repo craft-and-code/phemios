@@ -1,4 +1,5 @@
 import { expect } from "storybook/test";
+import { PlaybackQueueView } from "../../../src/components/PlaybackQueueView";
 import { StickyHeader } from "../../../src/components/StickyHeader";
 import { Icon } from "../../../src/components/Icon";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
@@ -133,5 +134,68 @@ export const DisconnectedHistory: Story = {
       connected.querySelector("header")!.getBoundingClientRect().height,
     ).toBeGreaterThanOrEqual(61);
     expect(connected.querySelector(".history-results")!.getBoundingClientRect().height).toBe(0);
+  },
+};
+
+/** Compare the real page wrappers, including the standalone queue's independent layout. */
+export const DisconnectedQueueNotice: Story = {
+  render: () => (
+    <div>
+      <main data-notice-view="queue" style={{ height: "400px" }}>
+        <section class="playback-page playlist-page">
+          <PlaybackQueueView
+            standalone
+            headerVisible={false}
+            count={0}
+            actions={null}
+            notices={
+              <p class="notice account-notice">
+                Connectez-vous pour accéder aux données de votre compte.
+              </p>
+            }
+          >
+            <ol />
+          </PlaybackQueueView>
+        </section>
+      </main>
+      <main data-notice-view="reference" style={{ height: "400px" }}>
+        <section class="page result-page">
+          <p class="notice account-notice">
+            Connectez-vous pour accéder aux données de votre compte.
+          </p>
+          <EmptyState icon="heart">No retained results.</EmptyState>
+        </section>
+      </main>
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    const position = (name: string) => {
+      const page = canvasElement.querySelector(`[data-notice-view="${name}"]`)!;
+      const outer = page.getBoundingClientRect(),
+        notice = page.querySelector(".account-notice")!.getBoundingClientRect();
+      return {
+        top: notice.top - outer.top,
+        left: notice.left - outer.left,
+        right: outer.right - notice.right,
+        height: notice.height,
+      };
+    };
+    expect(position("queue")).toEqual(position("reference"));
+    const emptyGeometry = (name: string) => {
+      const page = canvasElement.querySelector(`[data-notice-view="${name}"]`)!;
+      const outer = page.getBoundingClientRect();
+      const icon = page.querySelector(".empty-state > svg")!.getBoundingClientRect();
+      const text = page.querySelector(".empty-state > p")!.getBoundingClientRect();
+      return {
+        x: icon.left + icon.width / 2 - outer.left,
+        y: icon.top + icon.height / 2 - outer.top,
+        size: icon.width,
+        textTop: text.top - outer.top,
+      };
+    };
+    const queue = emptyGeometry("queue"),
+      reference = emptyGeometry("reference");
+    for (const key of ["x", "y", "size", "textTop"] as const)
+      expect(Math.abs(queue[key] - reference[key])).toBeLessThan(1);
   },
 };

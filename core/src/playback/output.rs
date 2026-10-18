@@ -44,7 +44,10 @@ fn record_error(failed: &AtomicBool, kind: cpal::ErrorKind) {
         failed.store(true, Ordering::Relaxed);
     }
 }
-fn select(id: &str) -> Result<(Device, SupportedStreamConfig), String> {
+fn select(
+    id: &str,
+    requested_rate: Option<u32>,
+) -> Result<(Device, SupportedStreamConfig), String> {
     let host = cpal::default_host();
     let device = if id.is_empty() {
         host.default_output_device()
@@ -54,9 +57,29 @@ fn select(id: &str) -> Result<(Device, SupportedStreamConfig), String> {
             .find(|device| device.id().is_ok_and(|value| value.to_string() == id))
     }
     .ok_or("Sortie audio indisponible ou déconnectée.")?;
-    let config = device
+    let default = device
         .default_output_config()
         .map_err(|_| "Format de sortie audio indisponible.")?;
+    let config = if let Some(rate) = requested_rate {
+        if default.sample_rate() == rate && (1..=2).contains(&default.channels()) {
+            default
+        } else {
+            device
+                .supported_output_configs()
+                .map_err(|_| "Formats de sortie audio indisponibles.")?
+                .filter(|config| (1..=2).contains(&config.channels()))
+                .filter_map(|config| config.try_with_sample_rate(rate))
+                .max_by_key(|config| {
+                    (
+                        config.channels() == 2,
+                        config.sample_format() == default.sample_format(),
+                    )
+                })
+                .ok_or("Cette sortie ne permet pas la lecture CD à 44,1 kHz.")?
+        }
+    } else {
+        default
+    };
     if !(1..=2).contains(&config.channels()) || !(8000..=192000).contains(&config.sample_rate()) {
         return Err("Cette sortie nécessite un format audio non pris en charge.".into());
     }
@@ -202,6 +225,12 @@ impl Output {
             .map_err(|_| "Impossible de suspendre la sortie audio.".into())
     }
     pub fn open(id: &str, signals: Arc<Signals>) -> Result<Self, String> {
+        Self::open_rate(id, signals, None)
+    }
+    pub fn open_cd(id: &str, signals: Arc<Signals>) -> Result<Self, String> {
+        Self::open_rate(id, signals, Some(phemios_cd::SAMPLE_RATE))
+    }
+    fn open_rate(id: &str, signals: Arc<Signals>, rate: Option<u32>) -> Result<Self, String> {
         signals.finished.store(false, Ordering::Release);
         signals.underrun_frames.store(0, Ordering::Relaxed);
         signals.level.store(0_f32.to_bits(), Ordering::Relaxed);
@@ -211,7 +240,7 @@ impl Output {
         for level in &signals.spectrum {
             level.store(0_f32.to_bits(), Ordering::Relaxed);
         }
-        let (device, supported) = select(id)?;
+        let (device, supported) = select(id, rate)?;
         let rate = supported.sample_rate();
         let format = supported.sample_format();
         let config: StreamConfig = supported.into();

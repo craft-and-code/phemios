@@ -1,3 +1,4 @@
+import { moodSearch } from "../library/personal-search";
 import { QueueAppend } from "../components/QueueAppend";
 import { retainedMoodPage } from "../library/retained-mood-page";
 import { MoodFeatures } from "../components/MoodFeatures";
@@ -7,7 +8,16 @@ import { ResultCount } from "../components/ResultCount";
 import { StickyHeader } from "../components/StickyHeader";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
-import { createEffect, createResource, createSignal, onCleanup, For, Show } from "solid-js";
+import {
+  createMemo,
+  on,
+  createEffect,
+  createResource,
+  createSignal,
+  onCleanup,
+  For,
+  Show,
+} from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -16,7 +26,7 @@ import { Icon } from "../components/Icon";
 import { Artwork } from "../components/Artwork";
 import { EmptyState } from "../components/EmptyState";
 /** Personal editable recipes expose every matching criterion and play only matched tracks. */
-export function MoodsPage() {
+export function MoodsPage(props: { query: string }) {
   const library = useLibrary(),
     [selected, setSelected] = createSignal(""),
     [offset, setOffset] = createSignal(0),
@@ -80,6 +90,22 @@ export function MoodsPage() {
       offset: offset(),
     });
   const rule = () => current()?.moods.find((mood) => mood.rule.id === selected())?.rule;
+  const matched = createMemo(() =>
+    (current()?.moods ?? []).filter((mood) =>
+      moodSearch({ ...mood.rule, name: moodName(mood.rule) }, props.query),
+    ),
+  );
+  createEffect(
+    on(
+      () => props.query,
+      () => {
+        setSelected("");
+        setOffset(0);
+        setExpected("");
+      },
+      { defer: true },
+    ),
+  );
   createEffect(() => {
     library.session();
     library.source();
@@ -226,9 +252,7 @@ export function MoodsPage() {
     <section class="page result-page moods-page">
       <StickyHeader visible={!!library.session()}>
         <div class="page-heading">
-          <ResultCount
-            value={selected() ? (current()?.total ?? 0) : (current()?.moods.length ?? 0)}
-          />
+          <ResultCount value={selected() ? (current()?.total ?? 0) : matched().length} />
           <button
             class="icon-button"
             aria-label={t("Créer une ambiance")}
@@ -288,7 +312,7 @@ export function MoodsPage() {
         </p>
       </Show>
       <div class="mood-cards">
-        <For each={current()?.moods ?? []}>
+        <For each={matched()}>
           {(mood) => (
             <button
               class="mood-card"
@@ -435,6 +459,9 @@ export function MoodsPage() {
             </Show>
           </>
         )}
+      </Show>
+      <Show when={library.session() && !response.loading && !!current() && !matched().length}>
+        <EmptyState icon="moods">{t("Aucune ambiance dans cette sélection.")}</EmptyState>
       </Show>
       <Show when={!library.session()}>
         <EmptyState icon="moods">{t("Aucune piste dans cette ambiance.")}</EmptyState>

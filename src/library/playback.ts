@@ -1,3 +1,4 @@
+import { cdReference, cdSelection, type CdDisc } from "../cd/model";
 import { interfacePreferences, interfaceProfileIdentity } from "./account-preferences";
 import {
   audioPreferenceKey,
@@ -9,6 +10,7 @@ import { announceSetting } from "./saved-settings";
 import { t } from "../i18n";
 import { batch, createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 import {
+  startCd,
   playbackAppend,
   playbackControl,
   playbackOutputs,
@@ -35,7 +37,11 @@ export function createPlayback(
   beforeStart: () => void = () => {},
   sessionFor?: (reference: string) => AccountSession | undefined,
   availableFor?: (reference: string) => boolean,
+  localCd?: { native: Accessor<boolean>; allowed: Accessor<boolean> },
 ) {
+  const nativeReady = () => localCd?.native() === true;
+  const outputReady = () => ready() || nativeReady();
+  const isCd = () => state().source === "cd" || !!cdReference(selection()[0]?.reference ?? "");
   const [state, setState] = createSignal(idlePlayback),
     [outputs, setOutputs] = createSignal<AudioOutput[]>([]),
     [discovering, setDiscovering] = createSignal(false),
@@ -51,14 +57,18 @@ export function createPlayback(
     [pendingSource, setPendingSource] = createSignal<SourceId>(),
     [remaining, setRemaining] = createSignal(false),
     [policy, setPolicy] = createSignal("without-effects");
+  const [discTarget, setDiscTarget] = createSignal<CdDisc>();
   const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
   const [crossfade, setCrossfade] = createSignal(defaultAudioPreferences.crossfadeMs);
+  let audibleVolume = 0.5;
   function restoreAudio() {
     try {
       const next = parseAudioPreferences(interfacePreferences.getItem(audioPreferenceKey));
       setAudio(next);
       setCrossfade(next.crossfadeMs);
       setPolicy(next.policy);
+      setState((current) => ({ ...current, volume: next.volume }));
+      audibleVolume = next.volume > 0 ? next.volume : 0.5;
     } catch (failure) {
       setError(message(failure));
     }
@@ -123,8 +133,7 @@ export function createPlayback(
     (position) => playbackControl("seek", position),
     setError,
   );
-  let audibleVolume = 0.5,
-    preferenceKey = "";
+  let preferenceKey = "";
   function identify(key: string) {
     preferenceKey = `phemios.playback-time:${key}`;
     try {
@@ -157,6 +166,8 @@ export function createPlayback(
   }
   /** Public cache visibility does not grant another source's session or playback permission. */
   function canStart(reference = target()) {
+    if (cdReference(reference))
+      return nativeReady() && localCd?.allowed() === true && device() !== "@hqplayer";
     if (!reference || !ready() || (availableFor && !availableFor(reference))) return false;
     return !sessionFor || ["user", "admin"].includes(sessionFor(reference)?.account.role ?? "");
   }
@@ -166,16 +177,61 @@ export function createPlayback(
     await configureAudio(epoch);
     if (epoch !== generation) return;
     if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
-    await playbackStart(
-      rows.map((row) => row.reference),
-      device(),
-      index,
-      policy(),
-    );
+    const disc = cdReference(rows[0]?.reference ?? "");
+    if (disc) {
+      if (rows.some((row) => cdReference(row.reference)?.token !== disc.token))
+        throw new Error(t("Une file CD ne peut pas recevoir de pistes du catalogue."));
+      await startCd(
+        disc.token,
+        rows.map((row) => row.reference),
+        device(),
+        index,
+      );
+    } else {
+      await playbackStart(
+        rows.map((row) => row.reference),
+        device(),
+        index,
+        policy(),
+      );
+    }
     if (epoch !== generation) return;
     await refresh(epoch, rows);
   }
+  /** Physical tracks share the same metadata publication and poll as the catalogue player. */
+  async function startDisc(disc: CdDisc, index = 0) {
+    const rows = cdSelection(disc);
+    if (busy() || index < 0 || index >= rows.length || rows.some((row) => !canStart(row.reference)))
+      return;
+    beforeStart();
+    setBusy(true);
+    setError("");
+    cancel();
+    const epoch = generation;
+    try {
+      await startRows(rows, index, epoch);
+    } catch (failure) {
+      if (epoch === generation) setError(message(failure));
+    } finally {
+      if (epoch === generation) {
+        setPendingReference("");
+        setBusy(false);
+      }
+    }
+  }
   async function startReference(reference = target()) {
+    const cd = cdReference(reference);
+    if (cd) {
+      const disc = discTarget();
+      if (!disc || disc.token !== cd.token) {
+        setError(t("Le CD a changé. Actualisez la liste des lecteurs."));
+        return;
+      }
+      return startDisc(
+        disc,
+        disc.tracks.findIndex((track) => track.reference === reference),
+      );
+    }
     if (!canStart(reference) || busy() || !catalog) return;
     beforeStart();
     const current = selection()[state().index];
@@ -258,6 +314,7 @@ export function createPlayback(
     source: SourceId,
     reference?: string,
   ) {
+    if (isCd()) throw new Error(t("Une file CD ne peut pas recevoir de pistes du catalogue."));
     if (!canStart(`track:@phemios/${source}/queue`) || busy() || appending() || !catalog)
       throw new Error(t("Lecture indisponible."));
     if (device() === "@hqplayer")
@@ -336,7 +393,9 @@ export function createPlayback(
     if (busy() || state().status === "connecting") return false;
     if (state().status === "playing") return true;
     if (state().status === "paused") return canStart(state().reference);
-    return canStart(orderedQueue()[0]?.reference ?? target());
+    return canStart(
+      orderedQueue()[0]?.reference ?? (target() || discTarget()?.tracks[0]?.reference),
+    );
   }
   /** Resume the prepared order before falling back to the page. Explicit contextual Play still replaces it. */
   async function togglePlayback() {
@@ -345,6 +404,7 @@ export function createPlayback(
     if (state().status === "paused") return action("resume");
     const first = orderedQueue()[0];
     if (first) return playQueueOccurrence(first.index);
+    if (discTarget()) return startDisc(discTarget()!);
     return startReference();
   }
   /** Contextual additions reuse canonical expansion; failures surface through the existing player feedback. */
@@ -499,7 +559,7 @@ export function createPlayback(
     setDiscovering(false);
   }
   async function discover() {
-    if (!ready() || discovering()) return;
+    if (!outputReady() || discovering()) return;
     const epoch = lifetime;
     setDiscovering(true);
     setError("");
@@ -517,29 +577,46 @@ export function createPlayback(
       if (epoch === lifetime) cancelDiscovery();
     }
   }
-  let pendingVolume: number | undefined,
+  let pendingVolume: { value: number; lifetime: number; profile: object } | undefined,
     volumeRunning = false;
+  function rememberVolume(value: number) {
+    if (!Number.isFinite(value) || value < 0 || value > 1) return;
+    if (value > 0) audibleVolume = value;
+    setState((s) => ({ ...s, volume: value }));
+    try {
+      saveAudio({ ...audio(), volume: value });
+    } catch (failure) {
+      setError(message(failure));
+    }
+  }
   async function volume(value: number) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
-    if (!ready()) {
-      if (value > 0) audibleVolume = value;
-      setState((s) => ({ ...s, volume: value }));
+    if (!outputReady()) {
+      rememberVolume(value);
       return;
     }
     if (value > 0) audibleVolume = value;
-    pendingVolume = value;
+    pendingVolume = { value, lifetime, profile: interfaceProfileIdentity() };
     if (volumeRunning) return;
     volumeRunning = true;
-    const epoch = lifetime;
     try {
-      while (pendingVolume !== undefined && epoch === lifetime) {
-        const next = pendingVolume;
+      while (pendingVolume !== undefined) {
+        const chosen = pendingVolume,
+          next = chosen.value;
         pendingVolume = undefined;
-        await playbackControl("volume", next);
-        if (epoch === lifetime) setState((s) => ({ ...s, volume: next }));
+        const current = () =>
+          chosen.lifetime === lifetime && chosen.profile === interfaceProfileIdentity();
+        if (!current()) continue;
+        try {
+          await playbackControl("volume", next);
+          if (current()) {
+            setState((s) => ({ ...s, volume: next }));
+            saveAudio({ ...audio(), volume: next });
+          }
+        } catch (failure) {
+          if (current()) setError(message(failure));
+        }
       }
-    } catch (failure) {
-      if (epoch === lifetime) setError(message(failure));
     } finally {
       volumeRunning = false;
     }
@@ -785,7 +862,7 @@ export function createPlayback(
   async function playQueueOccurrence(occurrence: number) {
     if (["playing", "paused", "connecting"].includes(state().status))
       return action("jump", occurrence);
-    if (!ready() || busy() || !Number.isSafeInteger(occurrence)) return;
+    if (!outputReady() || busy() || !Number.isSafeInteger(occurrence)) return;
     const ordered = orderedQueue(),
       index = ordered.findIndex((row) => row.index === occurrence);
     if (
@@ -815,9 +892,13 @@ export function createPlayback(
   const ownsSource = (source: SourceId) =>
     pendingSource() === source ||
     [state().reference, selection()[0]?.reference, pendingReference()].some(
-      (reference) => !!reference && referenceSource(reference) === source,
+      (reference) =>
+        !!reference && !cdReference(reference) && referenceSource(reference) === source,
     );
   return {
+    isCd,
+    setDiscTarget,
+    startDisc,
     canStart,
     clearing,
     clearQueue,
@@ -854,12 +935,13 @@ export function createPlayback(
     device,
     error,
     busy,
-    ready,
+    ready: outputReady,
     start,
     action,
     discover,
     chooseOutput,
     volume,
+    rememberVolume,
     reset,
     queue: orderedQueue,
     current: () => {

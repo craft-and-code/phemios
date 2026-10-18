@@ -9,7 +9,7 @@ export function PlaylistsPage(props: { query: string }) {
     <PlaylistsView
       queue={(navigation) => (
         <section class="playback-page playlist-page">
-          <PlaybackQueue standalone navigation={navigation} />
+          <PlaybackQueue standalone query={props.query} navigation={navigation} />
         </section>
       )}
       files={(navigation) => (

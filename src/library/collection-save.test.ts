@@ -142,3 +142,23 @@ it("refuses track-filter collections on older engines before any write", async (
   ).rejects.toThrow("filtres de pistes");
   expect(vi.mocked(requestAede).mock.calls.some((call) => call[2] === "PUT")).toBe(false);
 });
+
+it("negotiates composer collections before writing and retains exact engine identities", async () => {
+  vi.mocked(requestAede).mockClear();
+  const expression = 'browse-v1:{"view":"composers","composers":["artist:writer"]}';
+  vi.mocked(requestAede).mockResolvedValue({ capabilities: ["dynamic_browse_collections"] });
+  await expect(saveBrowsingCollection("Writers", expression, () => true)).rejects.toThrow(
+    /compositeurs/,
+  );
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  vi.mocked(requestAede).mockResolvedValue({
+    capabilities: ["dynamic_browse_collections", "dynamic_browse_composers"],
+  });
+  await saveBrowsingCollection("Writers", expression, () => true);
+  expect(requestAede).toHaveBeenLastCalledWith(
+    "/api/me/v1/collection",
+    { name: "Writers" },
+    "PUT",
+    { expression, create_only: true },
+  );
+});

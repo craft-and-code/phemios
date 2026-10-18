@@ -69,6 +69,7 @@ export function JobControls(props: {
         <input
           type="checkbox"
           checked={force()}
+          disabled={busy() || !!active()}
           onChange={(event) => setForce(event.currentTarget.checked)}
         />{" "}
         {t("Recalculer les résultats existants")}{" "}

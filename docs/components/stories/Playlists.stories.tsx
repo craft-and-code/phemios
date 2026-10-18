@@ -1,3 +1,4 @@
+import { queueSearch } from "../../../src/library/personal-search";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { createSignal, For } from "solid-js";
 import { expect, userEvent, within, fireEvent } from "storybook/test";
@@ -8,7 +9,7 @@ import { createQueueDrag } from "../../../src/components/queue-drag";
 import { Icon } from "../../../src/components/Icon";
 import { StickyHeader } from "../../../src/components/StickyHeader";
 /** Fictional metadata replaces IO; both presentations observe one owner outside the switched view. */
-function Demo(props: { count: number; connected?: boolean }) {
+function Demo(props: { count: number; connected?: boolean; query?: string }) {
   const [order, setOrder] = createSignal(Array.from({ length: props.count }, (_, index) => index)),
     [starts, setStarts] = createSignal(0);
   const drag = createQueueDrag({
@@ -17,9 +18,19 @@ function Demo(props: { count: number; connected?: boolean }) {
     order,
     onReorder: setOrder,
   });
+  const matched = () =>
+    queueSearch(
+      order().map((index) => ({
+        index,
+        title: `Track ${index + 1}`,
+        artist: "Example Artist",
+        album: null,
+      })),
+      props.query ?? "",
+    ).map((row) => row.index);
   const rows = () => (
     <ol>
-      <For each={order()}>
+      <For each={matched()}>
         {(index) => (
           <QueueTrackRow
             row={{
@@ -64,6 +75,7 @@ function Demo(props: { count: number; connected?: boolean }) {
               standalone
               headerVisible={props.connected}
               count={order().length}
+              matchedCount={props.query?.trim() ? matched().length : undefined}
               duration={`${order().length}:00`}
               navigation={navigation}
               actions={
@@ -218,5 +230,16 @@ export const DisconnectedDrawer: Story = {
     expect(canvas.getByRole("button", { name: "Queue action" })).toBeVisible();
     expect(canvas.getByRole("button", { name: "Queue search" })).toBeVisible();
     expect(canvas.getByRole("button", { name: "Fermer" })).toBeVisible();
+  },
+};
+
+export const SearchDoesNotClearQueue: Story = {
+  args: { count: 3, query: "absent" },
+  play: ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByText("Aucun résultat dans cette sélection.")).toBeVisible();
+    expect(canvas.getByText("0 / 3 pistes · 3:00")).toBeVisible();
+    expect(canvas.getByRole("button", { name: "Vider la liste" })).toBeEnabled();
+    expect(canvas.getByLabelText("Starts")).toHaveTextContent("0");
   },
 };

@@ -57,6 +57,16 @@ function strings(value: unknown): string[] {
     throw new Error(t("Liste Aède invalide."));
   return value as string[];
 }
+/** Nested reference slots reuse native federation mapping, including already installed bridges. */
+function composerReferences(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new Error(t("Liste Aède invalide."));
+  return value.map((row) => {
+    const reference = string(object(row).reference);
+    if (!reference.startsWith("artist:") || reference === "artist:")
+      throw new Error(t("Champ Aède invalide."));
+    return reference;
+  });
+}
 function relations(value: unknown): NonNullable<Artist["relations"]> {
   if (!Array.isArray(value)) throw new Error(t("Relations Aède invalides."));
   return value.map((value) => {
@@ -137,6 +147,7 @@ export function parseSnapshot(value: unknown): Snapshot {
       compilation: row.compilation === true,
       tags: strings(row.tags),
       contributors: strings(row.contributors ?? []),
+      ...(row.composers === undefined ? {} : { composers: composerReferences(row.composers) }),
       cover: row.cover === true,
       trackCount: Number(row.track_count),
       searchFields: strings(row.search_fields ?? []),

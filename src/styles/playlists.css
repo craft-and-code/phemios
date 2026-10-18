@@ -7,7 +7,7 @@ main > .playlist-page {
   flex-direction: column;
   min-height: 0;
   flex: 1;
-  padding: 24px 36px var(--page-end-gap);
+  padding: 24px var(--page-inline-padding) var(--page-end-gap);
   gap: 0;
 }
 .playlist-page > .playback-queue.standalone-queue {
@@ -126,4 +126,18 @@ main:has(> .history-page) {
   padding: 12px 0 0;
   border: 0;
   background: transparent;
+}
+
+@media (max-width: 1000px) {
+  main > .playlist-page {
+    --page-inline-padding: 24px;
+  }
+}
+
+/* The disconnected empty result shares the other account pages' centring area. */
+main > .playlist-page:has(> .standalone-queue > .account-notice) {
+  padding-bottom: var(--page-bottom-padding);
+}
+.standalone-queue:has(> .account-notice) > .empty-state {
+  min-height: 220px;
 }

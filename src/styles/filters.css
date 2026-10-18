@@ -1,5 +1,5 @@
 .filters {
-  padding: 16px 36px 20px;
+  padding: 18px 36px;
   border-bottom: 1px solid var(--border);
   background: #161819;
 }
@@ -153,7 +153,6 @@
   }
   .filter-options {
     gap: 10px;
-    flex-wrap: wrap;
   }
   .filter-options > button {
     margin-left: auto;
@@ -230,6 +229,7 @@
 
 /* Keep the explanation beside its switches and the count at the centre. */
 .filter-details {
+  flex-shrink: 0;
   margin-left: auto;
   display: flex;
   align-items: center;

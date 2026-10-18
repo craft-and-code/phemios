@@ -1,3 +1,5 @@
+import { cdReference } from "../cd/model";
+import { DurationToggle } from "./DurationToggle";
 import { PlayerTransport } from "./PlayerTransport";
 import { repeatDisabled } from "../navigation/contextual-play";
 import { ChoiceSelect } from "./ChoiceSelect";
@@ -67,14 +69,18 @@ export function PlayerBar() {
                 {(row) => (
                   <a
                     class="playing-track-link"
-                    href={`#/track/${encodeURIComponent(row().reference)}`}
+                    href={
+                      cdReference(row().reference)
+                        ? "#/cd"
+                        : `#/track/${encodeURIComponent(row().reference)}`
+                    }
                   >
                     {row().title}
                   </a>
                 )}
               </Show>
             </strong>
-            <Show when={player.current()}>
+            <Show when={player.current() && !player.isCd() ? player.current() : undefined}>
               {(row) => <PlayingFavourite reference={row().reference} />}
             </Show>
           </span>
@@ -191,18 +197,12 @@ export function PlayerBar() {
           <div class="playback-progress">
             <small>{time(position())}</small>
             <WaveformSeek />
-            <button
-              class="time-toggle"
-              aria-label={
-                player.remaining() ? t("Afficher la durée totale") : t("Afficher le temps restant")
-              }
-              aria-pressed={player.remaining()}
-              onClick={player.toggleTime}
-            >
-              {player.remaining() && state().duration_ms !== null
-                ? `−${time(Math.max(0, state().duration_ms! - position()))}`
-                : time(state().duration_ms)}
-            </button>
+            <DurationToggle
+              duration={state().duration_ms}
+              position={position()}
+              remaining={player.remaining()}
+              onToggle={player.toggleTime}
+            />
           </div>
         }
       />
@@ -294,8 +294,19 @@ export function PlayerBar() {
               {t("Mode de lecture")}{" "}
               <ChoiceSelect
                 label={t("Mode de lecture")}
-                disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
-                value={player.device() === "@hqplayer" ? "hqplayer" : player.policy()}
+                disabled={
+                  !player.ready() ||
+                  player.busy() ||
+                  player.device() === "@hqplayer" ||
+                  player.isCd()
+                }
+                value={
+                  player.isCd()
+                    ? "without-effects"
+                    : player.device() === "@hqplayer"
+                      ? "hqplayer"
+                      : player.policy()
+                }
                 onChange={(value) => void player.choosePolicy(value)}
                 options={[
                   { value: "hqplayer", label: t("Traitement HQPlayer"), disabled: true },
@@ -317,7 +328,12 @@ export function PlayerBar() {
                 max="10000"
                 step="500"
                 value={player.crossfade()}
-                disabled={!player.ready() || player.busy() || player.device() === "@hqplayer"}
+                disabled={
+                  !player.ready() ||
+                  player.busy() ||
+                  player.device() === "@hqplayer" ||
+                  player.isCd()
+                }
                 aria-label={t("Durée du fondu")}
                 onInput={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />

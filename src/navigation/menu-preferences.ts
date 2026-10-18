@@ -29,7 +29,7 @@ const headings = {
 export function menuHeading(id: Section): MenuItem {
   if (["moods", "favourites", "rated", "tags", "collections", "history", "playlists"].includes(id))
     return "heading:personal";
-  if (["radio", "podcasts", "concerts"].includes(id)) return "heading:sources";
+  if (["radio", "podcasts", "cd", "concerts"].includes(id)) return "heading:sources";
   if (
     [
       "doctor",
@@ -159,6 +159,10 @@ function validate(raw: unknown): MenuPreferences {
       if (at >= 0) saved.splice(at + 1, 0, id);
     }
   }
+  if (!saved.includes("cd") && saved.includes("concerts"))
+    saved.splice(saved.indexOf("concerts"), 0, "cd");
+  if (!saved.includes("composers") && saved.includes("genres"))
+    saved.splice(saved.indexOf("genres") + 1, 0, "composers");
   const oldDefault = ids().filter((id) => saved.includes(id));
   const untouched =
     value.version === 1 &&
