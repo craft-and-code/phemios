@@ -99,3 +99,48 @@ fn selecting_an_already_discovered_volume_reuses_its_adapter_and_eject_capabilit
     assert_eq!(row["ejectable"], true);
     assert_eq!(transfer.targets.lock().unwrap().len(), 1);
 }
+
+#[test]
+fn forgetting_a_manual_folder_retires_its_token_and_refresh_cannot_restore_it() {
+    let transfer = Transfers::default();
+    let root = Folder::new();
+    let keep = root.0.join("keep.txt");
+    std::fs::write(&keep, b"preserve").unwrap();
+    let row = pick(&transfer, || Ok(Some(root.0.clone())))
+        .unwrap()
+        .unwrap();
+    let id = row["id"].as_str().unwrap();
+    forget(&transfer, id).unwrap();
+    assert!(transfer.folder.lock().unwrap().is_none());
+    assert!(transfer.targets.lock().unwrap().is_empty());
+    assert!(
+        transfer.inventory.lock().unwrap()["volumes"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let mut rows = Vec::new();
+    let mut targets = Vec::new();
+    retain(&transfer, &mut rows, &mut targets).unwrap();
+    assert!(rows.is_empty());
+    assert!(targets.is_empty());
+    assert_eq!(std::fs::read(&keep).unwrap(), b"preserve");
+    assert!(forget(&transfer, id).is_err());
+}
+#[test]
+fn forgetting_refuses_running_work_unknown_tokens_and_physical_devices() {
+    let transfer = Transfers::default();
+    let root = Folder::new();
+    let row = pick(&transfer, || Ok(Some(root.0.clone())))
+        .unwrap()
+        .unwrap();
+    let id = row["id"].as_str().unwrap();
+    transfer.running.store(true, Ordering::Release);
+    assert!(forget(&transfer, id).is_err());
+    transfer.running.store(false, Ordering::Release);
+    assert!(forget(&transfer, "mount:unknown").is_err());
+    transfer.inventory.lock().unwrap()["volumes"][0]["kind"] = "removable".into();
+    assert!(forget(&transfer, id).is_err());
+    assert!(transfer.folder.lock().unwrap().is_some());
+    assert_eq!(transfer.targets.lock().unwrap().len(), 1);
+}

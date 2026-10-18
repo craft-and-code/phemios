@@ -134,8 +134,8 @@
   min-height: min-content;
 }
 .transfer-workspace .queue-add-results {
-  margin-inline-end: -6px;
-  padding-inline-end: 6px;
+  margin-inline-end: -12px;
+  padding-inline-end: 12px;
   scrollbar-gutter: stable;
 }
 .player-destination-row:last-child {

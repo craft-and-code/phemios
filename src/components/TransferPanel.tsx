@@ -30,7 +30,8 @@ export function TransferPanel(props: {
   onStart: () => void;
   onCancel: () => void;
 }) {
-  const locked = () => props.status.running || props.preparing || !!props.disabled;
+  const locked = () =>
+    props.status.running || props.preparing || !!props.disabled || !props.destination;
   return (
     <section class="transfer-panel">
       <h3>{t("Options de transfert")}</h3>

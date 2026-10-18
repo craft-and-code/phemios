@@ -27,15 +27,13 @@ const meta = {
           footer={t("Ajout à la sélection de transfert")}
           category="tracks"
           query=""
-          rows={[
-            {
-              key: "new",
-              title: "Northern Lights",
-              detail: "Example artist",
-              source: "local",
-              reference: "track:new",
-            },
-          ]}
+          rows={Array.from({ length: 30 }, (_, index) => ({
+            key: `new-${index}`,
+            title: index ? `Available track ${index}` : "Northern Lights",
+            detail: "Example artist",
+            source: "local" as const,
+            reference: `track:new-${index}`,
+          }))}
           loading={false}
           pending=""
           added=""
@@ -94,6 +92,12 @@ export const PermanentPanes: Story = {
     expect(
       list.getBoundingClientRect().right - heading.getBoundingClientRect().right,
     ).toBeGreaterThanOrEqual(5);
+    const results = right.querySelector(".queue-add-results")!;
+    expect(results.scrollHeight).toBeGreaterThan(results.clientHeight);
+    expect(
+      results.getBoundingClientRect().right -
+        right.querySelector(".queue-add-heading")!.getBoundingClientRect().right,
+    ).toBeGreaterThanOrEqual(11);
     await userEvent.click(
       canvas.getByRole("button", { name: t("Sélectionner {0}", "Northern Lights") }),
     );

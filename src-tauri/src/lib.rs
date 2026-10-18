@@ -118,6 +118,7 @@ pub fn run() -> Result<(), tauri::Error> {
             themes::theme_import,
             themes::theme_export,
             transfer_folder::transfer_pick_folder,
+            transfer_folder::transfer_forget_folder,
             volumes::players_discover,
             volumes::players_eject,
             transfer::transfer_prepare,

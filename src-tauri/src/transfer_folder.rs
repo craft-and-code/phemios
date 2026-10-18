@@ -34,6 +34,41 @@ pub(crate) async fn transfer_pick_folder(
     })
     .await
 }
+/// Forget only a registered manual folder; this neither deletes files nor ejects a disk.
+#[tauri::command]
+pub(crate) async fn transfer_forget_folder(
+    version: u32,
+    id: String,
+    transfer: State<'_, Arc<Transfers>>,
+) -> Result<(), String> {
+    bridge(version)?;
+    let transfer = transfer.inner().clone();
+    blocking(move || forget(&transfer, &id)).await
+}
+fn forget(transfer: &Transfers, id: &str) -> Result<(), String> {
+    let _destinations = transfer.idle_destinations()?;
+    let mut inventory = transfer
+        .inventory
+        .lock()
+        .map_err(|_| "Lecteurs indisponibles.")?;
+    let rows = inventory["volumes"]
+        .as_array_mut()
+        .ok_or("Dossier de destination indisponible.")?;
+    let index = rows
+        .iter()
+        .position(|row| row["id"] == id && row["kind"] == "folder")
+        .ok_or("Dossier de destination indisponible.")?;
+    let mut targets = transfer.targets.lock().map_err(|_| "Lecteurs occupés.")?;
+    let mut folder = transfer
+        .folder
+        .lock()
+        .map_err(|_| "Dossier de destination occupé.")?;
+    transfer.retire_preview()?;
+    targets.retain(|(registered, _)| registered != id);
+    *folder = None;
+    rows.remove(index);
+    Ok(())
+}
 fn project(mount: &Mounted, id: &str) -> Value {
     let path = mount.path().to_string_lossy();
     let name = mount

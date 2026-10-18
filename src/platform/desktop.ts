@@ -205,6 +205,9 @@ export const missingCoverAede = (artist: string, group: string, download: boolea
 export const discoverPlayers = () => nativeCall<unknown>("players_discover");
 /** Grant a destination through the native dialog only; cancellation leaves the current selection intact. */
 export const pickTransferFolder = () => nativeCall<unknown | null>("transfer_pick_folder");
+/** Forget a manual destination token without deleting its directory or files. */
+export const forgetTransferFolder = (id: string) =>
+  nativeCall<void>("transfer_forget_folder", { id });
 /** Eject only an opaque native-discovered destination; never accepts an OS path. */
 export const ejectPlayer = (id: string) => nativeCall<void>("players_eject", { id });
 

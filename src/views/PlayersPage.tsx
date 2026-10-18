@@ -11,33 +11,29 @@ import {
   discoverPlayers,
   ejectPlayer,
   pickTransferFolder,
+  forgetTransferFolder,
   isNative,
   prepareTransfer,
   startTransfer,
   transferStatus,
   cancelTransfer,
 } from "../platform/desktop";
+import { createTransferRecipe } from "../library/transfer-recipe";
 import { parsePlayerDiscovery, parsePlayers } from "../library/players";
 import { useLibrary } from "../library/context";
 import type { PlayableSelection } from "../library/playback-selection";
 import {
   addTransferSelection,
-  type TransferOptions,
   type TransferPreview,
   type TransferStatus,
 } from "../library/transfers";
 /** Discovery is public; transfer sources remain bound to their exact native account sessions. */
 export function PlayersPage() {
   const library = useLibrary();
-  const [selected, setSelected] = createSignal(""),
-    [rows, setRows] = createSignal<PlayableSelection[]>([]),
+  const [rows, setRows] = createSignal<PlayableSelection[]>([]),
     [choosing, setChoosing] = createSignal(false),
     [folderError, setFolderError] = createSignal(""),
-    [options, setOptions] = createSignal<TransferOptions>({
-      format: "original",
-      verify: true,
-      replace: false,
-    }),
+    [removing, setRemoving] = createSignal(""),
     [preview, setPreview] = createSignal<TransferPreview>(),
     [preparing, setPreparing] = createSignal(false),
     [ejecting, setEjecting] = createSignal(""),
@@ -50,6 +46,13 @@ export function PlayersPage() {
     () => (isNative() ? { native: true } : false),
     async () => parsePlayerDiscovery(await discoverPlayers()),
   );
+  const {
+    selected,
+    select: setSelected,
+    options,
+    setOptions,
+  } = createTransferRecipe(() => read.current()?.volumes, read.pending);
+  const destinationBusy = () => !!ejecting() || !!removing() || choosing();
   const reset = () => {
     operation++;
     setPreview(undefined);
@@ -83,7 +86,7 @@ export function PlayersPage() {
     operation++;
   });
   async function chooseFolder() {
-    if (status().running || preparing() || ejecting() || choosing() || read.pending()) return;
+    if (status().running || preparing() || destinationBusy() || read.pending()) return;
     const ticket = ++operation;
     setChoosing(true);
     setFolderError("");
@@ -110,7 +113,7 @@ export function PlayersPage() {
     }
   }
   async function eject(id: string) {
-    if (status().running || preparing() || ejecting() || choosing()) return;
+    if (status().running || preparing() || destinationBusy()) return;
     setEjecting(id);
     reset();
     try {
@@ -125,8 +128,24 @@ export function PlayersPage() {
       if (!disposed) setEjecting("");
     }
   }
+  async function removeFolder(id: string) {
+    if (status().running || preparing() || destinationBusy() || read.pending()) return;
+    setRemoving(id);
+    reset();
+    try {
+      await forgetTransferFolder(id);
+      if (!disposed) {
+        if (selected() === id) setSelected("");
+        await read.refetch();
+      }
+    } catch (failure) {
+      if (!disposed) setFolderError(String(failure));
+    } finally {
+      if (!disposed) setRemoving("");
+    }
+  }
   async function prepare() {
-    if (status().running || preparing() || !!ejecting() || choosing()) return;
+    if (status().running || preparing() || destinationBusy()) return;
     const ticket = ++operation;
     setPreparing(true);
     setPreview(undefined);
@@ -147,7 +166,7 @@ export function PlayersPage() {
   }
   async function start() {
     const value = preview();
-    if (!value || status().running || preparing() || ejecting() || choosing()) return;
+    if (!value || status().running || preparing() || destinationBusy()) return;
     setPreparing(true);
     setError("");
     try {
@@ -168,7 +187,7 @@ export function PlayersPage() {
           <RefreshButton
             rotate
             busy={read.loading()}
-            disabled={!isNative() || status().running || preparing() || !!ejecting() || choosing()}
+            disabled={!isNative() || status().running || preparing() || destinationBusy()}
             onRefresh={() => {
               reset();
               setSelected("");
@@ -180,7 +199,7 @@ export function PlayersPage() {
       </StickyHeader>
       <div class="transfer-workspace">
         <QueueAdd
-          disabled={status().running || preparing() || !!ejecting() || choosing()}
+          disabled={status().running || preparing() || destinationBusy()}
           onSelect={(added) => {
             setRows((existing) => addTransferSelection(existing, added));
             reset();
@@ -188,7 +207,7 @@ export function PlayersPage() {
         />
         <TransferSelection
           rows={rows()}
-          disabled={status().running || preparing() || !!ejecting() || choosing()}
+          disabled={status().running || preparing() || destinationBusy()}
           onRemove={(reference) => {
             setRows((value) => value.filter((row) => row.reference !== reference));
             reset();
@@ -197,7 +216,7 @@ export function PlayersPage() {
       </div>
       <TransferDestination
         canChoose={
-          isNative() && !status().running && !preparing() && !ejecting() && !read.pending()
+          isNative() && !status().running && !preparing() && !destinationBusy() && !read.pending()
         }
         choosing={choosing()}
         chooseError={folderError()}
@@ -210,12 +229,11 @@ export function PlayersPage() {
         selected={selected()}
         ejecting={ejecting()}
         onEject={(id) => void eject(id)}
-        disabled={status().running || preparing() || !!ejecting() || choosing()}
+        removing={removing()}
+        onRemove={(id) => void removeFolder(id)}
+        disabled={status().running || preparing() || destinationBusy()}
         onSelect={(value) => {
           setSelected(value);
-          const adapter = read.current()?.volumes.find((row) => row.id === value)?.adapter;
-          if (adapter === "ipod") setOptions({ format: "original", verify: false, replace: false });
-          else if (adapter === "mtp") setOptions((previous) => ({ ...previous, replace: false }));
           reset();
         }}
       />
@@ -228,7 +246,7 @@ export function PlayersPage() {
         preview={preview()}
         status={status()}
         preparing={preparing()}
-        disabled={!!ejecting() || choosing()}
+        disabled={destinationBusy()}
         error={error()}
         onOptions={(value) => {
           setOptions(value);

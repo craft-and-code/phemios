@@ -15,6 +15,8 @@ export function PlayersContent(props: {
   onSelect: (path: string) => void;
   ejecting?: string;
   onEject?: (id: string) => void;
+  onRemove?: (id: string) => void;
+  removing?: string;
 }) {
   return (
     <Show when={!props.busy} fallback={<PageLoader label={t("Détection des lecteurs…")} />}>
@@ -70,11 +72,31 @@ export function PlayersContent(props: {
               <div class="player-destination-actions">
                 <ActionButton
                   aria-pressed={props.selected === (volume.id ?? volume.path)}
-                  disabled={props.disabled || !!props.ejecting || volume.available === false}
+                  disabled={
+                    props.disabled ||
+                    !!props.ejecting ||
+                    !!props.removing ||
+                    volume.available === false
+                  }
                   onClick={() => props.onSelect(volume.id ?? volume.path)}
                 >
                   {t("Sélectionner")}
                 </ActionButton>
+                <Show when={volume.kind === "folder" && volume.id && props.onRemove}>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title={t("Retirer {0}", volume.name)}
+                    aria-label={t("Retirer {0}", volume.name)}
+                    aria-busy={props.removing === volume.id || undefined}
+                    disabled={props.disabled || !!props.ejecting || !!props.removing}
+                    onClick={() => props.onRemove?.(volume.id!)}
+                  >
+                    <Show when={props.removing === volume.id} fallback={<Icon name="close" />}>
+                      <span class="spinner" aria-hidden="true" />
+                    </Show>
+                  </button>
+                </Show>
                 <Show when={props.onEject && volume.id && volume.ejectable}>
                   <button
                     type="button"
@@ -82,7 +104,7 @@ export function PlayersContent(props: {
                     aria-label={t("Éjecter {0}", volume.name)}
                     title={t("Éjecter {0}", volume.name)}
                     aria-busy={props.ejecting === volume.id || undefined}
-                    disabled={props.disabled || !!props.ejecting}
+                    disabled={props.disabled || !!props.ejecting || !!props.removing}
                     onClick={() => props.onEject?.(volume.id!)}
                   >
                     <Show when={props.ejecting === volume.id} fallback={<Icon name="eject" />}>
