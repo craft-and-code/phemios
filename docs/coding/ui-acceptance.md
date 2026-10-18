@@ -615,3 +615,21 @@ Native acceptance reuses the separate QA profile and three owned FLAC copies. Th
 ## Queue/library follow-up browser acceptance (2026-10-18)
 
 An isolated fictional Vite preview confirms that an empty playback drawer can be opened, closed and reopened; the footer remains inactive with no actual audio. Albums starts in Cover Flow with both rail buttons unpressed. Countries with hidden rails places the result-count centre at the exact filter-row centre. Settings > About displays product, service and lockfile-library sections separately. The actual Playlists Storybook scenario builds, switches to M3U files and back, then clears the queue; the synchronized queue-lyric scenario renders its clock and distinct accessible label without errors. These browser checks do not establish native streaming, a real account scan, physical playback or server deployment.
+
+## Identified iPod and removal controls — 2026-10-18
+
+The read-only core host probe reports the connected Nano 7, its touch-style silhouette, unsupported podkit compatibility and ejectable OS mount. It performs no file content read, audio playback, copy, database change or ejection. The model derives from the exact mounted BSD descendant of Apple USB 05ac:1267, rather than a device name or the first connected iPod.
+
+Storybook's actual PlayersContent unsupported-model scenario shows the explicit incompatibility, disabled Select and enabled Eject. Its transfer-locked scenario shows disabled Eject. Screenshots stay outside version control. These synthetic presentation checks and native refusal fixtures do not establish successful physical removal; the user's device remains mounted. No native Phémios application rebuild is performed.
+
+## Transfer destination geometry — 2026-10-18
+
+The real component fixtures reproduce the destination action heights (33.5 / 36 px), a trailing single-row border, destination-loader vertical displacement (132.8 px), a picker scrollbar aligned with the input edge, and effectively zero bottom clearance after an overflowing preview. After correction, the actions both measure 38 px, a single row has no lower border, two rows have only the intervening border, the loader has zero horizontal/vertical offset inside the destination card, the picker scrollbar is 6 px farther right with 6 px content padding, and the real main/result-page fixture retains approximately 35.6 px below its last card.
+
+The existing selection/preview/cancel scenarios still complete. Added geometry scenarios use only fictional data and presentation callbacks. The screenshot is delivered outside version control. No connected-device action or native application rebuild is performed.
+
+## Permanent source panes and chosen folders — 2026-10-18
+
+The actual TransferSelection / QueueAddView fixture measures both panes at 560 px, with no source-opening plus or copy-picker closing button. Its selected-file result list overflows independently, sits 6 px farther right than the heading's content edge and keeps the selected count at the bottom. Adding a fictional track changes the count from 30 to 31 without closing either pane. The TransferDestination fixture's explicit folder callback displays a selected local Folder row without an eject button; its locked scenario disables the chooser. Ordinary queue-picking scenarios retain their close button. Screenshots stay outside version control.
+
+Native folder fixtures confirm cancellation without state changes, no dialog dispatch while running, a single retained manual folder, canonical matching of an existing discovered volume, preserved eject metadata and retirement after directory replacement. The real existing Aède binary copies and verifies a streamed original into a temporary folder using capture_folder, preserving source bytes and an unrelated file. No physical iPod/HDD is written or ejected, and the real native chooser has not been exercised in a rebuilt App.
