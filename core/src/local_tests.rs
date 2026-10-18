@@ -219,7 +219,7 @@ fn invalid_retained_concert_key_can_be_explicitly_removed_without_losing_other_c
         .unwrap();
     for invalid in [json!("invalid?fixture"), json!(42)] {
         let mut value = engine.config().unwrap();
-        value["ticketmaster"] = invalid;
+        value["jambase"] = invalid;
         value["future-setting"] = json!({"retained":true});
         engine.save(&value).unwrap();
         assert!(engine.concert_key().is_err());
@@ -234,4 +234,72 @@ fn invalid_retained_concert_key_can_be_explicitly_removed_without_losing_other_c
             json!({"retained":true})
         );
     }
+}
+
+#[test]
+fn selecting_new_concert_provider_removes_retired_key_without_touching_other_secrets() {
+    let root = Sandbox::new("concert-provider-migration");
+    let mut engine = Engine::new(root.0.clone(), PathBuf::from("missing-engine"));
+    engine.keys("fictional-fanart", "", false, false).unwrap();
+    let mut value = engine.config().unwrap();
+    value["ticketmaster"] = json!("retired-secret");
+    engine.save(&value).unwrap();
+    assert!(engine.concert_key().unwrap().is_none());
+    engine
+        .set_concert_key("jbd_abcdefghijklmnop", false)
+        .unwrap();
+    assert!(engine.config().unwrap().get("ticketmaster").is_none());
+    assert_eq!(engine.fetch_keys().unwrap()["fanart"], "fictional-fanart");
+    assert!(!engine.status().unwrap().to_string().contains("jbd_"));
+}
+
+#[test]
+fn a_busy_concert_budget_refuses_key_changes_before_persisting_them() {
+    let root = Sandbox::new("concert-key-busy");
+    let engine = Engine::new(root.0.clone(), PathBuf::from("missing-engine"));
+    engine
+        .set_concert_key("jbd_originalfixturekey", false)
+        .unwrap();
+    let active = engine.concert_budget().unwrap();
+    assert!(
+        engine
+            .configure_concerts(Some("jbd_replacementfixturekey"), false)
+            .is_err()
+    );
+    assert_eq!(
+        engine.concert_key().unwrap().as_deref(),
+        Some("jbd_originalfixturekey")
+    );
+    assert!(engine.configure_concerts(None, true).is_err());
+    assert_eq!(
+        engine.concert_key().unwrap().as_deref(),
+        Some("jbd_originalfixturekey")
+    );
+    drop(active);
+    engine
+        .configure_concerts(Some("jbd_replacementfixturekey"), false)
+        .unwrap();
+    assert_eq!(
+        engine.concert_key().unwrap().as_deref(),
+        Some("jbd_replacementfixturekey")
+    );
+    engine.configure_concerts(None, true).unwrap();
+    assert!(engine.concert_key().unwrap().is_none());
+}
+
+#[test]
+fn concert_configuration_projection_never_exposes_the_key_or_resets_usage() {
+    let root = Sandbox::new("concert-key-projection");
+    let engine = Engine::new(root.0.clone(), PathBuf::from("missing-engine"));
+    let secret = "jbd_fictionalconfigurationkey";
+    let saved = engine.configure_concerts(Some(secret), false).unwrap();
+    assert_eq!(saved["ready"], true);
+    assert!(!saved.to_string().contains(secret));
+    assert!(!engine.fetch_keys().unwrap().to_string().contains(secret));
+    let restored = Engine::new(root.0.clone(), PathBuf::from("missing-engine"));
+    assert_eq!(restored.configure_concerts(None, false).unwrap(), saved);
+    let removed = restored.configure_concerts(None, true).unwrap();
+    assert_eq!(removed["ready"], false);
+    assert_eq!(removed["used"], saved["used"]);
+    assert!(!removed.to_string().contains(secret));
 }

@@ -1,3 +1,4 @@
+import { concertConfig } from "../concerts/config";
 import { engineVersions } from "../library/product-versions";
 import { wikipediaDocument } from "../encyclopedia/document";
 import { t } from "../i18n";
@@ -269,7 +270,7 @@ export const downloadEncyclopedia = (
 
 /** Device-private provider configuration returns only its presence, never the retained key. */
 export const configureConcerts = (key: string | null = null, remove = false) =>
-  nativeCall<boolean>("concerts_config", { key, remove });
+  nativeCall<unknown>("concerts_config", { key, remove }).then(concertConfig);
 /** Explicit fixed-provider page lookup independent of library login. */
 export const searchConcerts = (artist: string, page: number) =>
   nativeCall<unknown>("concerts_events", { artist, page });

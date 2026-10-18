@@ -1,4 +1,4 @@
-import { SettingsTicketmaster } from "./SettingsTicketmaster";
+import { SettingsJamBase } from "./SettingsJamBase";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
@@ -144,7 +144,7 @@ export function SettingsServices() {
           "Discogs fournit les biographies des labels sans article Wikipédia, à partir de leur lien MusicBrainz. La récupération est lancée uniquement avec l’enrichissement.",
         )}
       </p>
-      <SettingsTicketmaster />
+      <SettingsJamBase />
       <h3>{t("Enrichir la bibliothèque")}</h3>
       <small>{t("Les options sont enregistrées automatiquement.")}</small>
       <Show when={prefs.error()}>

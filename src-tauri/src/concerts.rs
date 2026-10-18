@@ -9,17 +9,12 @@ pub(crate) async fn concerts_config(
     key: Option<String>,
     remove: bool,
     aede: State<'_, crate::aede::Aede>,
-) -> Result<bool, String> {
+) -> Result<serde_json::Value, String> {
     crate::aede::bridge(version)?;
     let engine = aede.engine.clone();
     crate::aede::blocking(move || {
         let engine = engine.lock().map_err(|_| "Configuration occupée.")?;
-        if let Some(key) = key {
-            engine.set_concert_key(&key, remove)?;
-        } else if remove {
-            engine.set_concert_key("", true)?;
-        }
-        Ok(engine.concert_key()?.is_some())
+        engine.configure_concerts(key.as_deref(), remove)
     })
     .await
 }
@@ -35,15 +30,19 @@ pub(crate) async fn concerts_events(
     let directory = state.0.clone();
     let engine = aede.engine.clone();
     crate::aede::blocking(move || {
-        let key = engine
-            .lock()
-            .map_err(|_| "Configuration occupée.")?
-            .concert_key()?
-            .ok_or("Renseignez une clé Ticketmaster pour rechercher les concerts.")?;
-        directory
+        let mut directory = directory
             .try_lock()
-            .map_err(|_| "Une recherche de concerts est déjà en cours.")?
-            .events(&key, &artist, page)
+            .map_err(|_| "Une recherche de concerts est déjà en cours.")?;
+        let (key, mut budget) = {
+            let engine = engine.lock().map_err(|_| "Configuration occupée.")?;
+            (
+                engine
+                    .concert_key()?
+                    .ok_or("Renseignez une clé JamBase pour rechercher les concerts.")?,
+                engine.concert_budget()?,
+            )
+        };
+        directory.events(&key, &artist, page, &mut budget)
     })
     .await
 }

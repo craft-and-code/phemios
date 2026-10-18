@@ -19,7 +19,7 @@ const event = {
 };
 it("paginates in order, deduplicates events and marks bounded searches partial", async () => {
   const request = vi.fn(async (_name: string, page: number) => ({
-    source: "Ticketmaster Discovery",
+    source: "JamBase",
     page,
     pages: 12,
     artistId: "one",
@@ -32,7 +32,7 @@ it("paginates in order, deduplicates events and marks bounded searches partial",
 });
 it("cancels replaced views and refuses inconsistent performer identities", async () => {
   const request = vi.fn(async (_name: string, page: number) => ({
-    source: "Ticketmaster Discovery",
+    source: "JamBase",
     page,
     pages: 2,
     artistId: String(page),
@@ -88,4 +88,31 @@ it("groups the same principal across local and remote origins without adding gue
       ],
     ),
   ).toEqual([{ name: "Example Artist", references: ["artist:a", "local:artist:a"] }]);
+});
+
+it("does not reinterpret retired-provider cache entries as JamBase dates", () => {
+  const store = {
+    getItem: (key: string) =>
+      key === "phemios.concerts.cache.v1" ? "retired-provider-data" : null,
+  };
+  expect(readConcertCache(store)).toEqual([]);
+});
+it("refuses a different provider instead of caching foreign dates", async () => {
+  await expect(
+    collectConcerts(
+      "Artist",
+      () => true,
+      async () => ({ source: "Other", page: 0, pages: 1, artistId: "one", items: [event] }),
+    ),
+  ).rejects.toThrow();
+});
+
+it("retires a pending result without requesting another metered page after cancellation", async () => {
+  let current = true;
+  const request = vi.fn(async () => {
+    current = false;
+    return { source: "JamBase", page: 0, pages: 10, artistId: "one", items: [event] };
+  });
+  expect(await collectConcerts("Artist", () => current, request)).toBeUndefined();
+  expect(request).toHaveBeenCalledTimes(1);
 });

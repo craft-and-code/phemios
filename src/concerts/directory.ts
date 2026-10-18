@@ -25,12 +25,11 @@ export interface ConcertCache {
   at: number;
   partial: boolean;
 }
-const key = "phemios.concerts.cache.v1",
+const key = "phemios.concerts.jambase.cache.v1",
   limit = 2 * 1024 * 1024;
 type Store = Pick<Storage, "getItem" | "setItem">;
 function events(raw: unknown): Concert[] {
-  if (!Array.isArray(raw) || raw.length > 1000)
-    throw new Error(t("Réponse Ticketmaster invalide."));
+  if (!Array.isArray(raw) || raw.length > 1000) throw new Error(t("Réponse JamBase invalide."));
   for (const row of raw) {
     if (
       !row ||
@@ -56,14 +55,14 @@ function events(raw: unknown): Concert[] {
           row[field] !== null && (typeof row[field] !== "string" || row[field].length > 4096),
       )
     )
-      throw new Error(t("Réponse Ticketmaster invalide."));
+      throw new Error(t("Réponse JamBase invalide."));
     if (row.url !== null) {
       const url = new URL(row.url);
       if (url.protocol !== "https:" || url.username || url.password)
         throw new Error(t("Lien externe invalide."));
     }
     if (row.date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(row.date))
-      throw new Error(t("Réponse Ticketmaster invalide."));
+      throw new Error(t("Réponse JamBase invalide."));
     if (
       row.price !== null &&
       (!row.price ||
@@ -74,7 +73,7 @@ function events(raw: unknown): Concert[] {
         ) ||
         (row.price.currency !== null && typeof row.price.currency !== "string"))
     )
-      throw new Error(t("Réponse Ticketmaster invalide."));
+      throw new Error(t("Réponse JamBase invalide."));
   }
   return raw as Concert[];
 }
@@ -153,17 +152,15 @@ export async function collectConcerts(
     if (
       !value ||
       value.page !== page ||
-      value.source !== "Ticketmaster Discovery" ||
+      value.source !== "JamBase" ||
       !Number.isSafeInteger(value.pages) ||
       value.pages < 0 ||
       value.pages > 100000 ||
       !(value.artistId === null || typeof value.artistId === "string")
     )
-      throw new Error(t("Réponse Ticketmaster invalide."));
+      throw new Error(t("Réponse JamBase invalide."));
     if (identity !== null && value.artistId !== null && identity !== value.artistId)
-      throw new Error(
-        t("Plusieurs artistes Ticketmaster portent ce nom : correspondance ambiguë."),
-      );
+      throw new Error(t("Plusieurs artistes JamBase portent ce nom : correspondance ambiguë."));
     identity = value.artistId ?? identity;
     pages = value.pages;
     for (const row of events(value.items)) found.set(row.id, row);

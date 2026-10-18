@@ -10,10 +10,7 @@ export const externalServices = [
   { name: "Discogs", url: "https://www.discogs.com/" },
   { name: "AcoustID", url: "https://acoustid.org/" },
   { name: "LRCLIB", url: "https://lrclib.net/" },
-  {
-    name: "Ticketmaster Discovery",
-    url: "https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/",
-  },
+  { name: "JamBase", url: "https://data.jambase.com/" },
 ];
 /** The component explorer can render product rows without loading a native application manifest. */
 export const dependencyCredits =

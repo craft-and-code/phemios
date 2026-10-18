@@ -340,20 +340,34 @@ impl Engine {
         }
         Ok(())
     }
+    /// Lock budget admission before changing a key: an occupied request cannot produce a false failed save.
+    /// This local-only status projection never returns credentials or contacts the provider.
+    pub fn configure_concerts(&self, key: Option<&str>, remove: bool) -> Result<Value, String> {
+        let budget = self.concert_budget()?;
+        if let Some(key) = key {
+            self.set_concert_key(key, remove)?;
+        } else if remove {
+            self.set_concert_key("", true)?;
+        }
+        let ready = self.concert_key()?.is_some();
+        let mut status = budget.status();
+        status["ready"] = ready.into();
+        Ok(status)
+    }
     /// Read the private concert-provider key only inside native Rust operations.
     pub fn concert_key(&self) -> Result<Option<String>, String> {
         let value = self.config()?;
-        match value.get("ticketmaster") {
+        match value.get("jambase") {
             None | Some(Value::Null) => Ok(None),
             Some(Value::String(key)) => {
                 crate::concerts::validate_key(key)?;
                 Ok(Some(key.clone()))
             }
-            _ => Err("Configuration Ticketmaster illisible.".into()),
+            _ => Err("Configuration JamBase illisible.".into()),
         }
     }
     /// Publish or explicitly remove the concert key without starting an engine or exposing it.
-    pub fn set_concert_key(&self, key: &str, remove: bool) -> Result<(), String> {
+    fn set_concert_key(&self, key: &str, remove: bool) -> Result<(), String> {
         if !remove {
             self.concert_key()?;
         }
@@ -362,12 +376,20 @@ impl Engine {
             value
                 .as_object_mut()
                 .ok_or("Configuration locale invalide.")?
-                .remove("ticketmaster");
+                .remove("jambase");
         } else {
             crate::concerts::validate_key(key.trim())?;
-            value["ticketmaster"] = key.trim().into();
+            value["jambase"] = key.trim().into();
         }
+        value
+            .as_object_mut()
+            .ok_or("Configuration locale invalide.")?
+            .remove("ticketmaster");
         self.save(&value)
+    }
+    /// Lock the device-wide provider budget independently of the active Aède account.
+    pub fn concert_budget(&self) -> Result<crate::concerts::Budget, String> {
+        crate::concerts::Budget::open(self.root.clone())
     }
     /// Retained service keys are private Rust data, attached only to explicit fetch requests.
     pub fn fetch_keys(&self) -> Result<Value, String> {

@@ -56,6 +56,8 @@ The same WebView media DNS/redirect limits, Linux GTK advisory, cache quotas and
 
 ## External-service credential follow-up
 
+This records the earlier provider implementation; its client and UI have since been retired. The JamBase replacement is described below.
+
 The 2026-10-12 follow-up traces app-owned Fanart.tv, AcoustID and Ticketmaster credentials through configuration, IPC status, preference export, explicit job preparation, child processes and provider diagnostics. It uses fictional keys and disposable stores; no real credential/profile is inspected or changed.
 
 Private native configuration keeps mode 0600 on Unix. Newly created app-owned configuration directories use mode 0700. An existing directory that is a symlink or group/world-writable is refused before private reads and publication, without changing its permissions, target or retained contents. Existing safe directories retain their permissions. Corrupt stores remain refused and preserved. This checks the root metadata; it is not race-proof descriptor confinement of every ancestor and does not establish Windows ACL acceptance. These are private files under the OS account, not encrypted keychain storage.
@@ -69,3 +71,5 @@ An invalid retained Ticketmaster value can be removed explicitly without reading
 Private annotation response validation also requires the outer target reference when an annotation is absent. Invalid GET/PUT replies cannot erase a different item's confirmed projection; writer publication remains inside its captured active owner. All canonical Aède annotation kinds and literal reference-key text remain supported.
 
 Existing trusted Aède/FFmpeg/fpcalc helpers may inherit their process environment; this lot does not isolate all children or erase credentials already captured by running jobs. The earlier media-DNS, cache-quota, Linux dependency and physical/cross-platform limits remain separate. This is a focused code and regression review, not a guarantee against every flaw or a protection boundary against a privileged process controlling the same OS account.
+
+The JamBase replacement retains a device-wide durable attempt journal and checks the provider’s unmetered shared quota before each event call; see [concert admission](../design/concerts.md#free-tier-ceiling).

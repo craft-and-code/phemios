@@ -1653,7 +1653,7 @@ body {
   width: 100%;
 }
 
-.ticketmaster-settings {
+.jambase-settings {
   border-block: 1px solid var(--border);
   padding-block: 16px;
   margin-block: 20px;
@@ -2511,4 +2511,14 @@ main:has(> .tracks-page) {
 /* Hidden headers expose no controls, border, margins or empty reserved row. */
 .sticky-header[hidden] {
   display: none;
+}
+
+.jambase-budget {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.jambase-settings form label,
+.jambase-settings .settings-actions {
+  margin-block: 0;
 }

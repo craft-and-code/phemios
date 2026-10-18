@@ -10,9 +10,8 @@ import { PlaybackPage } from "./PlaybackPage";
 import { Switch, Match, lazy, Suspense, Show } from "solid-js";
 import { t } from "../i18n";
 const CdPage = lazy(() => import("./CdPage").then((module) => ({ default: module.CdPage })));
-const ConcertsPage = lazy(() =>
-  import("./ConcertsPage").then((module) => ({ default: module.ConcertsPage })),
-);
+// This small view must remain available without a second module fetch after shell startup.
+import { ConcertsPage } from "./ConcertsPage";
 import { PlaylistsPage } from "./PlaylistsPage";
 const MoodsPage = lazy(() =>
   import("./MoodsPage").then((module) => ({ default: module.MoodsPage })),

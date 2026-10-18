@@ -35,11 +35,11 @@ export function ConcertsPage(props: { query: string }) {
   } catch (failure) {
     setError(String(failure));
   }
-  const [configured] = createResource(async () => {
+  const [configured, { refetch: refreshConfig }] = createResource(async () => {
     try {
-      return { ready: await configureConcerts() };
+      return { ...(await configureConcerts()), error: "" };
     } catch (failure) {
-      return { ready: false, error: String(failure) };
+      return { ready: false, error: String(failure), used: 0, remaining: 0 };
     }
   });
   const artists = createMemo(() => concertArtists(library.artists(), library.albums()));
@@ -84,7 +84,7 @@ export function ConcertsPage(props: { query: string }) {
       cancelled = true;
       return;
     }
-    if (!configured()?.ready) return;
+    if (!configured()?.ready || configured()?.remaining === 0) return;
     setBusy(true);
     setError("");
     cancelled = false;
@@ -103,12 +103,13 @@ export function ConcertsPage(props: { query: string }) {
           if (!current()) break;
           const message = String(failure);
           if (failures.length < 3) failures.push(`${artist.name} : ${message}`);
-          if (/Limite Ticketmaster|Clé Ticketmaster/.test(message)) break;
+          if (/JamBase/.test(message)) break;
         }
         if (current()) setProgress((value) => ({ ...value, done: value.done + 1 }));
       }
     } finally {
       if (!disposed) {
+        await refreshConfig();
         setBusy(false);
         if (failures.length) setError(failures.join("\n"));
       }
@@ -116,7 +117,7 @@ export function ConcertsPage(props: { query: string }) {
   }
   return (
     <section class="page result-page concerts-page">
-      <StickyHeader visible={!!library.session()}>
+      <StickyHeader visible={!!library.session() || !!configured()?.ready}>
         <div class="concerts-toolbar">
           <span>
             {t("{0} artistes de votre CDthèque", artists().length)} ·{" "}
@@ -124,11 +125,16 @@ export function ConcertsPage(props: { query: string }) {
           </span>
           <div>
             <a class="metadata-link" href="#/settings/services">
-              {t("Configurer Ticketmaster")}
+              {t("Configurer JamBase")}
             </a>
             <ActionButton
               icon={busy() ? "stop" : "refresh"}
-              disabled={!configured()?.ready || !artists().length || configured.loading}
+              disabled={
+                (!busy() && configured()?.remaining === 0) ||
+                !configured()?.ready ||
+                !artists().length ||
+                configured.loading
+              }
               onClick={() => void refresh()}
             >
               {busy() ? t("Arrêter") : t("Rechercher les concerts")}
@@ -136,6 +142,11 @@ export function ConcertsPage(props: { query: string }) {
           </div>
         </div>
       </StickyHeader>
+      <Show when={configured()?.ready}>
+        <p class="jambase-budget">
+          {t("Budget Phémios : {0} / {1} requêtes utilisées", configured()?.used ?? 0, 1000)}
+        </p>
+      </Show>
       <AccountNotice />
       <Show when={busy()}>
         <p class="concerts-progress" role="status">
@@ -167,9 +178,16 @@ export function ConcertsPage(props: { query: string }) {
         when={rows().length}
         fallback={
           <EmptyState icon="concerts">
-            {configured()?.ready
-              ? t("Aucun concert enregistré pour ces artistes.")
-              : t("Renseignez une clé Ticketmaster pour rechercher les concerts.")}
+            <Show
+              when={configured()?.ready}
+              fallback={
+                <a class="metadata-link" href="#/settings/services">
+                  {t("Renseignez une clé JamBase pour rechercher les concerts.")}
+                </a>
+              }
+            >
+              {t("Aucun concert enregistré pour ces artistes.")}
+            </Show>
           </EmptyState>
         }
       >

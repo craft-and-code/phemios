@@ -25,6 +25,7 @@ export function ConcertResults(props: {
     t(
       (
         {
+          scheduled: "Programmé",
           onsale: "Billets disponibles",
           offsale: "Vente terminée",
           canceled: "Annulé",
@@ -65,8 +66,11 @@ export function ConcertResults(props: {
                   {[row.event.venue, row.event.city, row.event.country].filter(Boolean).join(" · ")}
                 </p>
                 <small>
-                  {status(row.event.status)} · Ticketmaster ·{" "}
-                  {t("Consulté le {0}", new Date(row.claim.at).toLocaleDateString(locale()))}
+                  {status(row.event.status)} ·{" "}
+                  <a href="https://www.jambase.com/" rel="nofollow">
+                    Powered by JamBase
+                  </a>{" "}
+                  · {t("Consulté le {0}", new Date(row.claim.at).toLocaleDateString(locale()))}
                 </small>
                 <details>
                   <summary>{t("Informations")}</summary>
@@ -87,6 +91,7 @@ export function ConcertResults(props: {
                   <a
                     class="icon-button"
                     href={url()}
+                    rel="nofollow"
                     title={t("Voir le concert et les billets")}
                     aria-label={t("Voir le concert et les billets")}
                   >

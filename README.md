@@ -116,7 +116,7 @@ The separate bilingual project website lives in [`site/`](site/README.md). Previ
 
 ### Concert discovery
 
-Concerts groups the catalogue’s principal artists and explicitly searches Ticketmaster Discovery after a developer key is configured in Settings → External sources. Dates, venues, sale status, notices, prices and ticket links retain attribution and retrieval time. Each completed artist answer is cached immediately; no navigation launches provider requests. The key stays in the native device-private configuration, separate from browser/account preferences and Aède service keys. Coverage follows the provider’s inventory and pagination limits; live acceptance requires a valid key. See [Concert discovery](docs/design/concerts.md).
+Concerts displays JamBase dates directly for the catalogue’s principal artists after a key is configured in Settings → External sources. Venue/local dates, status, ticket links and retrieval time retain JamBase attribution. Searches are explicit and cache completed artists incrementally. Native preflight checks the shared subscription quota; a durable 1,000-attempt ceiling over 32 rolling days survives restart/key replacement. Dedicate the JamBase account to Phémios because unrelated clients share its quota and may incur provider overages. Keys stay outside browser/account preferences. Live acceptance requires a valid key. See [Concert discovery](docs/design/concerts.md).
 
 ## Engine releases and the separate Aède app
 
