@@ -4,6 +4,7 @@ export const accountSettingKeys = [
   "phemios.navigation.v1",
   "phemios.tools.v1",
   "phemios.duration",
+  "phemios.keep-awake",
   "phemios.visualizer",
   "phemios.spectrum",
   "phemios.spectrum-style",

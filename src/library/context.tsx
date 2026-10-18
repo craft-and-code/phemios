@@ -1,3 +1,4 @@
+import { createDisplayAwake, anyAudioPlaying } from "./display-awake";
 import { cdReference } from "../cd/model";
 import { createAlbumLyrics } from "./album-lyrics";
 import { createParentalAccess } from "./parental-access";
@@ -51,6 +52,7 @@ import {
 import { parseSnapshot, type AccountSession, type Snapshot, type Annotation } from "./server";
 import type { Artist, Album } from "./types";
 interface Library {
+  displayAwake: ReturnType<typeof createDisplayAwake>;
   parental: ReturnType<typeof createParentalAccess>;
   queueLyrics: ReturnType<typeof createQueueLyrics>;
   albumLyrics: ReturnType<typeof createAlbumLyrics>;
@@ -366,6 +368,10 @@ export function LibraryProvider(props: ParentProps) {
       ["playing", "connecting"].includes(player.state().status) ||
       ["playing", "connecting"].includes(radio.status()) ||
       ["playing", "connecting"].includes(podcast.status()),
+  });
+  const displayAwake = createDisplayAwake({
+    native: isNative(),
+    playing: () => anyAudioPlaying(player.state().status, radio.status(), podcast.status()),
   });
   const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
   const albumLyrics = createAlbumLyrics({ sessionFor, tasks });
@@ -685,6 +691,7 @@ export function LibraryProvider(props: ParentProps) {
       },
     },
     tasks,
+    displayAwake,
     radio,
     podcast,
     podcastListened,

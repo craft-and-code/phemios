@@ -4,10 +4,12 @@
 mod account_test_support;
 mod aede;
 mod articles;
+mod awake;
 mod cd;
 mod cd_image;
 mod commands;
 mod concerts;
+mod display_awake;
 mod encyclopedia;
 mod exports;
 mod hqplayer;
@@ -74,6 +76,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 phemios_core::playback::Player::default(),
             ));
             app.manage(hqplayer::HqPlayer::default());
+            app.manage(std::sync::Arc::new(display_awake::Awake::new()));
             app.manage(cd::Cd::default());
             app.manage(std::sync::Arc::new(transfer::Transfers::default()));
             app.manage(encyclopedia::Encyclopedia::new(
@@ -93,6 +96,8 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            awake::awake_open,
+            awake::awake_update,
             cd::cd_scan,
             cd_image::cd_open_image,
             cd::cd_start,

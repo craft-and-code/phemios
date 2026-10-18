@@ -1,3 +1,4 @@
+import { accountSettingKeys } from "./account-preference-keys";
 import { createRoot } from "solid-js";
 import { expect, it, vi } from "vitest";
 import type { AccountSession } from "./server";
@@ -154,7 +155,7 @@ it("keeps the review after failed restore and applies preferences only after suc
   await view.transfer.apply();
   expect(view.personalRestored).toHaveBeenCalledTimes(1);
   expect(view.preferencesApplied).toHaveBeenCalledTimes(1);
-  expect(view.storage.values.size).toBe(9);
+  expect([...view.storage.values.keys()].sort()).toEqual([...accountSettingKeys].sort());
   view.transfer.dispose();
 });
 it.each(["logout", "auditor"] as const)("never restores personal data while %s", async (change) => {

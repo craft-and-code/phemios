@@ -392,3 +392,9 @@ export const startTransfer = (id: string) => nativeCall<unknown>("transfer_start
 export const transferStatus = () =>
   nativeCall<import("../library/transfers").TransferStatus>("transfer_status");
 export const cancelTransfer = () => nativeCall<void>("transfer_cancel");
+
+/** Begin a new native display lease scope; a replaced controller cannot retain an older scope. */
+export const openAwakeScope = () => nativeCall<string>("awake_open");
+/** Renew or release this exact scope; native expiry bounds lost UI/controller updates. */
+export const updateAwakeScope = (scope: string, active: boolean) =>
+  nativeCall<void>("awake_update", { scope, active });

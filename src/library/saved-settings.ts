@@ -44,7 +44,10 @@ export function parseAccountSettings(raw: unknown): Record<string, unknown> {
       if (key === "phemios.tools.v1") readToolPreferences(storage);
       if (key === "phemios.audio.v1") parseAudioPreferences(JSON.stringify(value));
       if (key === "phemios.shortcuts.v1") parseShortcuts(JSON.stringify(value));
-      if (["phemios.duration", "phemios.spectrum"].includes(key) && typeof value !== "boolean")
+      if (
+        ["phemios.duration", "phemios.spectrum", "phemios.keep-awake"].includes(key) &&
+        typeof value !== "boolean"
+      )
         throw new Error(t("Préférences de compte invalides."));
       if (
         key === "phemios.visualizer" &&

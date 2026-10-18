@@ -102,3 +102,15 @@ it("includes the saved volume in portable preferences and accepts older backups 
   delete backup.values["phemios.audio.v1"].volume;
   expect(() => parsePreferenceBackup(JSON.stringify(backup))).not.toThrow();
 });
+
+it("imports pre-awake backups and preserves an explicitly disabled screen preference", () => {
+  const store = { getItem: () => null },
+    current = JSON.parse(exportPreferenceBackup(store));
+  expect(current.values["phemios.keep-awake"]).toBe(true);
+  current.values["phemios.keep-awake"] = false;
+  expect(parsePreferenceBackup(JSON.stringify(current))["phemios.keep-awake"]).toBe(false);
+  delete current.values["phemios.keep-awake"];
+  expect(parsePreferenceBackup(JSON.stringify(current))["phemios.keep-awake"]).toBe(true);
+  current.values["phemios.keep-awake"] = "bad";
+  expect(() => parsePreferenceBackup(JSON.stringify(current))).toThrow();
+});

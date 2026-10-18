@@ -18,6 +18,7 @@ export function exportPreferenceBackup(storage: Pick<Storage, "getItem">): strin
     "phemios.shortcuts.v1": parseShortcuts(null),
     "phemios.audio.v1": parseAudioPreferences(null),
     "phemios.duration": false,
+    "phemios.keep-awake": true,
     "phemios.visualizer": "sphere",
     "phemios.spectrum": false,
     "phemios.spectrum-style": "gradient",
@@ -48,11 +49,13 @@ export function parsePreferenceBackup(raw: string): PreferenceBackup {
     !values ||
     typeof values !== "object" ||
     Array.isArray(values) ||
-    Object.keys(values).length !== accountSettingKeys.length ||
+    accountSettingKeys
+      .filter((key) => key !== "phemios.keep-awake")
+      .some((key) => !Object.hasOwn(values, key)) ||
     Object.keys(values).some((key) => !accountSettingKeys.some((known) => known === key))
   )
     throw new Error(t("Sauvegarde des préférences invalide."));
-  const parsed = parseAccountSettings({ values });
+  const parsed = parseAccountSettings({ values: { "phemios.keep-awake": true, ...values } });
   for (const [key, allowed] of [
     ["phemios.navigation.v1", ["version", "order", "hidden", "labels"]],
     ["phemios.audio.v1", ["crossfadeMs", "repeat", "policy", "volume"]],

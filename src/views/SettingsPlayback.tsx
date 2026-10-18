@@ -1,3 +1,4 @@
+import { DisplayAwakeSettings } from "../components/DisplayAwakeSettings";
 import { Feedback } from "../components/Feedback";
 import { createSignal, Show } from "solid-js";
 import { t } from "../i18n";
@@ -63,7 +64,12 @@ export function SettingsPlayback() {
   }
   return (
     <>
-      {" "}
+      <DisplayAwakeSettings
+        enabled={library.displayAwake.enabled()}
+        disabled={!isNative()}
+        error={library.displayAwake.error()}
+        onChange={library.displayAwake.setEnabled}
+      />
       <section class="settings-card">
         <h2>{t("Fondu entre les morceaux")}</h2>
         <label>
