@@ -187,3 +187,206 @@ it("never opens integrity error details for success or an absent reference diges
     }
   });
 });
+
+it("publishes each completed file while its explicitly started check is still running", async () => {
+  const view = setup();
+  await view.integrity.start();
+  const output = { ...report(), stderr: "" };
+  output.stdout = JSON.stringify({
+    version: 1,
+    files: JSON.parse(output.stdout).files.slice(0, 1),
+  });
+  output.exit_code = 0;
+  const { result: _result, ...running } = complete();
+  view.setJobs([{ ...running, status: "running", partial_result: output }]);
+  expect(view.integrity.result(paths[0])?.status).toBe("ok");
+  expect(view.integrity.result(paths[1])).toBeUndefined();
+  expect(view.integrity.busy()).toBe(true);
+  view.setJobs([complete()]);
+  expect(view.integrity.result(paths[2])?.status).toBe("ko");
+});
+
+it("validates partial snapshots with the same file, duplicate, truncation and exit guards", () => {
+  const output = { ...report(), stderr: "" };
+  output.stdout = JSON.stringify({
+    version: 1,
+    files: JSON.parse(output.stdout).files.slice(0, 2),
+  });
+  output.exit_code = 0;
+  expect(parseIntegrityResults(output, paths, true).size).toBe(2);
+  expect(() => parseIntegrityResults(output, paths)).toThrow();
+  for (const invalid of [
+    { ...output, output_truncated: true },
+    { ...output, exit_code: 1 },
+    { ...output, exit_code: 130 },
+    { ...output, stderr: "unexpected" },
+    { ...output, stdout: JSON.stringify({ version: 1, files: [] }) },
+    {
+      ...output,
+      stdout: JSON.stringify({
+        version: 1,
+        files: [{ path: "/foreign.flac", status: "ok", verifier: "Rust" }],
+      }),
+    },
+    {
+      ...output,
+      stdout: JSON.stringify({
+        version: 1,
+        files: Array(2).fill({ path: paths[0], status: "ok", verifier: "Rust" }),
+      }),
+    },
+  ])
+    expect(() => parseIntegrityResults(invalid, paths, true)).toThrow();
+});
+it("keeps verified partial files on cancellation and discards them when the account is replaced", async () => {
+  const view = setup();
+  await view.integrity.start();
+  const output = {
+    ...report(),
+    stderr: "",
+    exit_code: 0,
+    stdout: JSON.stringify({
+      version: 1,
+      files: [{ path: paths[0], status: "ok", verifier: "Rust" }],
+    }),
+  };
+  view.setJobs([{ ...complete(), status: "cancelled", partial_result: output }]);
+  expect(view.integrity.result(paths[0])?.status).toBe("ok");
+  expect(view.integrity.busy()).toBe(false);
+  view.setSession({ ...owner, account: { ...owner.account, id: "replacement" } });
+  expect(view.integrity.result(paths[0])).toBeUndefined();
+});
+
+it("keeps a disclosed failed-file result stable while later files finish", async () => {
+  const view = setup();
+  await view.integrity.start();
+  const first = { path: paths[0], status: "ko", verifier: "Rust", message: "MD5 mismatch" };
+  const snapshot = (files: unknown[]) => ({
+    exit_code: 1,
+    stdout: JSON.stringify({ version: 1, files }),
+    stderr: "",
+    output_truncated: false,
+  });
+  view.setJobs([{ ...complete(), status: "running", partial_result: snapshot([first]) }]);
+  const result = view.integrity.result(paths[0]);
+  const detail = createIntegrityDisclosure(() => view.integrity.result(paths[0]));
+  detail.toggle();
+  view.setJobs([
+    {
+      ...complete(),
+      status: "running",
+      partial_result: snapshot([first, { path: paths[1], status: "no_hash", verifier: "Rust" }]),
+    },
+  ]);
+  expect(view.integrity.result(paths[0])).toBe(result);
+  expect(detail.open()).toBe(true);
+});
+
+it("does not publish a late cancellation error into a replacement account", async () => {
+  let reject!: (error: Error) => void;
+  const cancel = vi.fn(
+    () =>
+      new Promise<void>((_resolve, refuse) => {
+        reject = refuse;
+      }),
+  );
+  const view = createRoot((end) => {
+    dispose = end;
+    const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+    const [jobs, setJobs] = createSignal<Job[]>([]);
+    const integrity = createAlbumIntegrity({
+      release: () => "release:fixture",
+      session,
+      jobs,
+      paths: () => paths,
+      start: async () => 7,
+      cancel,
+    });
+    return { integrity, setSession, setJobs };
+  });
+  await view.integrity.start();
+  view.setJobs([{ ...complete(), status: "running" }]);
+  const pending = view.integrity.cancel();
+  expect(cancel).toHaveBeenCalledWith(7, "server");
+  view.setSession({ ...owner, account: { ...owner.account, id: "other" } });
+  reject(new Error("Old account cancellation error"));
+  await pending;
+  expect(view.integrity.error()).toBe("");
+  expect(view.integrity.result(paths[0])).toBeUndefined();
+});
+
+it("clears a prior cancellation failure when the user retries successfully", async () => {
+  const view = setup();
+  await view.integrity.start();
+  view.setJobs([{ ...complete(), status: "running" }]);
+  view.cancel.mockRejectedValueOnce(new Error("Temporary cancellation failure"));
+  await view.integrity.cancel();
+  expect(view.integrity.error()).toContain("Temporary cancellation failure");
+  await view.integrity.cancel();
+  view.setJobs([{ ...complete(), status: "cancelled" }]);
+  expect(view.integrity.error()).toBe("");
+});
+it("does not show a late cancellation error after the check has already finished", async () => {
+  const view = setup();
+  await view.integrity.start();
+  view.setJobs([{ ...complete(), status: "running" }]);
+  let reject!: (failure: Error) => void;
+  view.cancel.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, refuse) => {
+        reject = refuse;
+      }),
+  );
+  const cancelled = view.integrity.cancel();
+  view.setJobs([complete()]);
+  reject(new Error("task has already finished"));
+  await cancelled;
+  expect(view.integrity.result(paths[0])?.status).toBe("ok");
+  expect(view.integrity.error()).toBe("");
+});
+
+it("retires a cancellation error when the still-running check subsequently finishes", async () => {
+  const view = setup();
+  await view.integrity.start();
+  view.setJobs([{ ...complete(), status: "running" }]);
+  view.cancel.mockRejectedValueOnce(new Error("Cancellation transport unavailable"));
+  await view.integrity.cancel();
+  expect(view.integrity.error()).toContain("Cancellation transport unavailable");
+  view.setJobs([complete()]);
+  expect(view.integrity.error()).toBe("");
+  expect(view.integrity.result(paths[2])?.status).toBe("ko");
+});
+it("rejects a superseded cancellation error without losing current progressive verdicts", async () => {
+  const view = setup();
+  await view.integrity.start();
+  const { result: _result, ...running } = complete();
+  view.setJobs([{ ...running, status: "running", partial_result: { ...report(), stderr: "" } }]);
+  let reject!: (failure: Error) => void;
+  view.cancel.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, refuse) => {
+        reject = refuse;
+      }),
+  );
+  const first = view.integrity.cancel();
+  await view.integrity.cancel();
+  reject(new Error("Superseded cancellation error"));
+  await first;
+  expect(view.integrity.error()).toBe("");
+  expect(view.integrity.result(paths[0])?.status).toBe("ok");
+  expect(view.integrity.busy()).toBe(true);
+});
+
+it("requires the current admin owner to cancel even while old task rows remain available", async () => {
+  const view = setup();
+  await view.integrity.start();
+  view.setJobs([{ ...complete(), status: "running" }]);
+  expect(view.integrity.canCancel()).toBe(true);
+  view.setSession({ ...owner, account: { ...owner.account, role: "user" } });
+  expect(view.integrity.canCancel()).toBe(false);
+  await view.integrity.cancel();
+  view.setSession(undefined);
+  expect(view.integrity.canCancel()).toBe(false);
+  await view.integrity.cancel();
+  expect(view.cancel).not.toHaveBeenCalled();
+});

@@ -51,3 +51,34 @@ export const Cancellation: Story = {
     expect(canvas.queryByText(/JSON/)).toBeNull();
   },
 };
+export const TracksUnavailableDuringCheck: Story = {
+  render: () => {
+    const [busy, setBusy] = createSignal(false),
+      [cancelled, setCancelled] = createSignal(false);
+    return (
+      <>
+        <AlbumIntegrity
+          enabled={!busy()}
+          busy={busy()}
+          cancellable={busy()}
+          onStart={() => setBusy(true)}
+          onCancel={() => {
+            setBusy(false);
+            setCancelled(true);
+          }}
+        />
+        <output>{cancelled() ? "Cancellation confirmed" : ""}</output>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Tester l’intégrité de l’album" }));
+    const stop = canvas.getByRole("button", { name: "Arrêter le test" });
+    await expect(stop).toBeEnabled();
+    await userEvent.click(stop);
+    await expect(
+      canvas.getByRole("button", { name: "Tester l’intégrité de l’album" }),
+    ).toBeEnabled();
+  },
+};

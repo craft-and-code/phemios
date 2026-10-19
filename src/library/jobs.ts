@@ -2,6 +2,7 @@ import { createGenerations } from "./generation-jobs";
 import { validFeatureProgress, type FeatureProgress } from "./mood-features";
 import { startEnrichment, startSourceEnrichment, hasActiveEnrichment } from "./enrichment";
 import type { AccountSession } from "./server";
+import { createJobRefresh } from "./job-refresh";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "./sources";
 import { createSignal, createEffect, onCleanup } from "solid-js";
@@ -14,6 +15,7 @@ export interface Job {
   release?: string;
   task_kind?: string;
   result?: { exit_code: number; stdout: string; stderr: string; output_truncated: boolean };
+  partial_result?: Job["result"];
   error?: { message: string };
   tracking_error?: string;
   progress?: FeatureProgress;
@@ -28,7 +30,7 @@ export function activeReleaseJob(jobs: readonly Job[], release: string): Job | u
       !job.tracking_error,
   );
 }
-/** Poll only explicitly started jobs, retaining their IDs across view navigation. */
+/** Retain task IDs across navigation; source generations and task revisions reject late reads. */
 export function createJobs(
   connected: () => boolean,
   options?: {
@@ -37,10 +39,29 @@ export function createJobs(
   },
 ) {
   const [jobs, setJobs] = createSignal<Job[]>([]),
-    [error, setError] = createSignal(""),
+    [diagnostic, setDiagnostic] = createSignal<{
+      source: SourceId;
+      task: number | undefined;
+      message: string;
+    }>(),
     [enrichmentPending, setEnrichmentPending] = createSignal(false);
+  const error = () => diagnostic()?.message ?? "";
+  const refresh = createJobRefresh(async (source) => {
+    await options?.changed(source);
+  });
   let timer: number | undefined,
     disposed = false;
+  // Returning to the same account object must not revive an earlier login's requests.
+  const epochs: Record<SourceId, number> = { local: 0, server: 0 };
+  const capture = (source: SourceId) => {
+    const owner = options?.session(source),
+      epoch = epochs[source];
+    return {
+      owner,
+      current: () =>
+        !disposed && epoch === epochs[source] && (!options || owner === options.session(source)),
+    };
+  };
   async function poll() {
     if (disposed || !connected()) {
       timer = undefined;
@@ -50,41 +71,17 @@ export function createJobs(
       (job) => !job.tracking_error && ["queued", "running"].includes(job.status),
     );
     for (const job of active) {
+      if (disposed) return;
+      if (!jobs().includes(job)) continue;
       const source = job.source ?? "server",
-        identity = options?.session(source);
-      try {
-        const result = await requestAede<Job>(
-          `/api/admin/v1/tasks/${job.task_id}`,
-          {},
-          "GET",
-          null,
-          job.source,
-        );
-        if (disposed) return;
-        if (options && identity !== options.session(source)) continue;
-        if (
-          !validFeatureProgress(result.progress) ||
-          result.task_id !== job.task_id ||
-          !["queued", "running", "completed", "failed", "cancelled"].includes(result.status)
-        )
-          throw new Error(t("Suivi de tâche Aède invalide."));
-        setJobs((rows) =>
-          rows.map((row) =>
-            row.task_id === result.task_id && row.source === job.source
-              ? { ...row, ...result }
-              : row,
-          ),
-        );
-        if (
-          ["completed", "failed", "cancelled"].includes(result.status) &&
-          (job.kind === "fetch" || job.kind?.startsWith("generate"))
-        )
-          await options?.changed(source);
-      } catch (failure) {
-        if (options && identity !== options.session(source)) continue;
+        context = capture(source);
+      let tracked = job;
+      const current = () => context.current() && jobs().includes(tracked);
+      const failed = (failure: unknown) => {
+        if (!current()) return;
         const message =
           failure instanceof Error ? failure.message : t("Suivi de tâche interrompu.");
-        setError(message);
+        setDiagnostic({ source, task: job.task_id, message });
         setJobs((rows) =>
           rows.map((row) =>
             row.task_id === job.task_id && row.source === job.source
@@ -92,9 +89,49 @@ export function createJobs(
               : row,
           ),
         );
+      };
+      try {
+        const result = await requestAede<Job>(
+          `/api/admin/v1/tasks/${job.task_id}`,
+          {},
+          "GET",
+          null,
+          source,
+          context.owner,
+        );
+        if (disposed) return;
+        if (!current()) continue;
+        if (
+          !validFeatureProgress(result.progress) ||
+          result.task_id !== job.task_id ||
+          !["queued", "running", "completed", "failed", "cancelled"].includes(result.status)
+        )
+          throw new Error(t("Suivi de tâche Aède invalide."));
+        setJobs((rows) =>
+          rows.map((row) => {
+            if (row.task_id !== result.task_id || row.source !== job.source) return row;
+            tracked = { ...row, ...result };
+            if (!result.partial_result) delete tracked.partial_result;
+            return tracked;
+          }),
+        );
+        if (current() && diagnostic()?.source === source && diagnostic()?.task === job.task_id)
+          setDiagnostic(undefined);
+        if (
+          current() &&
+          ["completed", "failed", "cancelled"].includes(result.status) &&
+          (job.kind === "scan" || job.kind === "fetch" || job.kind?.startsWith("generate"))
+        )
+          // Catalogue refresh has its own lifetime; it cannot stall another task's verdicts.
+          void refresh.request(source, context.current).catch(failed);
+      } catch (failure) {
+        failed(failure);
       }
     }
-    if (jobs().some((job) => !job.tracking_error && ["queued", "running"].includes(job.status)))
+    if (
+      !disposed &&
+      jobs().some((job) => !job.tracking_error && ["queued", "running"].includes(job.status))
+    )
       timer = window.setTimeout(() => void poll(), 1200);
     else timer = undefined;
   }
@@ -104,6 +141,7 @@ export function createJobs(
     source: SourceId,
     release?: string,
   ) {
+    if (disposed) throw new Error(t("Session invalide."));
     if (!Number.isSafeInteger(result.task_id) || result.task_id <= 0)
       throw new Error(t("Suivi de tâche Aède invalide."));
     setJobs((rows) => [
@@ -119,12 +157,15 @@ export function createJobs(
     if (timer === undefined) timer = window.setTimeout(() => void poll(), 300);
   }
   async function restore(source: SourceId) {
-    const identity = options?.session(source),
-      known = new Set(
-        jobs()
-          .filter((row) => row.source === source)
-          .map((row) => row.task_id),
-      );
+    const context = capture(source);
+    if (!context.current()) return;
+    const previousDiagnostic = diagnostic();
+    // Keep updates made after this recovery started, even if the older list omits that task.
+    const known = new Map(
+      jobs()
+        .filter((row) => row.source === source)
+        .map((row) => [row.task_id, row]),
+    );
     try {
       const info = await requestAede<{ capabilities?: string[] }>(
         "/api/v1/status",
@@ -132,15 +173,18 @@ export function createJobs(
         "GET",
         null,
         source,
+        context.owner,
       );
-      if (
-        disposed ||
-        (options && identity !== options.session(source)) ||
-        !info.capabilities?.includes("administrative_tasks_list")
-      )
-        return;
-      const rows = await requestAede<Job[]>("/api/admin/v1/tasks", {}, "GET", null, source);
-      if (disposed || (options && identity !== options.session(source))) return;
+      if (!context.current() || !info.capabilities?.includes("administrative_tasks_list")) return;
+      const rows = await requestAede<Job[]>(
+        "/api/admin/v1/tasks",
+        {},
+        "GET",
+        null,
+        source,
+        context.owner,
+      );
+      if (!context.current()) return;
       if (
         !Array.isArray(rows) ||
         rows.length > 64 ||
@@ -160,7 +204,10 @@ export function createJobs(
           (held) => held.source === source && held.task_id === row.task_id,
         );
         return (
-          (previous?.kind === "fetch" || previous?.kind?.startsWith("generate")) &&
+          previous === known.get(row.task_id) &&
+          (previous?.kind === "scan" ||
+            previous?.kind === "fetch" ||
+            previous?.kind?.startsWith("generate")) &&
           ["queued", "running"].includes(previous.status) &&
           ["completed", "failed", "cancelled"].includes(row.status)
         );
@@ -169,6 +216,7 @@ export function createJobs(
         ...held.filter((row) => row.source !== source),
         ...rows.map((row) => {
           const local = held.find((old) => old.source === source && old.task_id === row.task_id);
+          if (local && local !== known.get(row.task_id)) return local;
           const kind =
             local?.kind ??
             (row.task_kind === "identification"
@@ -178,22 +226,29 @@ export function createJobs(
                 : (row.kind ?? row.task_kind));
           const restored = { ...local, ...row, source, ...(kind === undefined ? {} : { kind }) };
           delete restored.tracking_error;
+          if (!row.partial_result) delete restored.partial_result;
           return restored;
         }),
         ...held.filter(
           (row) =>
             row.source === source &&
-            !known.has(row.task_id) &&
+            known.get(row.task_id) !== row &&
             !rows.some((remote) => remote.task_id === row.task_id),
         ),
       ]);
-      if (finished) await options?.changed(source);
-      if (disposed || (options && identity !== options.session(source))) return;
-      if (timer === undefined && rows.some((row) => ["queued", "running"].includes(row.status)))
+      if (!context.current()) return;
+      // A successful read retires only the error this recovery actually observed.
+      if (diagnostic() === previousDiagnostic && previousDiagnostic?.source === source)
+        setDiagnostic(undefined);
+      if (
+        timer === undefined &&
+        jobs().some((row) => !row.tracking_error && ["queued", "running"].includes(row.status))
+      )
         timer = window.setTimeout(() => void poll(), 300);
+      // Catalog synchronization must not hold up independent task progress.
+      if (finished) await refresh.request(source, context.current);
     } catch (failure) {
-      if (!disposed && (!options || identity === options.session(source)))
-        setError(String(failure));
+      if (context.current()) setDiagnostic({ source, task: undefined, message: String(failure) });
     }
   }
   if (options) {
@@ -203,6 +258,8 @@ export function createJobs(
         const identity = options.session(source);
         if (owners.get(source) !== identity) {
           owners.set(source, identity);
+          epochs[source]++;
+          if (diagnostic()?.source === source) setDiagnostic(undefined);
           setJobs((rows) => rows.filter((row) => row.source !== source));
           if (identity?.account.role === "admin") void restore(source);
         }
@@ -214,11 +271,13 @@ export function createJobs(
     release: string,
     force: boolean,
   ) {
-    setError("");
+    if (disposed) throw new Error(t("Session invalide."));
+    setDiagnostic(undefined);
     if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
       throw new Error(t("Quatre tâches sont déjà actives."));
     const source = referenceSource(release),
-      identity = options?.session(source);
+      context = capture(source),
+      identity = context.owner;
     if (kind === "check") {
       if (identity?.account.role !== "admin")
         throw new Error(t("Droits administrateur nécessaires."));
@@ -230,7 +289,7 @@ export function createJobs(
         source,
         identity,
       );
-      if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
+      if (!context.current()) throw new Error(t("Session invalide."));
       if (!info.capabilities?.includes("album_decode_results"))
         throw new Error(t("Mettez à jour puis redémarrez Aède pour tester cet album."));
       const result = await requestAede<{ task_id: number; status: "queued" }>(
@@ -241,7 +300,7 @@ export function createJobs(
         source,
         identity,
       );
-      if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
+      if (!context.current()) throw new Error(t("Session invalide."));
       track(result, kind, source, release);
       return result.task_id;
     }
@@ -251,7 +310,7 @@ export function createJobs(
       "POST",
       kind === "lyrics" ? { track: release } : { release, force, threads: 2 },
     );
-    if (options && identity !== options.session(source)) throw new Error(t("Session invalide."));
+    if (!context.current()) throw new Error(t("Session invalide."));
     track(result, kind, source, release);
     return result.task_id;
   }
@@ -268,7 +327,9 @@ export function createJobs(
       throw new Error(t("Une extraction audio est déjà active."));
     if (jobs().filter((job) => ["queued", "running"].includes(job.status)).length >= 4)
       throw new Error(t("Quatre tâches sont déjà actives."));
-    const identity = options?.session(source);
+    const context = capture(source),
+      identity = context.owner;
+    if (!context.current()) throw new Error(t("Session invalide."));
     if (options && identity?.account.role !== "admin")
       throw new Error(t("Droits administrateur nécessaires."));
     const result = await requestAede<{ task_id: number; status: "queued" }>(
@@ -278,8 +339,7 @@ export function createJobs(
       { force: false },
       source,
     );
-    if (disposed || (options && identity !== options.session(source)))
-      throw new Error(t("Session invalide."));
+    if (!context.current()) throw new Error(t("Session invalide."));
     track(result, "mood_features", source);
     return result.task_id;
   }
@@ -287,9 +347,8 @@ export function createJobs(
   async function enrich(sources: readonly SourceId[], input: Record<string, boolean>) {
     if (enrichmentPending() || hasActiveEnrichment(jobs())) return undefined;
     setEnrichmentPending(true);
-    const owners = new Map(sources.map((source) => [source, options?.session(source)]));
-    const current = (source: SourceId) =>
-      !disposed && (!options || owners.get(source) === options.session(source));
+    const scopes = new Map(sources.map((source) => [source, capture(source)]));
+    const current = (source: SourceId) => scopes.get(source)?.current() === true;
     try {
       const results = await startEnrichment(sources, (source) =>
         startSourceEnrichment(source, input, () => current(source)),
@@ -305,10 +364,32 @@ export function createJobs(
     }
   }
   async function cancel(id: number, source: SourceId = "server") {
-    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", null, source);
+    const context = capture(source);
+    if (!context.current()) throw new Error(t("Session invalide."));
+    await requestAede(`/api/admin/v1/tasks/${id}/cancel`, {}, "POST", null, source, context.owner);
+    if (!context.current()) return;
+    // A transient tracking failure must not leave a successfully cancelled job busy forever.
+    let resumed = false;
+    setJobs((rows) =>
+      rows.map((row) => {
+        if (
+          row.source !== source ||
+          row.task_id !== id ||
+          !row.tracking_error ||
+          !["queued", "running"].includes(row.status)
+        )
+          return row;
+        const updated = { ...row };
+        delete updated.tracking_error;
+        resumed = true;
+        return updated;
+      }),
+    );
+    if (resumed && timer === undefined) timer = window.setTimeout(() => void poll(), 300);
   }
   onCleanup(() => {
     disposed = true;
+    refresh.dispose();
     if (timer !== undefined) window.clearTimeout(timer);
   });
   const generations = createGenerations({

@@ -233,7 +233,14 @@ it("cancels with the empty-body administrative contract", async () => {
   request.mockResolvedValue({});
   const tasks = controller();
   await tasks.cancel(19, "local");
-  expect(request).toHaveBeenCalledWith("/api/admin/v1/tasks/19/cancel", {}, "POST", null, "local");
+  expect(request).toHaveBeenCalledWith(
+    "/api/admin/v1/tasks/19/cancel",
+    {},
+    "POST",
+    null,
+    "local",
+    undefined,
+  );
 });
 
 it("album integrity binds the capability read and exact mutation to the captured local owner", async () => {

@@ -23,10 +23,12 @@ export interface IntegrityResult {
 export function parseIntegrityResults(
   output: NonNullable<Job["result"]>,
   paths: readonly string[],
+  partial = false,
 ) {
   const invalid = () => new Error(t("Résultat d’intégrité Aède invalide ou incomplet."));
   if (
     output.output_truncated ||
+    (partial && (![0, 1].includes(output.exit_code) || output.stderr !== "")) ||
     output.stdout.length > 65536 ||
     !Number.isSafeInteger(output.exit_code) ||
     output.exit_code < 0 ||
@@ -39,7 +41,8 @@ export function parseIntegrityResults(
     !report ||
     report.version !== 1 ||
     !Array.isArray(report.files) ||
-    report.files.length !== expected.size ||
+    (partial && !report.files.length) ||
+    (partial ? report.files.length > expected.size : report.files.length !== expected.size) ||
     !expected.size ||
     paths.some((path) => !path)
   )
@@ -82,8 +85,14 @@ export function createAlbumIntegrity(options: {
   const scope = createMemo(() => ({ release: options.release(), owner: options.session() }));
   const [task, setTask] = createSignal<{ id: number; scope: ReturnType<typeof scope> }>(),
     [pending, setPending] = createSignal(false),
-    [error, setError] = createSignal("");
-  let generation = 0,
+    [error, setError] = createSignal(""),
+    [cancelError, setCancelError] = createSignal<{
+      id: number;
+      scope: ReturnType<typeof scope>;
+      message: string;
+    }>();
+  let cancellation = 0,
+    generation = 0,
     disposed = false;
   createEffect(
     on(
@@ -93,6 +102,7 @@ export function createAlbumIntegrity(options: {
         setTask(undefined);
         setPending(false);
         setError("");
+        setCancelError(undefined);
       },
       { defer: true },
     ),
@@ -124,19 +134,48 @@ export function createAlbumIntegrity(options: {
           ["queued", "running"].includes(job.status),
       ),
   );
-  const result = createMemo(() => {
-    const job = current();
-    if (!scope().owner || !job?.result || !["completed", "failed"].includes(job.status))
-      return { values: new Map<string, IntegrityResult>(), error: "" };
-    try {
-      return { values: parseIntegrityResults(job.result, options.paths()), error: "" };
-    } catch (failure) {
-      return { values: new Map<string, IntegrityResult>(), error: String(failure) };
-    }
-  });
+  // A cancellation refusal belongs only to its still-active check, never its final verdict.
+  const cancellationFailure = () => {
+    const held = cancelError();
+    return held?.scope === scope() && held.id === active()?.task_id ? held.message : "";
+  };
+  const result = createMemo(
+    (
+      previous:
+        | { values: Map<string, IntegrityResult>; error: string; task: ReturnType<typeof task> }
+        | undefined,
+    ) => {
+      const job = current();
+      const empty = () => ({ values: new Map<string, IntegrityResult>(), error: "", task: task() });
+      if (!scope().owner || !job) return empty();
+      const final = ["completed", "failed"].includes(job.status) ? job.result : undefined;
+      const partial = ["running", "cancelled"].includes(job.status)
+        ? job.partial_result
+        : undefined;
+      const output = final ?? partial;
+      if (!output) return empty();
+      try {
+        const values = parseIntegrityResults(output, options.paths(), !final);
+        if (previous?.task === task())
+          for (const [path, next] of values) {
+            const held = previous?.values.get(path);
+            if (
+              held &&
+              held.status === next.status &&
+              held.verifier === next.verifier &&
+              held.message === next.message
+            )
+              values.set(path, held);
+          }
+        return { values, error: "", task: task() };
+      } catch (failure) {
+        return { ...empty(), error: String(failure) };
+      }
+    },
+  );
   return {
     busy: () => pending() || !!active(),
-    canCancel: () => !!active(),
+    canCancel: () => !disposed && scope().owner?.account.role === "admin" && !!active(),
     enabled: () =>
       scope().owner?.account.role === "admin" &&
       options.paths().length > 0 &&
@@ -145,6 +184,7 @@ export function createAlbumIntegrity(options: {
       path === undefined ? undefined : result().values.get(path),
     error: () =>
       error() ||
+      cancellationFailure() ||
       current()?.tracking_error ||
       result().error ||
       (!current()?.result ? (current()?.error?.message ?? "") : ""),
@@ -154,6 +194,7 @@ export function createAlbumIntegrity(options: {
         ticket = ++generation;
       setTask(undefined);
       setError("");
+      setCancelError(undefined);
       setPending(true);
       try {
         const id = await options.start(captured.release);
@@ -170,10 +211,19 @@ export function createAlbumIntegrity(options: {
         captured = scope(),
         ticket = generation;
       if (!job || disposed || captured.owner?.account.role !== "admin") return;
+      const attempt = ++cancellation;
+      setCancelError(undefined);
       try {
         await options.cancel(job.task_id, referenceSource(captured.release));
       } catch (failure) {
-        if (!disposed && ticket === generation && scope() === captured) setError(String(failure));
+        if (
+          !disposed &&
+          ticket === generation &&
+          scope() === captured &&
+          attempt === cancellation &&
+          active()?.task_id === job.task_id
+        )
+          setCancelError({ id: job.task_id, scope: captured, message: String(failure) });
       }
     },
   };

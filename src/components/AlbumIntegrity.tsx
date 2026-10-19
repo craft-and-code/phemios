@@ -17,7 +17,7 @@ export function AlbumIntegrity(props: {
       aria-busy={props.busy || undefined}
       aria-label={props.busy ? t("Arrêter le test") : t("Tester l’intégrité de l’album")}
       title={props.busy ? t("Arrêter le test") : t("Tester l’intégrité de l’album")}
-      disabled={!props.enabled || (props.busy && !props.cancellable)}
+      disabled={props.busy ? !props.cancellable : !props.enabled}
       onClick={() => (props.busy ? props.onCancel() : props.onStart())}
     >
       <Show when={props.busy} fallback={<Icon name="integrity" />}>

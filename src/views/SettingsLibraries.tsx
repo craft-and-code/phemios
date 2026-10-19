@@ -4,7 +4,7 @@ import { scanRootSelection } from "../library/server-roots";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
-import { createResource, createSignal, For, Show, onCleanup } from "solid-js";
+import { createResource, createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { ConnectionPanel } from "../components/ConnectionPanel";
 import {
@@ -14,7 +14,7 @@ import {
   localRootAction,
   requestAede,
 } from "../platform/desktop";
-import type { Job } from "../library/jobs";
+import { createLibraryScan } from "../library/library-scan";
 /** Registered folders, availability and explicit tasks are kept distinct. */
 export function SettingsLibraries() {
   const prefs = createToolPreferences();
@@ -25,9 +25,13 @@ export function SettingsLibraries() {
   const library = useLibrary(),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
-    [excluded, setExcluded] = createSignal(""),
-    [task, setTask] = createSignal<Job>(),
-    [taskSource, setTaskSource] = createSignal<"local" | "server">("local");
+    [excluded, setExcluded] = createSignal("");
+  const scan = createLibraryScan({
+    session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
+    tasks: library.tasks,
+  });
+  const task = scan.task,
+    taskSource = scan.source;
   const [local, { refetch }] = createResource(() => !library.demo, localStatus);
   const [roots, { refetch: refreshRoots }] = createResource(
     () => library.localSession(),
@@ -55,24 +59,8 @@ export function SettingsLibraries() {
       setBusy(false);
     }
   }
-  const timer = window.setInterval(() => {
-    if (task() && ["queued", "running"].includes(task()!.status) && !busy()) void refreshTask();
-  }, 1200);
-  onCleanup(() => window.clearInterval(timer));
   async function refreshTask() {
-    const current = task();
-    if (!current) return;
-    await perform(async () => {
-      const result = await requestAede<Job>(
-        `/api/admin/v1/tasks/${current.task_id}`,
-        {},
-        "GET",
-        null,
-        taskSource(),
-      );
-      setTask(result);
-      if (result.status === "completed") await library.sync(taskSource());
-    });
+    await perform(scan.refresh);
   }
   return (
     <div class="settings-libraries">
@@ -172,10 +160,7 @@ export function SettingsLibraries() {
           <button
             disabled={busy() || !library.localSession() || !local()?.roots.length}
             onClick={() =>
-              void perform(async () => {
-                setTaskSource("local");
-                setTask(await scanLocal(full(), threads()));
-              })
+              void perform(() => scan.start("local", () => scanLocal(full(), threads())))
             }
           >
             {t("Analyser les dossiers")}{" "}
@@ -273,14 +258,14 @@ export function SettingsLibraries() {
             scan={(paths) =>
               void perform(async () => {
                 const selection = scanRootSelection(paths);
-                setTaskSource("server");
-                setTask(
-                  await requestAede<Job>(
+                await scan.start("server", (owner) =>
+                  requestAede<{ task_id: number; status: "queued" }>(
                     "/api/admin/v1/scan",
                     {},
                     "POST",
                     { ...selection, full: full(), threads: threads() },
                     "server",
+                    owner,
                   ),
                 );
               })
@@ -303,17 +288,7 @@ export function SettingsLibraries() {
               </button>
               <button
                 disabled={busy() || !["queued", "running"].includes(current().status)}
-                onClick={() =>
-                  void perform(() =>
-                    requestAede(
-                      `/api/admin/v1/tasks/${current().task_id}/cancel`,
-                      {},
-                      "POST",
-                      {},
-                      taskSource(),
-                    ),
-                  )
-                }
+                onClick={() => void perform(scan.cancel)}
               >
                 {t("Annuler la tâche")}{" "}
               </button>
