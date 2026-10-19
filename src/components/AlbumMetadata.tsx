@@ -1,4 +1,5 @@
-import { createResource, For, Show } from "solid-js";
+import { createCatalogDetail } from "../library/catalog-detail";
+import { For, Show } from "solid-js";
 import { t, countryName } from "../i18n";
 import { albumLabels } from "../library/album-metadata";
 import { useLibrary } from "../library/context";
@@ -11,17 +12,14 @@ export function AlbumMetadata(props: {
   onCountry: (country: string) => void;
 }) {
   const library = useLibrary();
-  const owner = () => {
-    const session = library.sessionFor(props.album.reference);
-    return session
-      ? JSON.stringify([props.album.reference, session.server, session.account.id])
-      : false;
-  };
-  const [labels] = createResource(owner, async (key) => ({
-    key,
-    rows: await albumLabels((JSON.parse(key) as string[])[0]!),
-  }));
-  const rows = () => (owner() && labels()?.key === owner() ? labels()?.rows : undefined);
+  const owner = () => library.sessionFor(props.album.reference);
+  const labels = createCatalogDetail(
+    () => props.album.reference,
+    owner,
+    (reference, session, admission) =>
+      albumLabels(reference, { owner: session, current: admission.current }),
+  );
+  const rows = labels.current;
   return (
     <div class="album-metadata">
       <div>
@@ -58,14 +56,14 @@ export function AlbumMetadata(props: {
       <div>
         <small>{t("Labels")}</small>
         <Show
-          when={!labels.loading}
+          when={!labels.loading()}
           fallback={<span class="spinner" aria-label={t("Chargement…")} />}
         >
           <Show
-            when={!owner() || !labels.error}
+            when={!owner() || !labels.error()}
             fallback={
               <span role="alert" class="metadata-error">
-                {String(labels.error)}
+                {String(labels.error())}
               </span>
             }
           >

@@ -1,3 +1,4 @@
+import { createServiceCancellation } from "../library/service-cancellation";
 import { SettingsJamBase } from "./SettingsJamBase";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
@@ -32,6 +33,10 @@ export function SettingsServices() {
     [busy, setBusy] = createSignal(false),
     [failure, setFailure] = createSignal(false),
     [retrying, setRetrying] = createSignal<SourceId>();
+  const cancellation = createServiceCancellation({
+    session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
+    cancel: library.tasks.cancel,
+  });
   const launching = library.tasks.enrichmentPending;
   const enrichmentActive = () => hasActiveEnrichment(library.tasks.jobs());
   const recentJobs = createMemo(() => visibleEnrichmentJobs(library.tasks.jobs()));
@@ -279,6 +284,7 @@ export function SettingsServices() {
         <p class="notice">{t("Connectez un compte administrateur Aède pour lancer une tâche.")}</p>
       </Show>
       <Feedback error message={library.tasks.error()} />
+      <Feedback error message={cancellation.error()} onClose={cancellation.clear} />
       <Show when={recentJobs().length}>
         <div class="enrichment-jobs">
           <For each={recentJobs()}>
@@ -323,11 +329,7 @@ export function SettingsServices() {
                       class="icon-button quiet"
                       title={t("Annuler la tâche")}
                       aria-label={t("Annuler la tâche")}
-                      onClick={() =>
-                        void library.tasks
-                          .cancel(job.task_id, job.source ?? "server")
-                          .catch((failure) => setMessage(String(failure)))
-                      }
+                      onClick={() => void cancellation.cancel(job.task_id, job.source ?? "server")}
                     >
                       <Icon name="close" />
                     </button>

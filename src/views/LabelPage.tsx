@@ -1,3 +1,4 @@
+import { createLabelSelection } from "../library/label-selection";
 import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
 import { ArtistBiography } from "../components/ArtistBiography";
@@ -12,7 +13,7 @@ import { Feedback } from "../components/Feedback";
 import { PageLoader } from "../components/PageLoader";
 import { StickyHeader } from "../components/StickyHeader";
 import { BiographyText } from "../components/BiographyText";
-import { createResource, createSignal, createEffect, on, onCleanup, Show } from "solid-js";
+import { createResource, createEffect, on, onCleanup, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
@@ -24,7 +25,6 @@ import { Icon } from "../components/Icon";
 import { filterAlbums } from "../library/filtering";
 import { labelExpression, labelHistogram, labelYearDomain } from "../library/label-browsing";
 import { referenceSource } from "../library/sources";
-import type { Filters } from "../library/types";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { SourceBadge } from "../components/SourceBadge";
 interface LabelResult {
@@ -70,7 +70,14 @@ export function LabelPage(props: {
         if (key.session) {
           let raw: unknown;
           try {
-            raw = await requestAede("/api/v1/label", { ref: key.reference });
+            raw = await requestAede(
+              "/api/v1/label",
+              { ref: key.reference },
+              "GET",
+              null,
+              referenceSource(key.reference),
+              key.session,
+            );
           } catch (failure) {
             if (!cached) throw failure;
           }
@@ -121,21 +128,11 @@ export function LabelPage(props: {
   onCleanup(() => props.onBiographyNavigation(undefined));
   const albums = () =>
     library.albums().filter((album) => detail()?.releases.includes(album.reference));
-  const [filters, setFilters] = createSignal<Filters>({
-      mode: "years",
-      years: [0, 0],
-      alphabet: [0, 26],
-      includeUnknownYear: true,
-      query: "",
-    }),
-    [reverse, setReverse] = createSignal(false);
-  let initialized = false;
-  createEffect(() => {
-    if (detail() && !initialized && (albums().length || !detail()?.releases.length)) {
-      initialized = true;
-      setFilters({ ...filters(), years: labelYearDomain(albums()) });
-    }
-  });
+  const { filters, setFilters, reverse, setReverse } = createLabelSelection(
+    () => ({ reference: props.reference, session: library.sessionFor(props.reference) }),
+    albums,
+    () => !!detail() && (!!albums().length || !detail()?.releases.length),
+  );
   const selected = () => filterAlbums(albums(), library.artists(), filters());
   return (
     <Show

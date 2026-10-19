@@ -40,6 +40,26 @@ export function distributions(
     if (filters.recentOnly && !isRecentAlbum(album, nowSeconds)) continue;
     if (!matchesComposers(album, filters)) continue;
     const related = index.artistsByAlbum.get(album.reference) ?? [];
+    if (
+      !artistView &&
+      !related.length &&
+      !filters.countries?.length &&
+      !filters.genres?.length &&
+      !filters.genre &&
+      searchAlbum(album, undefined, filters.query)
+    ) {
+      if (album.year !== null && matchesAlphabet(album.title, filters)) {
+        const bin = years.get(album.year) ?? new Set<string>();
+        bin.add(album.reference);
+        years.set(album.year, bin);
+      }
+      if (matchesYear(album, filters)) {
+        const initial = initialIndex(album.title),
+          bin = letters.get(initial) ?? new Set<string>();
+        bin.add(album.reference);
+        letters.set(initial, bin);
+      }
+    }
     for (const artist of related) {
       if (!matchesFacets(artist, filters) || !searchAlbum(album, artist, filters.query)) continue;
       const name = artistView ? artist.name : album.title;

@@ -1,4 +1,4 @@
-import { createMemo, createResource, createSignal } from "solid-js";
+import { createMemo, createResource, createSignal, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import type { AccountSession } from "./server";
@@ -14,6 +14,23 @@ export function createTrackLyrics(options: {
   detail?: boolean;
 }) {
   const [visible, setVisible] = createSignal(false);
+  let disposed = false;
+  onCleanup(() => {
+    disposed = true;
+  });
+  const owner = createMemo(
+    () => {
+      const reference = options.reference(),
+        session = options.session();
+      return session ? { reference, session } : false;
+    },
+    undefined,
+    {
+      equals: (a, b) =>
+        a === b || (!!a && !!b && a.reference === b.reference && a.session === b.session),
+    },
+  );
+
   const completed = createMemo(() => {
     const reference = options.reference(),
       source = referenceSource(reference);
@@ -31,32 +48,32 @@ export function createTrackLyrics(options: {
   });
   const identity = createMemo(
     () => {
-      const reference = options.reference(),
-        session = options.session(),
+      const held = owner(),
         version = completed();
-      return reference &&
-        session &&
+      return held &&
+        held.reference &&
         (visible() ||
           version !== undefined ||
           (options.detail && options.available() === undefined))
-        ? { reference, session, version, expanded: visible() }
+        ? {
+            reference: held.reference,
+            session: held.session,
+            owner: held,
+            version,
+            expanded: visible(),
+          }
         : false;
     },
     undefined,
     {
       equals: (a, b) =>
         a === b ||
-        (!!a &&
-          !!b &&
-          a.reference === b.reference &&
-          a.session === b.session &&
-          a.version === b.version &&
-          a.expanded === b.expanded),
+        (!!a && !!b && a.owner === b.owner && a.version === b.version && a.expanded === b.expanded),
     },
   );
   const [words, { refetch }] = createResource(
     identity,
-    async ({ reference, session }) => {
+    async ({ reference, session, owner: held }) => {
       try {
         const raw = await requestAede(
           "/api/v1/lyrics",
@@ -64,13 +81,14 @@ export function createTrackLyrics(options: {
           "GET",
           null,
           referenceSource(reference),
+          session,
         );
         if (reference !== options.reference() || session !== options.session())
           throw new Error(t("Session invalide."));
-        return { reference, session, lyrics: parseLyrics(raw, reference), error: "" };
+        return { reference, session, owner: held, lyrics: parseLyrics(raw, reference), error: "" };
       } catch (failure) {
         // Resource errors must stay inside the optional panel, never break track navigation.
-        return { reference, session, lyrics: null, error: String(failure) };
+        return { reference, session, owner: held, lyrics: null, error: String(failure) };
       }
     },
     { initialValue: undefined },
@@ -78,16 +96,14 @@ export function createTrackLyrics(options: {
   const current = () => {
     // Optional reads retain the surrounding workspace and queue rather than enter its Suspense.
     const value = words.latest;
-    return value?.reference === options.reference() && value.session === options.session()
-      ? value
-      : undefined;
+    return !disposed && value?.owner === owner() ? value : undefined;
   };
   return {
     visible,
     toggle: () => setVisible(!visible()),
     available: () => !!current()?.lyrics || options.available() === true,
     lyrics: () => current()?.lyrics,
-    loading: () => words.loading,
+    loading: () => !disposed && !!owner() && words.loading,
     error: () => current()?.error ?? "",
     refresh: () => void refetch(),
   };

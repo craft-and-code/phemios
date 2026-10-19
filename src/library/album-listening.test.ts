@@ -136,3 +136,37 @@ it("does not refresh completion for position, volume or spectrum-only playback u
   await tick();
   expect(request).toHaveBeenCalledTimes(count);
 });
+
+it("does not fetch another completion page after logout during a full first window", async () => {
+  let finish!: (raw: unknown) => void;
+  request.mockResolvedValueOnce({ capabilities: ["album_listening"] }).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+  const data = createRoot((end) => {
+    dispose = end;
+    return createAlbumListening({
+      enabled: () => true,
+      session: (source) => (source === "server" ? session() : undefined),
+      checkpoint: () => "first",
+    });
+  });
+  await tick();
+  expect(request).toHaveBeenCalledTimes(2);
+  setSession(undefined);
+  finish({
+    offset: 0,
+    total: 201,
+    items: Array.from({ length: 200 }, (_, index) => ({
+      reference: `release:@phemios/server/edition-${index}`,
+      completed: true,
+    })),
+  });
+  await tick();
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(data.completed("release:@phemios/server/edition-0")).toBeUndefined();
+  expect(data.error()).toBe("");
+});

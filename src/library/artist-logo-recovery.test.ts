@@ -96,3 +96,29 @@ it("reports failed reads and continues while an inactive presentation starts no 
   expect(failed).toHaveBeenCalledWith(failure);
   reader.dispose();
 });
+
+it.each(["replacement", "disposal"])(
+  "does not publish a logo failure after %s",
+  async (boundary) => {
+    let scope: object = {};
+    let reject!: (failure: Error) => void;
+    const failed = vi.fn();
+    const reader = createArtistLogoRecovery({
+      enabled: () => true,
+      scope: () => scope,
+      cached: () => false,
+      load: () =>
+        new Promise<void>((_done, fail) => {
+          reject = fail;
+        }),
+      failed,
+    });
+    reader.visibility("artist:one", true);
+    if (boundary === "disposal") reader.dispose();
+    else scope = {};
+    reject(new Error("Retired logo diagnostic"));
+    for (let i = 0; i < 8; i++) await Promise.resolve();
+    expect(failed).not.toHaveBeenCalled();
+    reader.dispose();
+  },
+);

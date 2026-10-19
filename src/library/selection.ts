@@ -9,6 +9,8 @@ export function selectAlbumYear(previous: Filters, year: number): Filters {
     includeUnknownYear: false,
     query: "",
     countries: [],
+    composers: [],
+    recentOnly: false,
     genre: undefined,
     genres: [],
   };

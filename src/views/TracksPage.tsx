@@ -77,9 +77,15 @@ export function TracksPage(props: {
       (["alphabet", "both"].includes(filters.mode) &&
         (filters.alphabet[0] !== 0 || filters.alphabet[1] !== 26));
     if (!choices.length) return undefined;
+    const owners = { local: library.localSession(), server: library.serverSession() };
     const cached = new Set<string>();
     const capabilities = new Map<SourceId, Promise<boolean>>();
-    const read = combinedTrackReader(choices, async (source, at) => {
+    const read = combinedTrackReader(choices, async (source, at, admitted) => {
+      const owner = owners[source];
+      const current = () =>
+        admitted() &&
+        owner === (source === "local" ? library.localSession() : library.serverSession());
+      if (!current()) throw new Error(t("Chargement annulé."));
       const choice = choices.find((row) => row.source === source)!;
       if (choice.online) {
         try {
@@ -93,9 +99,12 @@ export function TracksPage(props: {
                   "GET",
                   null,
                   source,
+                  owner,
                 ).then((status) => status.capabilities?.includes("dynamic_browse_tracks") === true),
               );
-            if (!(await capabilities.get(source)))
+            const supported = await capabilities.get(source);
+            if (!current()) throw new Error(t("Chargement annulé."));
+            if (!supported)
               throw new Error(t("Mettez à jour puis redémarrez Aède pour les filtres de pistes."));
             return await requestAede(
               "/api/me/v1/search",
@@ -107,6 +116,7 @@ export function TracksPage(props: {
               "GET",
               null,
               source,
+              owner,
             );
           }
           return await requestAede(
@@ -115,8 +125,10 @@ export function TracksPage(props: {
             "GET",
             null,
             source,
+            owner,
           );
         } catch (failure) {
+          if (!current()) throw failure;
           if (!choice.snapshot?.tracks) throw failure;
         }
       }
@@ -129,14 +141,14 @@ export function TracksPage(props: {
         scanned_at: choice.snapshot.scannedAt,
       };
     });
-    return async (offset: number, size: number) => ({
-      ...(await read(offset, size)),
+    return async (offset: number, size: number, current: () => boolean) => ({
+      ...(await read(offset, size, current)),
       cached: [...cached],
     });
   });
   const read = createDiagnosticRead(
     () => (reader() ? { read: reader()!, offset: offset(), size: props.size } : false),
-    (key) => key.read(key.offset, key.size),
+    (key, admission) => key.read(key.offset, key.size, admission.current),
   );
   const page = read.current;
   const histogram = createMemo(() => {

@@ -1,4 +1,4 @@
-import { createMemo, createResource, type Accessor } from "solid-js";
+import { createMemo, createResource, type Accessor, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import { referenceSource } from "./sources";
@@ -48,13 +48,29 @@ export function createMissingCatalog(
   server: Accessor<AccountSession | undefined>,
   epoch: Accessor<unknown>,
 ) {
-  const scope = createMemo(() => ({ local: local(), server: server(), epoch: epoch() }));
+  let alive = true;
+  onCleanup(() => {
+    alive = false;
+  });
+  const localScope = createMemo(() => ({ session: local(), epoch: epoch() }));
+  const serverScope = createMemo(() => ({ session: server(), epoch: epoch() }));
+  const scope = createMemo(() => ({ local: localScope(), server: serverScope() }));
   const [value, { refetch }] = createResource(scope, async (key) => {
     const results = await Promise.all(
       (["local", "server"] as const).map(async (source) => {
-        const session = key[source];
+        const held = key[source],
+          session = held.session;
+        const current = () => alive && scope()[source] === held;
+        const empty = {
+          source,
+          session,
+          scope: held,
+          rows: [] as MissingAlbum[],
+          error: "",
+          covers: false,
+        };
         const rows: MissingAlbum[] = [];
-        if (!session) return { source, session, rows, error: "", covers: false };
+        if (!session || !current()) return empty;
         try {
           const status = await requestAede<{ capabilities: string[] }>(
             "/api/v1/status",
@@ -62,20 +78,25 @@ export function createMissingCatalog(
             "GET",
             undefined,
             source,
+            session,
           );
+          if (!current()) return empty;
           if (!status.capabilities?.includes("missing_studio_albums"))
             throw new Error(
               t("Mettez à jour puis redémarrez Aède pour afficher les albums manquants."),
             );
           let total: number | undefined, stamp: number | undefined;
           do {
+            if (!current()) return empty;
             const page = await requestAede<{ items: unknown[]; total: number; scanned_at: number }>(
               "/api/me/v1/missing",
               { offset: String(rows.length), limit: "200", include_set_aside: "true" },
               "GET",
               undefined,
               source,
+              session,
             );
+            if (!current()) return empty;
             if (
               !page ||
               !Array.isArray(page.items) ||
@@ -102,6 +123,7 @@ export function createMissingCatalog(
           return {
             source,
             session,
+            scope: held,
             rows,
             error: "",
             covers: status.capabilities.includes("missing_album_covers"),
@@ -110,6 +132,7 @@ export function createMissingCatalog(
           return {
             source,
             session,
+            scope: held,
             covers: false,
             rows: [],
             error: failure instanceof Error ? failure.message : String(failure),
@@ -120,9 +143,7 @@ export function createMissingCatalog(
     return results;
   });
   const current = () =>
-    value()?.filter(
-      (row) => row.session && row.session === (row.source === "local" ? local() : server()),
-    ) ?? [];
+    value()?.filter((row) => alive && row.session && row.scope === scope()[row.source]) ?? [];
   return {
     supportsCover: (artist: string) =>
       current().some(
@@ -131,20 +152,23 @@ export function createMissingCatalog(
     rows: () => current().flatMap((row) => row.rows),
     errors: () => current().flatMap((row) => (row.error ? [row.error] : [])),
     loading: () => value.loading,
-    refetch,
+    refetch: () => {
+      if (alive) return refetch();
+    },
     decide: async (row: MissingAlbum, setAside: boolean) => {
       const source = referenceSource(row.artist),
         session = source === "local" ? local() : server();
-      if (!session) throw new Error(t("Session invalide."));
+      const held = scope()[source];
+      if (!alive || !session) throw new Error(t("Session invalide."));
       await requestAede(
         "/api/me/v1/missing",
         {},
         "PUT",
         { release_group: row.release_group, set_aside: setAside },
         source,
+        session,
       );
-      if (session !== (source === "local" ? local() : server()))
-        throw new Error(t("Session invalide."));
+      if (!alive || scope()[source] !== held) throw new Error(t("Session invalide."));
       await refetch();
     },
   };

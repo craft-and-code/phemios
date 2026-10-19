@@ -447,7 +447,9 @@ export function App() {
                   : library.artists(),
                 section() === "composers"
                   ? library.albums().filter((album) => album.composers?.length)
-                  : library.albums(),
+                  : library
+                      .albums()
+                      .filter((album) => section() !== "compilations" || album.compilation),
                 filters(),
                 current().kind === "section" && artistCatalog(section()),
                 filters().recentOnly ? recentNow() : 0,

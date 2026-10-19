@@ -73,3 +73,20 @@ it("opening a release year clears the unrelated artist alphabet interval", () =>
     ).alphabet,
   ).toEqual([0, 26]);
 });
+
+it("opening an album year also clears recent-only and composer restrictions", () => {
+  const next = selectAlbumYear(
+    {
+      mode: "none",
+      years: [0, 9999],
+      alphabet: [0, 26],
+      query: "",
+      includeUnknownYear: true,
+      recentOnly: true,
+      composers: ["artist:one"],
+    },
+    2000,
+  );
+  expect(next.recentOnly).toBe(false);
+  expect(next.composers).toEqual([]);
+});

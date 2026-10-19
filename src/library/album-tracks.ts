@@ -1,6 +1,7 @@
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
-import type { Track } from "./server";
+import type { Track, AccountSession } from "./server";
+import { referenceSource } from "./sources";
 export interface AlbumTrack extends Track {
   disc_no: number | null;
   track_no: number | null;
@@ -24,18 +25,30 @@ const ordinal = (value: unknown) =>
   value === null ||
   (Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) <= 0xffffffff);
 /** Fetch lightweight album-order pages; analyses are loaded only when explicitly expanded. */
-export async function albumTracks(reference: string): Promise<AlbumTrack[]> {
+export async function albumTracks(
+  reference: string,
+  admission?: { owner: AccountSession; current: () => boolean },
+): Promise<AlbumTrack[]> {
   const tracks: AlbumTrack[] = [],
     seen = new Set<string>();
   let total: number | undefined, stamp: number | undefined;
   do {
+    if (admission && !admission.current()) return [];
     const page = object(
-      await requestAede("/api/v1/presentation/tracks", {
-        ref: reference,
-        offset: String(tracks.length),
-        limit: "50",
-      }),
+      await requestAede(
+        "/api/v1/presentation/tracks",
+        {
+          ref: reference,
+          offset: String(tracks.length),
+          limit: "50",
+        },
+        "GET",
+        null,
+        referenceSource(reference),
+        admission?.owner,
+      ),
     );
+    if (admission && !admission.current()) return [];
     if (
       !Number.isSafeInteger(page.total) ||
       Number(page.total) < 0 ||

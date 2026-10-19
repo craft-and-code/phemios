@@ -19,3 +19,5 @@ Dans Pays, tournez ou zoomez le globe. Commande sur Mac, ou Contrôle sur Window
 ## Chercher autrement
 
 La recherche générale couvre le catalogue ; les vues Votre musique disposent d’un contexte de recherche adapté. La loupe ouvre la recherche avancée : titres, artistes, années, formats, fréquence, profondeur de bits, notes, tags et favoris peuvent se combiner. Le résultat peut devenir une [collection](your-music.md). Les champs non renseignés restent inconnus, pas égaux à zéro.
+
+Un clic sur l’année d’un album retire les autres critères : ajouts récents, compositeurs, pays, genres et recherche. Chaque nouveau label initialise sa propre période. Les barres des réglettes comptent les albums de la vue courante, y compris les compilations et les albums sans artiste identifié.

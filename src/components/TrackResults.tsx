@@ -1,3 +1,5 @@
+import { createCatalogDetail } from "../library/catalog-detail";
+import { referenceSource } from "../library/sources";
 import { LyricsIcon } from "./LyricsIcon";
 import { CoverPlay } from "./CoverPlay";
 import { createIntegrityDisclosure, type IntegrityResult } from "../library/album-integrity";
@@ -9,7 +11,7 @@ import { createTrackLyrics } from "../library/track-lyrics";
 import { LyricsDownload } from "./LyricsDownload";
 import { t } from "../i18n";
 import type { JSX } from "solid-js";
-import { createEffect, createResource, createSignal, createUniqueId, For, Show } from "solid-js";
+import { createEffect, createSignal, createUniqueId, For, Show } from "solid-js";
 import { PlayingBars } from "./PlayingBars";
 import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
@@ -51,18 +53,24 @@ export function TrackResults(props: {
     document.getElementById(`${id}-integrity-toggle`)?.focus();
   };
   const duration = () => props.track.duration_ms;
-  const [detail] = createResource(
-    () =>
-      analysis() && library.sessionFor(props.track.reference) && !props.track.analyses.length
-        ? props.track.reference
-        : false,
-    async (reference) => {
-      const row = await requestAede<Track>("/api/v1/track", { ref: reference });
+  const detailRead = createCatalogDetail(
+    () => (analysis() && !props.track.analyses.length ? props.track.reference : false),
+    () => library.sessionFor(props.track.reference),
+    async (reference, owner) => {
+      const row = await requestAede<Track>(
+        "/api/v1/track",
+        { ref: reference },
+        "GET",
+        null,
+        referenceSource(reference),
+        owner,
+      );
       if (row.reference !== reference || !Array.isArray(row.analyses))
         throw new Error(t("Analyse de piste Aède invalide."));
       return row;
     },
   );
+  const detail = detailRead.current;
   const values = () =>
     props.track.analyses.length ? props.track.analyses : (detail()?.analyses ?? []);
   return (
@@ -162,18 +170,18 @@ export function TrackResults(props: {
             <strong>{t("Analyse FlacCompagnon")}</strong>
             <AnalysisDownload
               reference={props.track.reference}
-              available={values().length > 0 && !detail.loading}
+              available={values().length > 0 && !detailRead.loading()}
             />
           </div>
-          <Show when={detail.loading}>
+          <Show when={detailRead.loading()}>
             <PageLoader inline label={t("Chargement de l’analyse…")} />
           </Show>
-          <Show when={detail.error}>
+          <Show when={detailRead.error()}>
             <p role="alert">
-              {t("Analyse indisponible :")} {String(detail.error)}
+              {t("Analyse indisponible :")} {String(detailRead.error())}
             </p>
           </Show>
-          <Show when={!detail.loading && !detail.error && !values().length}>
+          <Show when={!detailRead.loading() && !detailRead.error() && !values().length}>
             <p class="muted">{t("Aucune analyse conservée pour ce titre.")}</p>
           </Show>
           <For each={values()}>{(value) => <AnalysisCharts analysis={value} />}</For>

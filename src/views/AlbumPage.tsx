@@ -1,3 +1,4 @@
+import { createCatalogDetail } from "../library/catalog-detail";
 import { TrackDurationTotal } from "../components/TrackDurationTotal";
 import { Icon } from "../components/Icon";
 import { QueueLyrics } from "../components/QueueLyrics";
@@ -10,7 +11,7 @@ import { AlbumMetadata } from "../components/AlbumMetadata";
 import { SourceBadge } from "../components/SourceBadge";
 import { t } from "../i18n";
 import { AnnotationPanel } from "../components/AnnotationPanel";
-import { createEffect, createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import { TrackResults } from "../components/TrackResults";
 import { AnalysisDownload } from "../components/AnalysisDownload";
 import { CoverPreview } from "../components/CoverPreview";
@@ -31,14 +32,16 @@ export function AlbumPage(props: {
   const [enlarged, setEnlarged] = createSignal(false);
   const [m3uStatus, setM3uStatus] = createSignal({ message: "", failed: false });
   const artist = () => library.artists().find((item) => item.reference === props.album.artist);
-  const [tracks, { refetch }] = createResource(
-    () => (library.sessionFor(props.album.reference) ? props.album.reference : false),
-    albumTracks,
+  const trackRead = createCatalogDetail(
+    () => props.album.reference,
+    () => library.sessionFor(props.album.reference),
+    (reference, owner, admission) => albumTracks(reference, { owner, current: admission.current }),
   );
+  const tracks = trackRead.current;
   const [lyricFeedbackHost, setLyricFeedbackHost] = createSignal<HTMLElement>();
   const lyrics = library.albumLyrics;
   createEffect(() => {
-    const rows = tracks.latest;
+    const rows = tracks();
     if (rows) lyrics.select(props.album.reference, rows);
   });
   const integrity = createAlbumIntegrity({
@@ -56,7 +59,7 @@ export function AlbumPage(props: {
     const count = completed();
     if (count > lastCompleted) {
       lastCompleted = count;
-      void refetch();
+      void trackRead.refetch();
     }
   });
   return (
@@ -127,14 +130,14 @@ export function AlbumPage(props: {
           <div class="album-track-summary">
             <h2>{t("Pistes")}</h2>
             <TrackDurationTotal
-              tracks={tracks.loading || tracks.error ? undefined : tracks.latest}
+              tracks={trackRead.loading() || trackRead.error() ? undefined : tracks()}
             />
           </div>
           <div class="detail-export-actions">
             <AlbumIntegrity
               busy={integrity.busy()}
               cancellable={integrity.canCancel()}
-              enabled={integrity.enabled() && !tracks.loading && !tracks.error}
+              enabled={integrity.enabled() && !trackRead.loading() && !trackRead.error()}
               onStart={() => void integrity.start()}
               onCancel={() => void integrity.cancel()}
             />
@@ -157,7 +160,7 @@ export function AlbumPage(props: {
             >
               <QueueLyrics
                 controller={lyrics.controller}
-                tracks={tracks.latest ?? []}
+                tracks={tracks() ?? []}
                 feedbackHost={lyricFeedbackHost}
                 label={t("Télécharger les paroles de l’album")}
               />
@@ -176,18 +179,18 @@ export function AlbumPage(props: {
           error={m3uStatus().failed}
           onClose={() => setM3uStatus({ message: "", failed: false })}
         />
-        <Show when={tracks.error}>
+        <Show when={trackRead.error()}>
           <p role="alert">
-            {t("Pistes indisponibles :")} {String(tracks.error)}
+            {t("Pistes indisponibles :")} {String(trackRead.error())}
           </p>
         </Show>
-        <Show when={tracks.loading}>
+        <Show when={trackRead.loading()}>
           <PageLoader inline label={t("Chargement des pistes…")} />
         </Show>
         <Show when={!library.sessionFor(props.album.reference)}>
           <p class="muted">{t("Connectez Aède pour consulter les pistes.")}</p>
         </Show>
-        <Show when={tracks() && !tracks.loading && !tracks()?.length}>
+        <Show when={tracks() && !trackRead.loading() && !tracks()?.length}>
           <p class="muted">{t("Aucune piste dans cet album.")}</p>
         </Show>
         <For each={discs()}>

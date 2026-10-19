@@ -51,6 +51,7 @@ it("reads only expanded words, routes their origin and retains text after collap
     "GET",
     null,
     "server",
+    session,
   );
   expect(words.lyrics()?.lines[0]?.text).toBe("Original control words");
   words.toggle();
@@ -228,4 +229,58 @@ it("keeps the workspace mounted during initial and replacement lyric reads", asy
   } finally {
     dispose();
   }
+});
+
+it("hides retained words immediately after logout and re-login with the same session object", async () => {
+  vi.mocked(requestAede).mockResolvedValueOnce(answer);
+  const [owner, setOwner] = createSignal<AccountSession | undefined>(session);
+  let dispose!: () => void;
+  const words = createRoot((end) => {
+    dispose = end;
+    return createTrackLyrics({
+      reference: () => "track:one",
+      available: () => false,
+      session: owner,
+      jobs: () => [],
+      detail: true,
+    });
+  });
+  try {
+    words.toggle();
+    await settle();
+    expect(words.lyrics()?.lines[0]?.text).toBe("Original control words");
+    setOwner(undefined);
+    vi.mocked(requestAede).mockImplementationOnce(() => new Promise(() => {}));
+    setOwner(session);
+    expect(words.lyrics()).toBeUndefined();
+    expect(words.error()).toBe("");
+  } finally {
+    dispose();
+  }
+});
+
+it("does not expose a lyrics reply after the optional reader is disposed", async () => {
+  let finish!: (raw: unknown) => void;
+  vi.mocked(requestAede).mockImplementation(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  let dispose!: () => void;
+  const words = createRoot((end) => {
+    dispose = end;
+    return createTrackLyrics({
+      reference: () => "track:one",
+      available: () => true,
+      session: () => session,
+      jobs: () => [],
+    });
+  });
+  words.toggle();
+  await settle();
+  dispose();
+  finish(answer);
+  await settle();
+  expect(words.lyrics()).toBeUndefined();
 });

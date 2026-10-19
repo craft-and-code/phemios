@@ -29,7 +29,8 @@ export function createArtistLogoRecovery(options: {
         try {
           await options.load(reference);
         } catch (failure) {
-          options.failed(failure);
+          if (!disposed && options.scope(reference) === scope && visible.has(reference))
+            options.failed(failure);
         }
       }
     } finally {

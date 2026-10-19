@@ -1,3 +1,4 @@
+import type { AccountSession } from "./server";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import { parseLabelDetail } from "./labels";
@@ -22,11 +23,33 @@ export function albumLabelReferences(raw: unknown, reference: string): string[] 
   return row.labels as string[];
 }
 /** Existing catalogue detail reads resolve display names; no external enrichment or raw-tag guesses. */
-export async function albumLabels(reference: string) {
-  const raw = await requestAede("/api/v1/album", { ref: reference });
+export async function albumLabels(
+  reference: string,
+  admission?: { owner: AccountSession; current: () => boolean },
+) {
+  if (admission && !admission.current()) return [];
+  const raw = await requestAede(
+    "/api/v1/album",
+    { ref: reference },
+    "GET",
+    null,
+    referenceSource(reference),
+    admission?.owner,
+  );
+  if (admission && !admission.current()) return [];
   const result: { reference: string; name: string }[] = [];
   for (const ref of albumLabelReferences(raw, reference)) {
-    const label = parseLabelDetail(await requestAede("/api/v1/label", { ref }), ref);
+    if (admission && !admission.current()) return [];
+    const raw = await requestAede(
+      "/api/v1/label",
+      { ref },
+      "GET",
+      null,
+      referenceSource(reference),
+      admission?.owner,
+    );
+    if (admission && !admission.current()) return [];
+    const label = parseLabelDetail(raw, ref);
     if (!label.releases.includes(reference)) throw new Error(t("Label Aède invalide."));
     result.push({ reference: label.reference, name: label.name });
   }

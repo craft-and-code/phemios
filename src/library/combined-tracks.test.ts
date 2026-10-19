@@ -38,7 +38,7 @@ it("combines colliding catalogs across page boundaries without downloading all t
   const next = await reader(100);
   expect(next.items[0]?.reference).toBe("track:@phemios/server/37");
   expect(next.items.at(-1)?.reference).toBe("track:@phemios/server/86");
-  expect(read.mock.calls).toEqual([
+  expect(read.mock.calls.map(([source, offset]) => [source, offset])).toEqual([
     ["local", 0],
     ["server", 0],
     ["local", 50],
@@ -108,4 +108,45 @@ it("honours display sizes without changing the bounded fifty-row wire pages", as
   expect(result.items[13]?.reference).toBe("track:@phemios/server/0");
   expect(result.items.at(-1)?.reference).toBe("track:@phemios/server/86");
   await expect(reader(0, 10000)).rejects.toThrow();
+});
+
+it("does not fetch further windows after the catalog read is retired", async () => {
+  let current = true,
+    finish!: (raw: unknown) => void;
+  const read = vi.fn((source: SourceId, at: number) =>
+    at === 0
+      ? new Promise((done) => {
+          finish = done;
+        })
+      : Promise.resolve(page(source, 100, at)),
+  );
+  const reader = combinedTrackReader([{ source: "server", identity: "one" }], read);
+  const pending = reader(50, 50, () => current);
+  current = false;
+  finish(page("server", 100, 0));
+  await expect(pending).rejects.toThrow();
+  expect(read).toHaveBeenCalledTimes(1);
+});
+
+it("keeps a replacement pending window cached when the retired request finishes later", async () => {
+  let oldCurrent = true;
+  const replies: ((raw: unknown) => void)[] = [];
+  const read = vi.fn(() => new Promise((done) => replies.push(done)));
+  const reader = combinedTrackReader([{ source: "server", identity: "one" }], read);
+  const old = reader(0, 50, () => oldCurrent);
+  oldCurrent = false;
+  const next = reader(0, 50);
+  expect(read).toHaveBeenCalledTimes(2);
+  replies[0]!(page("server", 1, 0));
+  await expect(old).rejects.toThrow();
+  replies[1]!(page("server", 1, 0));
+  expect((await next).items).toHaveLength(1);
+  expect((await reader(0)).items).toHaveLength(1);
+  expect(read).toHaveBeenCalledTimes(2);
+});
+it("starts no requests for an already cancelled window", async () => {
+  const read = vi.fn(async () => page("server", 1, 0));
+  const reader = combinedTrackReader([{ source: "server", identity: "one" }], read);
+  await expect(reader(0, 50, () => false)).rejects.toThrow();
+  expect(read).not.toHaveBeenCalled();
 });

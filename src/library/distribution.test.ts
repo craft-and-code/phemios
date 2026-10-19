@@ -53,3 +53,22 @@ describe("rail distributions", () => {
     expect(toggleRail("both", "alphabet")).toBe("years");
   });
 });
+
+it("counts editions without known artists consistently with album filtering", () => {
+  const orphan: Album = {
+    reference: "release:orphan",
+    artist: null,
+    title: "Unknown credit",
+    year: 2000,
+    compilation: true,
+    tags: [],
+  };
+  expect(distributions([], [orphan], filters, false)).toEqual({
+    years: [{ value: 2000, count: 1 }],
+    alphabet: [{ value: 21, count: 1 }],
+  });
+  expect(distributions([], [orphan], { ...filters, countries: ["France"] }, false)).toEqual({
+    years: [],
+    alphabet: [],
+  });
+});

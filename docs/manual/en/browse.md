@@ -19,3 +19,5 @@ In Countries, rotate or zoom the globe. Command on Mac, or Control on Windows/Li
 ## Search another way
 
 General search covers the catalogue; Your music views provide context-specific searching. The magnifier opens Advanced search: combine titles, artists, years, formats, sample rates, bit depths, ratings, tags and favourites. Turn results into a [collection](your-music.md). Missing metadata remains unknown rather than zero.
+
+Opening an album year clears unrelated recent-addition, composer, country, genre and text criteria. Labels initialize their own year range when you open another label. Rail counts follow the current catalogue view, including compilations and albums with no identified artist.

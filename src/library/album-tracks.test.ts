@@ -58,3 +58,27 @@ it("refuses incomplete or changed pages and explains an outdated disc contract",
   });
   await expect(albumTracks("release:fictional")).rejects.toThrow(/changé/i);
 });
+
+it("retires album pagination after its captured owner changes", async () => {
+  const owner = {
+    server: "https://music.example",
+    account: { id: "one", username: "one", role: "user" as const },
+  };
+  let current = true;
+  vi.mocked(requestAede).mockClear();
+  vi.mocked(requestAede).mockImplementation(async (_path, query) => {
+    const offset = Number(query?.offset);
+    current = false;
+    return { items: rows.slice(offset, offset + 50), total: 85, offset, scanned_at: 123 };
+  });
+  expect(await albumTracks("release:fictional", { owner, current: () => current })).toEqual([]);
+  expect(requestAede).toHaveBeenCalledTimes(1);
+  expect(requestAede).toHaveBeenCalledWith(
+    "/api/v1/presentation/tracks",
+    { ref: "release:fictional", offset: "0", limit: "50" },
+    "GET",
+    null,
+    "server",
+    owner,
+  );
+});

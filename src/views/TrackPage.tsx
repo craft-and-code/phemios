@@ -1,3 +1,5 @@
+import { createCatalogDetail } from "../library/catalog-detail";
+import { referenceSource } from "../library/sources";
 import { CoverPlay } from "../components/CoverPlay";
 import { PageLoader } from "../components/PageLoader";
 import { TrackMetadataValue } from "../components/TrackMetadataValue";
@@ -5,7 +7,7 @@ import type { MetadataBrowse } from "../library/track-metadata-links";
 import { SourceBadge } from "../components/SourceBadge";
 import { locale } from "../i18n";
 import { t } from "../i18n";
-import { createResource, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { parseTrackDetail } from "../library/track-detail";
@@ -20,15 +22,23 @@ export function TrackPage(props: {
   onBrowse: (target: MetadataBrowse) => void;
 }) {
   const library = useLibrary();
-  const [detail] = createResource(
-    () => (library.sessionFor(props.reference) ? props.reference : false),
-    async (ref) => parseTrackDetail(await requestAede("/api/v1/track", { ref }), ref),
+  const detailRead = createCatalogDetail(
+    () => props.reference,
+    () => library.sessionFor(props.reference),
+    async (ref, owner) =>
+      parseTrackDetail(
+        await requestAede("/api/v1/track", { ref }, "GET", null, referenceSource(ref), owner),
+        ref,
+      ),
   );
+  const detail = detailRead.current;
   const album = () => library.albums().find((a) => a.reference === detail()?.release);
-  const [siblings] = createResource(
-    () => library.sessionFor(props.reference) && !detail.loading && detail()?.release,
-    (reference) => albumTracks(reference),
+  const siblingRead = createCatalogDetail(
+    () => detail()?.release,
+    () => library.sessionFor(props.reference),
+    (reference, owner, admission) => albumTracks(reference, { owner, current: admission.current }),
   );
+  const siblings = siblingRead.current;
   const format = (v: number | null, unit: string) =>
     v === null ? t("Non renseigné") : `${v.toLocaleString(locale())} ${unit}`;
   return (
@@ -36,15 +46,15 @@ export function TrackPage(props: {
       <Show when={!library.sessionFor(props.reference)}>
         <p class="notice">{t("Connectez Aède pour consulter ce titre.")}</p>
       </Show>
-      <Show when={detail.loading}>
+      <Show when={detailRead.loading()}>
         <PageLoader label={t("Chargement du titre…")} />
       </Show>
-      <Show when={detail.error}>
+      <Show when={detailRead.error()}>
         <p role="alert">
-          {t("Titre indisponible :")} {String(detail.error)}
+          {t("Titre indisponible :")} {String(detailRead.error())}
         </p>
       </Show>
-      <Show when={!detail.loading && !detail.error && detail()}>
+      <Show when={!detailRead.loading() && !detailRead.error() && detail()}>
         {(row) => (
           <>
             <div class="album-hero">
@@ -74,9 +84,9 @@ export function TrackPage(props: {
                     </p>
                   )}
                 </Show>
-                <Show when={siblings.error}>
+                <Show when={siblingRead.error()}>
                   <small role="alert">
-                    {t("Pistes indisponibles :")} {String(siblings.error)}
+                    {t("Pistes indisponibles :")} {String(siblingRead.error())}
                   </small>
                 </Show>
                 <CoverPlay
