@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { createAccountPreferenceProfiles, accountPreferenceOwner } from "./account-preferences";
 import { parseAccountSettings } from "./saved-settings";
+import { readToolPreferences, saveToolPreferences } from "./tool-preferences";
 import { defaultPreferences, readPreferences } from "./preferences";
 const checked = (values: Record<string, unknown>) => parseAccountSettings({ values });
 function fixture() {
@@ -87,4 +88,24 @@ it("distinguishes account/source/authority and retains managed-local identity ac
   expect(accountPreferenceOwner({ ...alice, server: "http://127.0.0.1:1234" }, "local")).toBe(
     accountPreferenceOwner({ ...alice, server: "http://127.0.0.1:5678" }, "local"),
   );
+});
+
+it("keeps report disclosures private and restores each profile across restarts", () => {
+  const { storage } = fixture(),
+    profiles = createAccountPreferenceProfiles(storage);
+  saveToolPreferences(profiles.storage, { analysisSections: ["identity"] });
+  profiles.activate("alice", checked);
+  expect(readToolPreferences(profiles.storage).analysisSections).toEqual([]);
+  saveToolPreferences(profiles.storage, { analysisSections: ["integrity", "detection"] });
+  profiles.activate("bob", checked);
+  saveToolPreferences(profiles.storage, { analysisSections: ["measurements"] });
+  const restarted = createAccountPreferenceProfiles(storage);
+  expect(readToolPreferences(restarted.storage).analysisSections).toEqual(["identity"]);
+  restarted.activate("alice", checked);
+  expect(readToolPreferences(restarted.storage).analysisSections).toEqual([
+    "integrity",
+    "detection",
+  ]);
+  restarted.activate("bob", checked);
+  expect(readToolPreferences(restarted.storage).analysisSections).toEqual(["measurements"]);
 });

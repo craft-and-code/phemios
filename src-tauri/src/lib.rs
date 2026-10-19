@@ -3,6 +3,7 @@
 #[cfg(test)]
 mod account_test_support;
 mod aede;
+mod analysis_import;
 mod articles;
 mod awake;
 mod cd;
@@ -96,6 +97,7 @@ pub fn run() -> Result<(), tauri::Error> {
         })
         .invoke_handler(tauri::generate_handler![
             commands::runtime_info,
+            analysis_import::analysis_import,
             awake::awake_open,
             awake::awake_update,
             cd::cd_scan,

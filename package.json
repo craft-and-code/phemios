@@ -16,14 +16,15 @@
     "check": "bash tools/check.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "oxlint src scripts tests docs/components vite.config.ts vitest.config.ts",
+    "lint": "oxlint src scripts tests docs/components vite.config.ts vitest.config.ts vite.analysis.config.ts",
     "build:native": "tauri build --bundles app",
     "docs:ts": "node scripts/typescript-docs.mjs",
     "components:dev": "node scripts/component-explorer.mjs dev",
     "components:build": "node scripts/component-explorer.mjs build",
     "components:check": "tsc --noEmit -p docs/components/tsconfig.json && npm run components:build",
     "engines:check": "node scripts/update-engines.mjs --check",
-    "engines:update": "node scripts/update-engines.mjs"
+    "engines:update": "node scripts/update-engines.mjs",
+    "analysis:build": "vite build --config vite.analysis.config.ts"
   },
   "dependencies": {
     "@milkdown/kit": "7.22.2",

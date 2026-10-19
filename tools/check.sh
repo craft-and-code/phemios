@@ -5,6 +5,7 @@ npm run format:check
 npm run lint
 npm test
 npm run build
+npm run analysis:build
 npm run docs:ts
 npm run components:check
 npm run check:tauri

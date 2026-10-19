@@ -114,3 +114,14 @@ it("imports pre-awake backups and preserves an explicitly disabled screen prefer
   current.values["phemios.keep-awake"] = "bad";
   expect(() => parsePreferenceBackup(JSON.stringify(current))).toThrow();
 });
+
+it("round-trips individual analysis disclosures and accepts older backups", () => {
+  const from = store(),
+    to = store();
+  saveToolPreferences(from, { analysisSections: ["detection", "measurements"] });
+  applyPreferenceBackup(to, parsePreferenceBackup(exportPreferenceBackup(from)));
+  expect(readToolPreferences(to).analysisSections).toEqual(["detection", "measurements"]);
+  const old = JSON.parse(exportPreferenceBackup(from));
+  delete old.values["phemios.tools.v1"].analysisSections;
+  expect(() => parsePreferenceBackup(JSON.stringify(old))).not.toThrow();
+});

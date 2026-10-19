@@ -15,7 +15,7 @@ import { SpectrumDownload } from "./SpectrumDownload";
 import { requestAede } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import type { Track } from "../library/server";
-import { AnalysisCharts } from "./AnalysisCharts";
+import { SavedAnalysisCharts as AnalysisCharts } from "./SavedAnalysisCharts";
 import { AnalysisDownload } from "./AnalysisDownload";
 import { SourceBadge } from "./SourceBadge";
 import { Icon } from "./Icon";

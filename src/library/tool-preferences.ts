@@ -1,3 +1,4 @@
+import { validAnalysisSections, type AnalysisSection } from "../analysis-report/disclosure";
 import { interfacePreferences } from "./account-preferences";
 import { announceSetting } from "./saved-settings";
 import { getOwner, onCleanup } from "solid-js";
@@ -6,6 +7,7 @@ import { t } from "../i18n";
 export const pageSizes = [25, 50, 100, 200] as const;
 export type ArtistView = "discography" | "editorial";
 export interface ToolPreferences {
+  analysisSections: AnalysisSection[];
   artistView: ArtistView;
   full: boolean;
   threads: number;
@@ -21,6 +23,7 @@ export interface ToolPreferences {
   coverSizes: Partial<Record<"albums" | "compilations" | "genres" | "composers", number>>;
 }
 export const defaultToolPreferences: ToolPreferences = {
+  analysisSections: [],
   artistView: "discography",
   full: false,
   threads: 0,
@@ -80,6 +83,7 @@ function validate(raw: unknown): ToolPreferences {
       artistView === "discography" ||
       artistView === "editorial"
     ) ||
+    !validAnalysisSections(row.analysisSections === undefined ? [] : row.analysisSections) ||
     !validCoverSize(row.coverSize === undefined ? 150 : row.coverSize) ||
     !validCoverOverrides(row.coverSizes === undefined ? {} : row.coverSizes) ||
     !Number.isInteger(row.threads) ||
@@ -93,6 +97,7 @@ function validate(raw: unknown): ToolPreferences {
     throw new Error(t("Options enregistrées illisibles."));
   return {
     ...row,
+    analysisSections: row.analysisSections === undefined ? [] : row.analysisSections,
     artistView: artistView === "editorial" ? "editorial" : "discography",
     coverSize: row.coverSize === undefined ? 150 : row.coverSize,
     coverSizes: row.coverSizes === undefined ? {} : row.coverSizes,

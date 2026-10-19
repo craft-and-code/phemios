@@ -147,3 +147,34 @@ it("persists all artist presentations and migrates existing account choices", ()
   expect(() => saveToolPreferences(storage, { artistView: "unknown" as never })).toThrow();
   expect(readToolPreferences(storage).artistView).toBe("discography");
 });
+
+it("retains individual analysis disclosures and migrates earlier tool settings", () => {
+  const storage = store();
+  expect(readToolPreferences(storage).analysisSections).toEqual([]);
+  saveToolPreferences(storage, { analysisSections: ["integrity", "identity"] });
+  saveToolPreferences(storage, { threads: 2 });
+  expect(readToolPreferences(storage).analysisSections).toEqual(["integrity", "identity"]);
+  for (const value of [["foreign"], ["identity", "identity"], false])
+    expect(() => saveToolPreferences(storage, { analysisSections: value as never })).toThrow();
+  expect(readToolPreferences(storage).analysisSections).toEqual(["integrity", "identity"]);
+});
+
+it("keeps the last acknowledged analysis sections after a rejected write and restores them on remount", () => {
+  const storage = store();
+  saveToolPreferences(storage, { analysisSections: ["detection", "identity"] });
+  const saved = storage.getItem();
+  const prefs = createToolPreferences({
+    getItem: storage.getItem,
+    setItem: () => {
+      throw new Error("Disk full");
+    },
+  });
+  prefs.update({ analysisSections: [] });
+  expect(prefs.error()).toContain("Disk full");
+  expect(prefs.value().analysisSections).toEqual(["detection", "identity"]);
+  expect(storage.getItem()).toBe(saved);
+  expect(createToolPreferences(storage).value().analysisSections).toEqual([
+    "detection",
+    "identity",
+  ]);
+});

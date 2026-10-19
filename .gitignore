@@ -12,3 +12,5 @@ src-tauri/binaries/
 dist-docs/
 
 .engine-cache/
+
+dist-analysis/

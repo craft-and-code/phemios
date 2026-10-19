@@ -215,6 +215,8 @@ export const ejectPlayer = (id: string) => nativeCall<void>("players_eject", { i
 export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed", { url });
 
 /** Native dialogs restrict theme exchange to a bounded user-selected JSON document. */
+/** Read one user-selected JSON report without importing it into the catalogue. */
+export const importAnalysis = () => nativeCall<string | null>("analysis_import");
 export const importTheme = () => nativeCall<string | null>("theme_import");
 export const exportTheme = (document: string) =>
   nativeCall<string | null>("theme_export", { document });
