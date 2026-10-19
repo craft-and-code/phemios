@@ -1,3 +1,4 @@
+import { createGenerationActions } from "../library/generation-actions";
 import { createMemo, createSignal, For, Show } from "solid-js";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { requestAede } from "../platform/desktop";
@@ -7,16 +8,11 @@ import { LibraryGenerations } from "../components/LibraryGenerations";
 import { Feedback } from "../components/Feedback";
 import { RefreshButton } from "../components/RefreshButton";
 import { sourceLabel, type SourceId } from "../library/sources";
-import {
-  administrativeWorkActive,
-  generationForJob,
-  type GenerationStep,
-} from "../library/generation-policy";
+import { administrativeWorkActive, generationForJob } from "../library/generation-policy";
 /** Every accepted plan lives on Aède; leaving Settings never cancels it or starts another stage client-side. */
 export function SettingsAede() {
   const library = useLibrary(),
-    [selected, setSelected] = createSignal<SourceId>(library.source()),
-    [error, setError] = createSignal("");
+    [selected, setSelected] = createSignal<SourceId>(library.source());
   const sources = createMemo(() =>
     (["local", "server"] as const).filter(
       (source) => !!(source === "local" ? library.localSession() : library.serverSession()),
@@ -57,23 +53,13 @@ export function SettingsAede() {
       : active()
         ? generationForJob(active()!)
         : undefined;
-  async function start(steps: readonly GenerationStep[]) {
-    setError("");
-    try {
-      await library.tasks.generate(source(), steps);
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Lancement impossible."));
-    }
-  }
-  async function cancel() {
-    const job = active();
-    if (!job) return;
-    try {
-      await library.tasks.cancel(job.task_id, job.source);
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Annulation impossible."));
-    }
-  }
+  const { error, start, cancel } = createGenerationActions({
+    source,
+    session: (origin) => (origin === "local" ? library.localSession() : library.serverSession()),
+    active,
+    start: library.tasks.generate,
+    cancel: library.tasks.cancel,
+  });
   return (
     <div class="settings-card">
       <h2>{t("Générations Aède")}</h2>

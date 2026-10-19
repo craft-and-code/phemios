@@ -77,6 +77,10 @@
   border-radius: 6px;
   color: var(--text);
 }
+.sidebar nav a:hover,
+.sidebar nav a:focus-visible {
+  color: var(--accent);
+}
 .sidebar nav a[aria-current="page"] {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));

@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, Show, on } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createServerRootEditor } from "../library/server-root-editor";
 import { useLibrary } from "../library/context";
 import { readServerRoots } from "../library/server-roots";
 import { requestAede } from "../platform/desktop";
@@ -14,9 +14,7 @@ export function ServerRoots(props: {
   revision: number;
   scan: (paths: string[]) => void;
 }) {
-  const library = useLibrary(),
-    [rows, setRows] = createStore<{ id: number; path: string }[]>([]);
-  let id = 0;
+  const library = useLibrary();
   const [reloaded, setReloaded] = createSignal(false);
   createEffect(
     on(
@@ -41,10 +39,7 @@ export function ServerRoots(props: {
         ),
       ),
   );
-  createEffect(() => {
-    const paths = read.current();
-    if (paths) setRows(paths.map((path) => ({ id: id++, path })));
-  });
+  const { rows, setRows, nextId } = createServerRootEditor(library.serverSession, read.current);
   return (
     <section class="server-roots">
       <div class="section-heading">
@@ -113,7 +108,7 @@ export function ServerRoots(props: {
             title={t("Ajouter un dossier serveur")}
             aria-label={t("Ajouter un dossier serveur")}
             disabled={props.busy || read.loading() || rows.length >= 64}
-            onClick={() => setRows([...rows, { id: id++, path: "" }])}
+            onClick={() => setRows([...rows, { id: nextId(), path: "" }])}
           >
             <Icon name="plus" />
           </button>

@@ -1,5 +1,7 @@
 # UI acceptance record
 
+Destination note (2026-10-18): paths below describe dated acceptance observations. Direct downloads now target the system Downloads directory without Phémios/source/category subfolders; CSV, theme and preference exports keep their native save dialogs. This later destination policy is covered by unit verification; the older native observations are not relabelled as new UI acceptance.
+
 Initial checks on 2026-10-08 use the bundled fictional catalog. They establish interaction behavior on this Mac, not physical audio, transfer acceptance, large-catalog performance or accessibility compliance.
 
 ## Browser preview

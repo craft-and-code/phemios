@@ -1,3 +1,4 @@
+import { createAccountDrafts } from "../library/account-drafts";
 import { sourceLabel } from "../library/sources";
 import { RoleHelp } from "../components/RoleHelp";
 import { Feedback } from "../components/Feedback";
@@ -9,14 +10,21 @@ import { requestAede } from "../platform/desktop";
 import { createAccountList, type Account } from "../library/account-list";
 /** Aède retains password, role and last-administrator policy. The owned local principal is protected. */
 export function SettingsAccounts() {
-  const library = useLibrary(),
-    [username, setUsername] = createSignal(""),
-    [password, setPassword] = createSignal(""),
-    [role, setRole] = createSignal("user"),
-    [error, setError] = createSignal(""),
-    [busy, setBusy] = createSignal(false),
-    [currentPassword, setCurrentPassword] = createSignal(""),
-    [newPassword, setNewPassword] = createSignal("");
+  const library = useLibrary();
+  const [draft, setDraft] = createAccountDrafts(library.session, library.source);
+  const [busy, setBusy] = createSignal(false);
+  const username = () => draft.username,
+    setUsername = (value: string) => setDraft("username", value),
+    password = () => draft.password,
+    setPassword = (value: string) => setDraft("password", value),
+    role = () => draft.role,
+    setRole = (value: string) => setDraft("role", value),
+    error = () => draft.error,
+    setError = (value: string) => setDraft("error", value),
+    currentPassword = () => draft.currentPassword,
+    setCurrentPassword = (value: string) => setDraft("currentPassword", value),
+    newPassword = () => draft.newPassword,
+    setNewPassword = (value: string) => setDraft("newPassword", value);
   const administrative = () => library.session()?.account.role === "admin";
   const accounts = createAccountList(library.session, library.source);
   const locked = (account: Account) =>
