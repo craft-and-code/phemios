@@ -206,3 +206,102 @@ it("admits the exact native article-array byte limit and rejects one additional 
     }
   });
 });
+
+it("retires failed and queued biography saves after logout and return to the same owner", async () => {
+  await createRoot(async (dispose) => {
+    const alice = owner("alice");
+    const [session, setSession] = createSignal<AccountSession | undefined>(alice);
+    let fail!: (error: unknown) => void;
+    const update = vi.fn(
+      () =>
+        new Promise((_, reject) => {
+          fail = reject;
+        }),
+    );
+    const copies = createAccountSavedArticles(session, () => "server", {
+      read: async () => state([]),
+      update,
+    });
+    try {
+      await settle();
+      const first = copies.save(article);
+      const queued = copies.save({ ...article, pageId: 43 });
+      await settle();
+      setSession(undefined);
+      setSession(alice);
+      await settle();
+      fail(new Error("retired private save path"));
+      expect(await first).toBe(false);
+      expect(await queued).toBe(false);
+      expect(update).toHaveBeenCalledOnce();
+      expect(copies.error()).toBe("");
+      expect(copies.rows()).toEqual([]);
+      expect(copies.writable()).toBe(true);
+    } finally {
+      dispose();
+    }
+  });
+});
+it("retires an in-flight save and refuses a queued removal when the reader is disposed", async () => {
+  let finish!: (value: unknown) => void;
+  const update = vi.fn(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  let dispose!: () => void;
+  const copies = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createAccountSavedArticles(
+      () => owner("alice"),
+      () => "server",
+      {
+        read: async () => state([]),
+        update,
+      },
+    );
+  });
+  await settle();
+  const first = copies.save(article);
+  const queued = copies.remove(article);
+  await settle();
+  dispose();
+  finish(state());
+  expect(await first).toBe(false);
+  expect(await queued).toBe(false);
+  expect(update).toHaveBeenCalledOnce();
+  expect(copies.rows()).toEqual([]);
+  expect(copies.error()).toBe("");
+});
+
+it("does not publish resource links or delayed failures from a retired account save", async () => {
+  await createRoot(async (dispose) => {
+    const [session, setSession] = createSignal(owner("alice"));
+    let fail!: (error: unknown) => void;
+    const copies = createAccountSavedArticles(session, () => "server", {
+      read: async () => state([]),
+      update: () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+    });
+    try {
+      await settle();
+      const pending = copies.save({
+        ...article,
+        externalLinks: [{ label: "Private saved resource", url: "https://music.example/artist" }],
+      });
+      await settle();
+      setSession(owner("bob"));
+      await settle();
+      fail(new Error("Alice private saved resource"));
+      expect(await pending).toBe(false);
+      expect(copies.rows()).toEqual([]);
+      expect(copies.error()).toBe("");
+      expect(copies.writable()).toBe(true);
+    } finally {
+      dispose();
+    }
+  });
+});

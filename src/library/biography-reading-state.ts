@@ -56,6 +56,7 @@ export function createBiographyReading(
             current.revision !== article.revision ||
             current.title !== article.title ||
             current.text !== article.text ||
+            JSON.stringify(current.externalLinks) !== JSON.stringify(article.externalLinks) ||
             current.retrievedAt !== article.retrievedAt)
         )
           setReading(article);

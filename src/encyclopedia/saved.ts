@@ -9,6 +9,20 @@ export interface SavedArticleCollection {
   save: (value: WikipediaArticle) => boolean | Promise<boolean>;
   remove: (value: WikipediaArticle) => boolean | Promise<boolean>;
 }
+/** The retained edition must contain this exact revision and text, not only the same page title. */
+export function articleRetained(
+  row: WikipediaArticle,
+  copies: readonly WikipediaArticle[],
+): boolean {
+  return copies.some(
+    (held) =>
+      held.language === row.language &&
+      held.pageId === row.pageId &&
+      held.revision === row.revision &&
+      held.text === row.text &&
+      JSON.stringify(held.externalLinks) === JSON.stringify(row.externalLinks),
+  );
+}
 const key = "phemios.encyclopedia.v1";
 const limit = 3 * 1024 * 1024;
 function read(storage: ArticleStorage): WikipediaArticle[] {

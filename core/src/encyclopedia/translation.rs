@@ -60,7 +60,7 @@ impl Client {
     pub fn named_article(&self, lang: &str, name: &str) -> Result<Value, String> {
         language(lang)?;
         let name = checked_article_title(name)?;
-        let article = self.request(
+        let article = self.request_article(
             lang,
             &[
                 ("titles", name),
@@ -99,7 +99,7 @@ impl Client {
             ],
         )?;
         let name = counterpart_title(&relation, id, target)?;
-        let article = self.request(
+        let article = self.request_article(
             target,
             &[
                 ("titles", name),

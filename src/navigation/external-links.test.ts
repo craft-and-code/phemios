@@ -58,3 +58,19 @@ it("reports failed browser handoff instead of leaving a silent dead link", async
   );
   await vi.waitFor(() => expect(fail.mock.calls[0]?.[0]).toContain("Unavailable"));
 });
+
+it("hands legacy HTTP resource links to the native browser without navigating the authenticated WebView", async () => {
+  const launch = vi.fn(async () => {}),
+    prevent = vi.fn();
+  expect(
+    activateExternalLink(
+      { href: "http://public.example/artist", button: 0, preventDefault: prevent },
+      true,
+      launch,
+      vi.fn(),
+    ),
+  ).toBe(true);
+  await Promise.resolve();
+  expect(prevent).toHaveBeenCalledOnce();
+  expect(launch).toHaveBeenCalledExactlyOnceWith("http://public.example/artist");
+});

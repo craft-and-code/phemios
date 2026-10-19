@@ -87,6 +87,7 @@ impl Store {
             if article["pageId"] == id
                 && article["revision"] == revision
                 && article["title"] == title(page)?
+                && article.get("externalLinks").is_some()
             {
                 return Ok(article);
             }
@@ -124,12 +125,11 @@ fn validate(article: &Value, lang: &str) -> Result<(), String> {
         .as_u64()
         .filter(|at| *at > 0 && *at <= 8_640_000_000_000_000)
         .ok_or(INVALID)?;
-    let checked = article_result(
-        &json!({"query":{"pages":[{"ns":0,"pageid":id,"title":article["title"],"lastrevid":article["revision"],"extract":article["text"]}]}}),
-        lang,
-        id,
-        at,
-    )?;
+    let mut response = json!({"query":{"pages":[{"ns":0,"pageid":id,"title":article["title"],"lastrevid":article["revision"],"extract":article["text"]}]}});
+    if let Some(links) = article.get("externalLinks") {
+        response["query"]["pages"][0]["externalLinks"] = links.clone();
+    }
+    let checked = article_result(&response, lang, id, at)?;
     if checked != *article
         || article["text"].as_str().is_none_or(|text| {
             text.chars()
@@ -160,7 +160,11 @@ impl Client {
             if text {
                 params.extend([("explaintext", "1"), ("exsectionformat", "wiki")]);
             }
-            self.request(lang, &params)
+            if text {
+                self.request_article(lang, &params)
+            } else {
+                self.request(lang, &params)
+            }
         })
     }
 }

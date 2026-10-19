@@ -19,6 +19,13 @@ export function wikipediaDocument(value: WikipediaArticle): string {
       : "Text extracted by Wikipedia, without images or tables. Consult the original for references and complete layout.",
     "",
     row.text,
+    ...(row.externalLinks?.length
+      ? [
+          "",
+          fr ? "Liens externes" : "External links",
+          ...row.externalLinks.map((link) => `${link.label} : ${link.url}`),
+        ]
+      : []),
     "",
   ].join("\n");
 }

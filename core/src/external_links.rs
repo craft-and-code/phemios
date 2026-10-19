@@ -1,7 +1,7 @@
-//! Narrow system-browser handoff for explicit HTTPS source links; never a shell or filesystem opener.
+//! Narrow system-browser handoff for explicit HTTP(S) source links; never a shell or filesystem opener.
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
-/// Accept bounded HTTPS URLs without credentials, whitespace, backslashes or nonstandard ports.
+/// Accept bounded HTTP(S) URLs without credentials, whitespace, backslashes or nonstandard ports.
 pub fn browser_url(value: &str) -> Result<&str, String> {
     if value.len() > 4096
         || value.chars().any(|c| c.is_control() || c.is_whitespace())
@@ -11,14 +11,34 @@ pub fn browser_url(value: &str) -> Result<&str, String> {
     }
     let address = value.split('#').next().ok_or("Lien externe invalide.")?;
     let uri: ureq::http::Uri = address.parse().map_err(|_| "Lien externe invalide.")?;
-    if !uri
+    let https = uri
         .scheme_str()
-        .is_some_and(|s| s.eq_ignore_ascii_case("https"))
+        .is_some_and(|s| s.eq_ignore_ascii_case("https"));
+    let http = uri
+        .scheme_str()
+        .is_some_and(|s| s.eq_ignore_ascii_case("http"));
+    let parsed = url::Url::parse(value).map_err(|_| "Lien externe invalide.")?;
+    let canonical = parsed
+        .as_str()
+        .split('#')
+        .next()
+        .ok_or("Lien externe invalide.")?;
+    let local_domain = parsed.domain().is_some_and(|host| {
+        let host = host.strip_suffix('.').unwrap_or(host);
+        host == "localhost" || host.ends_with(".localhost") || host.ends_with(".local")
+    });
+    if !(https || http)
         || uri.authority().is_none_or(|a| a.as_str().contains('@'))
         || uri.host().is_none_or(str::is_empty)
-        || !matches!(uri.port_u16(), None | Some(443))
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || !matches!(
+            (https, uri.port_u16()),
+            (_, None) | (true, Some(443)) | (false, Some(80))
+        )
+        || (http && (local_domain || crate::podcast::feed_address(canonical).is_err()))
     {
-        return Err("Seuls les liens HTTPS sans identifiants peuvent être ouverts.".into());
+        return Err("Seuls les liens HTTP/HTTPS sans identifiants peuvent être ouverts.".into());
     }
     Ok(value)
 }

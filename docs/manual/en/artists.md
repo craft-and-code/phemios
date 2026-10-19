@@ -12,7 +12,11 @@ An empty discography may reflect missing credits, external metadata or available
 
 Read more opens the available long text, with a contents list for articles with several sections. The bottom arrow returns to the top. The download icon beside the title exports the retained text with its source, revision and licence.
 
+The heart immediately to the left of Download saves the complete biography as a private copy for the active account. Find it in **Encyclopedia → Saved articles**, selecting the same FR/EN edition. An already retained revision is marked and cannot be saved twice; a newer revision can replace it. Without a writable account the action is disabled. Saved biographies use the same account backup as other saved articles.
+
 Wikipedia articles are extracts: tables, images and references may be omitted. Follow the original link for the complete page. Retrieved articles are cached for reading; a changed revision may require an update.
+
+Resources in the External links section retain their clickable addresses, including saved copies and downloaded text. For an older saved copy without links, refresh the article and save it again.
 
 ## Retrieve images and biographies
 

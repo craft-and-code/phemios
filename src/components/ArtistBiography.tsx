@@ -1,3 +1,7 @@
+import { linkResourceBlocks } from "../encyclopedia/resource-links";
+import { WikipediaResourceText, WikipediaUnmatchedResources } from "./WikipediaResourceText";
+import { Icon } from "./Icon";
+import { ActivityGlyph } from "./ActivityGlyph";
 import { DownloadButton } from "./DownloadButton";
 import { createEffect, createMemo, createSignal, on, For, Show, type JSX } from "solid-js";
 import { t, locale } from "../i18n";
@@ -5,7 +9,7 @@ import { ScrollToTop } from "./ScrollToTop";
 import { Feedback } from "./Feedback";
 import { wikipediaBlocks, wikipediaLinks, type WikipediaArticle } from "../encyclopedia/wikipedia";
 import { readingTypography } from "../library/biography-reading";
-/** Dedicated literal-text reading reuses catalogue images without new media downloads or private saves. */
+/** Literal-text reading keeps private saves and file downloads as separate controlled actions. */
 export function ArtistBiography(props: {
   article: WikipediaArticle;
   renderText?: (text: string) => JSX.Element;
@@ -13,6 +17,12 @@ export function ArtistBiography(props: {
   photos: readonly string[];
   error?: string;
   onDismissError?: () => void;
+  onSave?: ((article: WikipediaArticle) => void) | undefined;
+  saved?: boolean;
+  saving?: boolean;
+  saveDisabled?: boolean;
+  saveUnavailable?: string | undefined;
+  saveError?: string;
   onDownload?: ((article: WikipediaArticle) => Promise<unknown>) | undefined;
 }) {
   let reader!: HTMLElement;
@@ -24,7 +34,13 @@ export function ArtistBiography(props: {
     ),
   );
   const links = () => wikipediaLinks(props.article);
-  const blocks = createMemo(() => wikipediaBlocks(props.article.text));
+  const reading = createMemo(() =>
+    linkResourceBlocks(
+      wikipediaBlocks(readingTypography(props.article.text, props.article.language)),
+      props.article.externalLinks,
+    ),
+  );
+  const blocks = () => reading().blocks;
   const headings: (HTMLHeadingElement | undefined)[] = [];
   const sections = createMemo(() =>
     blocks().flatMap((block, index) => (block.heading ? [{ text: block.text, index }] : [])),
@@ -39,18 +55,40 @@ export function ArtistBiography(props: {
       <p class="eyebrow">{t("BIOGRAPHIE")}</p>
       <div class="biography-reader-heading">
         <h1 tabindex="-1">{props.article.title}</h1>
-        <DownloadButton
-          label={t("Télécharger la biographie complète")}
-          identity={props.article}
-          disabled={!props.onDownload}
-          onClick={() => {
-            setDownloadError("");
-            return props.onDownload?.(props.article);
-          }}
-          onError={(failure) =>
-            setDownloadError(failure instanceof Error ? failure.message : String(failure))
-          }
-        />
+        <div class="biography-reader-tools">
+          <button
+            type="button"
+            class="icon-button quiet biography-save"
+            aria-label={t(
+              props.saved ? "Disponible hors connexion" : "Enregistrer pour lire hors connexion",
+            )}
+            title={
+              props.saved
+                ? t("Disponible hors connexion")
+                : props.saveUnavailable || t("Enregistrer pour lire hors connexion")
+            }
+            aria-pressed={!!props.saved}
+            aria-busy={!!props.saving}
+            disabled={!props.onSave || props.saveDisabled || props.saving || props.saved}
+            onClick={() => props.onSave?.(props.article)}
+          >
+            <Show when={props.saving} fallback={<Icon name="heart" />}>
+              <ActivityGlyph />
+            </Show>
+          </button>
+          <DownloadButton
+            label={t("Télécharger la biographie complète")}
+            identity={props.article}
+            disabled={!props.onDownload}
+            onClick={() => {
+              setDownloadError("");
+              return props.onDownload?.(props.article);
+            }}
+            onError={(failure) =>
+              setDownloadError(failure instanceof Error ? failure.message : String(failure))
+            }
+          />
+        </div>
       </div>
       <div class="wikipedia-attribution">
         <a href={links().article} target="_blank" rel="noreferrer">
@@ -75,6 +113,7 @@ export function ArtistBiography(props: {
         )}
       </p>
       <Feedback error message={props.error ?? ""} onClose={() => props.onDismissError?.()} />
+      <Feedback error message={props.saveError ?? ""} />
       <Feedback error message={downloadError()} onClose={() => setDownloadError("")} />
       <Show when={sections().length > 1}>
         <nav class="biography-toc" aria-label={t("Sommaire")}>
@@ -116,8 +155,7 @@ export function ArtistBiography(props: {
                 when={block.heading}
                 fallback={
                   <p>
-                    {props.renderText?.(readingTypography(block.text, props.article.language)) ??
-                      readingTypography(block.text, props.article.language)}
+                    <WikipediaResourceText parts={block.parts} renderText={props.renderText} />
                   </p>
                 }
               >
@@ -149,6 +187,7 @@ export function ArtistBiography(props: {
           )}
         </For>
       </div>
+      <WikipediaUnmatchedResources links={reading().unmatched} />
       <ScrollToTop target={() => reader} />
     </article>
   );

@@ -10,7 +10,8 @@ export function activateExternalLink(
   open: (url: string) => Promise<void>,
   failure: (message: string) => void,
 ): boolean {
-  if (!native || ![0, 1].includes(action.button) || !/^https:\/\//i.test(action.href)) return false;
+  if (!native || ![0, 1].includes(action.button) || !/^https?:\/\//i.test(action.href))
+    return false;
   action.preventDefault();
   void Promise.resolve()
     .then(() => open(action.href))

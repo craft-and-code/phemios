@@ -1,6 +1,11 @@
 import { createSignal } from "solid-js";
 import { t, type Language } from "../i18n";
-import { createSavedArticles, type ArticleStorage, type SavedArticleCollection } from "./saved";
+import {
+  articleRetained,
+  createSavedArticles,
+  type ArticleStorage,
+  type SavedArticleCollection,
+} from "./saved";
 import {
   wikipediaArticle,
   wikipediaSearch,
@@ -198,18 +203,7 @@ export function createWikipediaExplorer(
     },
     retained() {
       const row = article();
-      return (
-        !!row &&
-        saved
-          .rows()
-          .some(
-            (held) =>
-              held.language === row.language &&
-              held.pageId === row.pageId &&
-              held.revision === row.revision &&
-              held.text === row.text,
-          )
-      );
+      return !!row && articleRetained(row, saved.rows());
     },
   };
 }

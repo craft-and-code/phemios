@@ -1298,7 +1298,8 @@ main:has(> .playback-page) > :not(.playback-page) {
   gap: 10px;
 }
 .wikipedia-reader {
-  margin-top: 20px;
+  flex-shrink: 0;
+  margin: 20px 0 0;
 }
 .wikipedia-reader-actions {
   display: flex;
@@ -1359,7 +1360,6 @@ main:has(> .playback-page) > :not(.playback-page) {
 }
 
 .encyclopedia-grid > .settings-card:hover,
-.wikipedia-reader:hover,
 .wikipedia-result:hover:not(:disabled) {
   border-color: var(--accent);
 }
@@ -2175,6 +2175,15 @@ main:has(> .result-page) > * {
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+/* Long articles must grow the page itself, preserving its scrollable bottom padding. */
+.page.encyclopedia-page:has(.wikipedia-reader) {
+  flex: 0 0 auto;
+  min-height: 100%;
+}
+.result-page > .wikipedia-panel:has(.wikipedia-reader) {
+  flex: 0 0 auto;
+  min-height: auto;
 }
 .result-page :is(.mood-cards, .personal-list, .tagged-grid):empty {
   display: none;

@@ -175,3 +175,56 @@ fn capacity_refuses_without_eviction_and_remove_preserves_other_identities() {
         39
     );
 }
+
+#[test]
+fn labelled_resources_survive_private_storage_and_unsafe_replacement_keeps_the_previous_copy() {
+    let (client, _) = support::sessions();
+    let root = Sandbox::new();
+    let store = Store::new(root.0.clone());
+    let mut value = article();
+    value["externalLinks"] = json!([{"label":"Music","url":"https://music.example/artist#works"}]);
+    store
+        .update(Source::Server, &client, "save", &value)
+        .unwrap();
+    let before = store.read(Source::Server, &client).unwrap();
+    assert_eq!(
+        before["articles"][0]["externalLinks"],
+        value["externalLinks"]
+    );
+    let reopened = Store::new(root.0.clone());
+    assert_eq!(reopened.read(Source::Server, &client).unwrap(), before);
+    value["externalLinks"][0]["url"] = json!("javascript:alert(1)");
+    assert!(
+        store
+            .update(Source::Server, &client, "save", &value)
+            .is_err()
+    );
+    assert_eq!(store.read(Source::Server, &client).unwrap(), before);
+}
+
+#[test]
+fn refused_resource_aliases_and_ports_never_replace_an_existing_private_copy() {
+    let (client, _) = support::sessions();
+    let root = Sandbox::new();
+    let store = Store::new(root.0.clone());
+    let mut value = article();
+    value["externalLinks"] = json!([{"label":"Music","url":"https://music.example/artist"}]);
+    store
+        .update(Source::Server, &client, "save", &value)
+        .unwrap();
+    let before = store.read(Source::Server, &client).unwrap();
+    for url in [
+        "https://0x7f.1/",
+        "http://music.example:443/",
+        "https://music.example:80/",
+    ] {
+        value["externalLinks"][0]["url"] = json!(url);
+        assert!(
+            store
+                .update(Source::Server, &client, "save", &value)
+                .is_err(),
+            "{url}"
+        );
+        assert_eq!(store.read(Source::Server, &client).unwrap(), before);
+    }
+}

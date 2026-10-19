@@ -1,0 +1,142 @@
+[
+  {
+    "url": "https://music.example/artist?a=1#section",
+    "valid": true
+  },
+  {
+    "url": "http://music.example/artist",
+    "valid": true
+  },
+  {
+    "url": "https://music.example:443/path",
+    "valid": true
+  },
+  {
+    "url": "http://music.example:80/path",
+    "valid": true
+  },
+  {
+    "url": "HTTPS://MUSIC.EXAMPLE./path",
+    "valid": true
+  },
+  {
+    "url": "HTTP://MUSIC.EXAMPLE/path",
+    "valid": true
+  },
+  {
+    "url": "https://xn--bcher-kva.example/",
+    "valid": true
+  },
+  {
+    "url": "https://music.example/%E2%99%AA",
+    "valid": true
+  },
+  {
+    "url": "https://0x7f.1/",
+    "valid": false
+  },
+  {
+    "url": "https://0177.1/",
+    "valid": false
+  },
+  {
+    "url": "https://2130706433/",
+    "valid": false
+  },
+  {
+    "url": "https://127.0.0.1./",
+    "valid": false
+  },
+  {
+    "url": "https://127.0.0.1/",
+    "valid": false
+  },
+  {
+    "url": "https://%31%32%37.0.0.1/",
+    "valid": false
+  },
+  {
+    "url": "https://[::1]/",
+    "valid": false
+  },
+  {
+    "url": "https://[::ffff:8.8.8.8]/",
+    "valid": false
+  },
+  {
+    "url": "https://music.local/",
+    "valid": false
+  },
+  {
+    "url": "https://music.LOCAL./",
+    "valid": false
+  },
+  {
+    "url": "https://foo.localhost./",
+    "valid": false
+  },
+  {
+    "url": "http://localhost./",
+    "valid": false
+  },
+  {
+    "url": "http://music.example:443/",
+    "valid": false
+  },
+  {
+    "url": "https://music.example:80/",
+    "valid": false
+  },
+  {
+    "url": "https://foo..example/",
+    "valid": false
+  },
+  {
+    "url": "https://-music.example/",
+    "valid": false
+  },
+  {
+    "url": "https://music-.example/",
+    "valid": false
+  },
+  {
+    "url": "https://music.example/ space",
+    "valid": false
+  },
+  {
+    "url": "https://music.example/#\n",
+    "valid": false
+  },
+  {
+    "url": "javascript:alert(1)",
+    "valid": false
+  },
+  {
+    "url": "https:///missing",
+    "valid": false
+  },
+  {
+    "url": "https://music.example@127.0.0.1/",
+    "valid": false
+  },
+  {
+    "url": "https://%65xample.org/",
+    "valid": false
+  },
+  {
+    "url": "https://@music.example/",
+    "valid": false
+  },
+  {
+    "url": "https://:@music.example/",
+    "valid": false
+  },
+  {
+    "url": "http://@music.example/",
+    "valid": false
+  },
+  {
+    "url": "https://music.example/artist@stage#contact@name",
+    "valid": true
+  }
+]

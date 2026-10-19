@@ -125,6 +125,9 @@ fn positive(value: &Value) -> bool {
 }
 fn article(value: &Value) -> Result<(), String> {
     identity(value)?;
+    if let Some(links) = value.get("externalLinks") {
+        crate::encyclopedia::resources::validate(links)?;
+    }
     let title = value["title"].as_str().is_some_and(|s| {
         !s.trim().is_empty() && s.encode_utf16().count() <= 2048 && !s.chars().any(char::is_control)
     });

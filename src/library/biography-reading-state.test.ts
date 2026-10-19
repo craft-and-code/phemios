@@ -180,3 +180,25 @@ it("retains the displayed object after unchanged revalidation so sections do not
   expect(state.reading()).toBe(displayed);
   dispose();
 });
+
+it("publishes newly recovered resource links even when the text, revision and retrieval date are unchanged", async () => {
+  let dispose = () => {};
+  const enriched = {
+    ...article,
+    externalLinks: [{ label: "Music", url: "https://music.example/" }],
+  };
+  const state = createRoot((stop) => {
+    dispose = stop;
+    return createBiographyReading(
+      () => artist,
+      async () => enriched,
+      async () => article,
+    );
+  });
+  try {
+    await state.open();
+    expect(state.reading()?.externalLinks).toEqual(enriched.externalLinks);
+  } finally {
+    dispose();
+  }
+});

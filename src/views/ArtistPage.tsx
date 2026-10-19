@@ -1,3 +1,5 @@
+import { createAccountSavedArticles } from "../encyclopedia/account-saved";
+import { articleRetained } from "../encyclopedia/saved";
 import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
 import { biographyLinker } from "../library/biography-links";
@@ -5,6 +7,8 @@ import { ArtistBiography } from "../components/ArtistBiography";
 import { createBiographyReading } from "../library/biography-reading-state";
 import {
   downloadEncyclopedia,
+  readArticleState,
+  updateArticleState,
   readEncyclopediaTitle,
   readCachedBiography,
   isNative,
@@ -240,19 +244,41 @@ export function ArtistPage(props: {
         </article>
       }
     >
-      {(article) => (
-        <ArtistBiography
-          article={article()}
-          onDownload={isNative() ? downloadEncyclopedia : undefined}
-          renderText={(text) => (
-            <BiographyText reference={props.artist.reference} text={text} linker={linker()} />
-          )}
-          artist={props.artist.name}
-          photos={photos()}
-          error={biography.error()}
-          onDismissError={biography.clearError}
-        />
-      )}
+      {(article) => {
+        const saved = createAccountSavedArticles(
+          () => (isNative() ? library.session() : undefined),
+          library.source,
+          {
+            read: readArticleState,
+            update: updateArticleState,
+          },
+        );
+        return (
+          <ArtistBiography
+            article={article()}
+            onSave={(row) => {
+              void saved.save(row);
+            }}
+            saved={articleRetained(article(), saved.rows())}
+            saving={saved.pending()}
+            saveDisabled={!isNative() || !saved.writable()}
+            saveUnavailable={
+              !library.session()
+                ? t("Connectez-vous pour accéder aux données de votre compte.")
+                : undefined
+            }
+            saveError={saved.error()}
+            onDownload={isNative() ? downloadEncyclopedia : undefined}
+            renderText={(text) => (
+              <BiographyText reference={props.artist.reference} text={text} linker={linker()} />
+            )}
+            artist={props.artist.name}
+            photos={photos()}
+            error={biography.error()}
+            onDismissError={biography.clearError}
+          />
+        );
+      }}
     </Show>
   );
 }

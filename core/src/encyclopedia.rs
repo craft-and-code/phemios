@@ -4,6 +4,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use ureq::unversioned::transport::DefaultConnector;
 
 pub mod biography_cache;
+pub(crate) mod resources;
 mod translation;
 
 const MAX_ID: u64 = 9_007_199_254_740_991;
@@ -83,10 +84,13 @@ fn article_result(value: &Value, lang: &str, id: u64, retrieved_at: u64) -> Resu
             .as_u64()
             .ok_or("Réponse Wikipédia invalide.")?,
     )?;
-    Ok(
-        json!({"language":lang,"pageId":id,"revision":revision,"title":title(row)?,
-        "text":text,"retrievedAt":retrieved_at}),
-    )
+    let mut article = json!({"language":lang,"pageId":id,"revision":revision,"title":title(row)?,
+        "text":text,"retrievedAt":retrieved_at});
+    if let Some(links) = row.get("externalLinks") {
+        resources::validate(links)?;
+        article["externalLinks"] = links.clone();
+    }
+    Ok(article)
 }
 /// A fixed-host, public-only client; no arbitrary URL, cookies, credentials or redirect is accepted.
 pub struct Client {
@@ -110,6 +114,15 @@ impl Default for Client {
 }
 impl Client {
     fn request(&self, lang: &str, params: &[(&str, &str)]) -> Result<Value, String> {
+        self.request_action(lang, "query", params, RESPONSE_LIMIT)
+    }
+    fn request_action(
+        &self,
+        lang: &str,
+        action: &str,
+        params: &[(&str, &str)],
+        limit: u64,
+    ) -> Result<Value, String> {
         let host = language(lang)?;
         let mut request = self
             .agent
@@ -119,7 +132,7 @@ impl Client {
                 "Phemios/0.1.0 (https://craft-and-code.github.io/aede/; music encyclopedia)",
             )
             .header("Accept", "application/json")
-            .query("action", "query")
+            .query("action", action)
             .query("format", "json")
             .query("formatversion", "2")
             .query("maxlag", "5");
@@ -132,7 +145,7 @@ impl Client {
         let bytes = response
             .body_mut()
             .with_config()
-            .limit(RESPONSE_LIMIT)
+            .limit(limit)
             .read_to_vec()
             .map_err(|_| "Réponse Wikipédia trop grande ou interrompue.")?;
         serde_json::from_slice(&bytes).map_err(|_| "Réponse Wikipédia invalide.".into())
@@ -157,7 +170,7 @@ impl Client {
     /// Read a bounded plain-text extract, retaining the revision reported by the same API response.
     pub fn article(&self, lang: &str, id: u64) -> Result<Value, String> {
         let id = page_id(id)?;
-        let value = self.request(
+        let value = self.request_article(
             lang,
             &[
                 ("pageids", &id.to_string()),

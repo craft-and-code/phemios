@@ -12,7 +12,11 @@ Une discographie vide peut refléter l’absence de crédits, de métadonnées e
 
 Lire plus ouvre le texte long disponible, avec un sommaire pour les articles à plusieurs sections. La flèche en bas permet de remonter. L’icône de téléchargement près du titre exporte le texte conservé avec sa source, sa révision et sa licence.
 
+Le cœur placé à gauche du téléchargement enregistre la biographie complète dans les copies privées du compte actif. Retrouvez-la dans **Encyclopédie → Articles enregistrés**, en choisissant la même édition FR/EN. Une révision déjà conservée est signalée et ne peut pas être enregistrée deux fois ; une nouvelle révision peut la remplacer. Sans compte autorisé, l’action est désactivée. Ces biographies sont incluses dans la même sauvegarde du compte que les autres articles enregistrés.
+
 Les articles Wikipédia sont des extractions : certains tableaux, images et références peuvent manquer. Le lien original permet de consulter la page complète. Les articles déjà récupérés sont conservés dans un cache de lecture ; un changement de révision peut nécessiter une nouvelle récupération.
+
+Les ressources de la rubrique « Liens externes » conservent leurs adresses cliquables, également dans les copies enregistrées et le texte téléchargé. Pour une ancienne copie enregistrée sans liens, actualisez l’article puis enregistrez-le à nouveau.
 
 ## Récupérer les images et les biographies
 

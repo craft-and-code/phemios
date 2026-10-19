@@ -1,3 +1,4 @@
+import { createSignal } from "solid-js";
 import landscape from "../../../public/demo/landscape.svg";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { expect, fn, userEvent, within, waitFor } from "storybook/test";
@@ -7,6 +8,7 @@ const meta = {
   title: "Catalog/ArtistBiography",
   component: ArtistBiography,
   args: {
+    onSave: fn(),
     onDownload: fn(async () => "/Downloads/Phémios/Encyclopédie/wikipedia-fr-42.txt"),
     artist: "The Northern Lights",
     article: {
@@ -98,5 +100,75 @@ export const Download: Story = {
       "download-complete",
     );
     expect(canvas.getByRole("heading", { name: args.article.title })).toBeVisible();
+  },
+};
+
+export const SaveForOffline: Story = {
+  render: (args) => {
+    const [saved, setSaved] = createSignal(false);
+    return (
+      <ArtistBiography
+        {...args}
+        saved={saved()}
+        onSave={(article) => {
+          args.onSave?.(article);
+          setSaved(true);
+        }}
+      />
+    );
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const save = canvas.getByRole("button", { name: "Enregistrer pour lire hors connexion" });
+    const download = canvas.getByRole("button", { name: "Télécharger la biographie complète" });
+    expect(save.compareDocumentPosition(download) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await userEvent.click(save);
+    expect(args.onSave).toHaveBeenCalledWith(args.article);
+    expect(canvas.getByRole("button", { name: "Disponible hors connexion" })).toBeDisabled();
+    expect(canvas.getByRole("button", { name: "Disponible hors connexion" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  },
+};
+export const SaveUnavailable: Story = {
+  args: {
+    saveDisabled: true,
+    saveUnavailable: "Connectez-vous pour accéder aux données de votre compte.",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(
+      canvas.getByRole("button", { name: "Enregistrer pour lire hors connexion" }),
+    ).toBeDisabled();
+    expect(
+      canvas.getByRole("button", { name: "Télécharger la biographie complète" }),
+    ).toBeEnabled();
+  },
+};
+
+export const ExternalResources: Story = {
+  args: {
+    photos: [],
+    article: {
+      ...meta.args.article,
+      text: "Biographie fictive.\n\n=== Liens externes ===\nRessources relatives à la musique : Example Music · Example Archive",
+      externalLinks: [
+        { label: "Example Music", url: "https://music.example/artist" },
+        { label: "Example Archive", url: "https://archive.example/artist" },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.getByRole("link", { name: "Example Music" })).toHaveAttribute(
+      "href",
+      "https://music.example/artist",
+    );
+    expect(canvas.getByRole("link", { name: "Example Archive" })).toHaveAttribute(
+      "rel",
+      "noreferrer noopener",
+    );
+    expect(canvasElement.querySelector("script")).toBeNull();
   },
 };

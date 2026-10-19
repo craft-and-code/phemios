@@ -1826,7 +1826,8 @@ button.biography-more .biography-more-icon .spinner,
   border-left: 2px solid var(--accent);
   background: var(--surface);
 }
-.artist-biography-reader .biography-toc h2 {
+.artist-biography-reader .biography-toc h2,
+.wikipedia-reader .biography-toc h3 {
   margin: 0 0 10px;
   font-size: 1rem;
 }
@@ -1843,7 +1844,8 @@ button.biography-more .biography-more-icon .spinner,
 .biography-toc button {
   text-align: left;
 }
-.artist-biography-reader .wikipedia-prose h2 {
+.artist-biography-reader .wikipedia-prose h2,
+.wikipedia-reader .wikipedia-prose h3 {
   scroll-margin-top: 90px;
 }
 .artist-biography-reader {
@@ -1899,6 +1901,27 @@ button.biography-more .biography-more-icon .spinner,
   margin: 0;
   overflow-wrap: anywhere;
 }
-.biography-reader-heading > button {
+.biography-reader-tools {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
+  gap: var(--control-gap);
+}
+.biography-save[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+
+/* Keep the article action inside its padded frame instead of overlapping its edge. */
+.reader-scroll-top {
+  display: flex;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 16px;
+  margin-top: 16px;
+  min-height: 40px;
+  pointer-events: none;
+}
+.reader-scroll-top .biography-scroll-top {
+  position: static;
+  pointer-events: auto;
 }

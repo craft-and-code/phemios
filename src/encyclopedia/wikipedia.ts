@@ -1,3 +1,4 @@
+import { parseResourceLinks, type ResourceLink } from "./resource-links";
 import type { Language } from "../i18n";
 import { t } from "../i18n";
 export interface WikipediaHit {
@@ -9,6 +10,7 @@ export interface WikipediaArticle extends WikipediaHit {
   revision: number;
   text: string;
   retrievedAt: number;
+  externalLinks?: ResourceLink[];
 }
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -48,6 +50,9 @@ export function wikipediaArticle(value: unknown): WikipediaArticle {
     title: title(row.title),
     text: row.text,
     retrievedAt,
+    ...(row.externalLinks === undefined
+      ? {}
+      : { externalLinks: parseResourceLinks(row.externalLinks) }),
   };
 }
 /** Titles are plain text, never HTML snippets. Reject mismatched languages and duplicate pages. */

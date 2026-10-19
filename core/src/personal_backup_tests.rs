@@ -31,7 +31,7 @@ impl Drop for Sandbox {
     }
 }
 fn article(id: u64, text: &str) -> Value {
-    json!({"language":"fr","pageId":id,"revision":2,"retrievedAt":3,"title":"Fictional music","text":text})
+    json!({"language":"fr","pageId":id,"revision":2,"retrievedAt":3,"title":"Fictional music","text":text,"externalLinks":[{"label":"Music resource","url":"https://music.example/artist"}]})
 }
 fn feed(url: &str) -> Value {
     json!({"url":url,"title":"Fictional podcast","author":"","episodes":[]})

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createSavedArticles } from "./saved";
+import { articleRetained, createSavedArticles } from "./saved";
 import { article, storageFixture } from "./wikipedia.test-fixtures";
 it("restores provenance offline, replaces a revision and keeps language editions separate", () => {
   const storage = storageFixture(),
@@ -46,4 +46,14 @@ it("bounds retained copies without deleting older articles to make room", () => 
   expect(saved.save({ ...article, pageId: 41 })).toBe(false);
   expect(storage.getItem()).toBe(original);
   expect(saved.save({ ...article, pageId: 1, revision: 92 })).toBe(true);
+});
+
+it("recognizes the exact stored biography revision without conflating language or changed prose", () => {
+  expect(articleRetained(article, [])).toBe(false);
+  expect(articleRetained(article, [{ ...article }])).toBe(true);
+  expect(articleRetained(article, [{ ...article, language: "en" }])).toBe(false);
+  expect(articleRetained(article, [{ ...article, revision: article.revision + 1 }])).toBe(false);
+  expect(articleRetained(article, [{ ...article, text: "A different complete biography" }])).toBe(
+    false,
+  );
 });

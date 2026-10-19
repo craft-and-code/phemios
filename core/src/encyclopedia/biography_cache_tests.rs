@@ -26,6 +26,7 @@ fn response(revision: u64, text: bool) -> Value {
     let mut page = json!({"ns":0,"pageid":42,"title":"Example canon","lastrevid":revision});
     if text {
         page["extract"] = json!(format!("Fictional revision {revision}."));
+        page["externalLinks"] = json!([]);
     }
     json!({"query":{"pages":[page]}})
 }
@@ -184,4 +185,78 @@ fn refuses_a_cache_file_symlink() {
     std::os::unix::fs::symlink(&outside, &fixture.store.path).unwrap();
     assert!(fixture.store.get("fr", "Example").is_err());
     assert_eq!(std::fs::read(&outside).unwrap(), b"secret");
+}
+
+#[test]
+fn old_text_only_cache_is_readable_and_enriched_once_on_explicit_reopen() {
+    let fixture = Fixture::new();
+    let mut legacy = article_result(&response(91, true), "fr", 42, 1).unwrap();
+    legacy.as_object_mut().unwrap().remove("externalLinks");
+    fixture.store.save("fr", "Alias", &legacy).unwrap();
+    assert_eq!(fixture.store.get("fr", "Alias").unwrap(), Some(legacy));
+    let mut calls = Vec::new();
+    let upgraded = fixture
+        .store
+        .refresh("fr", "Alias", |text| {
+            calls.push(text);
+            let mut value = response(91, text);
+            if text {
+                value["query"]["pages"][0]["externalLinks"] =
+                    json!([{"label":"Example","url":"https://music.example/artist"}]);
+            }
+            Ok(value)
+        })
+        .unwrap();
+    assert_eq!(calls, [false, true]);
+    assert_eq!(upgraded["externalLinks"][0]["label"], "Example");
+    let reopened = Store::new(fixture.root.clone());
+    assert_eq!(reopened.get("fr", "Alias").unwrap(), Some(upgraded.clone()));
+    calls.clear();
+    assert_eq!(
+        reopened
+            .refresh("fr", "Alias", |text| {
+                calls.push(text);
+                Ok(response(91, text))
+            })
+            .unwrap(),
+        upgraded
+    );
+    assert_eq!(calls, [false]);
+}
+
+#[test]
+fn malformed_resource_refresh_keeps_the_previous_public_text_and_links_on_disk() {
+    let fixture = Fixture::new();
+    let initial = fixture
+        .store
+        .refresh("fr", "Example", |text| {
+            let mut value = response(91, text);
+            if text {
+                value["query"]["pages"][0]["externalLinks"] =
+                    json!([{"label":"Music","url":"https://music.example/artist"}]);
+            }
+            Ok(value)
+        })
+        .unwrap();
+    let before = std::fs::read(&fixture.store.path).unwrap();
+    assert!(
+        fixture
+            .store
+            .refresh("fr", "Example", |text| {
+                let mut value = response(92, text);
+                if text {
+                    value["query"]["pages"][0]["externalLinks"] =
+                        json!([{"label":"Music","url":"https://0x7f.1/"}]);
+                }
+                Ok(value)
+            })
+            .is_err()
+    );
+    assert_eq!(std::fs::read(&fixture.store.path).unwrap(), before);
+    assert_eq!(
+        Store::new(fixture.root.clone())
+            .get("fr", "Example")
+            .unwrap(),
+        Some(initial)
+    );
 }
