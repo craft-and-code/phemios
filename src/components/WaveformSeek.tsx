@@ -1,3 +1,4 @@
+import { createWaveformPointer } from "../library/waveform-pointer";
 import { cdReference } from "../cd/model";
 import { createMemo, createResource, Show } from "solid-js";
 import { t } from "../i18n";
@@ -30,7 +31,6 @@ export function WaveformSeek() {
     },
   );
   const duration = () => display().duration_ms || player.state().duration_ms || 0;
-  let pointer: number | undefined;
   function position(event: PointerEvent & { currentTarget: HTMLInputElement }) {
     const rect = event.currentTarget.getBoundingClientRect();
     return waveformPosition(event.clientX, rect.left, rect.width, duration());
@@ -45,6 +45,18 @@ export function WaveformSeek() {
     if (event.clientY < rect.top || event.clientY > rect.bottom) hover.clear();
     else hover.move(event.clientX, rect.left, rect.width, duration());
   }
+  const gesture = createWaveformPointer({
+    state: player.state,
+    disabled,
+    position,
+    hover: hoverPosition,
+    preview: player.previewSeek,
+    seek: (value) => void player.seek(value),
+    clear: () => {
+      hover.clear();
+      player.clearSeekPreview();
+    },
+  });
   const progress = () =>
     Math.max(0, Math.min(100, (player.seekPosition() / (duration() || 1)) * 100));
   return (
@@ -105,35 +117,13 @@ export function WaveformSeek() {
         aria-label={t("Position de lecture")}
         onInput={(event) => player.previewSeek(Number(event.currentTarget.value))}
         onChange={(event) => void player.seek(Number(event.currentTarget.value))}
-        onPointerDown={(event) => {
-          if (disabled() || event.button !== 0) return;
-          event.preventDefault();
-          event.currentTarget.focus();
-          pointer = event.pointerId;
-          event.currentTarget.setPointerCapture(event.pointerId);
-          hoverPosition(event);
-          player.previewSeek(position(event));
-        }}
-        onPointerMove={(event) => {
-          hoverPosition(event);
-          if (pointer === event.pointerId) player.previewSeek(position(event));
-        }}
-        onPointerUp={(event) => {
-          if (pointer !== event.pointerId) return;
-          pointer = undefined;
-          event.currentTarget.releasePointerCapture(event.pointerId);
-          void player.seek(position(event));
-        }}
+        onPointerDown={gesture.down}
+        onPointerMove={gesture.move}
+        onPointerUp={gesture.up}
         onPointerLeave={hover.clear}
-        onPointerCancel={() => {
-          pointer = undefined;
-          hover.clear();
-          player.clearSeekPreview();
-        }}
-        onBlur={() => {
-          hover.clear();
-          player.clearSeekPreview();
-        }}
+        onPointerCancel={gesture.cancel}
+        onLostPointerCapture={gesture.cancel}
+        onBlur={gesture.cancel}
       />
       <Show when={result.loading}>
         <span class="spinner waveform-loader" aria-label={t("Calcul de la forme d’onde…")} />

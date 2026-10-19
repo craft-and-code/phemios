@@ -237,3 +237,147 @@ fn retired_history_failures_remain_errors_without_claiming_confirmation() {
     assert_eq!(source.finish(), Err(error));
     assert!(!source.clock.confirmed.load(Ordering::Relaxed));
 }
+
+#[test]
+fn initial_seek_without_reset_cannot_hold_source_cleanup_indefinitely() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let (seeking, sought) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    let server = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(start["type"], "start");
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:offset","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        let seek: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(seek["type"], "seek");
+        assert_eq!(seek["position_ms"], 500);
+        seeking.send(()).unwrap();
+        // Keep the connection open without acknowledging reset. Release is a
+        // test watchdog, not the production cancellation mechanism.
+        released.recv_timeout(Duration::from_secs(20)).unwrap();
+    });
+    let mut source = Source::open(&client, "track:offset".into(), 48000, 500);
+    sought.recv_timeout(Duration::from_secs(5)).unwrap();
+    source.clock.stop.store(true, Ordering::Release);
+    let deadline = Instant::now() + Duration::from_secs(13);
+    while !source.handle.as_ref().unwrap().is_finished() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let finished_before_release = source.handle.as_ref().unwrap().is_finished();
+    release.send(()).unwrap();
+    let failure = source.finish().unwrap_err();
+    server.join().unwrap();
+    assert!(
+        finished_before_release,
+        "cleanup depended on the unresponsive peer closing its connection"
+    );
+    assert!(failure.contains("Confirmation"), "{failure}");
+    assert!(!source.clock.confirmed.load(Ordering::Relaxed));
+}
+
+#[test]
+fn delayed_start_format_cannot_cancel_an_already_requested_stop_deadline() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let (stopping, stopped) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    let server = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(start["type"], "start");
+        let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(stop["type"], "stop");
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:late","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        stopping.send(()).unwrap();
+        released.recv_timeout(Duration::from_secs(20)).unwrap();
+    });
+    let mut source = Source::open(&client, "track:late".into(), 48000, 0);
+    source.clock.stop.store(true, Ordering::Release);
+    stopped.recv_timeout(Duration::from_secs(5)).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(13);
+    while !source.handle.as_ref().unwrap().is_finished() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let finished_before_release = source.handle.as_ref().unwrap().is_finished();
+    release.send(()).unwrap();
+    let failure = source.finish().unwrap_err();
+    server.join().unwrap();
+    assert!(
+        finished_before_release,
+        "the late format removed the stop timeout"
+    );
+    assert!(failure.contains("Confirmation"), "{failure}");
+    assert!(!source.clock.confirmed.load(Ordering::Relaxed));
+}
+
+#[test]
+fn queued_audio_tail_after_stop_does_not_override_saved_history() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let peer = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(start["type"], "start");
+        let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(stop, json!({"type":"stop","epoch":0,"frames":0}));
+        // These were already scheduled by the producer when Stop crossed it.
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:tail","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        ws.send(Message::Binary(vec![0; 16])).unwrap();
+        ws.send(Message::Text(
+            json!({"type":"eof","epoch":0,"frames":2}).to_string(),
+        ))
+        .unwrap();
+        ws.send(Message::Text(json!({"type":"saved"}).to_string()))
+            .unwrap();
+        ws.close(None).unwrap();
+    });
+    let mut source = Source::open(&client, "track:tail".into(), 48000, 0);
+    source.clock.stop.store(true, Ordering::Release);
+    let result = source.finish();
+    peer.join().unwrap();
+    assert_eq!(result, Ok(()));
+    assert!(source.clock.confirmed.load(Ordering::Relaxed));
+    assert!(matches!(
+        source.try_recv(),
+        Err(mpsc::TryRecvError::Disconnected)
+    ));
+}
+
+#[test]
+fn ignored_tail_after_stop_never_hides_a_real_history_failure() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let client =
+        crate::network::test_support::client(format!("http://{}", listener.local_addr().unwrap()));
+    let peer = std::thread::spawn(move || {
+        let tcp = listener.accept().unwrap().0;
+        tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut ws = tungstenite::accept(tcp).unwrap();
+        let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(start["type"], "start");
+        let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
+        assert_eq!(stop["type"], "stop");
+        ws.send(Message::Binary(vec![0; 16])).unwrap();
+        ws.send(Message::Text(
+            json!({"type":"eof","epoch":0,"frames":2}).to_string(),
+        ))
+        .unwrap();
+        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
+    });
+    let mut source = Source::open(&client, "track:tail-error".into(), 48000, 0);
+    source.clock.stop.store(true, Ordering::Release);
+    let failure = source.finish().unwrap_err();
+    peer.join().unwrap();
+    assert!(failure.contains("L’historique est occupé"), "{failure}");
+    assert!(!source.clock.confirmed.load(Ordering::Relaxed));
+    assert_eq!(source.finish(), Err(failure));
+}

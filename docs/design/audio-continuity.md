@@ -45,3 +45,43 @@ On the development macOS host, a first optimized synthetic run of 30 seconds of 
 The extracted example was also run while native builds and behavioral checks were active. That observation measured 261.894 ms at 48 kHz (0.873% of source duration) and 925.151 ms at 192 kHz (3.084%); spectrum-only observations were 229.996 ms and 924.788 ms. Maximum observed callback intervals were 11.670 ms and 15.307 ms, exceeding those block periods. These wall-time observations include any scheduling interruptions and do not isolate the exact cause of each outlier. The earlier hot-block profile and this half-second-ring harness are useful bounded workload observations, not a before/after performance comparison. They demonstrate why a fast arithmetic average cannot guarantee device deadlines under host load.
 
 The fixed 24-band stereo mathematics remains unchanged: no decimation, reduced band count or asynchronous display worker is introduced from this evidence. The profile harness reports timings rather than enforcing fragile wall-time test thresholds. Sequential per-track reconnections without DSP overlap, minimum-toolchain execution, other platforms, digital-output capture and acoustic acceptance remain separate work.
+
+## Remote timing admission follow-up
+
+The DSP/fade review reproduces one protocol defect: `format` admitted `u64::MAX` as a remote duration, although the mixer's remaining-frame conversion multiplies duration milliseconds by the negotiated rate before division. This can overflow (panic with checked arithmetic, wrapped scheduling otherwise). The same unchecked timestamp domain was accepted for source offsets and ordinary-stream reset positions.
+
+A shared millisecond validator now requires the rate multiplication to fit `u64` before those values enter playback state. Epochs and frame counters retain their own unsigned domain. No new user-facing track-length policy is imposed; the bound follows the actual conversion arithmetic. Two cases cover oversized duration/offsets, the exact representable boundary, reset-position admission, zero-rate refusal and independent epoch counters.
+
+The review also inspects convex overlap gain, consumed-frame attribution, seek generations, source retirement and bounded PCM queues, pause/reserve ramps, callback ownership and the signal-processing/normalization interfaces in Aède. No further defect or measured performance improvement is established in these inspected paths. The correction adds no callback work, allocation, buffer, worker or dependency and does not change DSP sound algorithms. Existing synthetic continuity evidence above remains a separate checkpoint; no physical output, OS scheduling or new performance benchmark is claimed.
+
+Verification: all 54 selected Phémios playback cases and all-target core Clippy pass after the correction; all 81 existing Aède DSP library cases pass without Aède source changes. Rustfmt and touched-document formatting/diff checks pass. No application rebuild, physical listening acceptance or commit of this DSP correction is performed.
+
+## Initial-offset cleanup deadline
+
+The neighboring timing/lifecycle review demonstrates one further defect. A DSP source opened at a nonzero position sends an initial `seek` after its first format. Unlike subsequent seek requests handled by `Feedback::tick`, this branch set `seeking` without a confirmation deadline. If the peer kept the socket open without returning `reset`, a stop could not be sent while seeking and `Source::finish` could join that worker indefinitely. The mixer's own progress timeout did not bound the subsequent join.
+
+The initial seek now arms the same twelve-second confirmation deadline as later seeks. A local WebSocket regression first fails while cleanup depends on the test peer's forced closure; after the correction the existing worker exits with an explicit unconfirmed-listening error while the peer remains open. A thirteen-second test watchdog releases the mock in both outcomes. Existing successful seek/reset and retired-confirmation cases remain intact. This changes no callback work, worker count, PCM buffer or gain algorithm.
+
+Inspection also follows the neighboring format/reset millisecond conversions, overlap arithmetic, queue successor reservation, retained source generations and normal/CD progress deadlines. No additional demonstrated defect is established in those inspected paths. All 55 selected playback tests, all-target core Clippy, Rustfmt and touched-document formatting/diff checks pass. No App rebuild, physical device acceptance or commit is performed. The preceding numeric-admission correction remains uncommitted alongside this correction.
+
+## Late-format stop confirmation
+
+The next neighboring-lifecycle pass reproduces one distinct stop race. When Stop was sent before the initial format arrived, that delayed format still entered the active-format branch and cleared the already armed stop-confirmation deadline. An open peer that never confirmed history could then hold `Source::finish` indefinitely despite the existing stop timeout. This differs from the preceding missing initial-seek deadline: the deadline existed and was subsequently erased by a late reply.
+
+Once the worker has sent Stop, queued format replies are now ignored. They cannot replace its epoch, initiate an offset seek or clear its deadline. Saved/error/close handling remains active. A real local WebSocket fixture first reproduces the lost timeout by sending format only after receiving Stop; after correction cleanup terminates with an explicit unconfirmed-listening error before the watchdog closes the peer. Existing successful seek/reset, saved-history and retirement cases remain passing.
+
+Inspection follows all assignments to the shared deadline/seeking/stopped fields, source cleanup, mixer retirement and normal-stream stop handling. No additional demonstrated defect is established in those inspected paths. All 56 selected playback cases and all-target core Clippy pass, with Rustfmt and touched-document formatting/diff checks. No callback algorithm, allocation, worker or buffer changes; no App rebuild, physical output acceptance or commit.
+
+## In-flight EOF after Stop
+
+A further local WebSocket regression demonstrates one neighboring terminal-state defect: after Stop the source deliberately discards in-flight PCM, but still checked a queued EOF against its retained `sent` count. When that EOF included the discarded tail, cleanup failed with an inconsistent-end error before reading the valid `saved` response immediately behind it. No missing history confirmation or corrupt source was required.
+
+The stopped-source guard now ignores both queued format and EOF messages, matching its existing binary discard. Live-source EOF epoch/frame validation remains strict; saved/error/close processing and the stop deadline remain active. The fixture sends Stop, delayed format, two unconsumed stereo frames, their EOF and a saved confirmation. It fails before correction and afterwards confirms successful cleanup without publishing discarded audio packets.
+
+The neighboring feedback, mixer cleanup/seek, normal stop and spectrum ownership paths establish no additional demonstrated defect in this review. All 57 selected playback cases and all-target core Clippy pass, with Rustfmt and touched-document formatting/diff checks. No audio callback, signal algorithm, buffer, dependency or worker is added; no App rebuild, physical output acceptance or commit is performed.
+
+## Terminal-response confirmation
+
+The next pass establishes no new demonstrated production defect. Inspection follows other post-Stop responses, reset/seek/deadline transitions, worker cleanup, actor pause/output policy changes, callback reserve/reset accounting, convex overlap and spectrum publication. No measured performance improvement is claimed from source inspection.
+
+One additional test-only local WebSocket case confirms that discarded binary/EOF tails do not hide a subsequent genuine history-storage failure. The precise server diagnostic remains visible, confirmation remains false and repeated cleanup retains the same failure. Existing saved-success and bounded-cleanup regressions remain intact. All 58 selected playback cases and all-target core Clippy pass, with Rustfmt and touched-document formatting/diff checks. This pass adds no production change, App rebuild or commit; preceding uncommitted fixes remain preserved. Physical listening and other-platform acceptance are not established by these software fixtures.

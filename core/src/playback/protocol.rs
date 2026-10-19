@@ -45,6 +45,15 @@ pub(super) fn unsigned(value: &Value, key: &str) -> Result<u64, String> {
         .as_u64()
         .ok_or_else(|| "Réponse de lecture Aède invalide.".into())
 }
+/// Remote timing must fit the frame conversion at the negotiated output rate.
+/// Epochs and frame counters use `unsigned` instead; they are not milliseconds.
+pub(super) fn milliseconds(value: &Value, key: &str, rate: u32) -> Result<u64, String> {
+    let ms = unsigned(value, key)?;
+    if rate == 0 || ms.checked_mul(u64::from(rate)).is_none() {
+        return Err("Position ou durée audio Aède trop grande.".into());
+    }
+    Ok(ms)
+}
 #[cfg(test)]
 #[path = "protocol_tests.rs"]
 mod tests;
@@ -66,12 +75,12 @@ pub(super) fn format(value: &Value, reference: &str, rate: u32) -> Result<Format
     let duration = if value["duration_ms"].is_null() {
         None
     } else {
-        Some(unsigned(value, "duration_ms")?)
+        Some(milliseconds(value, "duration_ms", rate)?)
     };
     Ok(Format {
         channels: channels as usize,
         epoch: unsigned(value, "epoch")?,
-        position: unsigned(value, "position_ms")?,
+        position: milliseconds(value, "position_ms", rate)?,
         duration,
     })
 }

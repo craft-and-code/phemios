@@ -18,7 +18,22 @@ export function createSeekProgress(
     running = false,
     serial = 0,
     lifetime = 0;
+  const terminal = (status: string) => ["idle", "ended", "error"].includes(status);
+  let scope = state();
+  function synchronizeScope() {
+    const value = state();
+    if (
+      value.reference !== scope.reference ||
+      value.queue_id !== scope.queue_id ||
+      value.index !== scope.index ||
+      (terminal(value.status) && !terminal(scope.status))
+    ) {
+      reset();
+    }
+    scope = value;
+  }
   createEffect(() => {
+    synchronizeScope();
     const value = state(),
       held = pending();
     if (draft()?.reference !== value.reference) setDraft(undefined);
@@ -33,8 +48,10 @@ export function createSeekProgress(
       setPending(undefined);
   });
   async function seek(position: number) {
+    synchronizeScope();
     const value = state();
     if (
+      terminal(value.status) ||
       !value.reference ||
       !Number.isSafeInteger(position) ||
       position < 0 ||
@@ -55,6 +72,7 @@ export function createSeekProgress(
           selectedSerial = serial;
         queue = undefined;
         const reply = await send(selected);
+        synchronizeScope();
         if (epoch !== lifetime) break;
         const ticket = (reply as { seek_id?: unknown } | null)?.seek_id;
         if (!Number.isSafeInteger(ticket) || Number(ticket) <= 0)
@@ -68,6 +86,7 @@ export function createSeekProgress(
           });
       }
     } catch (error) {
+      synchronizeScope();
       if (epoch === lifetime) {
         setPending(undefined);
         queue = undefined;

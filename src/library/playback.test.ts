@@ -2105,3 +2105,108 @@ it("restores the saved volume on reopening and keeps accounts separate", async (
     vi.unstubAllGlobals();
   }
 });
+
+it("does not roll back a successful output switch because an independent volume write failed", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      queue: [0, 1],
+    });
+    await player.start(tracks, album, "Artist");
+    let finish!: (value: unknown) => void;
+    vi.mocked(playbackControl).mockImplementation((command) => {
+      if (command === "output")
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      if (command === "volume") return Promise.reject(new Error("volume refused"));
+      return Promise.resolve(null);
+    });
+    const switching = player.chooseOutput("fixture-output");
+    await player.volume(0.4);
+    expect(player.error()).toBe("volume refused");
+    finish(null);
+    await switching;
+    expect(player.device()).toBe("fixture-output");
+    dispose();
+  });
+});
+
+it.each([false, true])(
+  "rolls back an output refusal only in its original lifetime (replacement: %s)",
+  async (replacement) => {
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => true);
+      vi.mocked(playbackState).mockResolvedValue({
+        ...idlePlayback,
+        status: "playing",
+        reference: "track:one",
+        total: 2,
+        queue: [0, 1],
+      });
+      await player.start(tracks, album, "Artist");
+      let reject!: (error: Error) => void;
+      vi.mocked(playbackControl).mockImplementation((command) => {
+        if (command === "output")
+          return new Promise((_, fail) => {
+            reject = fail;
+          });
+        if (command === "volume") return Promise.reject(new Error("new volume refused"));
+        return Promise.resolve(null);
+      });
+      const switching = player.chooseOutput("old-output");
+      if (replacement) {
+        player.reset();
+        await player.chooseOutput("new-output");
+        await player.volume(0.4);
+      }
+      reject(new Error("old output refused"));
+      await switching;
+      expect(player.device()).toBe(replacement ? "new-output" : "");
+      expect(player.error()).toBe(replacement ? "new volume refused" : "old output refused");
+      dispose();
+    });
+  },
+);
+
+it("does not erase an independent volume failure when a pending crossfade succeeds", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    let finish!: (value: unknown) => void;
+    vi.mocked(playbackControl).mockImplementation((command) => {
+      if (command === "crossfade")
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      if (command === "volume") return Promise.reject(new Error("volume refused"));
+      return Promise.resolve(null);
+    });
+    const fade = player.chooseCrossfade(3000);
+    await player.volume(0.4);
+    expect(player.error()).toBe("volume refused");
+    finish(null);
+    await fade;
+    expect(player.crossfade()).toBe(3000);
+    expect(player.error()).toBe("volume refused");
+    dispose();
+  });
+});
+
+it("clears a previous fade refusal when explicitly retrying without erasing later failures", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    vi.mocked(playbackControl).mockRejectedValueOnce(new Error("fade refused"));
+    await player.chooseCrossfade(3000);
+    expect(player.error()).toBe("fade refused");
+    expect(player.crossfade()).toBe(0);
+    vi.mocked(playbackControl).mockResolvedValue(null);
+    await player.chooseCrossfade(3000);
+    expect(player.error()).toBe("");
+    expect(player.crossfade()).toBe(3000);
+    dispose();
+  });
+});

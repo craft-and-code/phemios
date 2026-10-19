@@ -184,7 +184,7 @@ pub(super) fn stream(
                     }
                     Some("reset") => {
                         epoch = protocol::unsigned(&value, "epoch")?;
-                        offset = protocol::unsigned(&value, "position_ms")?;
+                        offset = protocol::milliseconds(&value, "position_ms", output.rate)?;
                         seeking = false;
                         channels = None;
                         eof = None;

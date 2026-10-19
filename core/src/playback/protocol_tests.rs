@@ -76,3 +76,35 @@ fn history_failure_preserves_uncertainty_and_identifies_changed_sources() {
             .contains("Vérifiez l’historique")
     );
 }
+
+#[test]
+fn remote_timing_cannot_overflow_crossfade_frame_conversion() {
+    let valid = json!({"type":"format","track":"track:one","encoding":"f32le","sample_rate":192000,"channels":2,"epoch":1,"position_ms":0,"duration_ms":1000});
+    for field in ["duration_ms", "position_ms"] {
+        let mut broken = valid.clone();
+        broken[field] = json!(u64::MAX);
+        assert!(
+            format(&broken, "track:one", 192000).is_err(),
+            "accepted {field}"
+        );
+    }
+    let safe = u64::MAX / 192000;
+    let mut boundary = valid.clone();
+    boundary["duration_ms"] = json!(safe);
+    boundary["position_ms"] = json!(safe);
+    assert!(format(&boundary, "track:one", 192000).is_ok());
+    boundary["duration_ms"] = json!(safe + 1);
+    assert!(format(&boundary, "track:one", 192000).is_err());
+}
+
+#[test]
+fn reset_positions_share_timing_admission_without_restricting_epoch_counters() {
+    let value = json!({"position_ms":u64::MAX,"epoch":u64::MAX});
+    assert!(milliseconds(&value, "position_ms", 48000).is_err());
+    assert_eq!(unsigned(&value, "epoch").unwrap(), u64::MAX);
+    assert_eq!(
+        milliseconds(&json!({"position_ms":86400000}), "position_ms", 192000).unwrap(),
+        86400000
+    );
+    assert!(milliseconds(&json!({"position_ms":0}), "position_ms", 0).is_err());
+}

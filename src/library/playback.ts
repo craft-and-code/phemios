@@ -99,6 +99,7 @@ export function createPlayback(
       setError(message(failure));
       return;
     }
+    setError("");
     setCrossfade(ms);
     pendingCrossfade = { ms, lifetime, profile: interfaceProfileIdentity() };
     if (crossfadeRunning) return;
@@ -115,7 +116,6 @@ export function createPlayback(
           if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", chosen.ms);
           if (current()) {
             saveAudio({ ...audio(), crossfadeMs: chosen.ms });
-            setError("");
           }
         } catch (failure) {
           if (current()) {
@@ -509,10 +509,12 @@ export function createPlayback(
       if (command === "repeat" && ["off", "one", "all"].includes(String(value)))
         saveAudio({ ...audio(), repeat: value as AudioPreferences["repeat"] });
       await refresh(epoch);
+      if (epoch === generation) return true;
     } catch (failure) {
       if (epoch === generation) {
         setError(message(failure));
         void refresh(epoch);
+        return false;
       }
     } finally {
       if (epoch === generation) setBusy(false);
@@ -627,11 +629,22 @@ export function createPlayback(
   }
   async function chooseOutput(id: string) {
     if (busy()) return;
-    const previous = device();
+    const previous = device(),
+      held = lifetime,
+      profile = interfaceProfileIdentity();
     setDevice(id);
     if (!["idle", "ended", "error"].includes(state().status)) {
-      await action(id === "@hqplayer" || previous === "@hqplayer" ? "stop" : "output", id);
-      if (error()) setDevice(previous);
+      const applied = await action(
+        id === "@hqplayer" || previous === "@hqplayer" ? "stop" : "output",
+        id,
+      );
+      if (
+        applied === false &&
+        held === lifetime &&
+        profile === interfaceProfileIdentity() &&
+        device() === id
+      )
+        setDevice(previous);
     }
   }
   /** Remove exactly one occurrence; only the currently removed stream may stop or advance. */

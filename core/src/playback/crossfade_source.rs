@@ -8,7 +8,7 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     mpsc::{self, Receiver, SyncSender},
 };
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tungstenite::Message;
 
 pub(super) enum Packet {
@@ -189,6 +189,9 @@ fn pump(
                 let value: Value =
                     serde_json::from_str(&text).map_err(|_| "Message de fondu invalide.")?;
                 match value["type"].as_str() {
+                    // Audio already in flight is discarded after Stop; its
+                    // format/EOF cannot revive the visit or fail its confirmation.
+                    Some("format" | "eof") if feedback.stopped => continue,
                     Some("format") => {
                         let format = protocol::format(&value, reference, rate)?;
                         feedback.epoch = format.epoch;
@@ -199,6 +202,7 @@ fn pump(
                             )?;
                             seek_sent = true;
                             feedback.seeking = true;
+                            feedback.deadline = Some(Instant::now() + Duration::from_secs(12));
                         } else if !seeking {
                             feedback.seeking = false;
                             feedback.deadline = None;
