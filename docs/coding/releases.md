@@ -1,0 +1,11 @@
+# Native release preparation
+
+The GitHub Release workflow follows Aède's separate App naming convention. Phémios has no CLI download: its private bundled Aède executable belongs to the App, while standalone Aède CLI releases remain in Aède's repository.
+
+A push of a `vVERSION` tag builds installers on native macOS Apple Silicon, Windows x64 and Linux x86_64 runners. Ordinary branch pushes do not publish a release. Manual workflow dispatch builds downloadable Actions artifacts without publishing. Every expected installer must exist exactly once before packaging; ambiguous, missing or stale packages fail. SHA-256 sidecars accompany all downloads. The draft release is created only after every platform succeeds; a maintainer reviews it before publication.
+
+Before tagging, align `Cargo.toml` workspace version, `package.json`, `package-lock.json` (root and root package), `src-tauri/tauri.conf.json` and Cargo lock workspace package versions. The release script checks npm/Cargo/Tauri agreement and tag equality. Cargo's locked build also checks its lockfile. Update release highlights and the pinned Aède source tag in the workflow intentionally; the initial pin is `v0.6.1`, which includes its own pinned FlacCompagnon core. This prevents a later engine release from silently changing a rerun. CI fetches the exact locked dependencies explicitly before the existing offline engine preparation. The development `--offline` behavior is preserved.
+
+The workflow overrides bundle targets explicitly: DMG on macOS, MSI/NSIS on Windows, and AppImage/DEB/RPM on Linux. The local `app` target remains unchanged. Installers are unsigned until signing credentials and platform signing/notarization are configured. No updater keys, credentials, signing certificates or developer accounts are committed. Intel Mac and ARM Linux targets can be added after native CI and device acceptance are available.
+
+Packaging policy is tested with temporary installer fixtures via `node --test tests/release.test.mjs`; it does not build or run an App. Actual platform compilation, installer validation and native audio/device acceptance require a future GitHub run. The workflow is prepared here, not dispatched or claimed successful locally.

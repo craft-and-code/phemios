@@ -2,6 +2,10 @@
 
 Phémios is the local-first desktop client for Aède, built with SolidJS, TypeScript and Tauri 2. It presents Aède's graph and capabilities without duplicating the engine or changing source music files.
 
+## Native downloads
+
+The prepared GitHub release workflow produces explicitly named App installers and SHA-256 checksums for macOS Apple Silicon, Windows x64 and Linux x86_64. Tagged releases remain drafts until all platforms succeed and a maintainer reviews them; manual runs provide Actions artifacts only. See [release preparation](docs/coding/releases.md) for engine pinning, version checks, signing limitations and supported formats. This workflow has not yet been validated by a platform release run.
+
 ## Start
 
 Use Node.js 22.12+ within major 22, major 24 or 26+, and Rust 1.90+, plus the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). The resolved Tauri crates declare Rust 1.90; builds here were verified with Rust 1.99. Execution on the minimum toolchain is still pending.
