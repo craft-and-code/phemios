@@ -768,3 +768,16 @@ legend {
   justify-content: space-between;
   gap: 8px;
 }
+
+.network-audio-certificate code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+  user-select: text;
+}
+.network-audio-manual {
+  margin-block: 0.5rem;
+}
+.network-audio-manual summary {
+  cursor: pointer;
+}

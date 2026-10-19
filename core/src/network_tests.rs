@@ -800,9 +800,9 @@ fn artist_logos_request_a_bounded_thumbnail_without_expanding_image_capabilities
 }
 
 #[test]
-fn network_audio_admits_only_the_four_explicit_admin_endpoints() {
+fn network_audio_admits_only_the_explicit_admin_endpoints() {
     assert!(allowed("GET", "/api/admin/v1/network-audio"));
-    for action in ["discover", "play", "stop"] {
+    for action in ["discover", "inspect", "play", "stop"] {
         assert!(allowed(
             "POST",
             &format!("/api/admin/v1/network-audio/{action}")
@@ -814,4 +814,29 @@ fn network_audio_admits_only_the_four_explicit_admin_endpoints() {
     }
     assert!(!allowed("POST", "/api/admin/v1/network-audio/anything"));
     assert!(!allowed("DELETE", "/api/admin/v1/network-audio"));
+}
+
+#[test]
+fn managed_principal_mutation_refuses_all_case_insensitive_login_spellings() {
+    for name in ["phemios-local", "PHEMIOS-LOCAL", "Phemios-Local"] {
+        for (method, suffix) in [("PATCH", ""), ("DELETE", "/sessions"), ("PUT", "/parental")] {
+            let path = format!("/api/admin/v1/accounts/{name}{suffix}");
+            assert!(allowed(method, &path));
+            assert!(
+                managed_account_request(method, &path).is_err(),
+                "{method} {path}"
+            );
+        }
+    }
+    assert!(managed_account_request("PUT", "/api/auth/v1/password").is_err());
+}
+
+#[test]
+fn managed_principal_guard_does_not_protect_unrelated_prefix_named_accounts() {
+    for name in ["phemios-local-child", "phemios-local2"] {
+        assert!(
+            managed_account_request("PATCH", &format!("/api/admin/v1/accounts/{name}")).is_ok()
+        );
+    }
+    assert!(managed_account_request("GET", "/api/admin/v1/accounts/phemios-local").is_ok());
 }

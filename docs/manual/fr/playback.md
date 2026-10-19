@@ -30,10 +30,12 @@ L’icône de vue Lecture ouvre les visuels, sans changer de page automatiquemen
 
 Les paroles synchronisées suivent les temps fournis. Les textes sans temps utilisent les flèches de navigation manuelle. Dans la file, l’icône indique la disponibilité et permet une récupération explicite. Le téléchargement global poursuit son travail quand le volet est fermé ; l’action Stop permet d’interrompre les soumissions suivantes.
 
-## Lecteur réseau UPnP
+## Lecteurs réseau
 
-Dans **Sortie et mode de lecture**, la section **UPnP** propose un premier raccordement avec un compte administrateur et un moteur Aède à jour. Si la connexion utilise déjà une IPv4 privée, elle est reprise automatiquement ; le crayon permet de la modifier. Sinon, saisissez l’adresse IPv4 réseau de la machine **qui exécute Aède**, puis lancez la recherche. `localhost` et une adresse de proxy ne désignent pas forcément cette interface réseau. Choisissez votre lecteur et préparez une liste de 1 à 64 pistes appartenant à la même bibliothèque. **Écouter sur le lecteur UPnP** arrête la lecture locale et demande à Aède de transmettre les fichiers originaux directement au lecteur. **Arrêter UPnP** demande l’arrêt ; un arrêt non confirmé est signalé.
+Dans **Sortie et mode de lecture → Lecteurs réseau**, choisissez un appareil dans le sélecteur commun : OpenHome, Cast, SlimProto, puis UPnP. Un compte administrateur et un moteur Aède à jour sont nécessaires. Saisissez l’IPv4 privée de la machine qui exécute Aède si elle ne peut pas être reprise de la connexion, puis recherchez les appareils. Préparez une liste de 1 à 64 pistes de la même bibliothèque et utilisez **Écouter sur le lecteur réseau**. Aède, embarqué ou distant, transmet directement les fichiers originaux.
 
-Les boutons de cette section sont dédiés à UPnP : le transport du bas, le volume local, le DSP et le fondu ne pilotent pas encore ce lecteur réseau. La perte de la session ou du lien de contrôle déclenche une demande d’arrêt après un délai de sécurité ; le lecteur peut encore avoir du son en mémoire. [Limites du profil et détails serveur dans Aède](https://craft-and-code.github.io/aede/).
+Pour **Cast**, inspectez le certificat, vérifiez son empreinte sur votre réseau de confiance, puis cochez la validation. Cette confiance n’est pas enregistrée durablement. Pour **OpenHome et Cast**, le remplacement d’une lecture ou d’une liste existante nécessite une autorisation explicite.
 
-AirPlay n’est pas encore raccordé dans cette version.
+Pour **SlimProto**, ouvrez **Ajouter un lecteur SlimProto**, renseignez l’IPv4 du lecteur et ajoutez-le au même sélecteur. Après le lancement, connectez Squeezelite au serveur indiqué, par exemple `squeezelite -s ADRESSE_AEDE:3483`. La connexion est attendue pendant une minute ; un lecteur déjà connecté à un autre serveur doit être reconfiguré volontairement. Son volume est conservé et peut être initialement muet.
+
+**Arrêter le lecteur réseau** demande l’arrêt ; un arrêt non confirmé reste signalé. Ces profils sont expérimentaux : les commandes du bas restent locales et ne pilotent pas le volume, le fondu ou le DSP du lecteur réseau. Aucun historique d’écoute n’est déduit du transfert. La perte de connexion ou de session demande l’arrêt, sans garantir que le lecteur a vidé ses données en mémoire. [Détails des profils dans Aède](https://craft-and-code.github.io/aede/).

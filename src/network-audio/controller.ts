@@ -1,18 +1,15 @@
+import { parseDevices, deviceKey, slimprotoDevice, type Device } from "./profiles";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { requestAede } from "../platform/desktop";
 import { referenceSource, type SourceId } from "../library/sources";
 import type { AccountSession } from "../library/server";
 import { t } from "../i18n";
-interface Device {
-  name: string;
-  endpoint: string;
-}
 interface Run {
   id: number;
   status: string;
 }
 const root = "/api/admin/v1/network-audio";
-/** Explicit UPnP commands belong to one exact source/login; ordinary browsing never discovers LAN devices. */
+/** Explicit network-device commands belong to one exact source/login; ordinary browsing never discovers LAN devices. */
 export function createNetworkAudio(options: {
   source: () => SourceId;
   session: (source: SourceId) => AccountSession | undefined;
@@ -25,6 +22,9 @@ export function createNetworkAudio(options: {
   }));
   type Scope = ReturnType<typeof scope>;
   const [devices, setDevices] = createSignal<Device[]>([]),
+    [profiles, setProfiles] = createSignal(false),
+    [observed, setObserved] = createSignal<{ key: string; sha256: string }>(),
+    [discoveredBind, setDiscoveredBind] = createSignal(""),
     [run, setRun] = createSignal<Run>(),
     [busy, setBusy] = createSignal(false),
     [error, setError] = createSignal(""),
@@ -39,6 +39,9 @@ export function createNetworkAudio(options: {
     serial++;
     clearTimeout(timer);
     setDevices([]);
+    setProfiles(false);
+    setObserved(undefined);
+    setDiscoveredBind("");
     setRun(undefined);
     setError("");
     setReadError("");
@@ -59,7 +62,7 @@ export function createNetworkAudio(options: {
         row.status,
       )
     )
-      throw new Error(t("Réponse UPnP invalide."));
+      throw new Error(t("Réponse audio réseau invalide."));
     return row;
   }
   function poll(held: Scope, ticket: number) {
@@ -75,7 +78,7 @@ export function createNetworkAudio(options: {
           return;
         }
         const value = checkedRun(raw);
-        if (value.id !== run()?.id) throw new Error(t("La session UPnP a changé."));
+        if (value.id !== run()?.id) throw new Error(t("La session audio réseau a changé."));
         setReadError("");
         setRun(value);
         if (active()) poll(held, ticket);
@@ -108,6 +111,8 @@ export function createNetworkAudio(options: {
   }
   return {
     devices,
+    profiles,
+    observed,
     run,
     active,
     busy,
@@ -136,40 +141,92 @@ export function createNetworkAudio(options: {
         if (!current(held, ticket)) return;
         if (!info.capabilities?.includes("network_audio_upnp"))
           throw new Error(t("Mettez à jour puis redémarrez Aède pour les sorties UPnP."));
-        const raw = await requestAede<{ items: Device[] }>(
+        const modern = info.capabilities?.includes("network_audio_profiles") === true;
+        const raw = await requestAede<unknown>(
           `${root}/discover`,
           {},
           "POST",
-          { bind },
+          modern ? { bind, all: true } : { bind },
           held.source,
           held.owner,
         );
         if (!current(held, ticket)) return;
-        if (
-          !Array.isArray(raw?.items) ||
-          raw.items.length > 32 ||
-          raw.items.some(
-            (row) =>
-              !row ||
-              typeof row.name !== "string" ||
-              typeof row.endpoint !== "string" ||
-              row.name.length > 4096 ||
-              row.endpoint.length > 4096,
-          )
-        )
-          throw new Error(t("Réponse UPnP invalide."));
-        setDevices(raw.items);
+        setDevices(parseDevices(raw));
+        setProfiles(modern);
+        setDiscoveredBind(bind);
+        setObserved(undefined);
+        const errors = (raw as { errors?: unknown }).errors;
+        if (Array.isArray(errors) && errors.length)
+          setError(t("La découverte de certains protocoles a échoué. Réessayez."));
       }),
-    start: (bind: string, endpoint: string) =>
+    addSlimproto: (bind: string, ip: string) =>
+      perform(async (held, ticket) => {
+        const device = slimprotoDevice(ip);
+        const info = await requestAede<{ capabilities?: string[] }>(
+          "/api/v1/status",
+          {},
+          "GET",
+          null,
+          held.source,
+          held.owner,
+        );
+        if (!current(held, ticket)) return;
+        if (!info.capabilities?.includes("network_audio_profiles"))
+          throw new Error(t("Mettez à jour puis redémarrez Aède pour les sorties réseau."));
+        const retained = discoveredBind() === bind ? devices() : [];
+        if (retained.length >= 96 && !retained.some((row) => deviceKey(row) === deviceKey(device)))
+          throw new Error(t("Trop d’appareils réseau."));
+        setDevices(
+          parseDevices({
+            items: [...retained.filter((row) => deviceKey(row) !== deviceKey(device)), device],
+          }),
+        );
+        setProfiles(true);
+        setDiscoveredBind(bind);
+        setObserved(undefined);
+      }),
+    inspect: (key: string) =>
+      perform(async (held, ticket) => {
+        const device = devices().find((row) => deviceKey(row) === key);
+        if (!profiles() || device?.protocol !== "googlecast") return;
+        setObserved(undefined);
+        const raw = await requestAede<{ sha256?: unknown }>(
+          `${root}/inspect`,
+          {},
+          "POST",
+          { bind: discoveredBind(), device: device.endpoint },
+          held.source,
+          held.owner,
+        );
+        if (!current(held, ticket)) return;
+        if (typeof raw?.sha256 !== "string" || !/^[a-fA-F0-9]{64}$/.test(raw.sha256))
+          throw new Error(t("Empreinte Cast invalide."));
+        setObserved({ key, sha256: raw.sha256 });
+      }),
+    start: (bind: string, endpoint: string, settings: { pin?: string; replace?: boolean } = {}) =>
       perform(async (held, ticket) => {
         const tracks = options.queue().map((row) => row.reference);
+        const device = devices().find(
+          (row) => deviceKey(row) === endpoint || row.endpoint === endpoint,
+        );
         if (
-          !devices().some((row) => row.endpoint === endpoint) ||
+          !device ||
+          discoveredBind() !== bind ||
+          active() ||
           !tracks.length ||
           tracks.length > 64 ||
           tracks.some((ref) => referenceSource(ref) !== held.source)
         )
-          throw new Error(t("Sélectionnez de 1 à 64 pistes de la même bibliothèque pour UPnP."));
+          throw new Error(
+            t("Sélectionnez de 1 à 64 pistes de la même bibliothèque pour le lecteur réseau."),
+          );
+        if (
+          device.protocol === "googlecast" &&
+          (!settings.pin ||
+            observed()?.key !== deviceKey(device) ||
+            observed()?.sha256 !== settings.pin)
+        )
+          throw new Error(t("Inspectez puis vérifiez l’empreinte du récepteur Cast."));
         await options.beforeStart();
         if (!current(held, ticket)) return;
         const value = checkedRun(
@@ -177,7 +234,16 @@ export function createNetworkAudio(options: {
             `${root}/play`,
             {},
             "POST",
-            { bind, device: endpoint, tracks },
+            profiles()
+              ? {
+                  bind,
+                  device: device.endpoint,
+                  tracks,
+                  protocol: device.protocol,
+                  replace: settings.replace === true,
+                  ...(device.protocol === "googlecast" ? { certificate_sha256: settings.pin } : {}),
+                }
+              : { bind, device: device.endpoint, tracks },
             held.source,
             held.owner,
           ),

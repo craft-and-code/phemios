@@ -309,3 +309,163 @@ it("stops a late accepted play after controller disposal", async () => {
   );
   expect(vi.getTimerCount()).toBe(0);
 });
+
+async function discoverProfiles(audio: ReturnType<typeof createNetworkAudio>) {
+  request.mockResolvedValueOnce({ capabilities: ["network_audio_upnp", "network_audio_profiles"] });
+  request.mockResolvedValueOnce({
+    items: [
+      { name: "OpenHome", endpoint: "http://192.168.1.20/device.xml", protocol: "openhome" },
+      { name: "Cast", endpoint: "192.168.1.21:8009", protocol: "googlecast" },
+    ],
+  });
+  await audio.discover("192.168.1.10");
+}
+it("sends explicit OpenHome replacement only when requested", async () => {
+  const { audio } = setup();
+  await discoverProfiles(audio);
+  await audio.start("192.168.1.10", "openhome:http://192.168.1.20/device.xml", { replace: true });
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/admin/v1/network-audio/play",
+    {},
+    "POST",
+    {
+      bind: "192.168.1.10",
+      device: "http://192.168.1.20/device.xml",
+      protocol: "openhome",
+      replace: true,
+      tracks: ["track:one"],
+    },
+    "server",
+    owner,
+  );
+});
+it("Cast requires the current inspected fingerprint before stopping local audio", async () => {
+  const { audio, beforeStart } = setup();
+  await discoverProfiles(audio);
+  const key = "googlecast:192.168.1.21:8009",
+    pin = "a".repeat(64);
+  await audio.start("192.168.1.10", key, { pin });
+  expect(beforeStart).not.toHaveBeenCalled();
+  request.mockResolvedValueOnce({ sha256: pin });
+  await audio.inspect(key);
+  await audio.start("192.168.1.10", key, { pin });
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/admin/v1/network-audio/play",
+    {},
+    "POST",
+    {
+      bind: "192.168.1.10",
+      device: "192.168.1.21:8009",
+      protocol: "googlecast",
+      replace: false,
+      certificate_sha256: pin,
+      tracks: ["track:one"],
+    },
+    "server",
+    owner,
+  );
+});
+it("late Cast inspection cannot cross logout or cancellation", async () => {
+  for (const logout of [true, false]) {
+    const { audio, setSession } = setup();
+    await discoverProfiles(audio);
+    let finish!: (value: unknown) => void;
+    request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pending = audio.inspect("googlecast:192.168.1.21:8009");
+    if (logout) setSession(undefined);
+    else audio.cancelRead();
+    finish({ sha256: "a".repeat(64) });
+    await pending;
+    expect(audio.observed()).toBeUndefined();
+    dispose();
+  }
+});
+it("adds a literal SlimProto peer without requiring LAN discovery and refuses changed bind", async () => {
+  const { audio, beforeStart } = setup();
+  request.mockResolvedValueOnce({ capabilities: ["network_audio_profiles"] });
+  await audio.addSlimproto("192.168.1.10", "192.168.1.22");
+  await audio.start("192.168.1.99", "slimproto:192.168.1.22");
+  expect(beforeStart).not.toHaveBeenCalled();
+  await audio.start("192.168.1.10", "slimproto:192.168.1.22");
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/admin/v1/network-audio/play",
+    {},
+    "POST",
+    {
+      bind: "192.168.1.10",
+      device: "192.168.1.22",
+      protocol: "slimproto",
+      replace: false,
+      tracks: ["track:one"],
+    },
+    "server",
+    owner,
+  );
+});
+
+it.each([
+  ["openhome", "logout"],
+  ["openhome", "cancel"],
+  ["openhome", "dispose"],
+  ["googlecast", "logout"],
+  ["googlecast", "cancel"],
+  ["googlecast", "dispose"],
+  ["slimproto", "logout"],
+  ["slimproto", "cancel"],
+  ["slimproto", "dispose"],
+] as const)(
+  "retires late %s playback after %s with the original login",
+  async (protocol, transition) => {
+    const { audio, setSession } = setup();
+    await discoverProfiles(audio);
+    let key =
+      protocol === "openhome"
+        ? "openhome:http://192.168.1.20/device.xml"
+        : "googlecast:192.168.1.21:8009";
+    const settings: { pin?: string } = {};
+    if (protocol === "googlecast") {
+      settings.pin = "a".repeat(64);
+      request.mockResolvedValueOnce({ sha256: settings.pin });
+      await audio.inspect(key);
+    }
+    if (protocol === "slimproto") {
+      request.mockResolvedValueOnce({ capabilities: ["network_audio_profiles"] });
+      await audio.addSlimproto("192.168.1.10", "192.168.1.22");
+      key = "slimproto:192.168.1.22";
+    }
+    let finish!: (value: unknown) => void;
+    request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pending = audio.start("192.168.1.10", key, settings);
+    await Promise.resolve();
+    const submitted = request.mock.calls.at(-1)!;
+    expect(submitted[0]).toBe("/api/admin/v1/network-audio/play");
+    expect(submitted[3]).toMatchObject({ protocol });
+    if (transition === "logout")
+      setSession({ ...owner, account: { ...owner.account, id: "replacement" } });
+    else if (transition === "cancel") audio.cancelRead();
+    else dispose();
+    finish({ id: 7, status: "running" });
+    await pending;
+    expect(request).toHaveBeenLastCalledWith(
+      "/api/admin/v1/network-audio/stop",
+      {},
+      "POST",
+      { id: 7 },
+      "server",
+      owner,
+    );
+    expect(audio.run()).toBeUndefined();
+    expect(audio.error()).toBe("");
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);

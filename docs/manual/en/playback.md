@@ -30,10 +30,12 @@ The Playback icon opens visuals; starting a track does not automatically change 
 
 Synchronized lyrics follow supplied timestamps. Untimed text uses manual navigation arrows. Queue icons indicate availability and allow explicit retrieval. Batch retrieval continues after closing the drawer; Stop cancels subsequent submissions.
 
-## UPnP network player
+## Network players
 
-In **Output and playback mode**, **UPnP** provides an initial integration for an administrator account and an updated Aède engine. A private IPv4 host already used by the connection is reused automatically; the pencil lets you override it. Otherwise enter the LAN IPv4 address of the machine **running Aède**, then discover devices. `localhost` and a proxy address do not necessarily identify that network interface. Select a player and prepare a queue of 1–64 tracks from one library. **Listen on the UPnP player** stops local playback and asks Aède to send original files directly to the renderer. **Stop UPnP** requests shutdown; an unconfirmed stop is reported.
+In **Output and playback mode → Network players**, use the shared selector: OpenHome, Cast, SlimProto, then UPnP. An administrator account and an updated Aède engine are required. Enter the private IPv4 address of the machine running Aède when the connection cannot supply it, then discover players. Prepare 1–64 tracks from the same library and choose **Play on network player**. The embedded or remote Aède engine sends original files directly.
 
-These controls are dedicated to UPnP: the bottom local transport, local volume, DSP and crossfade do not yet control the network player. Losing the session or control heartbeat requests shutdown after a safety interval; the device may retain buffered audio. [Server details and profile limits in Aède](https://craft-and-code.github.io/aede/).
+For **Cast**, inspect the certificate, verify its fingerprint on your trusted network, then explicitly confirm it. Trust is not saved permanently. **OpenHome and Cast** require explicit permission before replacing existing playback or a playlist.
 
-AirPlay is not connected in this version.
+For **SlimProto**, open **Add a SlimProto player**, enter the player's IPv4 address and add it to the same selector. After starting, connect Squeezelite to the indicated server, for example `squeezelite -s AEDE_ADDRESS:3483`. The connection window is one minute; a player attached to another server requires deliberate reconfiguration. Its volume is preserved and may initially be muted.
+
+**Stop network player** requests shutdown and reports missing confirmation. These profiles are experimental: footer controls remain local and do not control the remote player's volume, crossfade or DSP. File transfers never imply listening history. Losing the session or heartbeat requests shutdown but cannot guarantee the device discarded buffered audio. [Profile details in Aède](https://craft-and-code.github.io/aede/).

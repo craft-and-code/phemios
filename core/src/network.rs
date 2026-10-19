@@ -354,6 +354,22 @@ fn read_response(
     }
     call()
 }
+/// Protect the application-owned principal on the managed-local source only.
+/// Server accounts remain governed by the selected server's own administration rules.
+pub fn managed_account_request(method: &str, path: &str) -> Result<(), String> {
+    let managed = path
+        .strip_prefix("/api/admin/v1/accounts/")
+        .and_then(|suffix| suffix.split('/').next())
+        .is_some_and(|name| name.eq_ignore_ascii_case("phemios-local"));
+    if managed && method != "GET" {
+        return Err("Le compte du moteur local est géré par Phémios.".into());
+    }
+    if path == "/api/auth/v1/password" {
+        return Err("Le secret du moteur local est géré par Phémios.".into());
+    }
+    Ok(())
+}
+
 fn parental_account_path(path: &str) -> bool {
     path.strip_prefix("/api/admin/v1/accounts/")
         .and_then(|p| p.strip_suffix("/parental"))
@@ -444,6 +460,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/me/v1/parental/lease"
                     | "/api/me/v1/background-priority"
                     | "/api/admin/v1/network-audio/discover"
+                    | "/api/admin/v1/network-audio/inspect"
                     | "/api/admin/v1/network-audio/play"
                     | "/api/admin/v1/network-audio/stop"
                     | "/api/admin/v1/mood-features"
