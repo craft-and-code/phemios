@@ -2,6 +2,8 @@
 
 Le lecteur du bas reste disponible pendant la navigation. Sa pochette ouvre l’album ; le titre ouvre la piste et le nom d’artiste sa page. La barre du bas peut lancer la liste construite dans Listes de lecture, ou la sélection visible compatible.
 
+Le mode DSP actuel demande une normalisation de volume par album ; les réglages de graves et d’aigus restent neutres. Il ne cherche pas à colorer le son. Sans gain ou mesure de normalisation exploitable, ou si la correction est faible, la différence avec Sans DSP peut être imperceptible. La sélection du mode conserve le titre en cours et les pistes déjà préchargées : elle s’applique aux prochaines préparations, sans redémarrer la lecture. Le fondu n’est utilisé qu’en mode DSP avec une durée supérieure à zéro.
+
 ## Les commandes essentielles
 
 Lecture/pause, précédent, suivant et Stop contrôlent la source active. Espace lance ou suspend la lecture hors des champs de saisie et fenêtres de dialogue. Un clic sur le haut-parleur coupe ou rétablit le son ; le volume reste réglable avant de jouer et son niveau est mémorisé.

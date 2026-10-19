@@ -21,8 +21,8 @@ fn prebuffering_is_not_acknowledged_and_pause_confirms_only_each_rendered_voice(
                     Ok(response)
                 }).unwrap();
                 let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
-                assert_eq!(start["normalize"], "album");
                 let reference = start["track"].as_str().unwrap().to_owned();
+                assert_eq!(start["normalize"], if reference == "track:outgoing" { "off" } else { "album" });
                 ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":reference,"sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
                 ws.send(Message::Binary(vec![0; 100 * 8])).unwrap();
                 loop {
@@ -43,8 +43,14 @@ fn prebuffering_is_not_acknowledged_and_pause_confirms_only_each_rendered_voice(
             worker.join().unwrap();
         }
     });
-    let mut outgoing = Source::open(&client, "track:outgoing".into(), 48000, 0);
-    let mut incoming = Source::open(&client, "track:incoming".into(), 48000, 0);
+    let mut outgoing = Source::open(
+        &client,
+        "track:outgoing".into(),
+        48000,
+        0,
+        Policy::WithoutEffects,
+    );
+    let mut incoming = Source::open(&client, "track:incoming".into(), 48000, 0, Policy::Dsp);
     for source in [&outgoing, &incoming] {
         assert!(matches!(next_packet(source).unwrap(), Packet::Format(_)));
         assert!(matches!(next_packet(source).unwrap(), Packet::Samples(_)));
@@ -112,7 +118,7 @@ fn seeks_reuse_one_authenticated_visit_and_discard_prebuffered_old_audio() {
             }
         }
     });
-    let mut source = Source::open(&client, "track:one".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:one".into(), 48000, 0, Policy::Dsp);
     for (position, consumed) in [(500, 40), (200, 25)] {
         let packet = next_packet(&source).unwrap();
         assert!(matches!(packet, Packet::Format(_)));
@@ -171,7 +177,7 @@ fn delayed_retired_confirmation_does_not_block_the_active_producer() {
             assert_eq!(command["type"], "ack");
         }
     });
-    let mut source = Source::open(&client, "track:retired".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:retired".into(), 48000, 0, Policy::Dsp);
     assert!(matches!(next_packet(&source).unwrap(), Packet::Format(_)));
     assert!(matches!(next_packet(&source).unwrap(), Packet::Samples(_)));
     source.clock.consumed.store(100, Ordering::Relaxed);
@@ -219,7 +225,7 @@ fn retired_history_failures_remain_errors_without_claiming_confirmation() {
         assert_eq!(stop["type"], "stop");
         ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
     });
-    let mut source = Source::open(&client, "track:retired".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:retired".into(), 48000, 0, Policy::Dsp);
     assert!(matches!(next_packet(&source).unwrap(), Packet::Format(_)));
     let deadline = Instant::now() + Duration::from_secs(5);
     let error = loop {
@@ -260,7 +266,7 @@ fn initial_seek_without_reset_cannot_hold_source_cleanup_indefinitely() {
         // test watchdog, not the production cancellation mechanism.
         released.recv_timeout(Duration::from_secs(20)).unwrap();
     });
-    let mut source = Source::open(&client, "track:offset".into(), 48000, 500);
+    let mut source = Source::open(&client, "track:offset".into(), 48000, 500, Policy::Dsp);
     sought.recv_timeout(Duration::from_secs(5)).unwrap();
     source.clock.stop.store(true, Ordering::Release);
     let deadline = Instant::now() + Duration::from_secs(13);
@@ -298,7 +304,7 @@ fn delayed_start_format_cannot_cancel_an_already_requested_stop_deadline() {
         stopping.send(()).unwrap();
         released.recv_timeout(Duration::from_secs(20)).unwrap();
     });
-    let mut source = Source::open(&client, "track:late".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:late".into(), 48000, 0, Policy::Dsp);
     source.clock.stop.store(true, Ordering::Release);
     stopped.recv_timeout(Duration::from_secs(5)).unwrap();
     let deadline = Instant::now() + Duration::from_secs(13);
@@ -341,7 +347,7 @@ fn queued_audio_tail_after_stop_does_not_override_saved_history() {
             .unwrap();
         ws.close(None).unwrap();
     });
-    let mut source = Source::open(&client, "track:tail".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:tail".into(), 48000, 0, Policy::Dsp);
     source.clock.stop.store(true, Ordering::Release);
     let result = source.finish();
     peer.join().unwrap();
@@ -373,7 +379,7 @@ fn ignored_tail_after_stop_never_hides_a_real_history_failure() {
         .unwrap();
         ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
     });
-    let mut source = Source::open(&client, "track:tail-error".into(), 48000, 0);
+    let mut source = Source::open(&client, "track:tail-error".into(), 48000, 0, Policy::Dsp);
     source.clock.stop.store(true, Ordering::Release);
     let failure = source.finish().unwrap_err();
     peer.join().unwrap();

@@ -39,7 +39,7 @@ enum Command {
     Stop,
     Output(String),
 }
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(super) enum Policy {
     #[default]
     WithoutEffects,
@@ -510,7 +510,7 @@ impl Player {
             .commands
             .try_send(command)
             .map_err(|_| "Lecteur occupé, réessayez.")?;
-        if action != "resume" {
+        if action != "resume" && action != "policy" {
             self.signals.paused.store(true, Ordering::Relaxed);
         }
         Ok(())

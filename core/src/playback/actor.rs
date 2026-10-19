@@ -57,11 +57,14 @@ pub(super) fn run(
                     disc, &reference, position, &device, &commands, state, signals, denied,
                 )
             } else if let Source::Remote(client) = &source {
-                if crossfade_ms > 0 && matches!(policy, super::Policy::Dsp) {
+                if continuous_queue(
+                    policy,
+                    state.lock().map_err(|_| "État audio indisponible.")?.total,
+                ) {
                     super::crossfade::stream(
                         client,
                         (index, position),
-                        &device,
+                        (&device, policy),
                         crossfade_ms,
                         &commands,
                         state,
@@ -81,6 +84,8 @@ pub(super) fn run(
             } else {
                 return Err("Source audio invalide.".into());
             }?;
+            // A hot mode selection is retained while the current visit drains.
+            policy = state.lock().map_err(|_| "État audio indisponible.")?.policy;
             queue.jump(state.lock().map_err(|_| "État audio indisponible.")?.index);
             match result {
                 Some(command) => command,
@@ -200,3 +205,11 @@ fn synchronize(queue: &mut super::queue::Queue, state: &Mutex<State>) -> Result<
     let state = state.lock().map_err(|_| "État audio indisponible.")?;
     queue.synchronize(&state.queue, state.shuffled, state.total)
 }
+
+/// Album queues keep one output open even without effects or overlap.
+fn continuous_queue(policy: super::Policy, total: usize) -> bool {
+    total > 1 || matches!(policy, super::Policy::Dsp)
+}
+#[cfg(test)]
+#[path = "actor_tests.rs"]
+mod tests;

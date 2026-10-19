@@ -100,6 +100,9 @@ pub(super) fn stream(
         };
         match command {
             Ok(Command::Crossfade(value)) => update(state, |s| s.crossfade_ms = value)?,
+            // The current decoder keeps its settings. The actor admits the
+            // requested mode on the next visit, without freezing this output.
+            Ok(Command::Policy(value)) => update(state, |s| s.policy = value)?,
             Ok(Command::Seek(target, ticket)) if !seeking && channels.is_some() => {
                 signals.paused.store(true, Ordering::Relaxed);
                 signals.finished.store(false, Ordering::Release);

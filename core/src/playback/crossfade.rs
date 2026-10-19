@@ -13,26 +13,39 @@ use std::sync::{
 use std::time::{Duration, Instant};
 struct Voice {
     source: Source,
+    policy: super::Policy,
     format: Option<protocol::Format>,
     frames: VecDeque<[f32; 2]>,
     ended: bool,
+    failure: Option<String>,
     index: usize,
     start: Option<u64>,
     supplied: u64,
 }
 impl Voice {
-    fn open(client: &Client, reference: String, index: usize, rate: u32, position: u64) -> Self {
+    fn open(
+        client: &Client,
+        reference: String,
+        index: usize,
+        output: (u32, super::Policy),
+        position: u64,
+    ) -> Self {
         Self {
-            source: Source::open(client, reference, rate, position),
+            source: Source::open(client, reference, output.0, position, output.1),
+            policy: output.1,
             format: None,
             frames: VecDeque::new(),
             ended: false,
+            failure: None,
             index,
             start: None,
             supplied: 0,
         }
     }
     fn poll(&mut self) -> Result<(), String> {
+        if let Some(error) = &self.failure {
+            return Err(error.clone());
+        }
         while self.frames.len() < 16384 {
             match self.source.try_recv() {
                 Ok(Ok(Packet::Format(format))) if self.format.is_none() => {
@@ -53,6 +66,33 @@ impl Voice {
         }
         Ok(())
     }
+    fn poll_preload(&mut self) -> Result<(), String> {
+        // A reserved incoming voice is no longer a speculative preload:
+        // failures must interrupt the active overlap rather than time out.
+        if self.start.is_some() {
+            return self.poll();
+        }
+        if self.failure.is_none()
+            && let Err(error) = self.poll()
+        {
+            self.failure = Some(error);
+        }
+        Ok(())
+    }
+    // Cancellation must not depend on whether the mixer observed the worker's
+    // error packet first. An unplayed visit has no consumed audio to confirm.
+    fn retire(&mut self) -> Result<bool, String> {
+        match self.source.retire() {
+            Err(_) if self.start.is_none() && self.supplied == 0 => Ok(true),
+            result => result,
+        }
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        match self.source.finish() {
+            Err(_) if self.start.is_none() && self.supplied == 0 => Ok(()),
+            result => result,
+        }
+    }
     fn acknowledge(&self, consumed: u64) {
         self.source.clock.consumed.store(
             played(consumed, self.start, self.supplied),
@@ -69,6 +109,7 @@ struct Mixer<'a> {
     state: &'a Mutex<State>,
     signals: &'a Arc<Signals>,
     output: Output,
+    policy: super::Policy,
     current: Voice,
     next: Option<Voice>,
     retired: Option<Voice>,
@@ -150,7 +191,7 @@ impl Mixer<'_> {
         }
         if let Some(old) = &mut self.retired
             && played(consumed, old.start, old.supplied) == old.supplied
-            && old.source.retire()?
+            && old.retire()?
         {
             self.retired = None;
         }
@@ -187,7 +228,7 @@ impl Mixer<'_> {
         {
             // A removed preload has no audible identity, but its confirmation
             // uses the same bounded retirement slot as a completed voice.
-            let _ = voice.source.retire()?;
+            let _ = voice.retire()?;
             self.retired = Some(voice);
             return Ok(());
         }
@@ -207,7 +248,7 @@ impl Mixer<'_> {
                 self.client,
                 reference,
                 index,
-                self.output.rate,
+                (self.output.rate, self.policy),
                 0,
             ));
         }
@@ -223,7 +264,7 @@ impl Mixer<'_> {
             .chain(self.next.iter_mut())
             .chain(self.retired.iter_mut())
         {
-            if let Err(error) = voice.source.finish() {
+            if let Err(error) = voice.finish() {
                 failure = Some(error);
             }
         }
@@ -258,7 +299,7 @@ impl Mixer<'_> {
             VoiceSlot::Current => {}
         }
         for voice in self.next.iter_mut().chain(self.retired.iter_mut()) {
-            voice.source.finish()?;
+            voice.finish()?;
         }
         self.current.source.seek(
             position,
@@ -287,6 +328,7 @@ impl Mixer<'_> {
         mut ms: u64,
         commands: &Receiver<Command>,
     ) -> Result<Option<Command>, String> {
+        ms = fade_duration(self.policy, ms);
         loop {
             if self.sent.is_multiple_of(256)
                 || self.current.frames.is_empty()
@@ -295,8 +337,21 @@ impl Mixer<'_> {
                 self.tick()?;
                 match commands.try_recv() {
                     Ok(Command::Crossfade(value)) => {
-                        ms = value;
+                        ms = fade_duration(self.policy, value);
                         update(self.state, |s| s.crossfade_ms = value)?;
+                    }
+                    Ok(Command::Policy(value)) => {
+                        // Do not reconnect audible visits or discard rendered
+                        // overlap. Already prepared audio keeps its captured policy.
+                        self.policy = value;
+                        ms = fade_duration(
+                            value,
+                            self.state
+                                .lock()
+                                .map_err(|_| "État audio indisponible.")?
+                                .crossfade_ms,
+                        );
+                        update(self.state, |s| s.policy = value)?;
                     }
                     Ok(Command::Seek(position, ticket)) => {
                         if self.current.format.is_some() {
@@ -319,7 +374,7 @@ impl Mixer<'_> {
                 }
                 self.prepare(ms)?;
                 if let Some(next) = &mut self.next {
-                    next.poll()?;
+                    next.poll_preload()?;
                 }
             }
             if self.current.ended && self.current.frames.is_empty() {
@@ -332,11 +387,22 @@ impl Mixer<'_> {
                     std::thread::sleep(Duration::from_millis(2));
                     continue;
                 }
+                // A failed future visit must not truncate already queued audio.
+                // Drain the current track before reporting that next-track error.
+                if let Some(error) = self.next.as_ref().and_then(|voice| voice.failure.as_ref()) {
+                    self.signals.finished.store(true, Ordering::Release);
+                    if self.output.consumed.load(Ordering::Relaxed) == self.sent {
+                        return Err(error.clone());
+                    }
+                    std::thread::sleep(Duration::from_millis(2));
+                    continue;
+                }
                 if let Some(mut next) = self.next.take() {
                     if !super::removal::reserve_mix(self.state, self.current.index, next.index)? {
                         self.next = Some(next);
                         continue;
                     }
+                    self.signals.finished.store(false, Ordering::Release);
                     next.start.get_or_insert(self.sent);
                     self.retired = Some(std::mem::replace(&mut self.current, next));
                     self.mixing = None;
@@ -359,6 +425,9 @@ impl Mixer<'_> {
             }
             if self.mixing.is_none()
                 && let Some(next) = &mut self.next
+                && self.current.policy == self.policy
+                && next.policy == self.policy
+                && next.failure.is_none()
                 && !next.frames.is_empty()
             {
                 let position = self
@@ -434,21 +503,29 @@ impl Mixer<'_> {
 pub(super) fn stream(
     client: &Client,
     initial: (usize, u64),
-    device: &str,
+    route: (&str, super::Policy),
     ms: u64,
     commands: &Receiver<Command>,
     state: &Mutex<State>,
     signals: &Arc<Signals>,
 ) -> Result<Option<Command>, String> {
+    let (device, policy) = route;
     signals.paused.store(true, Ordering::Relaxed);
     let output = Output::open(device, signals.clone())?;
     let reference = state.lock().map_err(|_| "État audio indisponible.")?.tracks[initial.0].clone();
-    let current = Voice::open(client, reference, initial.0, output.rate, initial.1);
+    let current = Voice::open(
+        client,
+        reference,
+        initial.0,
+        (output.rate, policy),
+        initial.1,
+    );
     let mut mixer = Mixer {
         client,
         state,
         signals,
         output,
+        policy,
         current,
         next: None,
         retired: None,
@@ -477,3 +554,12 @@ fn preload_reference(state: &Mutex<State>, index: usize) -> Result<Option<String
 #[cfg(test)]
 #[path = "crossfade_tests.rs"]
 mod tests;
+
+/// A retained duration never enables overlap on an unprocessed stream.
+fn fade_duration(policy: super::Policy, requested: u64) -> u64 {
+    if matches!(policy, super::Policy::Dsp) {
+        requested
+    } else {
+        0
+    }
+}

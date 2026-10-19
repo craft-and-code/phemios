@@ -2,6 +2,8 @@
 
 The footer stays available while browsing. Its cover opens the album, its title opens the track and its artist name opens the artist. It can start the queue built in Playlists or a compatible visible selection.
 
+The current DSP mode requests album loudness normalization; bass and treble stay neutral. It does not deliberately color the sound. With no usable normalization gain/measurement, or only a small correction, it may sound indistinguishable from Without DSP. Changing mode preserves the current track and already preloaded tracks: the selected mode applies to subsequent source preparation without restarting playback. Crossfade is used only in DSP mode with a duration above zero.
+
 ## Essential controls
 
 Play/pause, previous, next and Stop control the active source. Space starts or pauses audio outside editing fields and dialogs. Click the speaker to mute or unmute; volume remains adjustable before playback and its level is retained.

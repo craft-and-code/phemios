@@ -203,3 +203,43 @@ fn changing_crossfade_including_zero_preserves_active_and_paused_output() {
         assert!(matches!(command, Ok(Command::Crossfade(value)) if value == ms));
     }
 }
+
+#[test]
+fn mode_changes_never_suspend_the_current_audio_or_rewrite_its_position() {
+    let player = Player::default();
+    let (commands, receiver) = mpsc::sync_channel(32);
+    let (release, wait) = mpsc::channel();
+    *player.worker.lock().unwrap() = Some(Worker {
+        commands,
+        handle: std::thread::spawn(move || {
+            let _ = wait.recv();
+        }),
+    });
+    let mut observed = Vec::new();
+    for paused in [false, true] {
+        player.signals.paused.store(paused, Ordering::Relaxed);
+        {
+            let mut state = player.state.lock().unwrap();
+            state.status = if paused { "paused" } else { "playing" };
+            state.position = 1234;
+        }
+        for mode in ["dsp", "without-effects"] {
+            let result = player.control("policy", json!(mode));
+            observed.push((
+                paused,
+                result,
+                player.signals.paused.load(Ordering::Relaxed),
+                player.snapshot().unwrap(),
+                receiver.try_recv(),
+            ));
+        }
+    }
+    release.send(()).unwrap();
+    player.halt().unwrap();
+    for (paused, result, actual, snapshot, command) in observed {
+        assert!(result.is_ok());
+        assert_eq!(actual, paused, "mode selection must not suspend audio");
+        assert_eq!(snapshot["position_ms"], 1234);
+        assert!(matches!(command, Ok(Command::Policy(_))));
+    }
+}

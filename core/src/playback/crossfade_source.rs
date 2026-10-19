@@ -40,7 +40,13 @@ pub(super) struct Source {
     failure: Option<String>,
 }
 impl Source {
-    pub fn open(client: &Client, reference: String, rate: u32, initial: u64) -> Self {
+    pub fn open(
+        client: &Client,
+        reference: String,
+        rate: u32,
+        initial: u64,
+        policy: Policy,
+    ) -> Self {
         let client = client.clone();
         let (tx, packets) = mpsc::sync_channel(4);
         let clock = Arc::new(Clock {
@@ -52,7 +58,7 @@ impl Source {
         });
         let held = clock.clone();
         let handle = std::thread::spawn(move || {
-            let result = pump(&client, &reference, rate, initial, &tx, &held);
+            let result = pump(&client, &reference, (rate, policy), initial, &tx, &held);
             if let Err(error) = &result {
                 let _ = tx.try_send(Envelope {
                     generation: held.generation.load(Ordering::Acquire),
@@ -150,15 +156,16 @@ fn send(socket: &mut socket::Socket, value: Value) -> Result<(), String> {
 fn pump(
     client: &Client,
     reference: &str,
-    rate: u32,
+    output: (u32, Policy),
     initial: u64,
     tx: &SyncSender<Envelope>,
     clock: &Clock,
 ) -> Result<(), String> {
+    let (rate, policy) = output;
     let mut socket = socket::connect(client)?;
     send(
         &mut socket,
-        serde_json::from_str(&protocol::start(reference, rate, Policy::Dsp)?)
+        serde_json::from_str(&protocol::start(reference, rate, policy)?)
             .map_err(|_| "Démarrage de fondu invalide.")?,
     )?;
     let mut feedback = Feedback {
