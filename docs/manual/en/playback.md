@@ -29,3 +29,11 @@ LRCLIB needs no API key. Track metadata is used for matching; no match does not 
 The Playback icon opens visuals; starting a track does not automatically change your page. Choose an effect and click it again to disable it. The frequency control cycles bar styles and hiding. Ordinary lyrics can be shown or hidden; floating lyrics have their own presentation.
 
 Synchronized lyrics follow supplied timestamps. Untimed text uses manual navigation arrows. Queue icons indicate availability and allow explicit retrieval. Batch retrieval continues after closing the drawer; Stop cancels subsequent submissions.
+
+## UPnP network player
+
+In **Output and playback mode**, **UPnP** provides an initial integration for an administrator account and an updated Aède engine. A private IPv4 host already used by the connection is reused automatically; the pencil lets you override it. Otherwise enter the LAN IPv4 address of the machine **running Aède**, then discover devices. `localhost` and a proxy address do not necessarily identify that network interface. Select a player and prepare a queue of 1–64 tracks from one library. **Listen on the UPnP player** stops local playback and asks Aède to send original files directly to the renderer. **Stop UPnP** requests shutdown; an unconfirmed stop is reported.
+
+These controls are dedicated to UPnP: the bottom local transport, local volume, DSP and crossfade do not yet control the network player. Losing the session or control heartbeat requests shutdown after a safety interval; the device may retain buffered audio. [Server details and profile limits in Aède](https://craft-and-code.github.io/aede/).
+
+AirPlay is not connected in this version.

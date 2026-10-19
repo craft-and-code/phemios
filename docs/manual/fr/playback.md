@@ -29,3 +29,11 @@ LRCLIB ne demande pas de clé API. Les métadonnées du morceau servent à la re
 L’icône de vue Lecture ouvre les visuels, sans changer de page automatiquement au démarrage d’une piste. Choisissez un effet ; recliquer le désactive. Le contrôle des fréquences alterne les styles de barres et leur masquage. Les paroles ordinaires peuvent être affichées ou masquées ; les paroles flottantes ont leur propre présentation.
 
 Les paroles synchronisées suivent les temps fournis. Les textes sans temps utilisent les flèches de navigation manuelle. Dans la file, l’icône indique la disponibilité et permet une récupération explicite. Le téléchargement global poursuit son travail quand le volet est fermé ; l’action Stop permet d’interrompre les soumissions suivantes.
+
+## Lecteur réseau UPnP
+
+Dans **Sortie et mode de lecture**, la section **UPnP** propose un premier raccordement avec un compte administrateur et un moteur Aède à jour. Si la connexion utilise déjà une IPv4 privée, elle est reprise automatiquement ; le crayon permet de la modifier. Sinon, saisissez l’adresse IPv4 réseau de la machine **qui exécute Aède**, puis lancez la recherche. `localhost` et une adresse de proxy ne désignent pas forcément cette interface réseau. Choisissez votre lecteur et préparez une liste de 1 à 64 pistes appartenant à la même bibliothèque. **Écouter sur le lecteur UPnP** arrête la lecture locale et demande à Aède de transmettre les fichiers originaux directement au lecteur. **Arrêter UPnP** demande l’arrêt ; un arrêt non confirmé est signalé.
+
+Les boutons de cette section sont dédiés à UPnP : le transport du bas, le volume local, le DSP et le fondu ne pilotent pas encore ce lecteur réseau. La perte de la session ou du lien de contrôle déclenche une demande d’arrêt après un délai de sécurité ; le lecteur peut encore avoir du son en mémoire. [Limites du profil et détails serveur dans Aède](https://craft-and-code.github.io/aede/).
+
+AirPlay n’est pas encore raccordé dans cette version.

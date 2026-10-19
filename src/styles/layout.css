@@ -643,7 +643,7 @@ legend {
 }
 .audio-output-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) 36px;
   align-items: center;
   gap: 8px;
 }
@@ -658,9 +658,9 @@ legend {
   grid-column: 1;
 }
 .audio-output-refresh.icon-button {
-  width: 28px;
-  height: 28px;
-  padding: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
   margin: 0;
 }
 
@@ -727,4 +727,44 @@ legend {
   width: 117px;
   height: 30px;
   color: var(--text);
+}
+
+.network-audio-settings {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.audio-settings-panel {
+  max-height: min(640px, 70dvh);
+  overflow-y: auto;
+}
+
+.audio-settings-panel .choice-select {
+  height: 36px;
+  min-height: 36px;
+  min-width: 0;
+  padding-block: 6px;
+}
+.audio-settings-panel input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+}
+.network-audio-settings .section-heading {
+  margin-bottom: 0;
+}
+.network-audio-settings .section-heading h3,
+.network-audio-settings p {
+  margin: 0;
+}
+.network-audio-settings {
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.network-audio-address {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }

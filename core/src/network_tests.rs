@@ -798,3 +798,20 @@ fn artist_logos_request_a_bounded_thumbnail_without_expanding_image_capabilities
     );
     worker.join().unwrap();
 }
+
+#[test]
+fn network_audio_admits_only_the_four_explicit_admin_endpoints() {
+    assert!(allowed("GET", "/api/admin/v1/network-audio"));
+    for action in ["discover", "play", "stop"] {
+        assert!(allowed(
+            "POST",
+            &format!("/api/admin/v1/network-audio/{action}")
+        ));
+        assert!(!allowed(
+            "GET",
+            &format!("/api/admin/v1/network-audio/{action}")
+        ));
+    }
+    assert!(!allowed("POST", "/api/admin/v1/network-audio/anything"));
+    assert!(!allowed("DELETE", "/api/admin/v1/network-audio"));
+}

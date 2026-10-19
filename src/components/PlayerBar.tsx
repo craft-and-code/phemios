@@ -1,3 +1,4 @@
+import { NetworkAudio } from "./NetworkAudio";
 import { cdReference } from "../cd/model";
 import { DurationToggle } from "./DurationToggle";
 import { PlayerTransport } from "./PlayerTransport";
@@ -287,9 +288,6 @@ export function PlayerBar() {
                 </Show>
               </button>
             </div>
-            <Show when={player.discovering()}>
-              <small role="status">{t("Actualisation des sorties audio…")}</small>
-            </Show>
             <label>
               {t("Mode de lecture")}{" "}
               <ChoiceSelect
@@ -338,16 +336,8 @@ export function PlayerBar() {
                 onInput={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />
             </label>
-            <small>
-              {t(
-                "Le fondu nécessite le mode DSP. Ses réglages ne redémarrent pas le morceau ; un fondu déjà commencé se termine avec sa durée initiale.",
-              )}
-            </small>
-            <small>
-              {t(
-                "Sans DSP : effets désactivés ; adaptation au format de la sortie et volume restent actifs. Le flux PCM distant et la sortie système ne garantissent pas le bit-perfect.",
-              )}{" "}
-            </small>
+            <small>{t("Activez le mode DSP pour utiliser le fondu.")}</small>
+            <NetworkAudio />
           </div>
         </details>
         <button

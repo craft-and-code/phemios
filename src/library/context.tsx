@@ -1,3 +1,4 @@
+import { createNetworkAudio } from "../network-audio/controller";
 import { createDisplayAwake, anyAudioPlaying } from "./display-awake";
 import { cdReference } from "../cd/model";
 import { createAlbumLyrics } from "./album-lyrics";
@@ -66,6 +67,7 @@ interface Library {
       row: import("./missing").MissingAlbum,
     ) => ReturnType<ReturnType<typeof createMissingCoverLoader>["status"]>;
   };
+  networkAudio: ReturnType<typeof createNetworkAudio>;
   player: ReturnType<typeof createPlayback>;
   radio: ReturnType<typeof createRadioPlayback>;
   podcast: ReturnType<typeof createPodcastPlayback>;
@@ -372,6 +374,20 @@ export function LibraryProvider(props: ParentProps) {
   const displayAwake = createDisplayAwake({
     native: isNative(),
     playing: () => anyAudioPlaying(player.state().status, radio.status(), podcast.status()),
+  });
+  const networkAudio = createNetworkAudio({
+    source,
+    session: sessionAt,
+    queue: player.queue,
+    beforeStart: async () => {
+      radio.stop();
+      podcast.stop();
+      if (["playing", "paused", "connecting"].includes(player.state().status)) {
+        await player.action("stop");
+        if (["playing", "paused", "connecting"].includes(player.state().status))
+          throw new Error(t("Arrêtez la lecture locale avant UPnP."));
+      }
+    },
   });
   const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
   const albumLyrics = createAlbumLyrics({ sessionFor, tasks });
@@ -699,6 +715,7 @@ export function LibraryProvider(props: ParentProps) {
       ...podcastListened,
       feeds: () => podcastListened.feeds().filter((feed) => parental.podcastAllowed(feed.url)),
     },
+    networkAudio,
     player,
     artists,
     albums,
