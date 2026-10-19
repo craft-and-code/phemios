@@ -1,4 +1,4 @@
-# Account and source isolation review
+# Account and source isolation
 
 The catalog remains shared. Artists, albums, tracks, graph facts, technical analyses and public presentation cache are catalog data, not an invented private library. Annotations, stars/ratings, tags/notes, collections, listening history, preferences, trophies, subscriptions and retained articles belong to an authenticated owner. Aède determines server ownership; Phémios binds presentation and native work to the chosen source and exact session.
 
@@ -39,8 +39,6 @@ A server mutation already accepted before logout/revocation cannot be undone by 
 The source-session mutex serializes one application process. Two independent application instances can still race a same-owner read/modify/write before acquiring the exclusive pending file and lose one update; this is not cross-owner reassignment. Same-OS hostile path/ancestor replacement between metadata checks and open/rename remains a filesystem TOCTOU limitation; Windows inherited ACLs are not Unix-mode enforcement. OS IO on an unusual mounted application-data folder may block while the bounded native commit holds its mutex. An out-of-order login IPC response could retain an older desktop wrapper ticket and cause a refused operation; it cannot admit that ticket under a newer native generation.
 
 The public cache is populated from explicit public presentation routes, not from private response caches. Its validator accepts additional public server fields; no reproducible private-data path through that cache was established.
-
-The preceding account-isolation checkpoint gate passes on the host with 515 TypeScript, 14 Node, 148 core Rust and 15 bridge tests (692 total, none ignored), formatting, strict lint/TypeScript, frontend build/declarations, bridge compatibility, Rustdoc and native executable compilation. Targeted red-to-green fixtures and independent reviews support the boundaries described above. Separate debug QA and production macOS bundles build. The isolated [native acceptance record](ui-acceptance.md#account-isolation-radio-feedback-and-m3u-panes-2026-10-12) verifies article save/hide/restore across Local reconnection, logged-out podcast controls, ticketed synthetic playback, radio gestures and independent M3U panes. Neither the gate nor those scoped checks establish physical audio, other platforms or multi-device synchronization.
 
 ## Parental policy authority
 

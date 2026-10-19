@@ -84,6 +84,7 @@ npm run docs:ts
 - `src-tauri/`: native wiring, typed commands, minimum capabilities and app icons.
 - `tools/check.sh`: authoritative verification gate.
 - `docs/coding/current-state.md`: current implementation and verified limits.
+- [Client hardening](docs/coding/hardening.md): consolidated ownership, cancellation, security and publication contracts.
 - `docs/design/interface.md`: accepted interaction and capability contracts.
 - `docs/design/client-followup.md`: retained browsing, download feedback and private portable backups.
 - `docs/design/parental-controls.md`: administrator-owned account restrictions and listening leases.
