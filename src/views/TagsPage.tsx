@@ -1,3 +1,4 @@
+import { createDiagnosticRead } from "../library/diagnostic-read";
 import { CatalogActions } from "../components/CatalogActions";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
@@ -5,7 +6,7 @@ import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { normalizeName } from "../library/filtering";
@@ -40,7 +41,7 @@ export function TagsPage(props: {
   const targets = () => entries().slice(offset(), offset() + 10);
   const cached = (reference: string) =>
     cachedTagCard(reference, library.artists(), library.albums());
-  const [details, { refetch }] = createResource(
+  const details = createDiagnosticRead(
     () => ({
       references: entries().map((row) => row.reference),
       offset: offset(),
@@ -48,30 +49,43 @@ export function TagsPage(props: {
       server: library.serverSession(),
       snapshot: library.snapshot(),
     }),
-    (key) =>
-      taggedTrackWindow(key.references, key.offset, async (reference) => {
-        const known = cached(reference);
-        if (known) return known;
-        const session = library.sessionFor(reference);
-        if (!session)
-          throw new Error(t("Connectez-vous pour accéder aux données de votre compte."));
-        const path = reference.startsWith("artist:")
-          ? "artist"
-          : reference.startsWith("release:")
-            ? "album"
-            : reference.startsWith("track:")
-              ? "track"
-              : undefined;
-        if (!path) throw new Error(t("Cet élément n’a pas encore de vue dédiée."));
-        const card = parseTagCard(
-          await requestAede(`/api/v1/${path}`, { ref: reference }),
-          reference,
-        );
-        if (session !== library.sessionFor(reference)) throw new Error(t("Session invalide."));
-        return card;
-      }),
+    (key, admission) =>
+      taggedTrackWindow(
+        key.references,
+        key.offset,
+        async (reference) => {
+          const known = cached(reference);
+          if (known) return known;
+          const session = key[referenceSource(reference)];
+          if (!session)
+            throw new Error(t("Connectez-vous pour accéder aux données de votre compte."));
+          const path = reference.startsWith("artist:")
+            ? "artist"
+            : reference.startsWith("release:")
+              ? "album"
+              : reference.startsWith("track:")
+                ? "track"
+                : undefined;
+          if (!path) throw new Error(t("Cet élément n’a pas encore de vue dédiée."));
+          const card = parseTagCard(
+            await requestAede(
+              `/api/v1/${path}`,
+              { ref: reference },
+              "GET",
+              null,
+              referenceSource(reference),
+              session,
+            ),
+            reference,
+          );
+          if (session !== library.sessionFor(reference)) throw new Error(t("Session invalide."));
+          return card;
+        },
+        admission.current,
+      ),
   );
-  const result = (reference: string) => details()?.find((row) => row.reference === reference);
+  const result = (reference: string) =>
+    details.current()?.find((row) => row.reference === reference);
   const card = (reference: string) => {
     const row = result(reference);
     return cached(reference) ?? (row && "track" in row ? row.track : undefined);
@@ -137,12 +151,12 @@ export function TagsPage(props: {
       <Show when={!entries().length}>
         <EmptyState icon="tags">{t("Aucun élément tagué dans cette sélection.")}</EmptyState>
       </Show>
-      <Show when={details.loading}>
+      <Show when={details.loading()}>
         <PageLoader />
       </Show>
-      <Show when={details.error}>
-        <p role="alert">{String(details.error)}</p>
-        <button onClick={() => refetch()}>{t("Réessayer")}</button>
+      <Show when={details.error()}>
+        <p role="alert">{String(details.error())}</p>
+        <button onClick={() => details.refetch()}>{t("Réessayer")}</button>
       </Show>
       <div class="album-grid tagged-grid">
         <For each={targets()}>
@@ -164,7 +178,7 @@ export function TagsPage(props: {
                         </p>
                       )}
                     </Show>
-                    <button onClick={() => refetch()}>{t("Réessayer")}</button>
+                    <button onClick={() => details.refetch()}>{t("Réessayer")}</button>
                   </div>
                 }
               >

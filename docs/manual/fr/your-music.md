@@ -19,3 +19,5 @@ Collections permet de consulter les albums, renommer, lancer la lecture ou suppr
 Listes de lecture affiche la même file que le volet de la vue Lecture. Elle démarre vide au lancement. Le plus cherche des pistes, albums, artistes, M3U ou collections. Un plus associé à un Play ajoute à la suite ; Play lance une sélection.
 
 Glissez les poignées pour réorganiser les occurrences. Les tris numérique, alphabétique et inverse permettent d’essayer un autre ordre. La croix rouge retire une occurrence ; vider la liste arrête la lecture. Parcourir les fichiers M3U ouvre les listes présentes dans les dossiers et les exports accessibles à votre compte. Les chemins d’un M3U doivent pouvoir être résolus par sa source.
+
+Un changement de compte réinitialise l’ambiance sélectionnée et son brouillon de modification. Les anciennes pages personnelles restent masquées pendant le chargement du nouveau compte. Un échec de chargement des ambiances affiche son erreur dans cette vue, sans obliger à quitter l’application.

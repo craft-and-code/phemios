@@ -22,7 +22,11 @@ export interface HistoryRow {
   release: string | null;
   error?: string;
 }
-type Request = (path: string, query: Record<string, string>) => Promise<unknown>;
+type Request = (
+  path: string,
+  query: Record<string, string>,
+  owner: AccountSession,
+) => Promise<unknown>;
 /** Reads resolve to data or an explicit error; rejected resources never break shell navigation. */
 export function createPersonalReads(
   section: Accessor<Section>,
@@ -47,9 +51,8 @@ export function createPersonalReads(
   const [pending, setPending] = createSignal(false);
   let serial = 0,
     disposed = false;
-  const same = (a: Scope | undefined, b: Scope | false) =>
-    !!a && !!b && a.account === b.account && a.path === b.path && a.offset === b.offset;
-  const currentPage = () => (same(page()?.scope, scope()) ? page() : undefined);
+  const same = (a: Scope | undefined, b: Scope | false) => !!a && a === b;
+  const currentPage = () => (!disposed && same(page()?.scope, scope()) ? page() : undefined);
   async function refetch() {
     const input = scope();
     if (!input || disposed || pending()) return;
@@ -57,10 +60,14 @@ export function createPersonalReads(
     const current = () => !disposed && ticket === serial && same(input, scope());
     setPending(true);
     try {
-      const value = (await request(input.path, {
-        offset: String(input.offset),
-        limit: "50",
-      })) as Page;
+      const value = (await request(
+        input.path,
+        {
+          offset: String(input.offset),
+          limit: "50",
+        },
+        input.account,
+      )) as Page;
       if (!current()) return;
       if (
         !value ||
@@ -103,7 +110,7 @@ export function createPersonalReads(
             try {
               const track =
                 names.get(item.track) ??
-                ((await request("/api/v1/track", { ref: item.track })) as {
+                ((await request("/api/v1/track", { ref: item.track }, input.account)) as {
                   title: string;
                   release: string | null;
                 });
@@ -165,7 +172,9 @@ export function createPersonalReads(
   return {
     page: currentPage,
     history: () =>
-      section() === "history" && same(resolved()?.scope, scope()) ? resolved()!.rows : [],
+      !disposed && section() === "history" && same(resolved()?.scope, scope())
+        ? resolved()!.rows
+        : [],
     loading: () => !!scope() && pending() && !currentPage()?.data,
     refetch,
   };

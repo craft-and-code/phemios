@@ -263,3 +263,56 @@ it("stops track resolution after logout even when the outstanding read rejects",
     dispose();
   }
 });
+
+it("hides retained personal pages after logout and re-login with the same session object", async () => {
+  let dispose!: () => void;
+  const [session, setSession] = createSignal<AccountSession | undefined>(account);
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce({
+      items: [{ name: "Private rule", expression: "played:>=0" }],
+      total: 1,
+    })
+    .mockImplementation(() => new Promise(() => {}));
+  const reads = createRoot((end) => {
+    dispose = end;
+    return createPersonalReads(
+      () => "collections",
+      session,
+      () => 0,
+      request,
+    );
+  });
+  try {
+    await settle();
+    expect(reads.page()?.data?.total).toBe(1);
+    setSession(undefined);
+    setSession(account);
+    expect(reads.page()).toBeUndefined();
+  } finally {
+    dispose();
+  }
+});
+
+it("retains background history identity but hides it immediately after reader disposal", async () => {
+  let dispose!: () => void;
+  const request = vi.fn(async (path: string) =>
+    path.endsWith("/history")
+      ? { items: [{ track: "track:one", at: 1, ms_played: 1000, completed: true }], total: 1 }
+      : { title: "One", release: null },
+  );
+  const reads = createRoot((end) => {
+    dispose = end;
+    return createPersonalReads(
+      () => "history",
+      () => account,
+      () => 0,
+      request,
+    );
+  });
+  await settle();
+  expect(reads.history()).toHaveLength(1);
+  dispose();
+  expect(reads.history()).toEqual([]);
+  expect(reads.page()).toBeUndefined();
+});

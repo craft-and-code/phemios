@@ -86,7 +86,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
     () => props.section,
     library.session,
     offset,
-    (path, query) => requestAede(path, query),
+    (path, query, owner) => requestAede(path, query, "GET", null, library.source(), owner),
   );
   const page = () => reads.page()?.data;
   const history = reads.history;

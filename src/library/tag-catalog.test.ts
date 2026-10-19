@@ -67,3 +67,21 @@ it("reads only ten visible track identities with two concurrent requests and exp
     track: { reference: "track:19", title: "track:19" },
   });
 });
+
+it("stops admitting tagged detail reads when its visible window is retired", async () => {
+  let current = true;
+  const releases: (() => void)[] = [];
+  const read = vi.fn(() => new Promise<string>((done) => releases.push(() => done("old"))));
+  const pending = taggedTrackWindow(
+    ["track:one", "track:two", "track:three"],
+    0,
+    read,
+    () => current,
+  );
+  expect(read).toHaveBeenCalledTimes(2);
+  current = false;
+  for (const release of releases.slice()) release();
+  for (let i = 0; i < 8; i++) await Promise.resolve();
+  expect(read).toHaveBeenCalledTimes(2);
+  await pending;
+});

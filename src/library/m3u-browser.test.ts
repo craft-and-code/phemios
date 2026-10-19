@@ -188,8 +188,8 @@ it("admits a download acknowledgement only for the same owner, category, query, 
   await settle();
   read.select(id);
   await settle();
-  expect(read.isCurrentFile(initial, id)).toBe(true);
-  expect(read.isCurrentFile(initial, `m3u-file-${"b".repeat(64)}`)).toBe(false);
+  expect(read.captureFile(initial, id)()).toBe(true);
+  expect(read.captureFile(initial, `m3u-file-${"b".repeat(64)}`)()).toBe(false);
   for (const change of [
     { query: "another" },
     { offset: 50 },
@@ -197,7 +197,7 @@ it("admits a download acknowledgement only for the same owner, category, query, 
     { source: "local" as const },
   ]) {
     setScope({ ...initial, ...change });
-    expect(read.isCurrentFile(initial, id)).toBe(false);
+    expect(read.captureFile(initial, id)()).toBe(false);
     await settle();
     setScope(initial);
     await settle();
@@ -205,7 +205,7 @@ it("admits a download acknowledgement only for the same owner, category, query, 
     await settle();
   }
   dispose();
-  expect(read.isCurrentFile(initial, id)).toBe(false);
+  expect(read.captureFile(initial, id)()).toBe(false);
 });
 
 it("keeps the workspace mounted while only the selected M3U content loads", async () => {
@@ -279,5 +279,43 @@ it("cancels a refresh without publishing its late response or losing retained se
   await settle();
   expect(read.page()?.total).toBe(1);
   expect(read.selected()).toBe(id);
+  dispose();
+});
+
+it("does not revive an old download after returning to an equivalent file scope", async () => {
+  const { read, setScope, dispose } = mount(async (path) =>
+    path.endsWith("status") ? status : path.endsWith(id) ? file : page,
+  );
+  await settle();
+  read.select(id);
+  await settle();
+  const current = read.captureFile(initial, id);
+  expect(current()).toBe(true);
+  setScope(undefined);
+  await settle();
+  const replacement = { ...initial };
+  setScope(replacement);
+  await settle();
+  read.select(id);
+  await settle();
+  expect(current()).toBe(false);
+  expect(read.captureFile(initial, id)()).toBe(false);
+  expect(read.captureFile(replacement, id)()).toBe(true);
+  dispose();
+});
+
+it("retires download acknowledgement when the same file is selected again", async () => {
+  const { read, dispose } = mount(async (path) =>
+    path.endsWith("status") ? status : path.endsWith(id) ? file : page,
+  );
+  await settle();
+  read.select(id);
+  await settle();
+  const current = read.captureFile(initial, id);
+  expect(current()).toBe(true);
+  read.select(id);
+  await settle();
+  expect(current()).toBe(false);
+  expect(read.captureFile(initial, id)()).toBe(true);
   dispose();
 });

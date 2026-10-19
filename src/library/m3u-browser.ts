@@ -115,8 +115,16 @@ export function createM3UBrowser(scope: Accessor<M3UScope | undefined>, request:
     detail: () => currentDetail()?.file,
     detailError: () => currentDetail()?.error ?? "",
     detailLoading: () => !!activeSelection() && details.loading(),
-    isCurrentFile: (input: M3UScope, id: string) =>
-      !disposed && same(input, scope()) && activeSelection()?.id === id,
+    /** A delayed download may acknowledge only the exact selection that started it. */
+    captureFile(input: M3UScope, id: string) {
+      const held = activeSelection();
+      return () =>
+        !disposed &&
+        input === scope() &&
+        held !== undefined &&
+        held === activeSelection() &&
+        held.id === id;
+    },
     refetch: () => {
       capability = undefined;
       return pages.refetch();

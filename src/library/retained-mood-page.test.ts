@@ -30,3 +30,9 @@ it("does not retain personal rows after owner, source or selection changes", () 
   ])
     expect(retainedMoodPage(resource, key)).toBeUndefined();
 });
+
+it("rejects a former login generation even when the session object is reused", () => {
+  const old = { ...reply, owner: {} };
+  const resource = Object.assign(() => old, { latest: old });
+  expect(retainedMoodPage(resource, { ...reply, owner: {} })).toBeUndefined();
+});

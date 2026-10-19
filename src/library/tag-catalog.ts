@@ -39,18 +39,22 @@ export async function taggedTrackWindow<T>(
   references: readonly string[],
   offset: number,
   read: (reference: string) => Promise<T>,
+  current: () => boolean = () => true,
 ) {
   const window = references.slice(offset, offset + 10);
   const results: ({ reference: string; track: T } | { reference: string; error: string })[] = [];
   let cursor = 0;
   await Promise.all(
     [0, 1].map(async () => {
-      while (cursor < window.length) {
+      while (current() && cursor < window.length) {
         const index = cursor++,
           reference = window[index]!;
         try {
-          results[index] = { reference, track: await read(reference) };
+          const track = await read(reference);
+          if (!current()) return;
+          results[index] = { reference, track };
         } catch (error) {
+          if (!current()) return;
           results[index] = { reference, error: String(error) };
         }
       }

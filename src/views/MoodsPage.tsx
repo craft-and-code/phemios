@@ -1,6 +1,8 @@
+import { createPersonalActions } from "../library/personal-actions";
+import { readMoodReply } from "../library/mood-reading";
 import { moodSearch } from "../library/personal-search";
 import { QueueAppend } from "../components/QueueAppend";
-import { retainedMoodPage } from "../library/retained-mood-page";
+import { retainedMoodPage, retainedMoodReply, type MoodReply } from "../library/retained-mood-page";
 import { MoodFeatures } from "../components/MoodFeatures";
 import { Feedback } from "../components/Feedback";
 import { isNative } from "../platform/desktop";
@@ -39,56 +41,52 @@ export function MoodsPage(props: { query: string }) {
     [error, setError] = createSignal(""),
     [submitting, setSubmitting] = createSignal(false),
     [expected, setExpected] = createSignal("");
-  const [response, { refetch }] = createResource(
-    () => ({
-      session: library.session(),
-      source: library.source(),
-      selected: selected(),
-      offset: offset(),
-      expected: expected(),
-    }),
-    async (key) => {
-      if (!key.session) return undefined;
-      const info = await requestAede<{ capabilities?: string[] }>(
-        "/api/v1/status",
-        {},
-        "GET",
-        null,
-        key.source,
+  let alive = true;
+  onCleanup(() => {
+    alive = false;
+  });
+  const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
+  const readKey = createMemo(() => ({
+    session: owner().session,
+    source: owner().source,
+    owner: owner(),
+    selected: selected(),
+    offset: offset(),
+    expected: expected(),
+  }));
+  const [response, { refetch }] = createResource(readKey, async (key): Promise<MoodReply> => {
+    const empty = { ...key, audio: false, extractable: false };
+    if (!key.session) return empty;
+    try {
+      const value = await readMoodReply(
+        { ...key, session: key.session },
+        () => alive && readKey() === key,
       );
-      if (!info.capabilities?.includes("mood_rules"))
-        throw new Error(t("Mettez à jour puis redémarrez Aède pour utiliser les ambiances."));
-      const page = parseMoods(
-        await requestAede(
-          "/api/me/v1/moods",
-          {
-            ...(key.selected ? { mood: key.selected } : {}),
-            offset: String(key.offset),
-            limit: "50",
-            ...(info.capabilities?.includes("mood_audio_features")
-              ? { audio: "true", ...(key.offset && key.expected ? { revision: key.expected } : {}) }
-              : {}),
-          },
-          "GET",
-          null,
-          key.source,
-        ),
-      );
-      return {
-        ...key,
-        page,
-        audio: !!info.capabilities?.includes("mood_audio_features"),
-        extractable: !!info.capabilities?.includes("mood_audio_extraction"),
-      };
+      return { ...empty, ...value };
+    } catch (failure) {
+      return { ...empty, error: String(failure) };
+    }
+  });
+  const current = () => retainedMoodPage(response, readKey());
+  const currentReply = () => retainedMoodReply(response, readKey());
+  const actions = createPersonalActions(
+    () => "moods",
+    library.session,
+    library.source,
+    () => {
+      setSelected("");
+      setOffset(0);
+      setExpected("");
+      setEditing(false);
+      setName("");
+      setTags("");
+      setGenres("");
+      setId("");
+      setError("");
+      setBusy(false);
+      setSubmitting(false);
     },
   );
-  const current = () =>
-    retainedMoodPage(response, {
-      session: library.session(),
-      source: library.source(),
-      selected: selected(),
-      offset: offset(),
-    });
   const rule = () => current()?.moods.find((mood) => mood.rule.id === selected())?.rule;
   const matched = createMemo(() =>
     (current()?.moods ?? []).filter((mood) =>
@@ -106,13 +104,6 @@ export function MoodsPage(props: { query: string }) {
       { defer: true },
     ),
   );
-  createEffect(() => {
-    library.session();
-    library.source();
-    setSelected("");
-    setOffset(0);
-    setEditing(false);
-  });
   const featureJob = () =>
     library.tasks
       .jobs()
@@ -135,23 +126,27 @@ export function MoodsPage(props: { query: string }) {
     onCleanup(() => clearTimeout(timer));
   });
   async function extract() {
+    const current = actions.capture(),
+      source = library.source();
+    if (!current() || library.session()?.account.role !== "admin" || submitting()) return;
     setSubmitting(true);
     setError("");
     try {
-      await library.tasks.features(library.source());
+      await library.tasks.features(source);
     } catch (failure) {
-      setError(String(failure));
+      if (current()) setError(String(failure));
     } finally {
-      setSubmitting(false);
+      if (current()) setSubmitting(false);
     }
   }
   async function stopFeatures() {
-    const job = featureJob();
-    if (!job) return;
+    const current = actions.capture(),
+      job = featureJob();
+    if (!current() || !job) return;
     try {
       await library.tasks.cancel(job.task_id, job.source);
     } catch (failure) {
-      setError(String(failure));
+      if (current()) setError(String(failure));
     }
   }
   function pageOffset(next: number) {
@@ -166,17 +161,20 @@ export function MoodsPage(props: { query: string }) {
     setEditing(true);
   }
   async function save() {
+    const admitted = actions.capture(),
+      session = library.session(),
+      source = library.source(),
+      savedId = id();
+    if (!admitted() || !session || session.account.role === "auditor" || busy()) return;
     setBusy(true);
     setError("");
     try {
-      const source = library.source(),
-        session = library.session();
       await requestAede(
         "/api/me/v1/moods",
         {},
         "PUT",
         {
-          id: id(),
+          id: savedId,
           name: name(),
           tags: tags()
             .split(",")
@@ -188,20 +186,28 @@ export function MoodsPage(props: { query: string }) {
             .filter(Boolean),
         },
         source,
+        session,
       );
-      if (session !== library.session() || source !== library.source())
-        throw new Error(t("Session invalide."));
+      if (!admitted()) return;
       setEditing(false);
-      setSelected(id());
+      setSelected(savedId);
       setOffset(0);
       void refetch();
     } catch (failure) {
-      setError(String(failure));
+      if (admitted()) setError(String(failure));
     } finally {
-      setBusy(false);
+      if (admitted()) setBusy(false);
     }
   }
   async function play() {
+    const admitted = actions.capture();
+    if (
+      !admitted() ||
+      library.session()?.account.role === "auditor" ||
+      busy() ||
+      library.player.busy()
+    )
+      return;
     setBusy(true);
     setError("");
     try {
@@ -210,42 +216,48 @@ export function MoodsPage(props: { query: string }) {
         mood = selected(),
         total = current()?.total ?? 0,
         revision = current()?.selection_revision,
-        acoustic = !!response.latest?.audio;
+        acoustic = !!currentReply()?.audio;
       if (total > 4096) throw new Error(t("Sélection limitée à 4096 pistes."));
-      const items: unknown[] = [];
-      let epoch: number | undefined;
-      for (let offset = 0; offset < total; offset += 200) {
-        const page = parseMoods(
-          await requestAede(
-            "/api/me/v1/moods",
-            {
-              mood,
-              offset: String(offset),
-              limit: "200",
-              ...(acoustic ? { audio: "true", ...(revision ? { revision } : {}) } : {}),
-            },
-            "GET",
-            null,
-            source,
-          ),
-        );
-        if (
-          (epoch !== undefined && epoch !== page.scanned_at) ||
-          page.total !== total ||
-          page.selection_revision !== revision ||
-          mood !== selected() ||
-          session !== library.session() ||
-          source !== library.source()
-        )
-          throw new Error(t("Sélection modifiée ; resynchronisez la bibliothèque."));
-        epoch = page.scanned_at;
-        items.push(...page.items);
-      }
-      await library.player.startSelection({ items });
+      await library.player.readSelection(async (playerCurrent) => {
+        const currentSelection = () => admitted() && mood === selected() && playerCurrent();
+        const items: unknown[] = [];
+        let epoch: number | undefined;
+        for (let offset = 0; offset < total; offset += 200) {
+          if (!currentSelection()) return;
+          const page = parseMoods(
+            await requestAede(
+              "/api/me/v1/moods",
+              {
+                mood,
+                offset: String(offset),
+                limit: "200",
+                ...(acoustic ? { audio: "true", ...(revision ? { revision } : {}) } : {}),
+              },
+              "GET",
+              null,
+              source,
+              session,
+            ),
+          );
+          if (!currentSelection()) return;
+          if (
+            (epoch !== undefined && epoch !== page.scanned_at) ||
+            page.total !== total ||
+            page.selection_revision !== revision ||
+            mood !== selected() ||
+            session !== library.session() ||
+            source !== library.source()
+          )
+            throw new Error(t("Sélection modifiée ; resynchronisez la bibliothèque."));
+          epoch = page.scanned_at;
+          items.push(...page.items);
+        }
+        return currentSelection() ? { items } : undefined;
+      }, source);
     } catch (failure) {
-      setError(String(failure));
+      if (admitted()) setError(String(failure));
     } finally {
-      setBusy(false);
+      if (admitted()) setBusy(false);
     }
   }
   return (
@@ -285,7 +297,7 @@ export function MoodsPage(props: { query: string }) {
           {...(featureJob() ? { job: featureJob()! } : {})}
           admin={
             isNative() &&
-            !!response.latest?.extractable &&
+            !!currentReply()?.extractable &&
             library.session()?.account.role === "admin"
           }
           submitting={submitting()}
@@ -303,12 +315,12 @@ export function MoodsPage(props: { query: string }) {
           }
         />
       </Show>
-      <Show when={response.loading && !response.latest}>
+      <Show when={response.loading && !currentReply()}>
         <PageLoader />
       </Show>
-      <Show when={response.error || error()}>
+      <Show when={currentReply()?.error || error()}>
         <p class="notice" role="alert">
-          {String(response.error || error())}
+          {String(currentReply()?.error || error())}
         </p>
       </Show>
       <div class="mood-cards">

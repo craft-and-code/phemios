@@ -19,3 +19,5 @@ Collections lets you inspect albums, rename, play or delete a collection after c
 Playlists shows the same queue as the Playback drawer. It starts empty when the app launches. Its plus searches tracks, albums, artists, M3Us or collections. A plus attached to Play appends; Play starts a selection.
 
 Drag handles to reorder occurrences. Numeric, alphabetical and reverse sorting let you try a different order. The red cross removes one occurrence; clearing the queue stops playback. Browse M3U files opens lists in admitted folders and exports accessible to your account. Their paths must resolve through their source.
+
+Changing accounts clears the selected mood and its editing draft. Previous personal pages are hidden while the new account loads. A failed mood read displays its error within that view; it does not require leaving the application.

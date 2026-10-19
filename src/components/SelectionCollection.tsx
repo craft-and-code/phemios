@@ -2,10 +2,10 @@ import { composerExpression } from "../library/composers";
 import { referenceSource } from "../library/sources";
 import { Feedback } from "./Feedback";
 import { t } from "../i18n";
-import { createSignal, onMount, onCleanup, Show } from "solid-js";
+import { onMount, onCleanup, Show } from "solid-js";
 import { Icon } from "./Icon";
 import { useLibrary } from "../library/context";
-import { saveBrowsingCollection } from "../library/collection-save";
+import { createSelectionCollection } from "../library/selection-collection";
 import type { SourceId } from "../library/sources";
 import type { Filters } from "../library/types";
 /** Freeze the criteria at opening; Aède evaluates their future catalog matches. */
@@ -17,41 +17,25 @@ export function SelectionCollection(props: {
   reason?: string | undefined;
   source?: SourceId;
 }) {
-  const library = useLibrary(),
-    [draft, setDraft] = createSignal<string>(),
-    [draftSource, setDraftSource] = createSignal<SourceId>(library.source()),
-    [draftAccount, setDraftAccount] = createSignal<ReturnType<typeof library.session>>(),
-    [name, setName] = createSignal(""),
-    [error, setError] = createSignal(""),
-    [busy, setBusy] = createSignal(false),
-    [message, setMessage] = createSignal("");
+  const library = useLibrary();
   const source = () => props.source ?? library.source();
-  const session = (source: SourceId) =>
-    source === "local" ? library.localSession() : library.serverSession();
-  const writable = () =>
-    !!session(source()) && ["user", "admin"].includes(session(source())?.account.role ?? "");
-  async function save() {
-    const expression = draft();
-    if (!expression || busy()) return;
-    const owner = draftSource(),
-      account = draftAccount();
-    if (!account || account !== session(owner)) {
-      setError(t("Session invalide."));
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      await saveBrowsingCollection(name(), expression, () => account === session(owner), owner);
-      if (account !== session(owner)) return;
-      setDraft(undefined);
-      setMessage(t("Collection « {0} » enregistrée. Elle suit ces filtres.", name()));
-    } catch (e) {
-      if (account === session(owner)) setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const {
+    draft,
+    setDraft,
+    draftSource,
+    name,
+    setName,
+    error,
+    setError,
+    busy,
+    message,
+    setMessage,
+    writable,
+    save,
+    open,
+  } = createSelectionCollection(source, (source) =>
+    source === "local" ? library.localSession() : library.serverSession(),
+  );
   return (
     <div class="selection-collection">
       <button
@@ -67,15 +51,10 @@ export function SelectionCollection(props: {
         aria-label={t("Créer une collection depuis cette sélection")}
         title={props.reason ?? t("Créer une collection depuis ces filtres")}
         onClick={() => {
-          setDraftSource(source());
-          setDraftAccount(session(source()));
-          setName("");
-          setError("");
-          setMessage("");
           const criteria = { ...props.filters, view: props.section };
           delete criteria.recentOnly;
           if (!criteria.genres?.length) delete criteria.genres;
-          setDraft(
+          open(
             props.expression ??
               (props.section === "composers" && props.filters
                 ? composerExpression(props.filters, source())

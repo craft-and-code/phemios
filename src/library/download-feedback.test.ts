@@ -92,3 +92,34 @@ it("suppresses old-owner errors after replacement", async () => {
   expect(state.phase()).toBe("idle");
   dispose();
 });
+
+it("does not let a retired download failure clear or acknowledge a newer pending download", async () => {
+  let dispose!: () => void, rejectOld!: (error: Error) => void, finishNew!: () => void;
+  const state = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createDownloadFeedback();
+  });
+  try {
+    const old = state.run(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectOld = reject;
+        }),
+    );
+    state.reset();
+    const next = state.run(
+      () =>
+        new Promise<void>((resolve) => {
+          finishNew = resolve;
+        }),
+    );
+    rejectOld(Error("Retired private export"));
+    await old;
+    expect(state.phase()).toBe("busy");
+    finishNew();
+    await next;
+    expect(state.phase()).toBe("complete");
+  } finally {
+    dispose();
+  }
+});

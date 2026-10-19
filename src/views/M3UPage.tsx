@@ -67,18 +67,19 @@ export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
     const held = scope(),
       file = reads.detail();
     if (!held || !file || busy()) return false;
+    const current = reads.captureFile(held, file.id);
     setBusy(true);
     setMessage("");
     setFailed(false);
     try {
       const path = await downloadM3U(file);
-      if (!disposed && reads.isCurrentFile(held, file.id)) {
+      if (!disposed && current()) {
         setMessage(t("M3U téléchargé : {0}", path));
         return true;
       }
       return false;
     } catch (failure) {
-      if (!disposed && reads.isCurrentFile(held, file.id)) {
+      if (!disposed && current()) {
         setFailed(true);
         setMessage(String(failure));
       }

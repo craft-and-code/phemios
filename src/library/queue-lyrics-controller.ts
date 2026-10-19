@@ -1,4 +1,4 @@
-import { createSignal, onCleanup } from "solid-js";
+import { createMemo, createSignal, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import { referenceSource } from "./sources";
@@ -20,6 +20,14 @@ export function createQueueLyrics(library: {
     [failed, setFailed] = createSignal(false),
     [feedbackOwners, setFeedbackOwners] =
       createSignal<ReadonlyMap<string, AccountSession | undefined>>();
+  // This memo tracks captured accounts, not queue edits: closing/reordering the queue
+  // must not cancel downloads, but an account round trip must retire their feedback.
+  const ownerScope = createMemo(() => ({
+    sessions: [...(feedbackOwners()?.keys() ?? [])].map((reference) =>
+      library.sessionFor(reference),
+    ),
+  }));
+  const [feedbackScope, setFeedbackScope] = createSignal<ReturnType<typeof ownerScope>>();
   let disposed = false,
     cancelled = false,
     activeTask: { id: number; reference: string; owner: AccountSession | undefined } | undefined;
@@ -44,6 +52,7 @@ export function createQueueLyrics(library: {
     const owners = feedbackOwners();
     return (
       !disposed &&
+      feedbackScope() === ownerScope() &&
       !!owners &&
       [...owners].every(
         ([reference, owner]) => owner !== undefined && owner === library.sessionFor(reference),
@@ -64,10 +73,16 @@ export function createQueueLyrics(library: {
         .map((r) => r.reference),
       owners = new Map(references.map((r) => [r, library.sessionFor(r)]));
     setFeedbackOwners(owners);
+    const heldScope = ownerScope();
+    setFeedbackScope(heldScope);
     const current = () =>
-      !disposed && !cancelled && references.every((r) => owners.get(r) === library.sessionFor(r));
+      !disposed &&
+      !cancelled &&
+      heldScope === ownerScope() &&
+      references.every((r) => owners.get(r) === library.sessionFor(r));
     try {
       for (const source of new Set(references.map(referenceSource))) {
+        if (!current()) return;
         const info = await requestAede<{ capabilities: string[] }>(
           "/api/v1/status",
           {},
@@ -75,6 +90,7 @@ export function createQueueLyrics(library: {
           null,
           source,
         );
+        if (!current()) return;
         if (!info.capabilities.includes("fetch_track_lyrics"))
           throw new Error(t("Mettez à jour puis redémarrez Aède pour télécharger les paroles."));
       }
@@ -151,14 +167,15 @@ export function createQueueLyrics(library: {
   }
   async function cancel() {
     cancelled = true;
-    const task = activeTask;
+    const task = activeTask,
+      heldScope = feedbackScope();
     activeTask = undefined;
     if (!task || disposed || !task.owner || task.owner !== library.sessionFor(task.reference))
       return;
     try {
       await library.tasks.cancel?.(task.id, referenceSource(task.reference));
     } catch (failure) {
-      if (feedbackCurrent()) {
+      if (heldScope === feedbackScope() && feedbackCurrent()) {
         setFailed(true);
         setMessage(String(failure));
       }

@@ -443,3 +443,141 @@ it("keeps an individual operation distinct from the bulk control and cancellable
   await job.cancel();
   dispose();
 });
+
+it("does not revive private batch feedback after a logout and same-session return", async () => {
+  let dispose!: () => void;
+  const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+  vi.mocked(requestAede).mockImplementation(async (path, query) => {
+    if (path.endsWith("/status")) throw Error("Private batch diagnostic");
+    return { track: query?.track, lyrics: null };
+  });
+  const job = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createQueueLyrics({
+      queue: () => [{ reference: "track:first", title: "First" }],
+      sessionFor: session,
+      tasks: { start: vi.fn(), jobs: () => [] },
+    });
+  });
+  try {
+    await job.acquire();
+    expect(job.message()).toContain("Private batch diagnostic");
+    setSession(undefined);
+    expect(job.message()).toBe("");
+    setSession(owner);
+    expect(job.message()).toBe("");
+  } finally {
+    dispose();
+  }
+});
+
+it.each(["cancel", "logout-return", "dispose"] as const)(
+  "stops capability enumeration after %s during the first source request",
+  async (retire) => {
+    let dispose!: () => void, finish!: (value: unknown) => void;
+    const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+    const statusSources: unknown[] = [];
+    vi.mocked(requestAede).mockImplementation(async (path, query, _method, _body, source) => {
+      if (!path.endsWith("/status")) return { track: query?.track, lyrics: null };
+      statusSources.push(source);
+      if (statusSources.length === 1)
+        return await new Promise((resolve) => {
+          finish = resolve;
+        });
+      return { capabilities: ["fetch_track_lyrics"] };
+    });
+    const start = vi.fn();
+    const job = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createQueueLyrics({
+        queue: () => [
+          { reference: "track:@phemios/server/first", title: "First" },
+          { reference: "track:@phemios/local/next", title: "Next" },
+        ],
+        sessionFor: session,
+        tasks: { start, jobs: () => [] },
+      });
+    });
+    try {
+      const pending = job.acquire();
+      expect(statusSources).toEqual(["server"]);
+      if (retire === "cancel") await job.cancel();
+      else if (retire === "dispose") dispose();
+      else {
+        setSession(undefined);
+        setSession(owner);
+      }
+      finish({ capabilities: ["fetch_track_lyrics"] });
+      await pending;
+      expect(statusSources).toEqual(["server"]);
+      expect(start).not.toHaveBeenCalled();
+      if (retire !== "dispose") expect(job.busy()).toBe(false);
+    } finally {
+      dispose();
+    }
+  },
+);
+
+it.each(["same", "replacement", "logout-return", "disposed"] as const)(
+  "scopes cancellation failures to their batch (replacement: %s)",
+  async (mode) => {
+    vi.useFakeTimers();
+    let dispose!: () => void, rejectCancel!: (error: Error) => void;
+    const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+    vi.mocked(requestAede).mockImplementation(async (path, query) =>
+      path.endsWith("/status")
+        ? { capabilities: ["fetch_track_lyrics"] }
+        : { track: query?.track, lyrics: null },
+    );
+    const cancel = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectCancel = reject;
+        }),
+    );
+    const job = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createQueueLyrics({
+        queue: () => [{ reference: "track:first", title: "First" }],
+        sessionFor: session,
+        tasks: { start: vi.fn(async () => 1), cancel, jobs: () => [] },
+      });
+    });
+    try {
+      const first = job.acquire();
+      for (let i = 0; i < 30; i++) await Promise.resolve();
+      const cancellation = job.cancel();
+      expect(cancel).toHaveBeenCalledExactlyOnceWith(1, "server");
+      await vi.advanceTimersByTimeAsync(300);
+      await first;
+      expect(job.busy()).toBe(false);
+      if (mode === "replacement") {
+        vi.mocked(requestAede).mockImplementation(async (path, query) => {
+          if (path.endsWith("/status")) throw Error("Current batch diagnostic");
+          return { track: query?.track, lyrics: null };
+        });
+        await job.acquire();
+        expect(job.message()).toContain("Current batch diagnostic");
+      }
+      if (mode === "logout-return") {
+        setSession(undefined);
+        setSession(owner);
+      } else if (mode === "disposed") dispose();
+      rejectCancel(Error("Old cancellation diagnostic"));
+      await cancellation;
+      if (mode === "replacement") {
+        expect(job.message()).toContain("Current batch diagnostic");
+        expect(job.message()).not.toContain("Old cancellation diagnostic");
+      } else if (mode === "same") {
+        expect(job.message()).toContain("Old cancellation diagnostic");
+        expect(job.failed()).toBe(true);
+      } else {
+        expect(job.message()).toBe("");
+        expect(job.failed()).toBe(false);
+      }
+    } finally {
+      dispose();
+      vi.useRealTimers();
+    }
+  },
+);
