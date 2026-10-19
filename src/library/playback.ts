@@ -502,19 +502,23 @@ export function createPlayback(
     setBusy(true);
     setError("");
     cancel();
-    const epoch = generation;
+    const epoch = generation,
+      profile = interfaceProfileIdentity();
+    const currentProfile = () => epoch === generation && profile === interfaceProfileIdentity();
     try {
       await playbackControl(command, value);
       if (epoch !== generation) return;
-      if (command === "repeat" && ["off", "one", "all"].includes(String(value)))
+      if (currentProfile() && command === "repeat" && ["off", "one", "all"].includes(String(value)))
         saveAudio({ ...audio(), repeat: value as AudioPreferences["repeat"] });
       await refresh(epoch);
-      if (epoch === generation) return true;
+      if (currentProfile()) return true;
     } catch (failure) {
       if (epoch === generation) {
-        setError(message(failure));
+        if (currentProfile()) setError(message(failure));
+        // Playback can remain owned by the other connected source while the
+        // interface profile changes. Resume its polling even for retired feedback.
         void refresh(epoch);
-        return false;
+        if (currentProfile()) return false;
       }
     } finally {
       if (epoch === generation) setBusy(false);

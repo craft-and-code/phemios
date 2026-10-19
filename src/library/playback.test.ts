@@ -2210,3 +2210,91 @@ it("clears a previous fade refusal when explicitly retrying without erasing late
     dispose();
   });
 });
+
+it.each(
+  ["bob", undefined].flatMap((owner) =>
+    ["policy", "repeat"].flatMap((command) =>
+      [false, true].map((failed) => ({ owner, command, failed })),
+    ),
+  ),
+)(
+  "isolates pending $command outcome from replacement profile $owner (failed=$failed)",
+  async ({ owner, command, failed }) => {
+    vi.stubGlobal("window", new EventTarget());
+    await createRoot(async (dispose) => {
+      activateInterfaceProfile("alice", (values) => values);
+      vi.mocked(playbackState).mockResolvedValue({
+        ...idlePlayback,
+        status: "playing",
+        reference: tracks[0]!.reference,
+        total: tracks.length,
+        queue: [0, 1],
+        queue_id: 44,
+      });
+      const player = createPlayback(() => true);
+      await player.start(tracks, album, "Artist");
+      let complete!: () => void;
+      vi.mocked(playbackControl).mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            complete = () =>
+              failed ? reject(new Error("obsolete Alice audio command")) : resolve();
+          }),
+      );
+      const pending =
+        command === "policy" ? player.choosePolicy("dsp") : player.action("repeat", "all");
+      activateInterfaceProfile(owner, (values) => values);
+      const replacement = { crossfadeMs: 1500, repeat: "off", policy: "without-effects" };
+      interfacePreferences.setItem("phemios.audio.v1", JSON.stringify(replacement));
+      window.dispatchEvent(new Event("phemios-settings-loaded"));
+      try {
+        complete();
+        await pending;
+        expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!)).toEqual(replacement);
+        expect(player.policy()).toBe("without-effects");
+        expect(player.error()).toBe("");
+        expect(player.busy()).toBe(false);
+        expect(player.state().status).toBe("playing");
+        const reads = vi.mocked(playbackState).mock.calls.length;
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(vi.mocked(playbackState).mock.calls.length).toBeGreaterThan(reads);
+      } finally {
+        dispose();
+      }
+    });
+  },
+);
+
+it.each(["policy", "repeat"])(
+  "keeps current-profile $0 command feedback and persistence",
+  async (command) => {
+    vi.stubGlobal("window", new EventTarget());
+    await createRoot(async (dispose) => {
+      activateInterfaceProfile("current-audio-owner", (values) => values);
+      vi.mocked(playbackState).mockResolvedValue({
+        ...idlePlayback,
+        status: "playing",
+        reference: tracks[0]!.reference,
+        total: tracks.length,
+        queue: [0, 1],
+        queue_id: 45,
+      });
+      const player = createPlayback(() => true);
+      await player.start(tracks, album, "Artist");
+      try {
+        if (command === "policy") {
+          vi.mocked(playbackControl).mockRejectedValueOnce(new Error("current command refusal"));
+          await player.choosePolicy("dsp");
+          expect(player.error()).toBe("current command refusal");
+        } else {
+          vi.mocked(playbackControl).mockResolvedValueOnce(undefined);
+          expect(await player.action("repeat", "all")).toBe(true);
+          expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!).repeat).toBe("all");
+        }
+        expect(player.busy()).toBe(false);
+      } finally {
+        dispose();
+      }
+    });
+  },
+);
