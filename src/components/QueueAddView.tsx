@@ -1,6 +1,6 @@
 import { Pagination } from "./Pagination";
 import { LibraryPickerRow } from "./LibraryPickerRow";
-import { For, Show, onMount, createMemo } from "solid-js";
+import { For, Show, onMount, onCleanup, createEffect, createSignal, createMemo } from "solid-js";
 import { t } from "../i18n";
 import {
   queueCategoryLabels,
@@ -37,6 +37,29 @@ export function QueueAddView(props: {
   onCancel: () => void;
 }) {
   let input: HTMLInputElement | undefined;
+  let tabs: HTMLDivElement | undefined;
+  let frame = 0;
+  const [indicator, setIndicator] = createSignal({ left: 0, width: 0 });
+  const measure = () => {
+    const selected = tabs?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
+    if (!tabs || !selected) return;
+    setIndicator({ left: selected.offsetLeft, width: selected.offsetWidth });
+  };
+  createEffect(() => {
+    void props.category;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(measure);
+  });
+  onMount(() => {
+    const observer = new ResizeObserver(measure);
+    if (tabs) {
+      observer.observe(tabs);
+      tabs.querySelectorAll("button").forEach((button) => observer.observe(button));
+    }
+    measure();
+    onCleanup(() => observer.disconnect());
+  });
+  onCleanup(() => cancelAnimationFrame(frame));
   onMount(() => input?.focus());
   const categories = Object.entries(queueCategoryLabels) as [QueueCategory, string][];
   return (
@@ -75,7 +98,21 @@ export function QueueAddView(props: {
           }
         }}
       />
-      <div class="queue-add-categories" aria-label={t("Type de contenu")}>
+      <div
+        ref={(element) => {
+          tabs = element;
+        }}
+        class="queue-add-categories"
+        aria-label={t("Type de contenu")}
+      >
+        <span
+          class="queue-category-indicator"
+          aria-hidden="true"
+          style={{
+            width: `${indicator().width}px`,
+            transform: `translateX(${indicator().left}px)`,
+          }}
+        />
         <For each={categories}>
           {([key, label]) => (
             <button

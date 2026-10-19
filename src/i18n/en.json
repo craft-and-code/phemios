@@ -2188,5 +2188,6 @@
   "Empreinte Cast invalide.": "Invalid Cast fingerprint.",
   "Inspectez puis vérifiez l’empreinte du récepteur Cast.": "Inspect and verify the Cast receiver fingerprint.",
   "Sélectionnez de 1 à 64 pistes de la même bibliothèque pour le lecteur réseau.": "Select 1 to 64 tracks from the same library for the network player.",
-  "Indiquez une adresse IPv4 privée pour le lecteur SlimProto.": "Enter a private IPv4 address for the SlimProto player."
+  "Indiquez une adresse IPv4 privée pour le lecteur SlimProto.": "Enter a private IPv4 address for the SlimProto player.",
+  "Mode appliqué aux prochains titres, sans interrompre la lecture.": "Mode changes apply to upcoming tracks without interrupting playback."
 }

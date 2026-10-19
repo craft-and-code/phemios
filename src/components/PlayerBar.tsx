@@ -318,6 +318,11 @@ export function PlayerBar() {
                 ]}
               />
             </label>
+            <Show
+              when={["playing", "paused", "connecting"].includes(state().status) && !player.isCd()}
+            >
+              <small>{t("Mode appliqué aux prochains titres, sans interrompre la lecture.")}</small>
+            </Show>
             <label>
               {t("Fondu entre les titres")} · {player.crossfade() / 1000} s
               <input
@@ -330,7 +335,8 @@ export function PlayerBar() {
                   !player.ready() ||
                   player.busy() ||
                   player.device() === "@hqplayer" ||
-                  player.isCd()
+                  player.isCd() ||
+                  player.policy() !== "dsp"
                 }
                 aria-label={t("Durée du fondu")}
                 onInput={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}

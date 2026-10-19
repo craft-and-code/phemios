@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { createCatalogDetail } from "../library/catalog-detail";
 import { referenceSource } from "../library/sources";
 import { LyricsIcon } from "./LyricsIcon";
@@ -37,6 +38,13 @@ export function TrackResults(props: {
       !!props.expanded && (props.track.analysis_available ?? props.track.analyses.length > 0),
     ),
     [spectrum, setSpectrum] = createSignal(!!props.expanded && props.track.spectrum_available);
+  const [downloadStatus, setDownloadStatus] = createSignal(""),
+    [downloadFailed, setDownloadFailed] = createSignal(false);
+  createEffect(() => {
+    void props.track.reference;
+    void library.sessionFor(props.track.reference);
+    setDownloadStatus("");
+  });
   createEffect(() => {
     if (spectrum()) void library.warmImage(props.track.reference, "spectrum");
   });
@@ -168,10 +176,6 @@ export function TrackResults(props: {
         <div id={`${id}-analysis`} class="track-analysis">
           <div class="analysis-result-heading">
             <strong>{t("Analyse FlacCompagnon")}</strong>
-            <AnalysisDownload
-              reference={props.track.reference}
-              available={values().length > 0 && !detailRead.loading()}
-            />
           </div>
           <Show when={detailRead.loading()}>
             <PageLoader inline label={t("Chargement de l’analyse…")} />
@@ -184,7 +188,28 @@ export function TrackResults(props: {
           <Show when={!detailRead.loading() && !detailRead.error() && !values().length}>
             <p class="muted">{t("Aucune analyse conservée pour ce titre.")}</p>
           </Show>
-          <For each={values()}>{(value) => <AnalysisCharts analysis={value} />}</For>
+          <For each={values()}>
+            {(value) => (
+              <AnalysisCharts
+                analysis={value}
+                actions={
+                  <AnalysisDownload
+                    reference={props.track.reference}
+                    available={values().length > 0 && !detailRead.loading()}
+                    onStatus={(message, failure) => {
+                      setDownloadStatus(message);
+                      setDownloadFailed(failure);
+                    }}
+                  />
+                }
+              />
+            )}
+          </For>
+          <Feedback
+            message={downloadStatus()}
+            error={downloadFailed()}
+            onClose={() => setDownloadStatus("")}
+          />
         </div>
       </Show>
       <Show when={spectrum()}>

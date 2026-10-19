@@ -62,7 +62,6 @@ main > .playback-page.queue-open {
   font-size: 12px;
 }
 .queue-add-categories button[aria-pressed="true"] {
-  border-bottom-color: var(--accent);
   color: var(--accent);
 }
 .queue-add-results {
@@ -236,4 +235,24 @@ main > .playback-page.queue-open {
   white-space: normal;
   overflow-wrap: anywhere;
   line-height: 1.35;
+}
+
+.queue-add-categories {
+  position: relative;
+}
+.queue-category-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  transition:
+    transform 180ms ease,
+    width 180ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .queue-category-indicator {
+    transition: none;
+  }
 }

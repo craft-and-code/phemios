@@ -82,7 +82,12 @@ export function SettingsPlayback() {
             max="10000"
             step="500"
             value={library.player.crossfade()}
-            disabled={library.player.busy()}
+            disabled={
+              library.player.busy() ||
+              library.player.policy() !== "dsp" ||
+              library.player.isCd() ||
+              library.player.device() === "@hqplayer"
+            }
             onInput={(event) =>
               void library.player.chooseCrossfade(Number(event.currentTarget.value))
             }

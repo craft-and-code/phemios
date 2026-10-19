@@ -581,3 +581,10 @@
 .far-files .far-good {
   color: var(--analysis-good, #a8dcaa);
 }
+
+.flac-analysis-report .far-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}

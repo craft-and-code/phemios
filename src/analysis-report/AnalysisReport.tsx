@@ -1,7 +1,7 @@
 import { analysisSectionIds, changeAnalysisSection, type AnalysisSection } from "./disclosure";
 import { ReportDisclosure } from "./ReportDisclosure";
 import { AnalysisTechnical } from "./AnalysisTechnical";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show, type JSX } from "solid-js";
 import { Icon } from "../components/Icon";
 import { analysisModel, type AnalysisModel } from "./model";
 import { french, integrityReading, type ReportTranslate } from "./presentation";
@@ -11,6 +11,8 @@ import "./report.css";
 /** Props-only report: no IPC, account, storage, network or source-file access. */
 export interface AnalysisReportProps {
   analysis: unknown;
+  /** Host-owned actions displayed before the disclosure control. */
+  actions?: JSX.Element;
   title?: string | undefined;
   locale?: string | undefined;
   translate?: ReportTranslate | undefined;
@@ -69,16 +71,19 @@ export function AnalysisReport(props: AnalysisReportProps) {
                 </small>
               </Show>
             </div>
-            <button
-              class="far-expansion"
-              type="button"
-              title={tr(sections().length ? "Tout replier" : "Tout déplier")}
-              aria-label={tr(sections().length ? "Tout replier" : "Tout déplier")}
-              aria-expanded={sections().length > 0}
-              onClick={() => change(sections().length ? [] : [...analysisSectionIds])}
-            >
-              <Icon name="chevron-down" />
-            </button>
+            <div class="far-header-actions">
+              {props.actions}
+              <button
+                class="far-expansion"
+                type="button"
+                title={tr(sections().length ? "Tout replier" : "Tout déplier")}
+                aria-label={tr(sections().length ? "Tout replier" : "Tout déplier")}
+                aria-expanded={sections().length > 0}
+                onClick={() => change(sections().length ? [] : [...analysisSectionIds])}
+              >
+                <Icon name="chevron-down" />
+              </button>
+            </div>
           </header>
           <section
             class={`far-integrity far-${checksum(data()).tone}`}

@@ -621,20 +621,22 @@ pre {
   background: transparent;
 }
 .cover-dialog {
+  --cover-media-height: calc(100dvh - 104px);
+  --cover-media-width: calc(100vw - 56px);
   color: inherit;
   background: #141817ef;
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 20px;
-  max-width: calc(100vw - 48px);
-  max-height: calc(100dvh - 48px);
+  padding: 14px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
 }
 .cover-dialog::backdrop {
   background: #05080bdd;
   backdrop-filter: blur(8px);
 }
 .cover-dialog .artwork {
-  width: min(75vw, 68dvh);
+  width: min(var(--cover-media-width), var(--cover-media-height));
   border: 0;
   background: none !important;
 }
@@ -642,8 +644,8 @@ pre {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(75vw, 900px);
-  max-height: 68dvh;
+  max-width: var(--cover-media-width);
+  max-height: var(--cover-media-height);
   object-fit: contain;
 }
 .cover-dialog-heading {
@@ -651,7 +653,7 @@ pre {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 .cover-dialog-heading h2 {
   margin: 0;
@@ -857,12 +859,12 @@ pre {
   position: sticky;
   top: var(--catalog-header-height, 0px);
   height: calc(
-    var(--content-height, 100dvh - 70px - var(--player-bar-height, 96px)) -
+    var(--content-height, 100dvh - 70px - var(--player-bar-height, 88px)) -
       var(--catalog-header-height, 0px)
   );
   margin-bottom: calc(
     var(--catalog-header-height, 0px) -
-      var(--content-height, 100dvh - 70px - var(--player-bar-height, 96px))
+      var(--content-height, 100dvh - 70px - var(--player-bar-height, 88px))
   );
   background-size: cover;
   background-position: center;
@@ -1884,7 +1886,7 @@ button.biography-more .biography-more-icon .spinner,
 .biography-scroll-top {
   position: fixed;
   right: 24px;
-  bottom: calc(var(--player-bar-height, 96px) + 20px);
+  bottom: calc(var(--player-bar-height, 88px) + 20px);
   z-index: 5;
   background: var(--surface);
   box-shadow: 0 4px 14px #0005;
@@ -1924,4 +1926,9 @@ button.biography-more .biography-more-icon .spinner,
 .reader-scroll-top .biography-scroll-top {
   position: static;
   pointer-events: auto;
+}
+
+/* Match the artwork wrapper's block metrics on album and track detail pages. */
+.album-hero .detail-cover-actions > :is(a, .cover-open) {
+  display: block;
 }

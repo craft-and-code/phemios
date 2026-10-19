@@ -42,3 +42,5 @@ The FlacCompagnon website is not modified or published by this task. Its integra
 ## Verification
 
 Unit cases cover real-envelope/single-file admission, cumulative detections, historical/current MD5, Ogg separation, malformed numbers/flags/coverage/digests, size/count limits and unrequested default suppression. The sibling native test checks exact unchanged file contents, directory/symlink/UTF-8/size refusal. Data/AnalysisReport stories exercise expand/collapse, remembered disclosures, mouse/touch-style marker hints, arrow geometry, source explanation, album selection, literal unsafe-looking text and the actual import surface. These fictional fixtures do not assert physical decoding or acoustic acceptance.
+
+The optional `actions` JSX slot places host-owned controls immediately before the global disclosure toggle in the report header. The report remains free of IPC and account policy. Track results use this slot for the JSON download and retain its status feedback outside the header, avoiding narrow action-row reflow.

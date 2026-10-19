@@ -1,7 +1,7 @@
 .app {
   height: 100dvh;
   display: grid;
-  --player-bar-height: 96px;
+  --player-bar-height: 88px;
   grid-template: 70px minmax(0, 1fr) var(--player-bar-height) / 220px minmax(0, 1fr);
 }
 .topbar {
@@ -559,7 +559,7 @@ legend {
 .player-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(300px, 39vw, 620px) minmax(0, 1fr);
-  height: var(--player-bar-height, 96px);
+  height: var(--player-bar-height, 88px);
   padding-block: 10px;
 }
 .player-bar .transport {
@@ -736,8 +736,9 @@ legend {
   padding-top: 12px;
 }
 .audio-settings-panel {
-  max-height: min(640px, 70dvh);
+  max-height: calc(100dvh - var(--player-bar-height, 88px) - 24px);
   overflow-y: auto;
+  width: min(420px, calc(100vw - 32px));
 }
 
 .audio-settings-panel .choice-select {

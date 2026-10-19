@@ -98,6 +98,7 @@ export function TrackPage(props: {
                 />
               </div>
             </div>
+            <AnnotationPanel reference={props.reference} kind="track" />
             <section>
               <h2>{t("Fichier et format")}</h2>
               <dl class="track-facts">
@@ -181,7 +182,6 @@ export function TrackPage(props: {
                 </For>
               </dl>
             </section>
-            <AnnotationPanel reference={props.reference} kind="track" />
             <section>
               <h2>{t("Lecture et résultats enregistrés")}</h2>
               <ol class="track-list">
