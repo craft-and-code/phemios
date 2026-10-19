@@ -12,6 +12,8 @@ Add its RSS feed address, then Subscribe. A website or sharing link is not alway
 
 Subscriptions and listened state are private per account on this device and included in the selected account’s Phémios backup. Unsubscribing asks for confirmation.
 
+Pause also applies while the episode is preparing, before sound starts. Resume explicitly restarts preparation if the player had not yet created its audio source.
+
 ## Play a CD or image
 
 Audio CD works without an Aède server and without recording its use per account. Connect a drive, insert an audio CD and select it. Controls remain unavailable without recognized hardware. Eject is disabled while playing that disc.

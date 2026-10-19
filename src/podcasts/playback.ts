@@ -132,7 +132,7 @@ export function createPodcastPlayback(
     try {
       const url = podcastUrl(row.url);
       await beforePlay();
-      if (epoch !== held || !ownerCurrent()) return;
+      if (epoch !== held || attempt !== playAttempt || !ownerCurrent()) return;
       const audio = createMedia();
       media = audio;
       retainedOwner = ownerCurrent;
@@ -178,11 +178,11 @@ export function createPodcastPlayback(
     }
   }
   function pause() {
-    if (!media) return;
+    if (!episode()) return;
     clearTimeout(stall);
     playAttempt++;
     setStatus("paused");
-    media.pause();
+    media?.pause();
   }
   async function resume() {
     if (!media) {

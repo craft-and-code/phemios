@@ -313,3 +313,78 @@ it("restores shared volume without writing it back, then remembers user volume a
     dispose();
   });
 });
+
+it.each(["resolve", "reject"] as const)(
+  "honors Pause during deferred source shutdown even when preparation later %s",
+  async (reply) => {
+    await createRoot(async (dispose) => {
+      let finish!: () => void, fail!: (error: Error) => void;
+      const f = fixture(),
+        create = vi.fn(() => f.media),
+        before = vi.fn(
+          () =>
+            new Promise<void>((resolve, reject) => {
+              finish = resolve;
+              fail = reject;
+            }),
+        ),
+        player = createPodcastPlayback(before, create);
+      try {
+        const pending = player.start(feed, feed.episodes[0]!);
+        expect(player.status()).toBe("connecting");
+        player.pause();
+        expect(player.status()).toBe("paused");
+        if (reply === "resolve") finish();
+        else fail(Error("Retired preparation failure"));
+        await pending;
+        expect(create).not.toHaveBeenCalled();
+        expect(player.status()).toBe("paused");
+        expect(player.error()).toBe("");
+        before.mockResolvedValue(undefined);
+        await player.resume();
+        expect(create).toHaveBeenCalledOnce();
+        expect(player.status()).toBe("playing");
+      } finally {
+        dispose();
+      }
+    });
+  },
+);
+
+it.each(["resolve", "reject"] as const)(
+  "keeps the newer playback when paused preparation settles after Resume: %s",
+  async (reply) => {
+    await createRoot(async (dispose) => {
+      let finish!: () => void, fail!: (error: Error) => void;
+      const f = fixture(),
+        create = vi.fn(() => f.media),
+        before = vi
+          .fn<() => Promise<void>>()
+          .mockImplementationOnce(
+            () =>
+              new Promise<void>((resolve, reject) => {
+                finish = resolve;
+                fail = reject;
+              }),
+          )
+          .mockResolvedValue(undefined),
+        player = createPodcastPlayback(before, create);
+      try {
+        const old = player.start(feed, feed.episodes[0]!);
+        player.pause();
+        await player.resume();
+        expect(player.status()).toBe("playing");
+        expect(create).toHaveBeenCalledOnce();
+        if (reply === "resolve") finish();
+        else fail(Error("Old preparation failure"));
+        await old;
+        expect(player.status()).toBe("playing");
+        expect(player.error()).toBe("");
+        expect(create).toHaveBeenCalledOnce();
+        expect(f.media.release).not.toHaveBeenCalled();
+      } finally {
+        dispose();
+      }
+    });
+  },
+);

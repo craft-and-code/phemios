@@ -12,6 +12,8 @@ Ajoutez son adresse de flux RSS, puis S’abonner. Un lien de page web ou de par
 
 Les abonnements et l’état d’écoute sont privés par compte sur cet appareil et inclus dans la sauvegarde Phémios du compte sélectionné. Le désabonnement demande confirmation.
 
+La pause fonctionne aussi pendant la préparation d’un épisode, avant le début du son. Reprendre relance explicitement cette préparation si le lecteur n’avait pas encore créé sa source audio.
+
 ## Lire un CD ou une image
 
 CD audio fonctionne sans serveur Aède et sans enregistrement d’utilisation par compte. Branchez un lecteur, insérez un CD audio, puis choisissez le disque. Sans matériel reconnu, les commandes correspondantes restent indisponibles. L’éjection est désactivée pendant sa lecture.
