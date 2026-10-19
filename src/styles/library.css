@@ -1581,7 +1581,8 @@ button.metadata-link:hover {
   padding-top: 0;
   padding-bottom: 0;
 }
-.track-title::before {
+/* Whole-row navigation belongs only to the explicitly positioned catalogue row. */
+.track-main-row .track-title::before {
   content: "";
   position: absolute;
   inset: 0;
