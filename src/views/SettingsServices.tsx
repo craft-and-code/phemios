@@ -1,9 +1,11 @@
+import { completeServiceKeySave } from "../library/service-key-save";
+import { interfaceProfileIdentity } from "../library/account-preferences";
 import { createServiceCancellation } from "../library/service-cancellation";
 import { SettingsJamBase } from "./SettingsJamBase";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createMemo, createResource, createSignal, onCleanup, For, Show } from "solid-js";
 import { localStatus, saveLocalKeys } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import type { SourceId } from "../library/sources";
@@ -47,31 +49,48 @@ export function SettingsServices() {
       return session?.account.role === "admin";
     }),
   );
+  let alive = true;
+  onCleanup(() => {
+    alive = false;
+  });
   async function save(remove?: "fanart" | "acoustid") {
-    const activateFanart = !remove && !!fanart().trim();
+    if (busy()) return;
+    const held = interfaceProfileIdentity(),
+      current = () => alive && interfaceProfileIdentity() === held,
+      fanartKey = fanart(),
+      acoustidKey = acoustid(),
+      activateFanart = !remove && !!fanartKey.trim();
     setBusy(true);
     setMessage("");
     setFailure(false);
     try {
-      await saveLocalKeys(
-        remove ? "" : fanart(),
-        remove ? "" : acoustid(),
-        remove === "fanart",
-        remove === "acoustid",
-      );
-      if (!remove || remove === "fanart") setFanart("");
-      if (!remove || remove === "acoustid") setAcoustid("");
-      await refetch();
-      if (activateFanart) setFanartPass(true);
-      if (remove === "fanart") setFanartPass(false);
-      setMessage(
-        t("Clés communes enregistrées. Elles s’appliquent aux prochains enrichissements."),
-      );
+      await completeServiceKeySave({
+        current,
+        save: () =>
+          saveLocalKeys(
+            remove ? "" : fanartKey,
+            remove ? "" : acoustidKey,
+            remove === "fanart",
+            remove === "acoustid",
+          ),
+        refresh: async () => refetch(),
+        commit: () => {
+          if ((!remove || remove === "fanart") && fanart() === fanartKey) setFanart("");
+          if ((!remove || remove === "acoustid") && acoustid() === acoustidKey) setAcoustid("");
+          if (activateFanart) setFanartPass(true);
+          if (remove === "fanart") setFanartPass(false);
+          setMessage(
+            t("Clés communes enregistrées. Elles s’appliquent aux prochains enrichissements."),
+          );
+        },
+      });
     } catch (error) {
-      setFailure(true);
-      setMessage(String(error));
+      if (current()) {
+        setFailure(true);
+        setMessage(String(error));
+      }
     } finally {
-      setBusy(false);
+      if (alive) setBusy(false);
     }
   }
   return (
