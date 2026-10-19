@@ -19,3 +19,5 @@ Conversion profiles apply to eligible sources; already lossy files are not neces
 Disks and conventional storage players use file copying. MTP needs a recognized device. Compatible Apple-firmware iPods can require podkit to update their music database; copying arbitrary files is insufficient. Rockbox uses ordinary file copying. Not every model is supported.
 
 If a device is reported incompatible, check its model and the displayed guidance before continuing. Phémios does not format drives or replace firmware. Wait for copy/verification confirmation, then use Eject where available. Disconnecting during writing can leave incomplete files.
+
+Changing accounts clears the previous account’s detailed transfer progress. Destination actions remain unavailable while native status still reports a running transfer.

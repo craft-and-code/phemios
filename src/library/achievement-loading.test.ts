@@ -142,3 +142,45 @@ it("cancels pending status before the unlock write and admits a later refresh", 
     dispose();
   }
 });
+
+it("contains an invalid unlock date locally and recovers on explicit refresh", async () => {
+  const invalid = {
+    items: [
+      {
+        slot: 0,
+        unlocked_at: Number.MAX_SAFE_INTEGER,
+        title: { fr: "A", en: "A" },
+        description: { fr: "B", en: "B" },
+        icon: "heart",
+      },
+    ],
+    total: 1,
+    unlocked: 1,
+  };
+  let malformed = true,
+    dispose!: () => void;
+  vi.mocked(requestAede).mockImplementation(async (path) =>
+    path === "/api/v1/status" ? capability : malformed ? invalid : trophies,
+  );
+  const loaded = createRoot((cleanup) => {
+    dispose = cleanup;
+    const owner = account();
+    return createAchievementLoading(
+      () => owner,
+      () => "server",
+    );
+  });
+  try {
+    await settle();
+    expect(() => loaded.current()).not.toThrow();
+    expect(loaded.current()).toBeUndefined();
+    expect(loaded.error()).toContain("invalides");
+    malformed = false;
+    await loaded.refetch();
+    await settle();
+    expect(loaded.error()).toBe("");
+    expect(loaded.current()).toEqual(trophies);
+  } finally {
+    dispose();
+  }
+});

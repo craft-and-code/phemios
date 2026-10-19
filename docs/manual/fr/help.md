@@ -25,3 +25,5 @@ Seules des paroles horodatées peuvent se synchroniser. Utilisez les flèches po
 Diagnostic expose les contrôles de bibliothèque fournis par le moteur. Statistiques décrit votre catalogue et peut exporter un CSV. L’Encyclopédie propose des fiches et des recherches Wikipédia ; ses articles enregistrés sont privés par compte. Les trophées déjà gagnés restent acquis.
 
 Pour les commandes, comptes, formats ou erreurs serveur, consultez [Aède](https://craft-and-code.github.io/aede/docs/fr/index.html). Pour lire les mesures audio, consultez [FlacCompagnon](https://craft-and-code.github.io/FlacCompagnon/). Pour examiner l’interface sans modifier votre bibliothèque, ouvrez [Storybook](../../components/index.html). La [Rustdoc](../../rust/phemios_core/index.html) et les [contrats TypeScript](../../typescript/index.html) s’adressent aux développeurs.
+
+Les articles comportant plusieurs sections disposent d’un sommaire. Une flèche flottante permet de remonter au début du texte, y compris pour les biographies enregistrées.

@@ -25,3 +25,5 @@ Only timestamped lyrics can synchronize. Use arrows for untimed text. Request re
 Diagnostic exposes library checks provided by the engine. Statistics describes your catalogue and can export CSV. Encyclopedia offers reference entries and Wikipedia searches; saved articles are private per account. Earned trophies remain unlocked.
 
 For commands, accounts, formats or server errors, read [Aède](https://craft-and-code.github.io/aede/docs/en/index.html). For audio measures, read [FlacCompagnon](https://craft-and-code.github.io/FlacCompagnon/). Explore controls without changing your library in [Storybook](../../components/index.html). [Rustdoc](../../rust/phemios_core/index.html) and [TypeScript contracts](../../typescript/index.html) are for developers.
+
+Articles with multiple sections include a contents list. A floating up arrow returns to the beginning of the article, including saved biographies.

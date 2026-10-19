@@ -34,6 +34,7 @@ export function parseAchievements(raw: unknown): Achievements {
           ? Object.keys(r).some((k) => !["slot", "unlocked_at"].includes(k))
           : !Number.isSafeInteger(r.unlocked_at) ||
             r.unlocked_at < 0 ||
+            r.unlocked_at > 8_640_000_000_000 ||
             !text(r.title) ||
             !text(r.description) ||
             typeof r.icon !== "string"),

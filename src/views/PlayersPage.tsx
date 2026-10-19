@@ -1,3 +1,4 @@
+import { createTransferMonitor } from "../library/transfer-monitor";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
@@ -5,7 +6,7 @@ import { TransferDestination } from "../components/TransferDestination";
 import { TransferSelection } from "../components/TransferSelection";
 import { TransferPanel } from "../components/TransferPanel";
 import { QueueAdd } from "../components/QueueAdd";
-import { createSignal, createEffect, onCleanup, onMount } from "solid-js";
+import { createSignal, createEffect, createMemo, onCleanup, onMount } from "solid-js";
 import { t } from "../i18n";
 import {
   discoverPlayers,
@@ -22,11 +23,7 @@ import { createTransferRecipe } from "../library/transfer-recipe";
 import { parsePlayerDiscovery, parsePlayers } from "../library/players";
 import { useLibrary } from "../library/context";
 import type { PlayableSelection } from "../library/playback-selection";
-import {
-  addTransferSelection,
-  type TransferPreview,
-  type TransferStatus,
-} from "../library/transfers";
+import { addTransferSelection, type TransferPreview } from "../library/transfers";
 /** Discovery is public; transfer sources remain bound to their exact native account sessions. */
 export function PlayersPage() {
   const library = useLibrary();
@@ -37,11 +34,16 @@ export function PlayersPage() {
     [preview, setPreview] = createSignal<TransferPreview>(),
     [preparing, setPreparing] = createSignal(false),
     [ejecting, setEjecting] = createSignal(""),
-    [error, setError] = createSignal(""),
-    [status, setStatus] = createSignal<TransferStatus>({ phase: "idle", running: false });
+    [error, setError] = createSignal("");
+  const ownerScope = createMemo(() => ({
+    local: library.localSession(),
+    server: library.serverSession(),
+  }));
+  const { status, poll } = createTransferMonitor(ownerScope, transferStatus, isNative, (failure) =>
+    setError(String(failure)),
+  );
   let disposed = false,
-    operation = 0,
-    polling = false;
+    operation = 0;
   const read = createDiagnosticRead(
     () => (isNative() ? { native: true } : false),
     async () => parsePlayerDiscovery(await discoverPlayers()),
@@ -64,18 +66,6 @@ export function PlayersPage() {
     setRows([]);
     reset();
   });
-  async function poll() {
-    if (polling || !isNative()) return;
-    polling = true;
-    try {
-      const next = await transferStatus();
-      if (!disposed) setStatus(next);
-    } catch (failure) {
-      if (!disposed) setError(String(failure));
-    } finally {
-      polling = false;
-    }
-  }
   onMount(() => {
     void poll();
     const timer = setInterval(() => void poll(), 1000);

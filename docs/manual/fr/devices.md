@@ -19,3 +19,5 @@ Les profils de conversion concernent les sources éligibles ; les fichiers déj�
 Les disques et lecteurs à stockage classique utilisent la copie de fichiers. MTP nécessite un appareil reconnu par le backend. Les iPod avec firmware Apple compatibles peuvent nécessiter podkit pour leur base musicale ; un simple glisser de fichiers ne suffit pas. Rockbox utilise la copie classique. Tous les modèles ne sont pas pris en charge.
 
 Si un appareil est signalé incompatible, vérifiez son modèle et les indications affichées avant de poursuivre. Phémios ne formate pas de lecteur et ne remplace pas son firmware. Attendez la confirmation de fin de copie/vérification, puis utilisez l’éjection quand elle est disponible. Un débranchement pendant l’écriture peut laisser des fichiers incomplets.
+
+Changer de compte efface les détails de progression du transfert du compte précédent. Les actions sur le périphérique restent indisponibles tant que le suivi natif indique un transfert en cours.

@@ -1,8 +1,10 @@
-import { createMemo, createResource, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { advancedExpression, type SearchCriteria } from "../library/advanced-search";
+import { createDiagnosticRead } from "../library/diagnostic-read";
+import { readAdvancedTrackPage } from "../library/advanced-track-read";
 import { combinedTrackReader } from "../library/combined-tracks";
 import { TrackResults } from "../components/TrackResults";
 import { SelectionCollection } from "../components/SelectionCollection";
@@ -36,61 +38,38 @@ export function AdvancedSearchPage() {
     const saved = submitted(),
       sources = library.trackSources();
     if (!saved || !sources.length) return;
-    return combinedTrackReader(sources, async (source, at) => {
-      const status = await requestAede<{ capabilities: string[] }>(
-        "/api/v1/status",
-        {},
-        "GET",
-        null,
+    const owners = { local: library.localSession(), server: library.serverSession() };
+    return combinedTrackReader(sources, (source, at, admitted) =>
+      readAdvancedTrackPage(
+        requestAede,
         source,
-      );
-      if (!status.capabilities?.includes("advanced_search"))
-        throw new Error(t("Mettez à jour puis redémarrez Aède pour la recherche avancée."));
-      const identity = library.sessionFor(
-        source === "local" ? "track:@phemios/local/identity" : "track:identity",
-      );
-      const answer = await requestAede(
-        "/api/me/v1/search",
-        { expression: saved.expression, offset: String(at), limit: "50" },
-        "GET",
-        null,
-        source,
-      );
-      if (
-        identity !==
-        library.sessionFor(source === "local" ? "track:@phemios/local/identity" : "track:identity")
-      )
-        throw new Error(t("Session invalide."));
-      if (
-        at === 0 &&
-        status.capabilities.includes("private_achievements") &&
-        identity &&
-        identity.account.role !== "auditor"
-      ) {
-        await requestAede(
-          "/api/me/v1/achievements",
-          {},
-          "POST",
-          { advanced_search: true },
-          source,
-        ).catch(() => undefined);
-      }
-      return answer;
-    });
+        saved.expression,
+        at,
+        () => owners[source],
+        () =>
+          admitted() &&
+          submitted() === saved &&
+          owners[source] ===
+            (source === "local" ? library.localSession() : library.serverSession()),
+      ),
+    );
   });
-  const [results] = createResource(
-    () => reader() && { read: reader()!, offset: offset() },
-    async (key) => {
+  const resultRead = createDiagnosticRead(
+    () => (reader() ? { read: reader()!, offset: offset(), request: submitted()! } : false),
+    async (key, admission) => {
       const scope = library.advancedSearch.scope(),
-        request = submitted()!,
+        request = key.request,
         expression = request.expression;
       const cached = library.advancedSearch.cached(expression, key.offset);
       if (cached) return cached;
-      const value = await key.read(key.offset);
-      library.advancedSearch.remember(scope, expression, key.offset, value, request);
+      const value = await key.read(key.offset, 50, admission.current);
+      if (admission.current())
+        library.advancedSearch.remember(scope, expression, key.offset, value, request);
       return value;
     },
   );
+  const results = resultRead.current;
+
   const field = (id: string, label: string) => (
     <label>
       {t(label)}
@@ -276,7 +255,7 @@ export function AdvancedSearchPage() {
             type="submit"
             class="primary"
             icon="search"
-            busy={results.loading}
+            busy={resultRead.loading()}
             disabled={!library.trackSources().length}
           >
             {t("Rechercher")}
@@ -285,10 +264,10 @@ export function AdvancedSearchPage() {
       </form>
       <Feedback error message={error()} onClose={() => setError("")} />
 
-      <Show when={results.error}>
-        <Feedback error message={String(results.error)} />
+      <Show when={resultRead.error()}>
+        <Feedback error message={String(resultRead.error())} />
       </Show>
-      <Show when={submitted() && results() && !results.loading}>
+      <Show when={submitted() && results() && !resultRead.loading()}>
         {(_value) => (
           <>
             <div class="section-heading">
