@@ -7,7 +7,7 @@ import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { createAccountList, type Account } from "../library/account-list";
+import { createAccountList, managedLocalAccount, type Account } from "../library/account-list";
 /** Aède retains password, role and last-administrator policy. The owned local principal is protected. */
 export function SettingsAccounts() {
   const library = useLibrary();
@@ -27,6 +27,7 @@ export function SettingsAccounts() {
     setNewPassword = (value: string) => setDraft("newPassword", value);
   const administrative = () => library.session()?.account.role === "admin";
   const accounts = createAccountList(library.session, library.source);
+  const managed = (account: Account) => managedLocalAccount(account, library.source());
   const locked = (account: Account) =>
     !!account.parental_locked_by && account.parental_locked_by !== library.session()?.account.id;
   async function perform(work: () => Promise<unknown>) {
@@ -109,7 +110,7 @@ export function SettingsAccounts() {
                 <ChoiceSelect
                   label={t("Rôle")}
                   value={account.role}
-                  disabled={busy() || locked(account) || account.username === "phemios-local"}
+                  disabled={busy() || locked(account) || managed(account)}
                   onChange={(value) => void patch(account, { role: value })}
                   options={[
                     { value: "admin", label: t("Administrateur") },
@@ -120,13 +121,13 @@ export function SettingsAccounts() {
               </div>
 
               <button
-                disabled={busy() || locked(account) || account.username === "phemios-local"}
+                disabled={busy() || locked(account) || managed(account)}
                 onClick={() => void patch(account, { enabled: !account.enabled })}
               >
                 {account.enabled ? t("Désactiver") : t("Activer")}
               </button>
               <button
-                disabled={busy() || locked(account) || account.username === "phemios-local"}
+                disabled={busy() || locked(account) || managed(account)}
                 onClick={() =>
                   void perform(() =>
                     requestAede(
@@ -141,7 +142,7 @@ export function SettingsAccounts() {
               >
                 {t("Révoquer les sessions")}{" "}
               </button>
-              <Show when={account.username !== "phemios-local" && !locked(account)}>
+              <Show when={!managed(account) && !locked(account)}>
                 <details>
                   <summary>{t("Modifier ce compte")}</summary>
                   <form

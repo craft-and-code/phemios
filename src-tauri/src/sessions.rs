@@ -36,6 +36,25 @@ pub(crate) fn publish_login(
     Ok(account)
 }
 
+/// Remote authentication already allocated a bearer token before native publication.
+/// Retire only that rejected client; never invalidate a successor native session.
+/// Call from a blocking worker because release may perform the remote logout request.
+pub(crate) fn publish_remote_login(
+    session: &Mutex<Option<Client>>,
+    generation: &AtomicU64,
+    expected: u64,
+    client: Client,
+    release: impl FnOnce(&Client) -> Result<(), String>,
+) -> Result<Value, String> {
+    match publish_login(session, generation, expected, client.clone(), false) {
+        Ok(account) => Ok(account),
+        Err(publication) => match release(&client) {
+            Ok(()) => Err(publication),
+            Err(revocation) => Err(format!("{publication}\n{revocation}")),
+        },
+    }
+}
+
 /// Dispatch captured work once; stale queued clients and late private replies are refused.
 pub(crate) fn dispatch<T>(
     session: &Mutex<Option<Client>>,

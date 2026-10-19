@@ -244,11 +244,14 @@ impl Engine {
     }
     /// Disable future startup; catalog, annotations and source files are retained.
     pub fn stop(&mut self) -> Result<(), String> {
-        let mut value = self.config()?;
-        value["enabled"] = Value::Bool(false);
-        self.save(&value)?;
+        let saved = (|| {
+            let mut value = self.config()?;
+            value["enabled"] = Value::Bool(false);
+            self.save(&value)
+        })();
+        // A damaged or unwritable preference must not retain the live child lease.
         self.stop_process();
-        Ok(())
+        saved
     }
     /// Register folders picked by the native dialog; scanning remains an explicit action.
     pub fn add_roots(&self, paths: &[PathBuf]) -> Result<(), String> {

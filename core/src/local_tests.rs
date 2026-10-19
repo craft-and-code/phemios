@@ -303,3 +303,35 @@ fn concert_configuration_projection_never_exposes_the_key_or_resets_usage() {
     assert_eq!(removed["used"], saved["used"]);
     assert!(!removed.to_string().contains(secret));
 }
+
+#[cfg(unix)]
+#[test]
+fn unreadable_config_cannot_keep_an_owned_engine_lease_alive_after_stop() {
+    let data = Sandbox::new("stop-corrupt-config");
+    let mut engine = Engine::new(data.0.clone(), PathBuf::from("missing-engine"));
+    engine.keys("", "", false, false).unwrap();
+    let mut child = Command::new("cat")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    engine.lease = child.stdin.take();
+    engine.child = Some(child);
+    engine.address = Some("https://127.0.0.1:3412".into());
+    engine.certificate = Some(vec![1, 2, 3]);
+    fs::write(engine.file(), b"broken JSON").unwrap();
+    let result = engine.stop();
+    let released = engine.lease.is_none()
+        && engine.child.is_none()
+        && engine.address.is_none()
+        && engine.certificate.is_none();
+    // Ensure a failing pre-fix assertion does not leave the fixture process behind.
+    engine.stop_process();
+    assert!(result.is_err(), "configuration failure must stay visible");
+    assert_eq!(fs::read(engine.file()).unwrap(), b"broken JSON");
+    assert!(
+        released,
+        "the owned engine retained its lease after sign-out"
+    );
+}

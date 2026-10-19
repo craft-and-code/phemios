@@ -211,3 +211,99 @@ fn generation_guard_rejects_publication_after_even_same_client_replacement() {
     assert_eq!(writes.load(Ordering::SeqCst), 0);
     assert!(with_generation(&session, &generation, 2, || Ok(())).is_ok());
 }
+
+#[test]
+fn rejected_remote_logins_retire_only_their_own_unpublished_credentials() {
+    let (rejected, replacement) = sessions();
+    for (ticket, held) in [(0, None), (1, Some(replacement.clone()))] {
+        let session = Mutex::new(held.clone());
+        let generation = AtomicU64::new(1);
+        let released = AtomicUsize::new(0);
+        let result =
+            publish_remote_login(&session, &generation, ticket, rejected.clone(), |client| {
+                assert!(client.same_session(&rejected));
+                assert!(
+                    session.try_lock().is_ok(),
+                    "remote release must run outside the native owner lock"
+                );
+                released.fetch_add(1, Ordering::SeqCst);
+                Ok(())
+            });
+        assert!(result.is_err());
+        assert_eq!(
+            released.load(Ordering::SeqCst),
+            1,
+            "rejected bearer token remained active remotely"
+        );
+        assert_eq!(generation.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            session
+                .lock()
+                .unwrap()
+                .as_ref()
+                .map(|client| client.same_session(&replacement)),
+            held.as_ref().map(|_| true)
+        );
+    }
+}
+
+#[test]
+fn accepted_remote_login_keeps_its_token_and_rejected_revocation_errors_stay_visible() {
+    let (client, rejected) = sessions();
+    let session = Mutex::new(None);
+    let generation = AtomicU64::new(0);
+    let account = publish_remote_login(&session, &generation, 0, client.clone(), |_| {
+        panic!("accepted login must not be revoked")
+    })
+    .unwrap();
+    assert_eq!(account["nativeSession"], "1");
+    assert!(
+        session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .same_session(&client)
+    );
+    let result = publish_remote_login(&session, &generation, 0, rejected, |_| {
+        Err("revocation unavailable".into())
+    });
+    let failure = result.unwrap_err();
+    assert!(failure.contains("Connexion annulée"));
+    assert!(failure.contains("revocation unavailable"));
+    assert_eq!(generation.load(Ordering::SeqCst), 1);
+    assert!(
+        session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .same_session(&client)
+    );
+}
+
+#[test]
+fn private_file_mutations_require_live_write_rights_and_the_same_owner() {
+    for (current, allowed) in [
+        (json!({"id":"fixture","enabled":true,"role":"user"}), true),
+        (json!({"id":"fixture","enabled":true,"role":"admin"}), true),
+        (
+            json!({"id":"fixture","enabled":true,"role":"auditor"}),
+            false,
+        ),
+        (json!({"id":"fixture","enabled":false,"role":"user"}), false),
+        (json!({"id":"other","enabled":true,"role":"admin"}), false),
+    ] {
+        let (client, peer) = crate::account_test_support::rechecked_session(current.clone());
+        let session = Mutex::new(Some(client.clone()));
+        let generation = AtomicU64::new(4);
+        let writes = AtomicUsize::new(0);
+        let result = private_write(&session, &generation, "4", &client, || {
+            writes.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        });
+        peer.join().unwrap();
+        assert_eq!(result.is_ok(), allowed, "{current}");
+        assert_eq!(writes.load(Ordering::SeqCst), usize::from(allowed));
+    }
+}

@@ -1,7 +1,7 @@
 import { createRoot, createSignal } from "solid-js";
 import { expect, it, vi, afterEach } from "vitest";
 import { requestAede } from "../platform/desktop";
-import { createAccountList, parseAccounts } from "./account-list";
+import { createAccountList, managedLocalAccount, parseAccounts } from "./account-list";
 import type { AccountSession } from "./server";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 afterEach(() => vi.resetAllMocks());
@@ -41,4 +41,11 @@ it("confines failures to the accounts tab and never shows a late answer to a rep
   expect(rows.error()).toContain("Unreadable");
   expect(() => rows.values()).not.toThrow();
   dispose();
+});
+
+it("protects the managed local account without blocking a remote namesake", () => {
+  expect(managedLocalAccount({ username: "phemios-local" }, "local")).toBe(true);
+  expect(managedLocalAccount({ username: "phemios-local" }, "server")).toBe(false);
+  expect(managedLocalAccount({ username: "PHEMIOS-LOCAL" }, "local")).toBe(true);
+  expect(managedLocalAccount({ username: "phemios-local-child" }, "local")).toBe(false);
 });

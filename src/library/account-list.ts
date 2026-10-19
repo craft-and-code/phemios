@@ -10,6 +10,10 @@ export interface Account {
   enabled: boolean;
   parental_locked_by?: string;
 }
+/** Only the application-owned local principal is protected by client-side account controls. */
+export function managedLocalAccount(account: Pick<Account, "username">, source: SourceId): boolean {
+  return source === "local" && account.username.toLowerCase() === "phemios-local";
+}
 export function parseAccounts(raw: unknown): Account[] {
   if (
     !Array.isArray(raw) ||

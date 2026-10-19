@@ -41,20 +41,25 @@ pub(crate) async fn local_stop(
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
     let source = state.playback_source.clone();
-    blocking(move || {
-        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-        if *source.lock().map_err(|_| "État audio indisponible.")?
-            == phemios_core::federation::Source::Local
-        {
-            player.halt()?;
-            controller.halt()?;
-        }
-        Ok(())
-    })
-    .await?;
     let engine = state.engine.clone();
-    blocking(move || engine.lock().map_err(|_| "Moteur local occupé.")?.stop()).await?;
-    Ok(())
+    blocking(move || {
+        phemios_core::session_cleanup::complete(
+            || {
+                let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+                if *source.lock().map_err(|_| "État audio indisponible.")?
+                    == phemios_core::federation::Source::Local
+                {
+                    return phemios_core::session_cleanup::complete(
+                        || player.halt(),
+                        || controller.halt(),
+                    );
+                }
+                Ok(())
+            },
+            || engine.lock().map_err(|_| "Moteur local occupé.")?.stop(),
+        )
+    })
+    .await
 }
 
 #[tauri::command]

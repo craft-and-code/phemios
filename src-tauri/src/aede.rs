@@ -73,18 +73,27 @@ pub(crate) async fn aede_login(
         .server
         .generation
         .load(std::sync::atomic::Ordering::SeqCst);
-    let client = blocking(move || match certificate {
-        Some(certificate) => Client::login_pinned(&server, &username, &password, &certificate),
-        None => Client::login(&server, &username, &password),
+    let session = state.server.session.clone();
+    let current_generation = state.server.generation.clone();
+    let (client, account) = blocking(move || {
+        let client = match certificate {
+            Some(certificate) => Client::login_pinned(&server, &username, &password, &certificate),
+            None => Client::login(&server, &username, &password),
+        }?;
+        let account = crate::sessions::publish_remote_login(
+            &session,
+            &current_generation,
+            generation,
+            client.clone(),
+            |rejected| {
+                rejected
+                    .request("DELETE", "/api/auth/v1/session", &[], None)
+                    .map(|_| ())
+            },
+        )?;
+        Ok((client, account))
     })
     .await?;
-    let account = crate::sessions::publish_login(
-        &state.server.session,
-        &state.server.generation,
-        generation,
-        client.clone(),
-        false,
-    )?;
     if account["account"]["parental_enabled"] == true {
         crate::sessions::with_current(
             &state.server.session,
@@ -120,20 +129,28 @@ pub(crate) async fn aede_logout(
     let routing = hq.routing.clone();
     let source = state.playback_source.clone();
     blocking(move || {
-        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-        if *source.lock().map_err(|_| "État audio indisponible.")?
-            == phemios_core::federation::Source::Server
-        {
-            player.halt()?;
-            controller.halt()?;
-        }
-        Ok(())
+        phemios_core::session_cleanup::complete(
+            || {
+                let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
+                if *source.lock().map_err(|_| "État audio indisponible.")?
+                    == phemios_core::federation::Source::Server
+                {
+                    return phemios_core::session_cleanup::complete(
+                        || player.halt(),
+                        || controller.halt(),
+                    );
+                }
+                Ok(())
+            },
+            || match session {
+                Some(client) => client
+                    .request("DELETE", "/api/auth/v1/session", &[], None)
+                    .map(|_| ()),
+                None => Ok(()),
+            },
+        )
     })
-    .await?;
-    if let Some(client) = session {
-        blocking(move || client.request("DELETE", "/api/auth/v1/session", &[], None)).await?;
-    }
-    Ok(())
+    .await
 }
 
 #[tauri::command]
@@ -208,14 +225,8 @@ pub(crate) async fn aede_request(
         &mut body,
         self::source(source.as_deref())?,
     )?;
-    if origin == phemios_core::federation::Source::Local
-        && path.starts_with("/api/admin/v1/accounts/phemios-local")
-        && method != "GET"
-    {
-        return Err("Le compte du moteur local est géré par Phémios.".into());
-    }
-    if origin == phemios_core::federation::Source::Local && path == "/api/auth/v1/password" {
-        return Err("Le secret du moteur local est géré par Phémios.".into());
+    if origin == phemios_core::federation::Source::Local {
+        phemios_core::network::managed_account_request(&method, &path)?;
     }
     // Owner-bearing reads and all mutations must retain the frontend's original
     // process ticket; choosing whichever client is current after IPC queuing is unsafe.

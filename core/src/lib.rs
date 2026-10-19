@@ -75,3 +75,5 @@ pub fn transfer_random(bytes: &mut [u8]) -> Result<(), String> {
     }
     getrandom::fill(bytes).map_err(|_| "Générateur de jeton indisponible.".into())
 }
+
+pub mod session_cleanup;
