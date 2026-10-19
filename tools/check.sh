@@ -21,4 +21,5 @@ fi
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+node scripts/build-site.mjs --reuse-technical
 cargo build --workspace --locked

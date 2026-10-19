@@ -3,270 +3,345 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Phémios — Library &amp; playback</title>
+    <title>Your collection, every connection — Phémios</title>
     <meta
       name="description"
-      content="Phémios, the desktop application for exploring your Aède music library, locally and on your server."
+      content="Explore your records, follow the connections between artists and enjoy listening again. Phémios brings local music and your Aède server together."
     />
     <meta name="theme-color" content="#121314" />
+    <meta property="og:title" content="Your collection, every connection — Phémios" />
+    <meta
+      property="og:description"
+      content="Explore your records, follow the connections between artists and enjoy listening again. Phémios brings local music and your Aède server together."
+    />
+    <meta property="og:type" content="website" />
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles.css" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <header>
-      <a href="../" aria-label="Phémios"
-        ><img src="../assets/wordmark.svg" width="150" height="50" alt="Phémios"
+    <header class="site-header">
+      <a href="../en/" aria-label="Phémios"
+        ><img src="../assets/wordmark.svg" width="145" height="48" alt="Phémios"
       /></a>
       <nav aria-label="Main navigation">
-        <a href="#library">Library</a><a href="#playback">Playback</a
-        ><a href="#ecosystem">Ecosystem</a>
+        <a href="../en/#library">Discover</a><a href="../docs/en/index.html">Manual</a
+        ><a href="../components/index.html">Storybook <span aria-hidden="true">↗</span></a>
       </nav>
       <div class="languages" aria-label="Language">
-        <a href="../" lang="fr" aria-current="false">FR</a><span aria-hidden="true">/</span
-        ><a href="./" lang="en" aria-current="page">EN</a>
+        <a href="../index.html" lang="fr">FR</a><span aria-hidden="true">/</span
+        ><a href="../en/" lang="en" aria-current="page">EN</a>
       </div>
     </header>
     <main id="main">
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">DESKTOP APPLICATION · IN DEVELOPMENT</p>
-          <h1>Your music.<br /><span>Your own rhythm.</span></h1>
+          <p class="eyebrow">YOUR MUSIC, IN FULL VIEW</p>
+          <h1>Your collection.<br /><span>Every connection.</span></h1>
           <p class="lead">
-            Your albums, their stories and the way you listen. Phémios brings local folders and your
-            Aède server together in an interface you can make your own.
+            Enjoy choosing a record again. Browse its artwork, follow the musicians who catch your
+            attention and let lyrics join the listening experience. Your collection still has plenty
+            to tell you.
           </p>
           <div class="actions">
-            <a class="primary" href="#library"
-              >Explore the interface <span aria-hidden="true">↗</span></a
-            ><a
-              class="secondary"
-              href="https://craft-and-code.github.io/aede/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Discover Aède</a
+            <a class="primary" href="#library">Explore Phémios<span aria-hidden="true">→</span></a
+            ><a class="secondary" href="../docs/en/getting-started.html"
+              >Get started<span aria-hidden="true">↗</span></a
             >
           </div>
         </div>
         <div class="hero-note">
           <span class="status-dot"></span>
-          <div><strong>CUSTOMISABLE INTERFACE</strong><span>Local, server, or both.</span></div>
+          <p>
+            <strong>Local, server, or both.</strong
+            ><span>A desktop application. Your own collection.</span>
+          </p>
         </div>
       </section>
-      <figure class="app-preview" aria-label="Stylised interface preview">
-        <div class="preview-head">
-          <span class="window-dots" aria-hidden="true">● ● ●</span><span>phémios<i>.</i></span
-          ><small>Local + server</small>
-        </div>
-        <div class="preview-body">
-          <aside aria-hidden="true">
-            <span>YOUR COLLECTION</span><b>◌ &nbsp; Artists</b
-            ><b class="selected">◎ &nbsp; Albums</b><b>♡ &nbsp; Favourites</b><b>♧ &nbsp; Tags</b
-            ><b>◉ &nbsp; Radio</b><b>◍ &nbsp; Podcasts</b>
-          </aside>
-          <div class="preview-catalog">
-            <div class="preview-filters">
-              <span>Years</span><span class="years">1980 — 2025</span
-              ><small>12 albums · 1980–2025</small>
-            </div>
-            <div class="histogram" aria-hidden="true">
-              <i style="--bar: 12%"></i><i style="--bar: 24%"></i><i style="--bar: 15%"></i
-              ><i style="--bar: 40%"></i><i style="--bar: 25%"></i><i style="--bar: 60%"></i
-              ><i style="--bar: 30%"></i><i style="--bar: 75%"></i><i style="--bar: 48%"></i
-              ><i style="--bar: 85%"></i><i style="--bar: 40%"></i><i style="--bar: 56%"></i
-              ><i style="--bar: 100%"></i><i style="--bar: 65%"></i><i style="--bar: 43%"></i
-              ><i style="--bar: 70%"></i><i style="--bar: 55%"></i><i style="--bar: 33%"></i
-              ><i style="--bar: 46%"></i><i style="--bar: 23%"></i><i style="--bar: 32%"></i
-              ><i style="--bar: 62%"></i><i style="--bar: 40%"></i><i style="--bar: 27%"></i>
-            </div>
-            <div class="records">
-              <div class="record record-0"><span>LES HEURES BLEUES</span><small>ORÉE</small></div>
-              <div class="record record-1"><span>COURANTS</span><small>ORÉE</small></div>
-              <div class="record record-2"><span>LUMIÈRE OBLIQUE</span><small>ORÉE</small></div>
-              <div class="record record-3"><span>LIGNES DE FUITE</span><small>ORÉE</small></div>
-            </div>
-          </div>
-        </div>
-        <div class="preview-transport">
-          <div class="mini-record"></div>
-          <div><strong>A distant light</strong><small>Orée · Blue hours</small></div>
-          <span class="preview-play" aria-hidden="true">▶</span
-          ><svg class="wave" viewBox="0 0 464 80" aria-hidden="true">
-            <rect x="0" y="36.0" width="3" height="8" rx="1.5" />
-            <rect x="8" y="34.0" width="3" height="12" rx="1.5" />
-            <rect x="16" y="30.0" width="3" height="20" rx="1.5" />
-            <rect x="24" y="22.5" width="3" height="35" rx="1.5" />
-            <rect x="32" y="15.5" width="3" height="49" rx="1.5" />
-            <rect x="40" y="25.0" width="3" height="30" rx="1.5" />
-            <rect x="48" y="31.5" width="3" height="17" rx="1.5" />
-            <rect x="56" y="21.0" width="3" height="38" rx="1.5" />
-            <rect x="64" y="10.0" width="3" height="60" rx="1.5" />
-            <rect x="72" y="6.0" width="3" height="68" rx="1.5" />
-            <rect x="80" y="18.0" width="3" height="44" rx="1.5" />
-            <rect x="88" y="28.0" width="3" height="24" rx="1.5" />
-            <rect x="96" y="19.5" width="3" height="41" rx="1.5" />
-            <rect x="104" y="12.0" width="3" height="56" rx="1.5" />
-            <rect x="112" y="24.0" width="3" height="32" rx="1.5" />
-            <rect x="120" y="31.0" width="3" height="18" rx="1.5" />
-            <rect x="128" y="34.0" width="3" height="12" rx="1.5" />
-            <rect x="136" y="25.0" width="3" height="30" rx="1.5" />
-            <rect x="144" y="16.5" width="3" height="47" rx="1.5" />
-            <rect x="152" y="8.5" width="3" height="63" rx="1.5" />
-            <rect x="160" y="2.0" width="3" height="76" rx="1.5" />
-            <rect x="168" y="15.5" width="3" height="49" rx="1.5" />
-            <rect x="176" y="29.0" width="3" height="22" rx="1.5" />
-            <rect x="184" y="32.0" width="3" height="16" rx="1.5" />
-            <rect x="192" y="24.5" width="3" height="31" rx="1.5" />
-            <rect x="200" y="20.0" width="3" height="40" rx="1.5" />
-            <rect x="208" y="11.0" width="3" height="58" rx="1.5" />
-            <rect x="216" y="5.0" width="3" height="70" rx="1.5" />
-            <rect x="224" y="16.0" width="3" height="48" rx="1.5" />
-            <rect x="232" y="23.5" width="3" height="33" rx="1.5" />
-            <rect x="240" y="32.5" width="3" height="15" rx="1.5" />
-            <rect x="248" y="27.5" width="3" height="25" rx="1.5" />
-            <rect x="256" y="17.0" width="3" height="46" rx="1.5" />
-            <rect x="264" y="9.0" width="3" height="62" rx="1.5" />
-            <rect x="272" y="22.5" width="3" height="35" rx="1.5" />
-            <rect x="280" y="34.0" width="3" height="12" rx="1.5" />
-            <rect x="288" y="31.0" width="3" height="18" rx="1.5" />
-            <rect x="296" y="27.0" width="3" height="26" rx="1.5" />
-            <rect x="304" y="18.0" width="3" height="44" rx="1.5" />
-            <rect x="312" y="10.5" width="3" height="59" rx="1.5" />
-            <rect x="320" y="3.5" width="3" height="73" rx="1.5" />
-            <rect x="328" y="17.5" width="3" height="45" rx="1.5" />
-            <rect x="336" y="26.0" width="3" height="28" rx="1.5" />
-            <rect x="344" y="31.5" width="3" height="17" rx="1.5" />
-            <rect x="352" y="21.5" width="3" height="37" rx="1.5" />
-            <rect x="360" y="13.0" width="3" height="54" rx="1.5" />
-            <rect x="368" y="24.5" width="3" height="31" rx="1.5" />
-            <rect x="376" y="34.5" width="3" height="11" rx="1.5" />
-            <rect x="384" y="33.0" width="3" height="14" rx="1.5" />
-            <rect x="392" y="28.5" width="3" height="23" rx="1.5" />
-            <rect x="400" y="21.0" width="3" height="38" rx="1.5" />
-            <rect x="408" y="14.0" width="3" height="52" rx="1.5" />
-            <rect x="416" y="18.0" width="3" height="44" rx="1.5" />
-            <rect x="424" y="23.5" width="3" height="33" rx="1.5" />
-            <rect x="432" y="27.0" width="3" height="26" rx="1.5" />
-            <rect x="440" y="31.0" width="3" height="18" rx="1.5" />
-            <rect x="448" y="36.0" width="3" height="8" rx="1.5" />
-            <rect x="456" y="37.5" width="3" height="5" rx="1.5" />
-          </svg>
-        </div>
-        <figcaption>Stylised interface preview</figcaption>
+      <figure class="product-shot hero-shot">
+        <a href="../assets/screens/library.png" aria-label="Enlarge screenshot"
+          ><img
+            src="../assets/screens/library.png"
+            alt="Phémios screenshot with album navigation, year distribution and an artwork grid."
+            width="1280"
+            height="720"
+            fetchpriority="high"
+        /></a>
+        <figcaption>The Phémios interface · fictional catalogue and artwork</figcaption>
       </figure>
+      <ul class="promise-strip">
+        <li><span aria-hidden="true">✓</span>Original files stay intact</li>
+        <li><span aria-hidden="true">✓</span>Local library + Aède</li>
+        <li><span aria-hidden="true">✓</span>French and English interface</li>
+      </ul>
       <section id="library" class="section">
-        <p class="eyebrow">LIBRARY</p>
+        <p class="eyebrow">01 / FIND</p>
         <div class="section-heading">
-          <h2>Find a record.<br />Discover the next one.</h2>
-          <p>Artwork sets the pace. Filters narrow the selection while keeping your bearings.</p>
+          <h2>The right record.<br />At the right time.</h2>
+          <p>
+            Remember a cover, a year or a sound? Enter your collection through the route that feels
+            right.
+          </p>
         </div>
         <div class="features">
           <article>
             <span class="number">01</span>
-            <h3>Artwork comes first</h3>
+            <h3>A collection worth looking at</h3>
             <p>
-              Grid, list or Cover Flow: choose how to browse albums. Previously acquired images are
-              kept in a cache.
+              Grid, list or Cover Flow. Adjustable artwork, artist cards and previously retrieved
+              images kept in cache.
             </p>
           </article>
           <article>
             <span class="number">02</span>
-            <h3>Precise search</h3>
+            <h3>Selections that make sense</h3>
             <p>
-              Years, alphabet, genres, tags, formats, sample rate or bit depth: combine criteria and
-              create a collection from the results.
+              Years, alphabet, countries on a globe, genres, composers or labels: follow your
+              interests, then refine with advanced search.
             </p>
           </article>
           <article>
             <span class="number">03</span>
-            <h3>Your library, your landmarks</h3>
+            <h3>Keep your discoveries close</h3>
             <p>
-              Favourites, ratings, personal notes and dynamic collections accompany artists, albums
-              and tracks.
+              Ratings, favourites, tags and personal notes. Turn a selection into a dynamic
+              collection that evolves with your catalogue.
             </p>
           </article>
         </div>
+        <a class="text-link" href="../docs/en/browse.html">Explore the collection guide →</a>
       </section>
-      <section id="playback" class="playback-section section">
+      <section id="connections" class="section editorial">
         <div>
-          <p class="eyebrow">PLAYBACK</p>
-          <h2>Give the music<br />room to play.</h2>
+          <p class="eyebrow">02 / DISCOVER</p>
+          <h2>Does that name<br />ring a bell?</h2>
           <p class="lead">
-            A waveform to navigate within the track. A queue you can reorder. A dedicated view for
-            visuals and available synchronised lyrics.
+            A guest musician. Another band. A record you had forgotten. Credits become routes to
+            take your discovery further.
           </p>
-          <ul>
-            <li>Audio output, volume and repeat</li>
-            <li>Adjustable crossfade between tracks in DSP mode</li>
-            <li>Radio, favourite stations and podcast RSS subscriptions</li>
+          <ul class="plain-list">
+            <li>Explore a collaboration graph</li>
+            <li>Follow artists and albums</li>
+            <li>Keep roles and contributions distinct from band membership</li>
           </ul>
         </div>
-        <div class="sound-orbit" aria-hidden="true">
-          <div></div>
-          <div></div>
-          <div></div>
-          <span>◦</span>
+        <figure class="product-shot detail-shot">
+          <a href="../assets/screens/connections.png" aria-label="Enlarge screenshot"
+            ><img
+              src="../assets/screens/connections.png"
+              alt="The actual Phémios graph connecting Orée to fictional artists and albums."
+              width="1280"
+              height="720"
+              loading="lazy"
+          /></a>
+          <figcaption>Relations component · fictional credits</figcaption>
+        </figure>
+      </section>
+      <section class="section artist-story">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">MUSIC HAS A FACE, TOO</p>
+            <h2>Artwork. Faces.<br />Stories worth following.</h2>
+          </div>
+          <div>
+            <p>
+              Portraits, banners, logos and backgrounds give artists a presence. Read a biography,
+              open its longer version and explore a discography without leaving your music.
+            </p>
+            <a class="text-link" href="../docs/en/artists.html">Explore artist pages →</a>
+          </div>
+        </div>
+        <figure class="product-shot">
+          <a href="../assets/screens/artist.png" aria-label="Enlarge screenshot"
+            ><img
+              src="../assets/screens/artist.png"
+              alt="The fictional artist Orée’s page, with biography and discography."
+              width="1280"
+              height="720"
+              loading="lazy"
+          /></a>
+          <figcaption>Artist page · fictional example in the application</figcaption>
+        </figure>
+        <p class="caption-note">
+          Request artwork and metadata retrieval explicitly through Aède. Availability and keys
+          depend on providers.
+        </p>
+      </section>
+      <section id="playback" class="section">
+        <p class="eyebrow">03 / LISTEN</p>
+        <div class="section-heading">
+          <h2>Give the music<br />room to unfold.</h2>
+          <p>
+            Build a queue, press play and stay with the track. The waveform guides you; Playback
+            view makes room for words and visuals.
+          </p>
+        </div>
+        <figure class="product-shot listening-shot">
+          <a href="../assets/screens/listening.png" aria-label="Enlarge screenshot"
+            ><img
+              src="../assets/screens/listening.png"
+              alt="A green particle sphere in the real preview renderer, with a fictional lyric phrase."
+              width="1280"
+              height="720"
+              loading="lazy"
+          /></a>
+          <figcaption>Actual scene and lyrics renderers · fictional text, no audio</figcaption>
+        </figure>
+        <div class="features">
+          <article>
+            <span class="number">01</span>
+            <h3>A queue for your plans</h3>
+            <p>
+              Append a track, album or collection. Reorder, sort and remove entries to build your
+              listening session.
+            </p>
+          </article>
+          <article>
+            <span class="number">02</span>
+            <h3>Words with the music</h3>
+            <p>
+              Synchronized lyrics when available, manual navigation for untimed text, or a
+              floating-lyrics scene.
+            </p>
+          </article>
+          <article>
+            <span class="number">03</span>
+            <h3>Make listening comfortable</h3>
+            <p>
+              Audio output, volume, repeat, shuffle and DSP crossfade. Find your radio stations,
+              podcasts and audio CDs too.
+            </p>
+          </article>
+        </div>
+        <a class="text-link" href="../docs/en/playback.html">Get to know playback →</a>
+      </section>
+      <section class="personal-section section">
+        <h2>Your collection.<br />Your habits.</h2>
+        <div>
+          <p class="lead">
+            Choose colours, cover size, menus and shortcuts. Export preferences to keep your
+            bearings. Even on a shared catalogue, your annotations stay personal.
+          </p>
+          <div class="sample-tags">
+            <span>Favourites</span><span>Notes</span><span>Collections</span><span>Themes</span
+            ><span>Shortcuts</span>
+          </div>
+          <a class="text-link" href="../docs/en/settings.html">Personalize Phémios →</a>
         </div>
       </section>
       <section id="ecosystem" class="section">
-        <p class="eyebrow">ECOSYSTEM</p>
+        <p class="eyebrow">ONE FAMILY</p>
         <div class="section-heading">
-          <h2>Three tools.<br />One shared passion.</h2>
+          <h2>The interface, the engine<br />and a closer look at sound.</h2>
           <p>
-            Phémios presents your music. Aède organises the catalog and serves audio. FlacCompagnon
-            helps you understand your files.
+            Each tool has its role. Keep a simple journey in Phémios, with the right explanations a
+            click away.
           </p>
         </div>
         <div class="tools">
           <article class="tool">
-            <span class="tool-symbol">p<i></i></span>
+            <span class="tool-symbol" aria-hidden="true">p<i></i></span>
             <h3>Phémios</h3>
-            <strong>The desktop interface</strong>
-            <p>Browse, personalise and listen to your local and remote libraries.</p>
-            <span class="development">In development</span>
+            <strong>Explore & listen</strong>
+            <p>Your collection, musical connections, lyrics and an interface that adapts to you.</p>
+            <a class="text-link" href="../docs/en/index.html">Read the manual ↗</a>
           </article>
           <article class="tool">
-            <span class="tool-symbol">æ<i></i></span>
+            <span class="tool-symbol" aria-hidden="true">æ<i></i></span>
             <h3>Aède</h3>
-            <strong>Your library engine</strong>
-            <p>Catalog, metadata, credits, biographies, accounts and audio playback.</p>
+            <strong>Organize & serve</strong>
+            <p>
+              The bundled or remote engine: catalogue, files, enrichment, accounts and playback
+              rules.
+            </p>
             <a
               class="text-link"
               href="https://craft-and-code.github.io/aede/"
               target="_blank"
               rel="noopener noreferrer"
-              >Visit the website <span aria-hidden="true">↗</span></a
+              >Understand Aède ↗</a
             >
           </article>
           <article class="tool">
-            <span class="tool-symbol">f<i></i></span>
+            <span class="tool-symbol" aria-hidden="true">f<i></i></span>
             <h3>FlacCompagnon</h3>
-            <strong>Audio file analysis</strong>
-            <p>Analyse audio and find available results in Phémios.</p>
+            <strong>Measure & understand</strong>
+            <p>Audio analysis and its explanations. Find available results inside Phémios.</p>
             <a
               class="text-link"
               href="https://craft-and-code.github.io/FlacCompagnon/"
               target="_blank"
               rel="noopener noreferrer"
-              >Visit the website <span aria-hidden="true">↗</span></a
+              >Understand analyses ↗</a
             >
           </article>
         </div>
       </section>
-      <aside class="release-note">
-        <span class="status-dot"></span>
+      <section class="section faq">
+        <h2>A few answers<br />before your first listen.</h2>
         <div>
-          <strong>In development</strong>
-          <p>
-            The application is evolving. This website introduces the project; no public download is
-            announced here.
-          </p>
+          <details>
+            <summary>Do I need an Aède server already?<span aria-hidden="true">+</span></summary>
+            <p>
+              No. Phémios bundles a local engine for your folders. You can also connect an Aède
+              server or use both together.
+            </p>
+          </details>
+          <details>
+            <summary>Does it change my audio files?<span aria-hidden="true">+</span></summary>
+            <p>
+              Browsing, annotations and enrichment rewrite neither your tracks nor their tags. Copy
+              and conversion operations use an explicitly chosen destination.
+            </p>
+          </details>
+          <details>
+            <summary>Can I listen to more than my albums?<span aria-hidden="true">+</span></summary>
+            <p>
+              Yes: radio stations, RSS podcast subscriptions and audio CDs. Supported CUE image
+              formats, required tools and hardware limits are explained in the manual.
+            </p>
+          </details>
+          <details>
+            <summary>How can I try it today?<span aria-hidden="true">+</span></summary>
+            <p>
+              The project is in development and no public installer is announced here. The manual
+              explains running the sources. Storybook lets you use components with fictional data
+              without installing the App.
+            </p>
+          </details>
         </div>
-      </aside>
+      </section>
+      <section class="start-section">
+        <p class="eyebrow">FIND YOUR BEARINGS</p>
+        <h2>Your next record<br />is already waiting.</h2>
+        <p>Start with a folder. Discover what your collection has to tell you.</p>
+        <div class="actions">
+          <a class="primary" href="../docs/en/getting-started.html"
+            >Open the getting started guide →</a
+          ><a class="secondary" href="../components/index.html">Try the components ↗</a>
+        </div>
+        <p class="development-note">
+          Phémios is in development. Screenshots use fictional data; some native actions are
+          disabled in these previews. This site does not offer a public installer.
+        </p>
+        <small
+          >For curious minds: user manual, Storybook, Rustdoc and TypeScript contracts in the
+          footer.</small
+        >
+      </section>
     </main>
-    <footer>
-      <span>phémios<i>.</i></span
-      ><small>Your music stays yours.</small><small>MPL-2.0 · 2026</small>
+    <footer class="site-footer">
+      <div>
+        <img src="../assets/wordmark.svg" width="120" height="40" alt="Phémios" />
+        <p>Your music stays yours.</p>
+      </div>
+      <nav aria-label="Resources">
+        <a href="../docs/en/index.html">User manual</a
+        ><a href="../rust/phemios_core/index.html">Rustdoc</a
+        ><a href="../components/index.html">Storybook</a
+        ><a href="../typescript/index.html">TypeScript</a>
+      </nav>
+      <small>MPL-2.0 · 2026<br />Application in development</small>
     </footer>
   </body>
 </html>

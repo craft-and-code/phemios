@@ -1,0 +1,30 @@
+# Les histoires et les liens
+
+Une page d’artiste réunit sa biographie, sa discographie et les albums auxquels il a participé lorsque les crédits existent. Depuis un album ou une piste, cliquez sur un nom, un pays, un genre ou un label pour poursuivre l’exploration.
+
+## Suivre une contribution
+
+Les crédits décrivent les rôles effectivement présents dans le catalogue. Un guitariste invité n’est pas nécessairement un membre du groupe. Relations représente des collaborations et peut mener vers un artiste ou un album. Tournez le graphe pour explorer les voisins ; un lien ne constitue pas une preuve d’appartenance.
+
+Une discographie vide peut refléter l’absence de crédits, de métadonnées externes ou d’albums disponibles. Enrichir ne remplace jamais les informations locales de vos fichiers.
+
+## Lire une biographie
+
+Lire plus ouvre le texte long disponible, avec un sommaire pour les articles à plusieurs sections. La flèche en bas permet de remonter. L’icône de téléchargement près du titre exporte le texte conservé avec sa source, sa révision et sa licence.
+
+Les articles Wikipédia sont des extractions : certains tableaux, images et références peuvent manquer. Le lien original permet de consulter la page complète. Les articles déjà récupérés sont conservés dans un cache de lecture ; un changement de révision peut nécessiter une nouvelle récupération.
+
+## Récupérer les images et les biographies
+
+Après avoir scanné vos dossiers, lancez l’enrichissement pour compléter les pochettes, portraits, bannières, logos, fonds et biographies disponibles.
+
+1. Ouvrez **Paramètres → Sources externes**. Pour lancer une tâche, utilisez un compte administrateur de la bibliothèque concernée ; le moteur local dispose de sa propre session.
+2. Pour les bannières et arrière-plans, renseignez votre clé **Fanart.tv**, puis cliquez sur **Enregistrer les clés communes**. MusicBrainz, Cover Art Archive, Wikipédia, Wikidata et les passes Discogs utilisées ne demandent pas de clé dans cette interface. La clé AcoustID concerne l’identification, pas les bannières.
+3. Dans **Enrichir la bibliothèque**, choisissez **Local**, **Serveur**, ou les deux si ces sources sont présentes et administrables.
+4. Cochez **Pochettes**, **Biographies** et, avec sa clé configurée, **Fanart.tv · bannières et arrière-plans**. **Discogs · biographies des labels** complète les labels ; **Paroles** peut être demandé dans le même lot.
+5. Cliquez sur **Lancer l’enrichissement**. Suivez la tâche affichée et attendez son résultat. MusicBrainz identifie d’abord artistes et albums, puis les fournisseurs sélectionnés complètent les informations.
+6. Synchronisez le catalogue de la source concernée si nécessaire, puis rouvrez une page artiste ou album pour consulter les informations récupérées.
+
+Une connexion Internet est nécessaire à la récupération. Les correspondances incertaines peuvent demander une validation dans Aède. Aucun fournisseur ne garantit une image pour chaque artiste ou chaque album : une tâche terminée peut laisser des images absentes. Phémios réutilise ensuite les images en cache ; consulter une page ne relance pas tout l’enrichissement.
+
+Les albums manquants sont des suggestions de discographie, pas des fichiers que vous pouvez lire. Leur affichage est configurable ; la croix masque une suggestion, que vous pourrez retrouver dans les suggestions masquées. [Aède](https://craft-and-code.github.io/aede/docs/fr/index.html) documente les fournisseurs, la provenance et l’identification.

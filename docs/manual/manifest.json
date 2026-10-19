@@ -1,0 +1,123 @@
+[
+  {
+    "slug": "getting-started",
+    "title": {
+      "fr": "Premiers pas",
+      "en": "Getting started"
+    },
+    "description": {
+      "fr": "Installer le projet et écouter son premier album.",
+      "en": "Set up the project and play your first album."
+    }
+  },
+  {
+    "slug": "libraries",
+    "title": {
+      "fr": "Vos bibliothèques",
+      "en": "Your libraries"
+    },
+    "description": {
+      "fr": "Dossiers locaux, serveur et volumes réseau.",
+      "en": "Local folders, servers and network volumes."
+    }
+  },
+  {
+    "slug": "browse",
+    "title": {
+      "fr": "Explorer la CDthèque",
+      "en": "Explore your collection"
+    },
+    "description": {
+      "fr": "Pochettes, Cover Flow, filtres et recherche.",
+      "en": "Artwork, Cover Flow, filters and search."
+    }
+  },
+  {
+    "slug": "artists",
+    "title": {
+      "fr": "Les histoires et les liens",
+      "en": "Stories and connections"
+    },
+    "description": {
+      "fr": "Crédits, biographies et images des artistes.",
+      "en": "Artist credits, biographies and imagery."
+    }
+  },
+  {
+    "slug": "your-music",
+    "title": {
+      "fr": "Votre musique, vos repères",
+      "en": "Make it yours"
+    },
+    "description": {
+      "fr": "Favoris, tags, étoiles, collections et listes.",
+      "en": "Favourites, tags, ratings, collections and queues."
+    }
+  },
+  {
+    "slug": "playback",
+    "title": {
+      "fr": "Écouter et composer sa séance",
+      "en": "Listen and build a session"
+    },
+    "description": {
+      "fr": "Transport, sortie audio, paroles et visuels.",
+      "en": "Transport, audio output, lyrics and visuals."
+    }
+  },
+  {
+    "slug": "sources",
+    "title": {
+      "fr": "Radios, podcasts et CD",
+      "en": "Radio, podcasts and CDs"
+    },
+    "description": {
+      "fr": "D’autres façons de nourrir vos écoutes.",
+      "en": "More ways to listen."
+    }
+  },
+  {
+    "slug": "analysis",
+    "title": {
+      "fr": "Comprendre ses fichiers",
+      "en": "Understand your files"
+    },
+    "description": {
+      "fr": "Intégrité, analyses et spectres sans confusion.",
+      "en": "Integrity, analyses and spectra explained."
+    }
+  },
+  {
+    "slug": "settings",
+    "title": {
+      "fr": "Personnaliser et partager",
+      "en": "Personalize and share"
+    },
+    "description": {
+      "fr": "Apparence, raccourcis, comptes et sauvegardes.",
+      "en": "Appearance, shortcuts, accounts and backups."
+    }
+  },
+  {
+    "slug": "devices",
+    "title": {
+      "fr": "Emporter sa musique",
+      "en": "Take your music with you"
+    },
+    "description": {
+      "fr": "Copie, conversion et lecteurs externes.",
+      "en": "Copying, conversion and external players."
+    }
+  },
+  {
+    "slug": "help",
+    "title": {
+      "fr": "Questions et dépannage",
+      "en": "Questions and troubleshooting"
+    },
+    "description": {
+      "fr": "Les réponses aux premiers blocages.",
+      "en": "Help with common first steps."
+    }
+  }
+]

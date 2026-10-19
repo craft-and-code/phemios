@@ -1,32 +1,61 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-const root = resolve(import.meta.dirname, "../site");
-for (const [page, lang] of [
-  ["index.html", "fr"],
-  ["en/index.html", "en"],
-]) {
-  test(`website ${lang}: local assets, anchors, locale and project links stay valid`, () => {
-    const file = resolve(root, page),
-      html = readFileSync(file, "utf8");
-    assert.match(html, new RegExp(`<html lang="${lang}"`));
-    assert.match(html, /name="viewport"/);
-    assert.equal((html.match(/<h1>/g) ?? []).length, 1);
-    assert.doesNotMatch(html, /<script|<iframe|<form|https?:\/\/[^" ]+\.(?:js|css|png|woff)/);
-    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
-    assert.equal(new Set(ids).size, ids.length);
-    for (const [, value] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
-      if (value.startsWith("https://")) continue;
-      if (value.startsWith("#")) {
-        assert.ok(ids.includes(value.slice(1)), `missing anchor ${value}`);
-        continue;
+import { readFile, mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { generateSite, renderMarkdown } from "../scripts/site-content.mjs";
+import { checkSite } from "../scripts/check-site.mjs";
+const root = path.resolve(import.meta.dirname, "..");
+for (const language of ["fr", "en"]) {
+  test(`website ${language}: the complete manual has valid navigation, assets and explicit ecosystem links`, async () => {
+    const out = await mkdtemp(path.join(tmpdir(), "phemios-site-"));
+    try {
+      const pages = await generateSite(root, out);
+      await checkSite(out, { technical: false });
+      const home = await readFile(
+        path.join(out, language === "fr" ? "index.html" : "en/index.html"),
+        "utf8",
+      );
+      assert.match(home, new RegExp(`<html lang="${language}"`));
+      assert.match(home, /href="https:\/\/craft-and-code\.github\.io\/aede\/"/);
+      assert.match(home, /href="https:\/\/craft-and-code\.github\.io\/FlacCompagnon\/"/);
+      assert.doesNotMatch(home, /<iframe|<form|https?:\/\/[^" ]+\.(?:js|css|png|woff)/);
+      assert.equal(pages.length, 11);
+      for (const page of pages) {
+        const text = await readFile(path.join(out, "docs", language, page.slug + ".html"), "utf8");
+        assert.ok(text.includes(`../${language === "fr" ? "en" : "fr"}/${page.slug}.html`));
+        assert.ok(text.includes(`href="${page.slug}.html" data-search=`));
+        assert.match(text, /class="manual-toc"/);
+        assert.match(text, /rust\/phemios_core\/index.html/);
+        assert.match(text, /components\/index.html/);
       }
-      assert.ok(existsSync(resolve(dirname(file), value)), `missing local target ${value}`);
+      await assert.rejects(checkSite(out), /missing target|ENOENT/);
+      for (const name of [
+        "components/index.html",
+        "components/index.json",
+        "rust/phemios_core/index.html",
+        "typescript/index.html",
+      ]) {
+        await mkdir(path.dirname(path.join(out, name)), { recursive: true });
+        await writeFile(path.join(out, name), "test-only technical output");
+      }
+      await checkSite(out);
+    } finally {
+      await rm(out, { recursive: true, force: true });
     }
-    assert.match(html, /href="https:\/\/craft-and-code\.github\.io\/aede\/"/);
-    assert.match(html, /href="https:\/\/craft-and-code\.github\.io\/FlacCompagnon\/"/);
-    assert.match(html, /rel="noopener noreferrer"/);
-    assert.ok(existsSync(resolve(root, lang === "fr" ? "en/index.html" : "index.html")));
   });
 }
+test("manual rendering keeps literal text and code, rewrites chapter links and refuses executable links", () => {
+  const result = renderMarkdown(
+    "# Title\n\n## Same title\n\n<script>alert(1)</script> [Next](playback.md) **Read**\n\n## Same title\n\n```\n<a>\n```",
+  );
+  assert.match(result.html, /&lt;script&gt;/);
+  assert.match(result.html, /href="playback.html"/);
+  assert.match(result.html, /<code>&lt;a&gt;<\/code>/);
+  assert.deepEqual(
+    result.headings.map((h) => h.id),
+    ["same-title", "same-title-2"],
+  );
+  assert.throws(() => renderMarkdown("[Bad](javascript:alert)"), /Unsupported/);
+  assert.throws(() => renderMarkdown("```\nnot closed"), /Unclosed/);
+});

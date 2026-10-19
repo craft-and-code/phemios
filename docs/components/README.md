@@ -48,3 +48,11 @@ The compact follow-up adds complete/partial/unknown album duration scenarios, th
 `Media/DurationToggle` checks the inert dash/default pointer and unchanged finite-duration toggle. These scenarios neither mount a library provider nor invoke native capabilities.
 
 Biography reading is exposed by `Catalog/ArtistBiography` (literal sections, contents/focus and attribution) and `Catalog/BiographyMore` (inline arrow/activity geometry). Public-cache/revalidation and account/native navigation admission are tested separately; these presentation scenarios do not fetch Wikipedia. `Media/TransferWorkspace` verifies picker-before-selection DOM order and equal scrolling panels, while `Media/QueueAdd/PagingHelp` exercises shared compact pagination through both bounds. `Media/TransferDestination/StableRefresh` checks retained card height with multiple devices and a cleared selection notice; `Catalog/ArtistBiography/LongReading` verifies the floating return and title focus.
+
+The assembled [website and user manual](../../site/README.md) includes this same static explorer at `components/`, alongside Rustdoc and frontend declarations. `Editorial/WebsiteShowcase` renders the real collaboration graph and playback scene for editorial captures, using fictional credits and original placeholder words. These screenshot fixtures do not add native or account access; see [capture provenance](../../site/assets/screens/README.md).
+
+`Catalog/BiographyMore/DuringArtistPlayback` reproduces the artist-page current-track/biography adjacency. Real hit testing ensures the playing-track link cannot intercept Read more; the catalogue track row retains its full-width click target. This scenario requires no account or audio playback.
+
+`Data/AnalysisReport` exercises the reusable guided rendering, remembered expand/collapse controls and mouse/touch marker hints, compact shield block, aligned disclosure arrows, whole-album JSON selection, read-only import and literal diagnostics. `npm run analysis:build` exports the same renderer for non-Solid sites; see [integration and limits](../design/analysis-report.md).
+
+AnalysisReport scenarios also verify the single rotating expansion control, green aggregate integrity only for confirmed good verdicts, mouse/touch and focus hint dismissal, and interactive click/dropout timing aligned with the complete chart width.
