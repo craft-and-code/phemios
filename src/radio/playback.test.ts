@@ -372,3 +372,48 @@ it("restores shared volume without writing it back, then remembers user volume a
     dispose();
   });
 });
+
+it.each(["resolve", "reject"] as const)(
+  "keeps a resumed radio when superseded source preparation settles: %s",
+  async (reply) => {
+    await createRoot(async (dispose) => {
+      let finish!: () => void, fail!: (error: Error) => void;
+      const oldAudio = media(),
+        nextAudio = media(),
+        create = vi.fn().mockReturnValueOnce(oldAudio).mockReturnValueOnce(nextAudio),
+        before = vi
+          .fn<() => Promise<void>>()
+          .mockImplementationOnce(
+            () =>
+              new Promise<void>((resolve, reject) => {
+                finish = resolve;
+                fail = reject;
+              }),
+          )
+          .mockResolvedValue(undefined),
+        resolve = vi.fn(async (uuid: string) => ({
+          stationuuid: uuid,
+          url: "https://radio.example.org/live.mp3",
+        })),
+        player = createRadioPlayback(resolve, before, create);
+      try {
+        const old = player.start(station);
+        player.pause();
+        player.resume();
+        await vi.waitFor(() => expect(player.status()).toBe("playing"));
+        if (reply === "resolve") finish();
+        else fail(Error("Old preparation failure"));
+        await old;
+        expect(player.status()).toBe("playing");
+        expect(player.error()).toBe("");
+        expect(resolve).toHaveBeenCalledOnce();
+        expect(oldAudio.play).not.toHaveBeenCalled();
+        expect(oldAudio.release).toHaveBeenCalledOnce();
+        expect(nextAudio.play).toHaveBeenCalledOnce();
+        expect(nextAudio.release).not.toHaveBeenCalled();
+      } finally {
+        dispose();
+      }
+    });
+  },
+);
