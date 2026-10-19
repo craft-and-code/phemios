@@ -18,6 +18,7 @@ pub(crate) struct Aede {
     pub(crate) playback_source: Arc<Mutex<phemios_core::federation::Source>>,
     pub(crate) articles: Arc<Mutex<phemios_core::article_store::Store>>,
     pub(crate) podcasts: Arc<Mutex<phemios_core::podcast_store::Store>>,
+    // Exact OS Downloads directory, shared by direct exports; never ascend or append a category.
     pub(crate) downloads: std::path::PathBuf,
 }
 impl Aede {
@@ -422,11 +423,7 @@ pub(crate) async fn aede_download(
     let client = client(owner)?;
     let session = owner.session.clone();
     let generation = owner.generation.clone();
-    let folder = state
-        .downloads
-        .parent()
-        .ok_or("Dossier de téléchargement inaccessible.")?
-        .to_path_buf();
+    let folder = state.downloads.clone();
     blocking(move || {
         crate::sessions::scoped_dispatch(&session, &generation, Some(&ticket), &client, || {
             let library_file = id.starts_with("m3u-file-");
@@ -454,7 +451,7 @@ pub(crate) async fn aede_download_analysis(
     bridge(version)?;
     let (origin, reference) = phemios_core::federation::resolve(&reference)?;
     let client = client(state.owner(origin))?;
-    let folder = state.downloads.join(origin.name());
+    let folder = state.downloads.clone();
     blocking(move || {
         let response = client.request(
             "GET",
@@ -477,7 +474,7 @@ pub(crate) async fn aede_download_spectrum(
     bridge(version)?;
     let (origin, reference) = phemios_core::federation::resolve(&reference)?;
     let client = client(state.owner(origin))?;
-    let folder = state.downloads.join(origin.name());
+    let folder = state.downloads.clone();
     blocking(move || {
         let bytes = client.spectrum_download(&reference)?;
         let path = phemios_core::download::publish_spectrum(&folder, &reference, &bytes)?;

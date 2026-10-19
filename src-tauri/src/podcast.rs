@@ -37,7 +37,7 @@ pub(crate) async fn podcast_download(
     let origin = crate::aede::source(Some(&source))?;
     let session = state.owner(origin).session.clone();
     let generation = state.owner(origin).generation.clone();
-    let folder = state.downloads.join("Podcasts");
+    let folder = state.downloads.clone();
     let gate = podcasts.download.clone();
     crate::aede::blocking(move || {
         let _guard = gate

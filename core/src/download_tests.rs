@@ -258,3 +258,64 @@ fn personal_note_title_is_catalogue_bound_and_cannot_escape_downloads() {
     assert!(unicode_path.file_name().unwrap().len() <= 200);
     std::fs::remove_dir_all(folder).unwrap();
 }
+
+#[test]
+fn mixed_exports_share_existing_downloads_without_subfolders_or_replacement() {
+    let folder =
+        std::env::temp_dir().join(format!("phemios-shared-downloads-{}", std::process::id()));
+    fs::create_dir_all(&folder).unwrap();
+    let unrelated = folder.join("user-document.txt");
+    fs::write(&unrelated, b"keep this user file").unwrap();
+    let previous = folder.join("wikipedia-fr-42.txt");
+    fs::write(&previous, b"edited article").unwrap();
+    let id = format!("playlist-{}", "d".repeat(64));
+    let playlist = json!({"id":id,"content":"#EXTM3U\n/music/one.flac\n"});
+    let library_id = format!("m3u-file-{}", "e".repeat(64));
+    let library =
+        json!({"id":library_id,"filename":"album.m3u8","content":"one.flac\n","track_count":1});
+    let report = json!({"format":"flaccompagnon-report","version":1,"report":{"root":"/music/album","files":[{"path":"/music/album/one.flac"}],"has_flac":true}});
+    let note = json!({"reference":"artist:fixture","annotation":{"reference":"artist:fixture","note":"private saved note"}});
+    let paths = [
+        publish(&folder, &id, &playlist).unwrap(),
+        publish_library_m3u(&folder, &library_id, &library).unwrap(),
+        publish_analysis(&folder, "track:one", &report).unwrap(),
+        publish_analysis(&folder, "track:one", &report).unwrap(),
+        publish_spectrum(&folder, "track:one", b"\x89PNG\r\n\x1a\nretained-spectrum").unwrap(),
+        publish_wikipedia(
+            &folder,
+            "fr",
+            42,
+            "\u{feff}Wikipédia · FR · 42\nFull article",
+        )
+        .unwrap(),
+        publish_note(
+            &folder,
+            "artist:fixture",
+            &note,
+            &json!({"reference":"artist:fixture","name":"Fictional artist"}),
+        )
+        .unwrap(),
+    ];
+    for path in &paths {
+        assert_eq!(path.parent(), Some(folder.as_path()));
+        assert!(path.is_file());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(
+                fs::metadata(path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+        }
+    }
+    assert_ne!(paths[2], paths[3]);
+    assert_eq!(fs::read(&unrelated).unwrap(), b"keep this user file");
+    assert_eq!(fs::read(&previous).unwrap(), b"edited article");
+    assert_eq!(fs::read_dir(&folder).unwrap().count(), paths.len() + 2);
+    assert!(
+        fs::read_dir(&folder)
+            .unwrap()
+            .all(|entry| entry.unwrap().file_type().unwrap().is_file())
+    );
+    fs::remove_dir_all(folder).unwrap();
+}

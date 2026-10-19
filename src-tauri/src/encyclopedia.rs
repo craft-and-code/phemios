@@ -100,9 +100,7 @@ pub(crate) async fn encyclopedia_export(
     let folder = app
         .path()
         .download_dir()
-        .map_err(|_| "Dossier de téléchargement inaccessible.")?
-        .join("Phémios")
-        .join("Encyclopédie");
+        .map_err(|_| "Dossier de téléchargement inaccessible.")?;
     crate::aede::blocking(move || {
         let path =
             phemios_core::download::publish_wikipedia(&folder, &language, page_id, &document)?;

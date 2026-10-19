@@ -70,7 +70,7 @@ pub fn run() -> Result<(), tauri::Error> {
                         app.path().app_data_dir()?.join("private-podcasts"),
                     ),
                 )),
-                downloads: app.path().download_dir()?.join("Phémios"),
+                downloads: app.path().download_dir()?,
             });
             app.manage(std::sync::Arc::new(
                 phemios_core::playback::Player::default(),

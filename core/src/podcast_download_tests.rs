@@ -19,6 +19,9 @@ impl Drop for Fixture {
 #[test]
 fn streaming_publication_sanitizes_titles_and_preserves_prior_downloads() {
     let folder = Fixture::new();
+    fs::create_dir_all(&folder.0).unwrap();
+    let user_file = folder.0.join("user-file.txt");
+    fs::write(&user_file, b"keep").unwrap();
     let first = publish_episode(
         &folder.0,
         "../Episode: 1",
@@ -42,7 +45,8 @@ fn streaming_publication_sanitizes_titles_and_preserves_prior_downloads() {
     assert_ne!(first, second);
     assert_eq!(std::fs::read(first).unwrap(), b"audio");
     assert_eq!(std::fs::read(second).unwrap(), b"second");
-    assert_eq!(std::fs::read_dir(&folder.0).unwrap().count(), 2);
+    assert_eq!(std::fs::read(&user_file).unwrap(), b"keep");
+    assert_eq!(std::fs::read_dir(&folder.0).unwrap().count(), 3);
 }
 #[test]
 fn failures_leave_no_partial_episode_or_temporary_file() {

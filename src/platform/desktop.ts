@@ -235,7 +235,7 @@ export const connectHqPlayer = (
   );
 export const disconnectHqPlayer = () => nativeCall<void>("hqplayer_disconnect");
 
-/** Explicit episode download streams to Downloads/Phémios/Podcasts, without overwriting prior files. */
+/** Explicit episode download streams directly to system Downloads, without overwriting prior files. */
 export const downloadPodcastEpisode = (url: string, title: string) =>
   nativeCall<string>("podcast_download", {
     url,
