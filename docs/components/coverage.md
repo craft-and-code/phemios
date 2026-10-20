@@ -147,3 +147,5 @@ Storybook uses actual presentation implementations. This inventory includes ever
 `Settings/JamBase` presents missing-key, configured and exhausted-budget states through the native-free `JamBaseSettingsView`; no real key or provider request enters Storybook.
 
 `Media/ExternalTransfer` covers the source-before-destination recipe and preview/start gating. `Media/TransferWorkspace` exercises the permanent two-pane composer; `Media/TransferDestination` exercises the actual folder-action presentation without native IO.
+
+SourceReviewCard: Catalog/SourceReviewCard provides pending, accepted, rejected and busy states with fictional evidence and presentation-only decisions.

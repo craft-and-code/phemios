@@ -16,13 +16,15 @@ export async function startEnrichment(
   }));
 }
 
-/** Confirm additive Discogs support on the captured library before submitting a non-replayed job. */
+/** Explicit job flags plus bounded engine-owned selectors; the server validates supported combinations. */
+export type EnrichmentOptions = Record<string, boolean | string | string[]>;
+/** Confirm additive enrichment capabilities before submitting a non-replayed job on the captured login. */
 export async function startSourceEnrichment(
   source: SourceId,
-  options: Record<string, boolean>,
+  options: EnrichmentOptions,
   isCurrent: () => boolean,
 ): Promise<{ task_id: number }> {
-  if (options.discogs || options.musicbrainz) {
+  if (options.discogs || options.musicbrainz || options.artist) {
     const status = await requestAede<{ capabilities?: unknown }>(
       "/api/v1/status",
       {},
@@ -37,6 +39,10 @@ export async function startSourceEnrichment(
     )
       throw new Error(
         t("Mettez à jour puis redémarrez Aède pour récupérer les biographies Discogs des labels."),
+      );
+    if (options.artist && !status.capabilities.includes("fetch_artist_summary_links"))
+      throw new Error(
+        t("Mettez à jour puis redémarrez Aède pour récupérer la biographie de cet artiste."),
       );
     if (
       options.musicbrainz &&

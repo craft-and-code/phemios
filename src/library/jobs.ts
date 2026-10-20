@@ -1,3 +1,4 @@
+import type { EnrichmentOptions } from "./enrichment";
 import { createGenerations } from "./generation-jobs";
 import { validFeatureProgress, type FeatureProgress } from "./mood-features";
 import { startEnrichment, startSourceEnrichment, hasActiveEnrichment } from "./enrichment";
@@ -344,7 +345,7 @@ export function createJobs(
     return result.task_id;
   }
   /** Submission remains owned by the library when the initiating settings view is closed. */
-  async function enrich(sources: readonly SourceId[], input: Record<string, boolean>) {
+  async function enrich(sources: readonly SourceId[], input: EnrichmentOptions) {
     if (enrichmentPending() || hasActiveEnrichment(jobs())) return undefined;
     setEnrichmentPending(true);
     const scopes = new Map(sources.map((source) => [source, capture(source)]));

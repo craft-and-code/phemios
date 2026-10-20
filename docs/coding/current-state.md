@@ -8,6 +8,7 @@ The application includes artist presentations, Albums/Cover Flow, tracks, countr
 
 ## Current delivery boundaries
 
+- Administrative MusicBrainz review is available in External sources, with durable accept/reject/undo, optimistic revisions and explicit exact-artist biography jobs. Engines must advertise the new capabilities; native App rebuild/acceptance remains separate.
 - Process-owned native sessions can be restored after a frontend reload; older hosts expose explicit disconnection recovery after an active-session conflict. Application exit still discards credentials.
 - The embedded engine uses explicit locked/offline preparation. Published-engine updates are explicit; running processes must be restarted to expose changed native contracts.
 - Native PCM has DSP/without-effects modes, bounded preloading, repeat/shuffle, consumed-time seeking and optional DSP crossfade. Mode changes apply to future preparation without reopening audible/prepared visits. Bit-perfect is unavailable on this remote f32/CPAL route. See [audio continuity](../design/audio-continuity.md).
@@ -19,9 +20,9 @@ The application includes artist presentations, Albums/Cover Flow, tracks, countr
 
 ## Verification status
 
-The 2026-10-19 audio/interface checkpoint passed 1,098 frontend, 25 Node tooling and 278 Rust core/native-session tests, strict App/component TypeScript, lint/format, bridge-version validation, core Clippy and Rustdoc. Subsequent release preparation passed 30 Node cases and selected audio tests (178 frontend, 81 Rust). These overlapping checkpoints are not additive test totals and are not a new full native release gate.
+The 2026-10-20 non-App-build MusicBrainz checkpoint passed 1,131 frontend cases, 30 Node tooling cases and 280 Rust core/native-session harness cases, strict App/component TypeScript, lint/format, bridge-version validation, core Clippy and Rustdoc. Generated TypeScript contracts, Storybook and all 26 bilingual website/manual pages with local links also passed. These are software checks; no live-provider or physical-device acceptance is implied.
 
-The current documentation cleanup changes no product behavior and reruns no application build. Use [verification procedures](frontend-documentation.md) and `tools/check.sh` for a future full gate; that script builds the embedded engine, frontend and native host. Actual App bundling, physical listening/transfers, minimum-toolchain execution and target-platform acceptance are distinct checks. See [UI acceptance](ui-acceptance.md).
+The authoritative `tools/check.sh` also builds the embedded engine, frontend and native host; its App-build stages were deliberately omitted from this checkpoint. Use [verification procedures](frontend-documentation.md) for the individual checks. Actual App bundling, native-host execution, physical listening/transfers, minimum-toolchain execution and target-platform acceptance remain distinct checks. See [UI acceptance](ui-acceptance.md).
 
 ## Documentation map
 

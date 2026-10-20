@@ -840,3 +840,11 @@ fn managed_principal_guard_does_not_protect_unrelated_prefix_named_accounts() {
     }
     assert!(managed_account_request("GET", "/api/admin/v1/accounts/phemios-local").is_ok());
 }
+
+#[test]
+fn source_review_allows_only_its_bounded_read_and_decision_routes() {
+    assert!(allowed("GET", "/api/admin/v1/source-review"));
+    assert!(allowed("PATCH", "/api/admin/v1/source-review"));
+    assert!(!allowed("DELETE", "/api/admin/v1/source-review"));
+    assert!(!allowed("GET", "/api/admin/v1/source-review/../accounts"));
+}

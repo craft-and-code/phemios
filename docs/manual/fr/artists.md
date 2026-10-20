@@ -29,10 +29,20 @@ Après avoir scanné vos dossiers, lancez l’enrichissement pour compléter les
 5. Cliquez sur **Lancer l’enrichissement**. Suivez la tâche affichée et attendez son résultat. MusicBrainz identifie d’abord artistes et albums, puis les fournisseurs sélectionnés complètent les informations.
 6. Synchronisez le catalogue de la source concernée si nécessaire, puis rouvrez une page artiste ou album pour consulter les informations récupérées.
 
-Une connexion Internet est nécessaire à la récupération. Les correspondances incertaines peuvent demander une validation dans Aède. Aucun fournisseur ne garantit une image pour chaque artiste ou chaque album : une tâche terminée peut laisser des images absentes. Phémios réutilise ensuite les images en cache ; consulter une page ne relance pas tout l’enrichissement.
+Une connexion Internet est nécessaire à la récupération. Les correspondances incertaines peuvent être validées dans Phémios, dans la section **Correspondances MusicBrainz** ci-dessus. Aucun fournisseur ne garantit une image pour chaque artiste ou chaque album : une tâche terminée peut laisser des images absentes. Phémios réutilise ensuite les images en cache ; consulter une page ne relance pas tout l’enrichissement.
 
 Le bouton **Arrêter l’enrichissement** annule les tâches d’enrichissement actives sur les sources concernées ; il est désactivé au repos. Les données déjà enregistrées restent disponibles. Attendez la confirmation d’annulation avant de relancer.
 
-Une biographie nécessite une identité validée et un lien Wikidata dans les données MusicBrainz. Sans identifiant dans les tags, la recherche propose une correspondance à valider dans Aède (`aede review --interactive`). Un résultat de recherche Wikipédia dans l’Encyclopédie ne constitue pas cette validation. Picard peut fournir les identifiants dans les fichiers, mais il n’est pas obligatoire. Répéter une passe d’enrichissement ne valide jamais automatiquement une proposition et ne complète pas une fiche déjà en cache sans une actualisation explicite côté Aède.
+## Valider une correspondance MusicBrainz
+
+Dans **Paramètres → Sources externes → Correspondances MusicBrainz**, un administrateur peut traiter les propositions stockées par l’enrichissement. Les bibliothèques locale et serveur disposent chacune de leur liste. Ouvrir cette liste ne contacte pas MusicBrainz.
+
+- Comparez le nom du catalogue avec les indices proposés : type, région, pays, dates et précision éventuelle. Le score représente une correspondance de recherche, pas une certitude. **Vérifier sur MusicBrainz** ouvre la fiche originale.
+- **Valider** enregistre votre décision ; **Refuser** empêche cette proposition d’être utilisée. **Afficher aussi les correspondances déjà traitées** permet de les retrouver et d’**Annuler la décision**.
+- Pour un artiste, **Valider et récupérer la biographie** valide puis lance une tâche dédiée à cet artiste. Si la correspondance est déjà validée, utilisez **Récupérer la biographie**. Suivez la tâche dans la section d’enrichissement ; son bouton d’arrêt reste disponible après une navigation.
+
+Une biographie nécessite un lien Wikidata fourni par MusicBrainz. Aède complète les liens détaillés de l’identité validée avant de récupérer l’article Wikipédia dans la langue choisie, avec l’anglais en secours. L’absence de lien ou d’article reste possible. Trouver un nom dans l’Encyclopédie ne constitue pas une validation. Picard est une possibilité, pas une obligation.
+
+Les décisions concernent le catalogue commun et ne changent jamais les fichiers ou leurs tags. Une proposition modifiée entre l’affichage et le clic doit être actualisée avant validation. Si le lancement de la biographie échoue, la décision déjà enregistrée est conservée. Une mise à jour et un redémarrage d’Aède sont nécessaires si le serveur n’expose pas encore cette fonction.
 
 Les albums manquants sont des suggestions de discographie, pas des fichiers que vous pouvez lire. Leur affichage est configurable ; la croix masque une suggestion, que vous pourrez retrouver dans les suggestions masquées. [Aède](https://craft-and-code.github.io/aede/docs/fr/index.html) documente les fournisseurs, la provenance et l’identification.

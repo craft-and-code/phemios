@@ -1,3 +1,4 @@
+import { SettingsSourceReview } from "./SettingsSourceReview";
 import { errorMessage, isAedeConnectionError } from "../library/aede-availability";
 import { completeServiceKeySave } from "../library/service-key-save";
 import { interfaceProfileIdentity } from "../library/account-preferences";
@@ -170,6 +171,7 @@ export function SettingsServices() {
         )}
       </p>
       <SettingsJamBase />
+      <SettingsSourceReview />
       <h3>{t("Enrichir la bibliothèque")}</h3>
       <small>{t("Les options sont enregistrées automatiquement.")}</small>
       <Show when={prefs.error()}>
@@ -300,12 +302,12 @@ export function SettingsServices() {
       </div>
       <p class="muted">
         {t(
-          "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.",
+          "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.",
         )}
       </p>
       <p class="muted">
         {t(
-          "Une biographie nécessite une identité validée et un lien Wikidata fourni par MusicBrainz. Sans identifiant dans les fichiers, les correspondances proposées doivent être validées dans Aède. Trouver un nom dans l’Encyclopédie ne suffit pas ; Picard est une possibilité, pas une obligation.",
+          "Une biographie nécessite une identité validée et un lien Wikidata fourni par MusicBrainz. Sans identifiant dans les fichiers, validez les correspondances proposées ci-dessus. Trouver un nom dans l’Encyclopédie ne suffit pas ; Picard est une possibilité, pas une obligation.",
         )}
       </p>
       <Show

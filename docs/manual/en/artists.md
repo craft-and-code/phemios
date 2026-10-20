@@ -29,10 +29,20 @@ After scanning folders, run enrichment to retrieve available covers, portraits, 
 5. Click **Start enrichment**, follow the displayed task and wait for its result. MusicBrainz first identifies artists and albums; selected providers then fill in their information.
 6. Synchronize that source’s catalogue if needed, then reopen an artist or album page to see retrieved information.
 
-Retrieval needs an Internet connection. Uncertain matches may need confirmation in Aède. No provider guarantees an image for every artist or album: a completed task can leave artwork missing. Phémios subsequently reuses cached images; opening a page does not restart all enrichment.
+Retrieval needs an Internet connection. Uncertain matches can be reviewed in Phémios under **MusicBrainz matches** above. No provider guarantees an image for every artist or album: a completed task can leave artwork missing. Phémios subsequently reuses cached images; opening a page does not restart all enrichment.
 
 **Stop enrichment** cancels active enrichment tasks for the relevant sources; it is disabled while idle. Previously saved results remain available. Wait for cancellation confirmation before launching again.
 
-A biography requires an approved identity and a Wikidata link in the MusicBrainz data. Without identifiers in the tags, name searches propose matches for approval in Aède (`aede review --interactive`). A Wikipedia search result in the Encyclopedia is not that approval. Picard can supply file identifiers, but is not required. Repeating enrichment never automatically approves a proposal or fills an already cached record without an explicit refresh in Aède.
+## Review a MusicBrainz match
+
+In **Settings → External sources → MusicBrainz matches**, an administrator can review proposals stored by enrichment. Local and server libraries each have their own list. Opening this list does not contact MusicBrainz.
+
+- Compare the catalogue name with the proposed type, region, country, dates and disambiguation when available. A search score is not a certainty. **Check on MusicBrainz** opens the original entity page.
+- **Validate** saves your decision; **Reject** prevents the proposal from being used. **Also show reviewed matches** reveals previous decisions and **Undo decision** returns one to pending.
+- For an artist, **Validate and retrieve biography** saves acceptance and starts a task for that exact artist. An accepted match offers **Retrieve biography**. Follow the job in the enrichment section; its stop action remains available after navigation.
+
+A biography still needs a MusicBrainz Wikidata link. Aède completes the validated identity’s detailed links before retrieving the Wikipedia summary in the chosen language, with English fallback. A link or article may be unavailable. Finding a name in the Encyclopedia is not an identity review. Picard remains an option, not a requirement.
+
+Decisions apply to the shared catalogue and never edit audio files or tags. A proposal changed since display must be refreshed before acceptance. If biography submission fails, the already saved decision is retained. Update and restart Aède if the server does not yet advertise this capability.
 
 Missing albums are discography suggestions, not playable files. Their display is configurable; the cross hides a suggestion, which remains accessible among hidden suggestions. [Aède](https://craft-and-code.github.io/aede/docs/en/index.html) documents providers, attribution and identification.

@@ -391,6 +391,7 @@ fn allowed(method: &str, path: &str) -> bool {
                     | "/api/v1/roots"
                     | "/api/admin/v1/accounts"
                     | "/api/admin/v1/tasks"
+                    | "/api/admin/v1/source-review"
                     | "/api/admin/v1/network-audio"
                     | "/api/v1/presentation/tracks"
                     | "/api/v1/presentation/analysis"
@@ -442,7 +443,8 @@ fn allowed(method: &str, path: &str) -> bool {
                 )
         }
         "PATCH" => {
-            path == "/api/me/v1/collection"
+            path == "/api/admin/v1/source-review"
+                || path == "/api/me/v1/collection"
                 || path == "/api/me/v1/preferences"
                 || account_path(path, false)
         }
