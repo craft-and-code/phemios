@@ -2,9 +2,23 @@
 
 Phémios is the desktop application for browsing and listening to your music collection. Its bundled Aède engine builds the catalogue. You can also connect an Aède server, or use both libraries together.
 
-## Try the project
+## Install a published release
 
-Phémios is in development. This site does not offer a public installer yet. Explore the controls without an installation, account or personal library in [Storybook](../../components/index.html). These are fictional scenarios without real audio playback.
+Download the installer for your system from the [Phémios GitHub releases](https://github.com/craft-and-code/phemios/releases). Names follow the `phemios-App-VERSION-PLATFORM` pattern: `.dmg` for Apple Silicon macOS, `.msi` or `.exe` for Windows x64, and `.AppImage`, `.deb` or `.rpm` for x86_64 Linux. When a `.sha256` file is published, verify it before opening the installer. The local Aède engine is bundled with the app; a remote Aède server remains optional.
+
+On macOS, open the `.dmg`, drag **Phémios** to **Applications**, then launch it. If macOS blocks a downloaded app because it still has the quarantine attribute, close Phémios and run this command in **Terminal**:
+
+```
+xattr -dr com.apple.quarantine "/Applications/Phémios.app"
+```
+
+Adjust the path if you installed the app elsewhere, then open it again. This command removes only Phémios' quarantine attribute; it does not disable Gatekeeper for other applications.
+
+On Windows, run the `.msi` or `.exe` and approve the SmartScreen prompt if Windows asks you to confirm it. On Linux, make the AppImage executable (`chmod +x Phémios.AppImage`, then `./Phémios.AppImage`) or install the `.deb`/`.rpm` package with your distribution's package manager.
+
+The [component catalogue](../../components/index.html) also lets you explore the interface with fictional data, without installing the app, signing in or using a personal library; it does not play real audio files.
+
+## Run from source
 
 To run the sources, install Node.js 22.12+ within major 22, Node.js 24 or 26+, Rust 1.90+ and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). From the project folder, run:
 

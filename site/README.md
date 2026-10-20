@@ -28,4 +28,4 @@ User operations stay in this manual. Backend commands, server administration and
 
 `npm test` exercises both generated manual editions and renderer safety; `npm run site:check` additionally verifies the assembled real technical outputs. The complete `tools/check.sh` gate assembles the website after generating its technical documentation. Before release, check homepage/manual at desktop and narrow widths, chapter search, language continuity, keyboard focus and a bundled Storybook story. The site's generated output belongs in `dist-site/` and is ignored by Git.
 
-There is no invented public installer, repository URL or release promise. No remote destination is configured here. Publication remains a separate user-authorized step; the desktop build never deploys the website.
+The homepage links to the verified [GitHub releases page](https://github.com/craft-and-code/phemios/releases) for published installers. Release publication remains a separate user-authorized step; the desktop build never deploys the website.

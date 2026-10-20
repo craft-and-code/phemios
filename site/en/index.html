@@ -22,7 +22,7 @@
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
       <a href="../en/" aria-label="Phémios"
-        ><img src="../assets/wordmark.svg" width="145" height="48" alt="Phémios"
+        ><img src="../assets/phemios-wordmark.svg" width="145" height="48" alt="Phémios"
       /></a>
       <nav aria-label="Main navigation">
         <a href="../en/#library">Discover</a><a href="../docs/en/index.html">Manual</a
@@ -59,19 +59,18 @@
         </div>
       </section>
       <figure class="product-shot hero-shot">
-        <a href="../assets/screens/library.png" aria-label="Enlarge screenshot"
-          ><img
-            src="../assets/screens/library.png"
-            alt="Phémios screenshot with album navigation, year distribution and an artwork grid."
-            width="1280"
-            height="720"
-            fetchpriority="high"
-        /></a>
+        <img
+          src="../assets/screens/library.png"
+          alt="Phémios screenshot with album navigation, year distribution and an artwork grid."
+          width="1280"
+          height="720"
+          fetchpriority="high"
+        />
         <figcaption>The Phémios interface · fictional catalogue and artwork</figcaption>
       </figure>
       <ul class="promise-strip">
         <li><span aria-hidden="true">✓</span>Original files stay intact</li>
-        <li><span aria-hidden="true">✓</span>Local library + Aède</li>
+        <li><span aria-hidden="true">✓</span>Local and network library</li>
         <li><span aria-hidden="true">✓</span>French and English interface</li>
       </ul>
       <section id="library" class="section">
@@ -111,7 +110,7 @@
         </div>
         <a class="text-link" href="../docs/en/browse.html">Explore the collection guide →</a>
       </section>
-      <section id="connections" class="section editorial">
+      <section id="connections" class="section">
         <div>
           <p class="eyebrow">02 / DISCOVER</p>
           <h2>Does that name<br />ring a bell?</h2>
@@ -125,17 +124,6 @@
             <li>Keep roles and contributions distinct from band membership</li>
           </ul>
         </div>
-        <figure class="product-shot detail-shot">
-          <a href="../assets/screens/connections.png" aria-label="Enlarge screenshot"
-            ><img
-              src="../assets/screens/connections.png"
-              alt="The actual Phémios graph connecting Orée to fictional artists and albums."
-              width="1280"
-              height="720"
-              loading="lazy"
-          /></a>
-          <figcaption>Relations component · fictional credits</figcaption>
-        </figure>
       </section>
       <section class="section artist-story">
         <div class="section-heading">
@@ -151,17 +139,6 @@
             <a class="text-link" href="../docs/en/artists.html">Explore artist pages →</a>
           </div>
         </div>
-        <figure class="product-shot">
-          <a href="../assets/screens/artist.png" aria-label="Enlarge screenshot"
-            ><img
-              src="../assets/screens/artist.png"
-              alt="The fictional artist Orée’s page, with biography and discography."
-              width="1280"
-              height="720"
-              loading="lazy"
-          /></a>
-          <figcaption>Artist page · fictional example in the application</figcaption>
-        </figure>
         <p class="caption-note">
           Request artwork and metadata retrieval explicitly through Aède. Availability and keys
           depend on providers.
@@ -176,17 +153,6 @@
             view makes room for words and visuals.
           </p>
         </div>
-        <figure class="product-shot listening-shot">
-          <a href="../assets/screens/listening.png" aria-label="Enlarge screenshot"
-            ><img
-              src="../assets/screens/listening.png"
-              alt="A green particle sphere in the real preview renderer, with a fictional lyric phrase."
-              width="1280"
-              height="720"
-              loading="lazy"
-          /></a>
-          <figcaption>Actual scene and lyrics renderers · fictional text, no audio</figcaption>
-        </figure>
         <div class="features">
           <article>
             <span class="number">01</span>
@@ -240,15 +206,17 @@
         </div>
         <div class="tools">
           <article class="tool">
-            <span class="tool-symbol" aria-hidden="true">p<i></i></span>
-            <h3>Phémios</h3>
+            <h3 class="tool-brand tool-brand-icon">
+              <img src="../assets/phemios-icon.svg" alt="Phémios" width="64" height="64" />
+            </h3>
             <strong>Explore & listen</strong>
             <p>Your collection, musical connections, lyrics and an interface that adapts to you.</p>
             <a class="text-link" href="../docs/en/index.html">Read the manual ↗</a>
           </article>
           <article class="tool">
-            <span class="tool-symbol" aria-hidden="true">æ<i></i></span>
-            <h3>Aède</h3>
+            <h3 class="tool-brand tool-brand-icon">
+              <img src="../assets/aede-icon.svg" alt="Aède" width="64" height="64" />
+            </h3>
             <strong>Organize & serve</strong>
             <p>
               The bundled or remote engine: catalogue, files, enrichment, accounts and playback
@@ -263,8 +231,14 @@
             >
           </article>
           <article class="tool">
-            <span class="tool-symbol" aria-hidden="true">f<i></i></span>
-            <h3>FlacCompagnon</h3>
+            <h3 class="tool-brand tool-brand-icon">
+              <img
+                src="../assets/flaccompagnon-icon.png"
+                alt="FlacCompagnon"
+                width="64"
+                height="64"
+              />
+            </h3>
             <strong>Measure & understand</strong>
             <p>Audio analysis and its explanations. Find available results inside Phémios.</p>
             <a
@@ -304,9 +278,10 @@
           <details>
             <summary>How can I try it today?<span aria-hidden="true">+</span></summary>
             <p>
-              The project is in development and no public installer is announced here. The manual
-              explains running the sources. Storybook lets you use components with fictional data
-              without installing the App.
+              Download the installer for your system from the
+              <a href="https://github.com/craft-and-code/phemios/releases">GitHub releases</a>. The
+              manual explains installation and first launch. Storybook lets you use components with
+              fictional data without installing the App.
             </p>
           </details>
         </div>
@@ -321,8 +296,8 @@
           ><a class="secondary" href="../components/index.html">Try the components ↗</a>
         </div>
         <p class="development-note">
-          Phémios is in development. Screenshots use fictional data; some native actions are
-          disabled in these previews. This site does not offer a public installer.
+          Screenshots use fictional data; some native actions remain disabled in these previews. The
+          manual explains installation and first launch.
         </p>
         <small
           >For curious minds: user manual, Storybook, Rustdoc and TypeScript contracts in the
@@ -332,7 +307,7 @@
     </main>
     <footer class="site-footer">
       <div>
-        <img src="../assets/wordmark.svg" width="120" height="40" alt="Phémios" />
+        <img src="../assets/phemios-wordmark.svg" width="120" height="40" alt="Phémios" />
         <p>Your music stays yours.</p>
       </div>
       <nav aria-label="Resources">
@@ -341,7 +316,7 @@
         ><a href="../components/index.html">Storybook</a
         ><a href="../typescript/index.html">TypeScript</a>
       </nav>
-      <small>MPL-2.0 · 2026<br />Application in development</small>
+      <small>MPL-2.0 · 2026</small>
     </footer>
   </body>
 </html>

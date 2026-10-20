@@ -195,6 +195,14 @@ h1 span {
   border-color: var(--accent);
   box-shadow: 0 15px 60px #0005;
 }
+.product-shot > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #3a3e3f;
+  border-radius: 12px;
+  background: #111213;
+}
 .product-shot img {
   display: block;
   width: 100%;
@@ -209,6 +217,10 @@ h1 span {
 .hero-shot a {
   box-shadow: 0 30px 90px #0005;
 }
+.hero-shot > img {
+  box-shadow: 0 30px 90px #0005;
+}
+
 .promise-strip {
   display: flex;
   justify-content: space-between;
@@ -254,6 +266,9 @@ h3 {
   font-size: 15px;
   margin: 0;
 }
+.artist-story .section-heading {
+  align-items: start;
+}
 .features,
 .tools {
   display: grid;
@@ -282,12 +297,6 @@ h3 {
   color: var(--accent);
   margin-top: 22px;
 }
-.editorial {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  align-items: center;
-  gap: 50px;
-}
 .plain-list {
   list-style: none;
   padding: 0;
@@ -298,17 +307,10 @@ h3 {
   border-top: 1px solid var(--border);
   padding-block: 12px;
 }
-.detail-shot a {
-  background: #181a1b;
-}
 .caption-note {
   font-size: 12px;
   color: var(--muted);
   max-width: 700px;
-}
-.listening-shot {
-  max-width: 1000px;
-  margin-inline: auto;
 }
 .personal-section {
   display: grid;
@@ -341,21 +343,23 @@ h3 {
   align-items: start;
   border-top: 1px solid var(--border);
 }
-.tool-symbol {
-  font-size: 42px;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-.tool-symbol i {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  background: var(--accent);
-  border-radius: 50%;
-  margin-left: 3px;
-}
 .tool h3 {
   margin-block: 20px 6px;
+}
+.tool-brand {
+  --tool-icon-size: 64px;
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+}
+.tool-brand img {
+  display: block;
+  flex: none;
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+  object-fit: contain;
 }
 .tool strong {
   font-size: 12px;
@@ -458,13 +462,6 @@ h3 {
   }
   .hero-note {
     display: none;
-  }
-  .editorial {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .editorial .lead {
-    max-width: 660px;
   }
   .section-heading {
     gap: 30px;
@@ -591,15 +588,4 @@ h3 {
   *::after {
     transition: none !important;
   }
-}
-
-/* Crop the component explorer surround, retaining the actual relation renderer. */
-.detail-shot a {
-  aspect-ratio: 1.24;
-}
-.detail-shot img {
-  width: 145%;
-  max-width: none;
-  margin-left: -22.5%;
-  margin-top: -2%;
 }
