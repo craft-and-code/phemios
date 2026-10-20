@@ -1,4 +1,17 @@
 /* Explorer-only layout; production components and their styles are imported unchanged. */
+/*
+ * The application shell intentionally locks the document and lets its own
+ * panels scroll. Storybook renders stories in a standalone iframe, so that
+ * production rule also locked the preview document and made long docs appear
+ * truncated. Restore a document scroll root for the explorer; components that
+ * provide their own bounded panel keep their local overflow rules below.
+ */
+html,
+body {
+  overflow: auto !important;
+  overscroll-behavior: auto;
+}
+
 .component-frame {
   width: 100%;
   max-width: 860px;
