@@ -150,8 +150,13 @@ export function LibraryProvider(props: ParentProps) {
       return parental.catalogVisible("local", value) ? value : undefined;
     }),
     server: createMemo(() => {
-      const value = rawSnapshot("server");
-      return parental.catalogVisible("server", value) ? value : undefined;
+      const value = rawSnapshot("server"),
+        account = serverSession();
+      // Public data can survive logout, but never represent another connected authority.
+      return (!account || value?.server === account.server) &&
+        parental.catalogVisible("server", value)
+        ? value
+        : undefined;
     }),
   };
   const admittedSnapshot = (owner: SourceId) => admitted[owner]();
@@ -185,7 +190,7 @@ export function LibraryProvider(props: ParentProps) {
   const trackSources = createMemo(() =>
     (["local", "server"] as const).flatMap((owner) => {
       const session = owner === "local" ? localSession() : serverSession();
-      const snapshot = owner === "local" ? localSnapshot() : serverSnapshot();
+      const snapshot = admittedSnapshot(owner);
       return session
         ? [
             {
@@ -369,7 +374,7 @@ export function LibraryProvider(props: ParentProps) {
   });
   createBackgroundPriority({
     jobs: tasks.jobs,
-    session: sessionFor,
+    sessions: { local: localSession, server: serverSession },
     playing: () =>
       ["playing", "connecting"].includes(player.state().status) ||
       ["playing", "connecting"].includes(radio.status()) ||
@@ -561,6 +566,7 @@ export function LibraryProvider(props: ParentProps) {
     }
     try {
       await parental.refresh(owner);
+      if (!current() || !parental.available(owner)) return false;
       parentalSync.delete(owner);
       const policyEpoch = policyEpochs[owner];
       const raw = await syncAede(owner);
@@ -607,7 +613,7 @@ export function LibraryProvider(props: ParentProps) {
     password: string,
     certificate?: number[],
   ) {
-    if (busy() || disconnectingServer) return;
+    if (!bootstrap.active() || busy() || disconnectingServer) return;
     bootstrap.invalidate("server");
     setBusy(true);
     setError("");
@@ -615,10 +621,15 @@ export function LibraryProvider(props: ParentProps) {
     try {
       // Revoke and halt the previous server account before admitting new credentials.
       if (serverSession()) await releaseServer();
-      setSession(await loginAede(server, username, password, certificate));
+      if (!bootstrap.active()) return;
+      const account = await loginAede(server, username, password, certificate);
+      // Native process ownership may survive a frontend reload; this retired context must not resume.
+      if (!bootstrap.active()) return;
+      setSession(account);
       authenticated = true;
       connection.start();
     } catch (failure) {
+      if (!bootstrap.active()) return;
       let message = failure instanceof Error ? failure.message : t("Connexion impossible.");
       if (activeNativeSessionConflict(failure)) {
         try {
@@ -664,33 +675,44 @@ export function LibraryProvider(props: ParentProps) {
       disconnectingServer = false;
     }
   }
-  let startingLocal = false;
+  let startingLocal = false,
+    localOperation = 0;
   async function enableLocal() {
-    if (startingLocal) return;
+    if (!bootstrap.active() || startingLocal) return;
     startingLocal = true;
+    const operation = ++localOperation;
+    const current = () => bootstrap.active() && operation === localOperation;
     bootstrap.invalidate("local");
     setError("");
     try {
-      setLocalSession(await startLocal());
+      const account = await startLocal();
+      if (!current()) return;
+      setLocalSession(account);
       if (!serverSession()) chooseSource("local");
       await sync("local");
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Moteur local indisponible."));
+      if (current())
+        setError(failure instanceof Error ? failure.message : t("Moteur local indisponible."));
     } finally {
       startingLocal = false;
     }
   }
   async function disableLocal() {
+    // A late shutdown reply must not clear a newer local login or its feedback.
+    const operation = ++localOperation;
+    const current = () => bootstrap.active() && operation === localOperation;
     bootstrap.invalidate("local");
     setLocalSession(undefined);
     annotationsLoader.reset("local");
     try {
       await stopLocal();
+      if (!current()) return;
       setLocalSession(undefined);
       if (player.ownsSource("local")) player.reset();
       if (source() === "local") chooseSource("server");
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Arrêt local impossible."));
+      if (current())
+        setError(failure instanceof Error ? failure.message : t("Arrêt local impossible."));
     }
   }
   onMount(async () => {

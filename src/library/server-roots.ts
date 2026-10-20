@@ -1,19 +1,24 @@
 import { t } from "../i18n";
-/** Root reads keep exclusions separate and refuse changing epochs or incomplete pages. */
+/** Root reads keep exclusions separate and refuse changing epochs or incomplete pages.
+ * Retiring admission drops partial rows and prevents any subsequent page dispatch.
+ */
 export async function readServerRoots(
   request: (offset: number) => Promise<unknown>,
+  current: () => boolean = () => true,
 ): Promise<string[]> {
   const roots: string[] = [];
   let offset = 0,
     total: number | undefined,
     stamp: number | undefined;
   do {
+    if (!current()) return [];
     const page = (await request(offset)) as {
       items?: { path: string | null; status: string }[];
       total?: number;
       offset?: number;
       scanned_at?: number;
     };
+    if (!current()) return [];
     if (
       !page ||
       !Array.isArray(page.items) ||

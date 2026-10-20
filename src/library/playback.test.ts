@@ -2298,3 +2298,120 @@ it.each(["policy", "repeat"])(
     });
   },
 );
+
+it.each(
+  ["volume", "crossfade"].flatMap((command) =>
+    ["reset", "profile", "relogin", "round-trip"].map((change) => ({ command, change })),
+  ),
+)(
+  "admits $command after $change without waiting for a retired setting acknowledgement",
+  async ({ command, change }) => {
+    vi.stubGlobal("window", new EventTarget());
+    await createRoot(async (dispose) => {
+      activateInterfaceProfile("previous-audio-owner", (values) => values);
+      const player = createPlayback(() => true);
+      let complete!: () => void;
+      vi.mocked(playbackControl)
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              complete = resolve;
+            }),
+        )
+        .mockResolvedValue(undefined);
+      const choose = (value: number) =>
+        command === "volume" ? player.volume(value) : player.chooseCrossfade(value);
+      const oldValue = command === "volume" ? 0.1 : 1000,
+        firstValue = command === "volume" ? 0.4 : 4000,
+        lastValue = command === "volume" ? 0.7 : 7000;
+      const old = choose(oldValue);
+      try {
+        expect(playbackControl).toHaveBeenCalledTimes(1);
+        if (change === "reset") player.reset();
+        else {
+          if (change === "round-trip") activateInterfaceProfile("other-owner", (values) => values);
+          activateInterfaceProfile(
+            change === "profile" ? "new-audio-owner" : "previous-audio-owner",
+            (values) => values,
+          );
+          window.dispatchEvent(new Event("phemios-settings-loaded"));
+        }
+        await choose(firstValue);
+        expect(playbackControl).toHaveBeenCalledTimes(2);
+        expect(playbackControl).toHaveBeenLastCalledWith(command, firstValue);
+        expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!)).toMatchObject(
+          command === "volume" ? { volume: firstValue } : { crossfadeMs: firstValue },
+        );
+        complete();
+        await old;
+        expect(playbackControl).toHaveBeenCalledTimes(2);
+        expect(player.error()).toBe("");
+        await choose(lastValue);
+        expect(playbackControl).toHaveBeenCalledTimes(3);
+        expect(playbackControl).toHaveBeenLastCalledWith(command, lastValue);
+        expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!)).toMatchObject(
+          command === "volume" ? { volume: lastValue } : { crossfadeMs: lastValue },
+        );
+      } finally {
+        complete();
+        await old;
+        dispose();
+      }
+    });
+  },
+);
+
+it.each(["volume", "crossfade"] as const)(
+  "retains current %s coalescing when a retired worker fails during the new write",
+  async (command) => {
+    await createRoot(async (dispose) => {
+      activateInterfaceProfile("retired-setting-owner", (values) => values);
+      const player = createPlayback(() => true);
+      let fail!: () => void, finish!: () => void;
+      vi.mocked(playbackControl)
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((_, reject) => {
+              fail = () => reject(new Error("retired setting"));
+            }),
+        )
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              finish = resolve;
+            }),
+        )
+        .mockResolvedValue(undefined);
+      const choose = (value: number) =>
+        command === "volume" ? player.volume(value) : player.chooseCrossfade(value);
+      const value = (step: number) => (command === "volume" ? step / 10 : step * 1000);
+      const old = choose(value(1));
+      let fresh: Promise<void> | undefined;
+      try {
+        await choose(value(2));
+        activateInterfaceProfile("current-setting-owner", (values) => values);
+        fresh = choose(value(3));
+        expect(playbackControl).toHaveBeenCalledTimes(2);
+        await choose(value(4));
+        fail();
+        await old;
+        expect(player.error()).toBe("");
+        await choose(value(5));
+        expect(playbackControl).toHaveBeenCalledTimes(2);
+        finish();
+        await fresh;
+        expect(playbackControl).toHaveBeenCalledTimes(3);
+        expect(playbackControl).toHaveBeenLastCalledWith(command, value(5));
+        expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!)).toMatchObject(
+          command === "volume" ? { volume: value(5) } : { crossfadeMs: value(5) },
+        );
+      } finally {
+        fail();
+        finish?.();
+        await old;
+        await fresh;
+        dispose();
+      }
+    });
+  },
+);

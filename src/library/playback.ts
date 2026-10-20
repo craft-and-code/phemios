@@ -21,6 +21,7 @@ import {
 import { idlePlayback, parseOutputs, parsePlayback, type AudioOutput } from "./playback-state";
 import type { AccountSession, Track } from "./server";
 import { createSeekProgress } from "./seek-progress";
+import { createAudioSettingQueue } from "./audio-setting-queue";
 import {
   playbackSelection,
   queueAdditionSelection,
@@ -89,8 +90,21 @@ export function createPlayback(
     if (epoch !== generation) return;
     await playbackControl("volume", state().volume);
   }
-  let pendingCrossfade: { ms: number; lifetime: number; profile: object } | undefined,
-    crossfadeRunning = false;
+  const audioSettingScope = () => ({ lifetime, profile: interfaceProfileIdentity() });
+  const writeCrossfade = createAudioSettingQueue(
+    audioSettingScope,
+    async (ms, current, pending) => {
+      try {
+        if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", ms);
+        if (current()) saveAudio({ ...audio(), crossfadeMs: ms });
+      } catch (failure) {
+        if (current()) {
+          if (!pending()) setCrossfade(audio().crossfadeMs);
+          setError(message(failure));
+        }
+      }
+    },
+  );
   async function chooseCrossfade(ms: number) {
     if (busy()) return;
     try {
@@ -101,32 +115,8 @@ export function createPlayback(
     }
     setError("");
     setCrossfade(ms);
-    pendingCrossfade = { ms, lifetime, profile: interfaceProfileIdentity() };
-    if (crossfadeRunning) return;
-    crossfadeRunning = true;
     // Hot policy writes retain polling/focus and coalesce only not-yet-sent choices.
-    try {
-      while (pendingCrossfade) {
-        const chosen = pendingCrossfade;
-        pendingCrossfade = undefined;
-        const current = () =>
-          chosen.lifetime === lifetime && chosen.profile === interfaceProfileIdentity();
-        if (!current()) continue;
-        try {
-          if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", chosen.ms);
-          if (current()) {
-            saveAudio({ ...audio(), crossfadeMs: chosen.ms });
-          }
-        } catch (failure) {
-          if (current()) {
-            if (!pendingCrossfade) setCrossfade(audio().crossfadeMs);
-            setError(message(failure));
-          }
-        }
-      }
-    } finally {
-      crossfadeRunning = false;
-    }
+    await writeCrossfade(ms);
   }
   const progress = createSeekProgress(
     state,
@@ -583,8 +573,17 @@ export function createPlayback(
       if (epoch === lifetime) cancelDiscovery();
     }
   }
-  let pendingVolume: { value: number; lifetime: number; profile: object } | undefined,
-    volumeRunning = false;
+  const writeVolume = createAudioSettingQueue(audioSettingScope, async (value, current) => {
+    try {
+      await playbackControl("volume", value);
+      if (current()) {
+        setState((s) => ({ ...s, volume: value }));
+        saveAudio({ ...audio(), volume: value });
+      }
+    } catch (failure) {
+      if (current()) setError(message(failure));
+    }
+  });
   function rememberVolume(value: number) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
     if (value > 0) audibleVolume = value;
@@ -602,30 +601,7 @@ export function createPlayback(
       return;
     }
     if (value > 0) audibleVolume = value;
-    pendingVolume = { value, lifetime, profile: interfaceProfileIdentity() };
-    if (volumeRunning) return;
-    volumeRunning = true;
-    try {
-      while (pendingVolume !== undefined) {
-        const chosen = pendingVolume,
-          next = chosen.value;
-        pendingVolume = undefined;
-        const current = () =>
-          chosen.lifetime === lifetime && chosen.profile === interfaceProfileIdentity();
-        if (!current()) continue;
-        try {
-          await playbackControl("volume", next);
-          if (current()) {
-            setState((s) => ({ ...s, volume: next }));
-            saveAudio({ ...audio(), volume: next });
-          }
-        } catch (failure) {
-          if (current()) setError(message(failure));
-        }
-      }
-    } finally {
-      volumeRunning = false;
-    }
+    await writeVolume(value);
   }
   async function toggleMute() {
     if (state().device === "@hqplayer") await action("mute");
@@ -762,8 +738,6 @@ export function createPlayback(
     cancelDiscovery();
     cancel();
     const epoch = generation;
-    pendingVolume = undefined;
-    pendingCrossfade = undefined;
     setCrossfade(audio().crossfadeMs);
     batch(() => {
       setAppending(false);
@@ -817,8 +791,6 @@ export function createPlayback(
     cancelDiscovery();
     cancel();
     setBusy(false);
-    pendingVolume = undefined;
-    pendingCrossfade = undefined;
     setCrossfade(audio().crossfadeMs);
     batch(() => {
       setState({ ...idlePlayback, volume: state().volume });
@@ -854,7 +826,6 @@ export function createPlayback(
       window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
-    pendingCrossfade = undefined;
     cancelDiscovery();
     cancel();
   });

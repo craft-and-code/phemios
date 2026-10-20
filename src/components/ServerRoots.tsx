@@ -25,16 +25,18 @@ export function ServerRoots(props: { busy: boolean; revision: number; scan: () =
         ? { session, revision: props.revision, catalogue: library.publicSnapshot("server") }
         : false;
     },
-    async (key) =>
-      readServerRoots((offset) =>
-        requestAede(
-          "/api/v1/roots",
-          { offset: String(offset), limit: "200" },
-          "GET",
-          null,
-          "server",
-          key.session,
-        ),
+    async (key, admission) =>
+      readServerRoots(
+        (offset) =>
+          requestAede(
+            "/api/v1/roots",
+            { offset: String(offset), limit: "200" },
+            "GET",
+            null,
+            "server",
+            key.session,
+          ),
+        admission.current,
       ),
   );
   return (
