@@ -1,19 +1,15 @@
-import { createEffect, createSignal, For, Show, on } from "solid-js";
-import { createServerRootEditor } from "../library/server-root-editor";
+import { createEffect, createSignal, For, on } from "solid-js";
 import { useLibrary } from "../library/context";
 import { readServerRoots } from "../library/server-roots";
 import { requestAede } from "../platform/desktop";
 import { t } from "../i18n";
-import { Icon } from "./Icon";
 import { RefreshButton } from "./RefreshButton";
+import { ActionButton } from "./ActionButton";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { Feedback } from "./Feedback";
-/** Server paths are edited as rows; discovery never scans or consults the client's filesystem. */
-export function ServerRoots(props: {
-  busy: boolean;
-  revision: number;
-  scan: (paths: string[]) => void;
-}) {
+
+/** Aède owns remote folders; Phémios displays confirmed roots without maintaining an editable copy. */
+export function ServerRoots(props: { busy: boolean; revision: number; scan: () => void }) {
   const library = useLibrary();
   const [reloaded, setReloaded] = createSignal(false);
   createEffect(
@@ -25,7 +21,9 @@ export function ServerRoots(props: {
   const read = createDiagnosticRead(
     () => {
       const session = library.serverSession();
-      return session ? { session, revision: props.revision } : false;
+      return session
+        ? { session, revision: props.revision, catalogue: library.publicSnapshot("server") }
+        : false;
     },
     async (key) =>
       readServerRoots((offset) =>
@@ -39,11 +37,10 @@ export function ServerRoots(props: {
         ),
       ),
   );
-  const { rows, setRows, nextId } = createServerRootEditor(library.serverSession, read.current);
   return (
     <section class="server-roots">
       <div class="section-heading">
-        <h3>{t("Dossiers et scan du serveur")}</h3>
+        <h3>{t("Dossiers fournis par Aède")}</h3>
         <RefreshButton
           label={t("Relire la liste des dossiers, sans scanner")}
           busy={read.loading()}
@@ -70,59 +67,27 @@ export function ServerRoots(props: {
         }
         onClose={() => setReloaded(false)}
       />
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.scan(rows.map((row) => row.path));
-        }}
+      <ul class="server-root-rows">
+        <For each={read.current()}>
+          {(path) => (
+            <li>
+              <code>{path}</code>
+            </li>
+          )}
+        </For>
+      </ul>
+      <ActionButton
+        type="button"
+        icon="search"
+        busy={props.busy}
+        disabled={read.pending() || !read.current()?.length}
+        onClick={props.scan}
       >
-        <ul class="server-root-rows">
-          <For each={rows}>
-            {(row, index) => (
-              <li>
-                <input
-                  aria-label={t("Dossier serveur {0}", index() + 1)}
-                  value={row.path}
-                  placeholder="/music"
-                  disabled={props.busy || read.loading()}
-                  onInput={(event) => setRows(index(), "path", event.currentTarget.value)}
-                />
-                <button
-                  class="icon-button quiet"
-                  type="button"
-                  title={t("Retirer ce dossier du prochain scan")}
-                  aria-label={t("Retirer ce dossier du prochain scan")}
-                  disabled={props.busy || read.loading()}
-                  onClick={() => setRows(rows.filter((value) => value.id !== row.id))}
-                >
-                  <Icon name="minus" />
-                </button>
-              </li>
-            )}
-          </For>
-        </ul>
-        <div class="settings-actions">
-          <button
-            class="icon-button"
-            type="button"
-            title={t("Ajouter un dossier serveur")}
-            aria-label={t("Ajouter un dossier serveur")}
-            disabled={props.busy || read.loading() || rows.length >= 64}
-            onClick={() => setRows([...rows, { id: nextId(), path: "" }])}
-          >
-            <Icon name="plus" />
-          </button>
-          <button disabled={props.busy || read.loading() || !rows.length}>
-            <Show when={props.busy} fallback={<Icon name="search" />}>
-              <span class="spinner" />
-            </Show>
-            {t("Appliquer les dossiers et scanner")}
-          </button>
-        </div>
-      </form>
+        {t("Scanner les dossiers du serveur")}
+      </ActionButton>
       <p class="muted">
         {t(
-          "Le scan découvre les nouveaux fichiers. Les changements de dossiers sont appliqués au lancement ; retirer une ligne ne supprime aucun fichier audio. La synchronisation recharge ensuite le catalogue connu.",
+          "Les dossiers sont gérés dans l’application Aède ou avec la CLI. Phémios recharge automatiquement le catalogue après un scan.",
         )}
       </p>
     </section>

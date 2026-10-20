@@ -181,9 +181,7 @@ export function TrackResults(props: {
             <PageLoader inline label={t("Chargement de l’analyse…")} />
           </Show>
           <Show when={detailRead.error()}>
-            <p role="alert">
-              {t("Analyse indisponible :")} {String(detailRead.error())}
-            </p>
+            <Feedback error persistent message={String(detailRead.error())} />
           </Show>
           <Show when={!detailRead.loading() && !detailRead.error() && !values().length}>
             <p class="muted">{t("Aucune analyse conservée pour ce titre.")}</p>
@@ -231,7 +229,11 @@ export function TrackResults(props: {
             )}
           </Show>
           <Show when={library.imageError(props.track.reference, "spectrum")}>
-            <p role="alert">{library.imageError(props.track.reference, "spectrum")}</p>
+            <Feedback
+              error
+              persistent
+              message={library.imageError(props.track.reference, "spectrum") ?? ""}
+            />
           </Show>
         </div>
       </Show>
@@ -255,7 +257,7 @@ export function TrackResults(props: {
             <PageLoader inline label={t("Chargement des paroles…")} />
           </Show>
           <Show when={words.error()}>
-            <p role="alert">{words.error()}</p>
+            <Feedback error persistent message={words.error()} />
           </Show>
           <Show when={!words.loading() && !words.error()}>
             <Show

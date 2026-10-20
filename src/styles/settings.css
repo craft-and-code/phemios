@@ -544,9 +544,9 @@
   gap: 8px;
   margin-block: 8px;
 }
-.server-root-rows input {
-  flex: 1;
+.server-root-rows code {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .account-row {
   display: grid;
@@ -761,4 +761,11 @@
 }
 .settings-credits .product-version a {
   overflow-wrap: anywhere;
+}
+
+.enrichment-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--control-gap, 12px);
 }

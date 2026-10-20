@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
@@ -88,9 +89,7 @@ export function DoctorPage() {
         </span>
       </Show>
       <Show when={report.error()}>
-        <p role="alert">
-          {t("Diagnostic indisponible :")} {String(report.error())}
-        </p>
+        <Feedback error persistent message={String(report.error())} />
       </Show>
       <Show when={report.current()}>
         {(ready) => (

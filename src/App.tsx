@@ -1,3 +1,4 @@
+import { ConnectionNotice } from "./components/ConnectionNotice";
 import type { BiographyReturn } from "./library/biography-navigation";
 import { CatalogSearch } from "./components/CatalogSearch";
 import { AlbumCount } from "./components/AlbumCount";
@@ -401,11 +402,6 @@ export function App() {
         <ParentalNotice />
         <Feedback message={externalError()} error onClose={() => setExternalError("")} />
         <Feedback message={browsing.error()} error />
-        <Show when={library.error()}>
-          <p class="notice" role="alert">
-            {library.error()}
-          </p>
-        </Show>
         <Show
           when={needsCatalogPrompt(
             current(),
@@ -572,6 +568,8 @@ export function App() {
             </div>
           </Show>
         </StickyHeader>
+        <ConnectionNotice />
+        <Feedback error persistent message={library.error()} />
         <Show
           when={
             current().kind === "section" &&

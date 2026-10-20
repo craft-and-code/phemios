@@ -180,9 +180,7 @@ export function AlbumPage(props: {
           onClose={() => setM3uStatus({ message: "", failed: false })}
         />
         <Show when={trackRead.error()}>
-          <p role="alert">
-            {t("Pistes indisponibles :")} {String(trackRead.error())}
-          </p>
+          <Feedback error persistent message={String(trackRead.error())} />
         </Show>
         <Show when={trackRead.loading()}>
           <PageLoader inline label={t("Chargement des pistes…")} />

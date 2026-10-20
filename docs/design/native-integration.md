@@ -6,6 +6,16 @@ Aède owns catalog references, account authorization, annotations, query grammar
 
 The client bounds request JSON (16 KiB), each JSON response (16 MiB), total cached public catalog (100 MiB), artwork (32 MiB) and request time (30 seconds). Complete presentation pagination validates totals/offsets/progress and requires one scan epoch. Snapshot DTO validation preserves unknown origin/year, compilations without a principal artist, contributor references and biography attribution. Missing projected services are errors, never fabricated demo data.
 
+## Native session recovery
+
+Frontend reloads read the process-owned public identity through the optional `native_session_read` bridge capability. This restores the exact local/server login ticket without persisting a password/bearer or silently choosing another account. Explicit actions and provider disposal retire pending restoration replies. Older native hosts keep the manual Disconnect recovery action when their still-active session refuses a login. New native commands require the next native build; frontend recovery controls remain compatible with already running hosts.
+
+## Connection feedback and enrichment cancellation
+
+Typed Aède requests and synchronizations report transport availability against their captured opaque native session, independently for local and remote sources. A single shell notification presents unreachable-source errors in a stable slot after the catalogue header; per-view Feedback suppresses those duplicate transport messages while preserving permissions, malformed responses and unrelated provider failures. Logout/engine stop clears the corresponding state immediately; old-login replies cannot change the next account's indicator. Confirmed recovery retries opted-in failed reads once, never mutations or playback. Cancelled diagnostic reads remain cancelled. Cached catalogue navigation remains available.
+
+External-source settings expose Stop enrichment beside Start, disabled when no enrichment is active. It uses the existing authenticated task-cancellation endpoint for each active fetch task, including independently owned local/server jobs. Duplicate pending stop requests are blocked; another task family is never cancelled. Aède's terminal task status confirms completion/cancellation and preserves already published provider records.
+
 ## Additive server contracts
 
 - `GET /api/v1/presentation/artists` and `/albums`: paged public presentation fields, all raw tag fields/values for local search, sourced origin/biography, available artist media, release credits and local collaboration neighbours.
@@ -39,7 +49,7 @@ The discovery graph displays at most 16 local collaboration neighbours, ordered 
 
 `core/src/network.rs` keeps authenticated transport and authority admission; `network_snapshot.rs` owns the complete bounded projection read. `src/library/context.tsx` composes shared session/catalog/media lifetimes, while annotation paging, admission and account preference hydration have independent policy modules. `App.tsx` composes routes and section-owned filters; detail return names live in navigation policy. `AnnotationPanel.tsx` composes draft/read/write lifetimes and the visual editor without owning server semantics. Personal/statistics pages compose independently parsed and paged results. These composition roots exceed the usual 250-line guideline; extracted policies have separate behavioral tests, and further splitting should follow actual independently evolving lifetimes rather than line counts.
 
-Synchronized lyrics, consumed-signal visualization, repeat/shuffle and optional DSP crossfade are now connected. Mounted-device discovery is read-only; destination conversion/verification/copy remains separate work. Catalog event synchronization, minimum Rust/other-platform execution, cache quotas, virtualization and sustained fast-scroll measurements remain pending. Native observations and their physical-audio limits are recorded in current state and the acceptance log.
+Synchronized lyrics, consumed-signal visualization, repeat/shuffle and optional DSP crossfade are now connected. Mounted-device discovery is read-only; destination conversion/verification/copy remains separate work. A bounded publication probe now synchronizes catalogues from connected sources; see [local/server catalogue updates](local-engine.md#server-catalogue-updates). Minimum Rust/other-platform execution, cache quotas, virtualization and sustained fast-scroll measurements remain pending. Native observations and their physical-audio limits are recorded in current state and the acceptance log.
 
 ## Connection indicator
 
@@ -199,9 +209,9 @@ Directory search, statistics, UUID stream resolution and WebView playback requir
 
 Radio favourites use the current owner's private `phemios.radio-favourites` preferences instead of installation-global state. Signed-out browsing/streaming remains available; favourite controls require a writable account. Explicit import may copy legacy public station metadata into the selected account, leaving the installation store intact. Late responses cannot cross account/source changes; an unreadable account store refuses writes. The existing 8192-byte preference limit is enforced visibly.
 
-## Server root editing and synchronization
+## Server roots and synchronization
 
-Settings reads every authenticated `/api/v1/roots` page and shows watched roots as individual editable rows; exclusions and orphan groups do not become scan targets. Page offsets, totals and scan epochs are validated. Explicit Apply and scan sends a nonempty, validated root replacement with the retained full/thread options; deleting a row affects the next scan, never the source audio files. A scan discovers newly added files, whereas Synchronize only reads the server's existing catalogue. Completed task reads refresh both roots and the catalogue. Root edits remain in the UI on a refused scan. Local and server selectors stay separate.
+Settings reads every authenticated `/api/v1/roots` page and shows watched roots read-only; exclusions and orphan groups do not become scan targets. Page offsets, totals and scan epochs are validated. Server folder configuration belongs to Aède App/CLI. A requested server scan sends only the retained full/thread options, letting Aède resolve its own roots without a client path replacement. A scan discovers newly added files, whereas Synchronize only reads the server's existing catalogue. Completed task reads and background publication detection refresh both roots and the catalogue. Local embedded folders remain independently configurable. See [catalogue updates](local-engine.md#server-catalogue-updates).
 
 Folder tabs join the first settings card without an intervening save-status banner. Automatic account-preference restore is quiet; explicit saves/errors remain visible below the section. Account-role help explains the three server roles and account-edit forms occupy a dedicated full-width panel.
 

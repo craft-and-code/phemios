@@ -59,6 +59,18 @@ pub(crate) async fn blocking<T: Send + 'static>(
         .map_err(|_| "Opération native interrompue.".to_string())?
 }
 
+/// Read only the existing process session; this neither logs in nor probes the remote server.
+#[tauri::command]
+pub(crate) fn aede_session(
+    version: u32,
+    source: Option<String>,
+    state: State<'_, Aede>,
+) -> Result<Option<Value>, String> {
+    bridge(version)?;
+    let state = state.owner(self::source(source.as_deref())?);
+    crate::sessions::current(&state.session, &state.generation)
+}
+
 #[tauri::command]
 pub(crate) async fn aede_login(
     version: u32,

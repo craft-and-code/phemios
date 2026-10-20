@@ -14,6 +14,21 @@ pub(crate) fn invalidate(
     Ok(session.take())
 }
 
+/// Restore process-owned public identity after a webview reload, without issuing or exposing credentials.
+/// The session mutex keeps the metadata and opaque generation ticket in one snapshot.
+pub(crate) fn current(
+    session: &Mutex<Option<Client>>,
+    generation: &AtomicU64,
+) -> Result<Option<Value>, String> {
+    let session = session.lock().map_err(|_| "Session native indisponible.")?;
+    let Some(client) = session.as_ref() else {
+        return Ok(None);
+    };
+    let mut account = client.account();
+    account["nativeSession"] = generation.load(Ordering::SeqCst).to_string().into();
+    Ok(Some(account))
+}
+
 /// Install a finished login only inside the generation that requested it.
 pub(crate) fn publish_login(
     session: &Mutex<Option<Client>>,

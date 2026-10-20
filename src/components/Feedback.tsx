@@ -1,3 +1,4 @@
+import { aedeAvailability, inlineAedeError } from "../library/aede-availability";
 import { createEffect, Show } from "solid-js";
 import { t } from "../i18n";
 import { createFeedback } from "../library/feedback";
@@ -5,6 +6,8 @@ import { Icon } from "./Icon";
 /** Action acknowledgements share dismissal and bounded, wrappable presentation. */
 export function Feedback(props: {
   message: string;
+  /** The single shell notice displays transport errors suppressed in individual views. */
+  connectionNotice?: boolean;
   error?: boolean;
   onClose?: () => void;
   class?: string;
@@ -12,10 +15,11 @@ export function Feedback(props: {
   durationMs?: number;
   pauseOnInteraction?: boolean;
 }) {
-  const state = createFeedback(
-    () => props.message,
-    () => props.durationMs ?? (props.error ? 15000 : 10000),
-  );
+  const message = () =>
+    props.error
+      ? inlineAedeError(props.message, !props.connectionNotice && aedeAvailability.ownsSession())
+      : props.message;
+  const state = createFeedback(message, () => props.durationMs ?? (props.error ? 15000 : 10000));
   let hovered = false,
     focused = false;
   const pause = () =>
@@ -49,7 +53,7 @@ export function Feedback(props: {
           pause();
         }}
       >
-        <span>{props.message}</span>
+        <span>{message()}</span>
         <button
           type="button"
           class="icon-button quiet icon-close feedback-close"

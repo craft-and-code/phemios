@@ -1,3 +1,4 @@
+import { activeNativeSessionConflict } from "../library/connection-recovery";
 import { ActionButton } from "./ActionButton";
 import { importLocalServerProfile, type LocalServerProfile } from "../platform/desktop";
 import { ConnectionActions } from "./ConnectionActions";
@@ -204,6 +205,17 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
               <button class="primary" disabled={library.busy() || library.demo || disconnecting()}>
                 {library.busy() ? t("Connexion et synchronisation…") : t("Se connecter")}
               </button>
+              <Show when={activeNativeSessionConflict(library.error())}>
+                <ActionButton
+                  type="button"
+                  icon="disconnect"
+                  busy={disconnecting()}
+                  disabled={library.busy() || library.demo}
+                  onClick={() => void disconnect()}
+                >
+                  {t("Se déconnecter")}
+                </ActionButton>
+              </Show>
               <Show when={library.demo}>
                 <p class="muted">
                   {t("La connexion utilise le pont natif de l’application desktop.")}

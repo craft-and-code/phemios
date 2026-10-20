@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { AlbumCount } from "../components/AlbumCount";
 import { StickyHeader } from "../components/StickyHeader";
 import { PageLoader } from "../components/PageLoader";
@@ -155,9 +156,11 @@ export function LabelsPage(props: { query: string }) {
           {(page) => (
             <>
               <Show when={"error" in page}>
-                <p role="alert">
-                  {sourceLabel(page.source)} · {"error" in page ? page.error : ""}
-                </p>
+                <Feedback
+                  error
+                  persistent
+                  message={"error" in page ? `${sourceLabel(page.source)} · ${page.error}` : ""}
+                />
               </Show>
               <For each={page.items}>
                 {(label) => (

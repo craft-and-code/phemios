@@ -1,3 +1,4 @@
+import { retryAedeReadOnRecovery } from "./aede-availability";
 import { t } from "../i18n";
 import {
   createEffect,
@@ -169,6 +170,7 @@ export function createPersonalReads(
     serial++;
   });
 
+  retryAedeReadOnRecovery(() => currentPage()?.error, refetch);
   return {
     page: currentPage,
     history: () =>

@@ -1,3 +1,4 @@
+import { retryAedeReadOnRecovery } from "../library/aede-availability";
 import { createPersonalActions } from "../library/personal-actions";
 import { readMoodReply } from "../library/mood-reading";
 import { moodSearch } from "../library/personal-search";
@@ -69,6 +70,12 @@ export function MoodsPage(props: { query: string }) {
   });
   const current = () => retainedMoodPage(response, readKey());
   const currentReply = () => retainedMoodReply(response, readKey());
+  retryAedeReadOnRecovery(
+    () => currentReply()?.error,
+    () => {
+      if (!response.loading) return refetch();
+    },
+  );
   const actions = createPersonalActions(
     () => "moods",
     library.session,
@@ -318,11 +325,7 @@ export function MoodsPage(props: { query: string }) {
       <Show when={response.loading && !currentReply()}>
         <PageLoader />
       </Show>
-      <Show when={currentReply()?.error || error()}>
-        <p class="notice" role="alert">
-          {String(currentReply()?.error || error())}
-        </p>
-      </Show>
+      <Feedback error persistent message={currentReply()?.error || error() || ""} />
       <div class="mood-cards">
         <For each={matched()}>
           {(mood) => (

@@ -22,6 +22,24 @@ export function createCatalogBootstrap<T>(options: Options<T>) {
     return () => !disposed && revisions[source] === revision && options.session(source) === owner;
   }
   return {
+    /** Native identity is process-only and may outlive a frontend reload; never restore over an explicit action. */
+    async restoreSession(
+      source: SourceId,
+      read: (source: SourceId) => Promise<AccountSession | undefined>,
+      publish: (source: SourceId, session: AccountSession) => void,
+    ): Promise<boolean> {
+      if (!unused(source)) return false;
+      const current = guard(source);
+      try {
+        const value = await read(source);
+        if (!current() || !value) return false;
+        publish(source, value);
+        return true;
+      } catch (failure) {
+        if (current()) options.failed(failure);
+        return false;
+      }
+    },
     async load(source: SourceId): Promise<boolean> {
       if (!unused(source) || requested[source]) return false;
       requested[source] = true;

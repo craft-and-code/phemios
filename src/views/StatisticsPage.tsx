@@ -213,9 +213,7 @@ export function StatisticsPage(props: {
       </Show>
       <StatisticsContent busy={loading()}>
         <Show when={report.error()}>
-          <p role="alert">
-            {t("Statistiques indisponibles :")} {String(report.error())}
-          </p>
+          <Feedback error persistent message={String(report.error())} />
         </Show>
         <h2>{t("Votre collection")}</h2>
         <div class="stat-tiles">
@@ -232,9 +230,7 @@ export function StatisticsPage(props: {
           <section>
             <h2>{t("Intégrité et analyses enregistrées")}</h2>
             <Show when={doctor.error()}>
-              <p role="alert">
-                {t("Diagnostic indisponible :")} {String(doctor.error())}
-              </p>
+              <Feedback error persistent message={String(doctor.error())} />
             </Show>
             <Show when={doctor.current()}>
               {(result) => (

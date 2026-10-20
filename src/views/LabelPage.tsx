@@ -143,9 +143,7 @@ export function LabelPage(props: {
             <PageLoader />
           </Show>
           <Show when={current()?.error}>
-            <p class="page notice" role="alert">
-              {current()?.error}
-            </p>
+            <Feedback error persistent message={current()?.error ?? ""} />
           </Show>
           <Show when={detail()}>
             {(row) => (

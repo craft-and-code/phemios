@@ -169,15 +169,15 @@ export function AnalysisPage(props: { query: string }) {
               <PageLoader inline />
             </Show>
             <Show when={read.error()}>
-              <p class="notice missing-notice" role="alert">
-                <span>{String(read.error())}</span>
+              <div class="missing-notice">
+                <Feedback error persistent message={String(read.error())} />
                 <RefreshButton
                   busy={read.loading()}
                   disabled={read.pending() && !read.loading()}
                   onCancel={read.cancel}
                   onRefresh={refetch}
                 />
-              </p>
+              </div>
             </Show>
             <Show when={page()}>
               {(value) => (

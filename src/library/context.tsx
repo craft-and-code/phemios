@@ -1,3 +1,4 @@
+import { activeNativeSessionConflict } from "./connection-recovery";
 import { createNetworkAudio } from "../network-audio/controller";
 import { createDisplayAwake, anyAudioPlaying } from "./display-awake";
 import { cdReference } from "../cd/model";
@@ -7,6 +8,7 @@ import { createParentalMedia } from "./parental-media";
 import { createBackgroundPriority } from "./background-priority";
 import { createRetainedSearch } from "./retained-search";
 import { createQueueLyrics } from "./queue-lyrics-controller";
+import { createCatalogWatch } from "./catalog-watch";
 import { createCatalogBootstrap } from "./catalog-bootstrap";
 import { annotateAlbum } from "./album-annotation";
 import { createAnnotationLoader, parseAnnotation } from "./annotation-loading";
@@ -47,6 +49,7 @@ import {
   cachedAede,
   isNative,
   loginAede,
+  restoreAedeSession,
   logoutAede,
   syncAede,
 } from "../platform/desktop";
@@ -537,17 +540,35 @@ export function LibraryProvider(props: ParentProps) {
       }
   });
   onCleanup(annotationsLoader.dispose);
+  let synchronizing = false;
+  let synchronizationDone: Promise<void> = Promise.resolve();
   async function sync(owner: SourceId = source()) {
-    if (busy()) return;
+    const expected = sessionAt(owner);
+    while (synchronizing) {
+      await synchronizationDone;
+      if (!bootstrap.active() || sessionAt(owner) !== expected) return;
+    }
+    if (bootstrap.active()) await synchronize(owner, false);
+  }
+  async function synchronize(owner: SourceId, background: boolean): Promise<boolean> {
+    if (!bootstrap.active() || busy() || synchronizing) return false;
+    synchronizing = true;
+    let complete = () => {};
+    synchronizationDone = new Promise<void>((resolve) => {
+      complete = resolve;
+    });
     const current = bootstrap.capture(owner);
-    setBusy(true);
-    setError("");
+    if (!background) {
+      setBusy(true);
+      setError("");
+    }
     try {
       await parental.refresh(owner);
       parentalSync.delete(owner);
       const policyEpoch = policyEpochs[owner];
       const raw = await syncAede(owner);
-      if (!current() || policyEpochs[owner] !== policyEpoch || !parental.available(owner)) return;
+      if (!current() || policyEpochs[owner] !== policyEpoch || !parental.available(owner))
+        return false;
       const value = parseSnapshot(raw);
       if (!parental.catalogVisible(owner, value))
         throw Error(t("Catalogue supervisé à actualiser. Synchronisez la bibliothèque."));
@@ -555,15 +576,26 @@ export function LibraryProvider(props: ParentProps) {
       if (owner === "local") setLocalSnapshot(value);
       else setServerSnapshot(value);
       await annotationsLoader.load(owner);
-      if (current() && policyEpochs[owner] === policyEpoch && parental.available(owner))
-        void warmCovers();
+      const admitted =
+        current() && policyEpochs[owner] === policyEpoch && parental.available(owner);
+      if (admitted) void warmCovers();
+      return admitted;
     } catch (failure) {
       if (current())
         setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
+      return false;
     } finally {
-      setBusy(false);
+      synchronizing = false;
+      complete();
+      if (!background) setBusy(false);
     }
   }
+  createCatalogWatch({
+    session: sessionAt,
+    busy: () => busy() || synchronizing,
+    read: (owner, session) => requestAede("/api/v1/library", {}, "GET", null, owner, session),
+    refresh: (owner) => synchronize(owner, true),
+  });
   createEffect(() => {
     parentalEpoch();
     if (!busy()) {
@@ -582,17 +614,31 @@ export function LibraryProvider(props: ParentProps) {
     bootstrap.invalidate("server");
     setBusy(true);
     setError("");
+    let authenticated = false;
     try {
       // Revoke and halt the previous server account before admitting new credentials.
       if (serverSession()) await releaseServer();
       setSession(await loginAede(server, username, password, certificate));
+      authenticated = true;
       connection.start();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t("Connexion impossible."));
+      let message = failure instanceof Error ? failure.message : t("Connexion impossible.");
+      if (activeNativeSessionConflict(failure)) {
+        try {
+          const retained = await restoreAedeSession("server");
+          if (retained && bootstrap.active() && !disconnectingServer && !serverSession()) {
+            setSession(retained);
+            connection.start();
+          }
+        } catch (recovery) {
+          message += `\n${recovery instanceof Error ? recovery.message : String(recovery)}`;
+        }
+      }
+      if (bootstrap.active()) setError(message);
     } finally {
       setBusy(false);
     }
-    if (serverSession()) await sync("server");
+    if (authenticated && serverSession()) await sync("server");
   }
   async function releaseServer() {
     bootstrap.invalidate("server");
@@ -657,6 +703,22 @@ export function LibraryProvider(props: ParentProps) {
       admitted = (await bootstrap.load(owner)) || admitted;
     if (!bootstrap.active()) return;
     if (admitted) void warmCovers();
+    for (const owner of ["server", "local"] as const) {
+      const restored = await bootstrap.restoreSession(
+        owner,
+        restoreAedeSession,
+        (source, session) => {
+          if (source === "server") {
+            setSession(session);
+            connection.start();
+          } else {
+            setLocalSession(session);
+            if (!serverSession()) chooseSource("local");
+          }
+        },
+      );
+      if (restored && bootstrap.active()) await sync(owner);
+    }
     if (!bootstrap.unused("local")) return;
     try {
       const status = await localStatus();

@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { CatalogActions } from "../components/CatalogActions";
 import { AccountNotice } from "../components/AccountNotice";
@@ -155,7 +156,7 @@ export function TagsPage(props: {
         <PageLoader />
       </Show>
       <Show when={details.error()}>
-        <p role="alert">{String(details.error())}</p>
+        <Feedback error persistent message={String(details.error())} />
         <button onClick={() => details.refetch()}>{t("Réessayer")}</button>
       </Show>
       <div class="album-grid tagged-grid">
@@ -170,12 +171,14 @@ export function TagsPage(props: {
                     <strong>{t("Élément tagué indisponible.")}</strong>
                     <Show when={result(target.reference)}>
                       {(row) => (
-                        <p role="alert">
-                          {(() => {
+                        <Feedback
+                          error
+                          persistent
+                          message={(() => {
                             const value = row();
                             return "error" in value ? value.error : "";
                           })()}
-                        </p>
+                        />
                       )}
                     </Show>
                     <button onClick={() => details.refetch()}>{t("Réessayer")}</button>

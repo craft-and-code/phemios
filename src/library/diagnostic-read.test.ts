@@ -1,3 +1,4 @@
+import { aedeAvailability } from "./aede-availability";
 import { createRoot, createSignal } from "solid-js";
 import { expect, it, vi } from "vitest";
 import { createDiagnosticRead } from "./diagnostic-read";
@@ -215,5 +216,43 @@ it("cancellation retires initial errors without admitting a late rejected respon
     expect(read.loading()).toBe(false);
   } finally {
     dispose();
+  }
+});
+
+it("recovers a failed current diagnostic read but does not restart an explicitly cancelled retry", async () => {
+  const late = deferred();
+  const request = vi
+    .fn()
+    .mockRejectedValueOnce(new Error("Impossible de joindre Aède."))
+    .mockReturnValueOnce(late.promise)
+    .mockResolvedValueOnce(9);
+  let dispose!: () => void;
+  const read = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createDiagnosticRead(() => ({ source: "server" }), request);
+  });
+  const recover = () => {
+    aedeAvailability.failure("server", "diagnostic-fixture", "Impossible de joindre Aède.");
+    aedeAvailability.success("server", "diagnostic-fixture");
+  };
+  try {
+    aedeAvailability.owner("server", "diagnostic-fixture");
+    await settle();
+    expect(read.error()).toBe("Impossible de joindre Aède.");
+    recover();
+    await settle();
+    expect(request).toHaveBeenCalledTimes(2);
+    read.cancel();
+    late.resolve(7);
+    await settle();
+    expect(read.current()).toBeUndefined();
+    recover();
+    await settle();
+    expect(request).toHaveBeenCalledTimes(2);
+    await read.refetch();
+    expect(read.current()).toBe(9);
+  } finally {
+    dispose();
+    aedeAvailability.owner("server");
   }
 });

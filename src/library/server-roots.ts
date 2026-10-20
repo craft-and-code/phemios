@@ -45,20 +45,3 @@ export async function readServerRoots(
   } while (offset < total!);
   return [...new Set(roots)];
 }
-/** Explicit replacement makes removing a displayed root meaningful; files remain server-owned. */
-export function scanRootSelection(paths: readonly string[]) {
-  const folders = [...new Set(paths.map((path) => path.trim()))];
-  if (
-    !folders.length ||
-    folders.length > 64 ||
-    folders.some(
-      (path) =>
-        !path ||
-        path.length > 4096 ||
-        path.includes("\0") ||
-        !/^(?:\/|[a-z]:[\\/]|\\\\)/i.test(path),
-    )
-  )
-    throw Error(t("Indiquez de 1 à 64 dossiers absolus sur le serveur."));
-  return { folders, replace: true };
-}

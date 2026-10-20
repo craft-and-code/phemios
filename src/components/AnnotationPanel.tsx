@@ -199,9 +199,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         <p class="notice">{t("Connectez-vous pour enregistrer vos annotations.")}</p>
       </Show>
       <Show when={read.error()}>
-        <p role="alert">
-          {t("Annotations illisibles :")} {String(read.error())}
-        </p>
+        <Feedback error persistent message={String(read.error())} />
         <button onClick={() => read.refetch()}>{t("Réessayer les annotations")}</button>
       </Show>
       <div class="annotation-controls">
@@ -343,7 +341,7 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         </div>
       </Show>
       <Show when={library.tagPreferences.error()}>
-        <p role="alert">{library.tagPreferences.error()}</p>
+        <Feedback error persistent message={library.tagPreferences.error()} />
       </Show>
       <Show
         when={pending() || dirty()}
@@ -354,9 +352,8 @@ export function AnnotationPanel(props: { reference: string; kind: "artist" | "al
         </p>
       </Show>
       <Show when={failure()}>
-        <p role="alert">
-          {failure()} {t("Les notes en cours sont conservées.")}
-        </p>
+        <Feedback error persistent message={failure()} />
+        <p class="muted">{t("Les notes en cours sont conservées.")}</p>
       </Show>
     </section>
   );

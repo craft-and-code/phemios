@@ -23,12 +23,16 @@ Your operating system must mount network folders. Check availability before scan
 
 Enter its address and sign in under Aède server. The connection dot shows its state. For the Aède server App, use its exported connection profile. The [Aède App guide](https://craft-and-code.github.io/aede/docs/en/server/reference/desktop.html) explains startup and local certificate trust.
 
+In the Aède App, starting the server or changing folders while it runs starts a background scan. Wait for its result: Phémios then detects the new catalogue automatically without changing views. With the CLI, use folder-management and scan commands against the connected server’s data directory. A command with `--no-scan` intentionally leaves content pending until the next scan.
+
+For administrators, **Folders supplied by Aède** displays server roots read-only. Edit folders in the Aède App or CLI: Phémios keeps no second editable list. **Scan the server folders** requests another scan of Aède’s known roots. The refresh button only rereads their list.
+
 Preference backups exclude passwords and service keys. Account permissions determine which actions are available.
 
 ## Scan or synchronize?
 
-- **Scan** inspects the engine’s folders and discovers added or moved files. Apply folders and scan also applies your root changes.
+- **Scan** inspects the engine’s folders and discovers added or moved files. Remote folders remain configured in Aède.
 - **Synchronize library** reads Aède’s existing catalogue into Phémios’s navigation cache. It does not discover a new album on disk by itself.
 - **Refresh folders** reads their configuration; it is not a scan.
 
-After adding files, scan the correct source, wait for the task result, then synchronize. Offline browsing uses available cached information; it does not make remote audio accessible without its server.
+After adding files, scan the correct source and wait for the task result. Phémios checks the catalogues of connected sessions every five seconds and reloads them when they change. Manual reload remains available when needed. Offline browsing uses available cached information; it does not make remote audio accessible without its server.

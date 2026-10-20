@@ -94,3 +94,37 @@ it("invalidates outstanding projection tickets and pending cache work on disposa
   expect(cache.active()).toBe(false);
   expect(publish).not.toHaveBeenCalled();
 });
+
+it("restores process identity without needing credentials, but never after an explicit logout or disposal", async () => {
+  for (const retire of ["logout", "dispose"] as const) {
+    const request = deferred<AccountSession | undefined>();
+    const publish = vi.fn();
+    const bootstrap = createCatalogBootstrap({
+      session: () => undefined,
+      read: async () => null,
+      publish: vi.fn(),
+      failed: vi.fn(),
+    });
+    const pending = bootstrap.restoreSession("server", () => request.promise, publish);
+    if (retire === "logout") bootstrap.invalidate("server");
+    else bootstrap.dispose();
+    request.resolve(account("https://fixture.example"));
+    expect(await pending).toBe(false);
+    expect(publish).not.toHaveBeenCalled();
+  }
+});
+it("restores local and remote sessions independently and skips an already engaged source", async () => {
+  const publish = vi.fn(),
+    read = vi.fn(async () => account("https://fixture.example"));
+  const bootstrap = createCatalogBootstrap({
+    session: () => undefined,
+    read: async () => null,
+    publish: vi.fn(),
+    failed: vi.fn(),
+  });
+  bootstrap.invalidate("server");
+  expect(await bootstrap.restoreSession("server", read, publish)).toBe(false);
+  expect(read).not.toHaveBeenCalled();
+  expect(await bootstrap.restoreSession("local", read, publish)).toBe(true);
+  expect(publish).toHaveBeenCalledWith("local", account("https://fixture.example"));
+});

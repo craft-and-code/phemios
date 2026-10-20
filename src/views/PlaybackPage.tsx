@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { cdReference } from "../cd/model";
 import { UntimedLyricsControls } from "../components/UntimedLyricsControls";
 import { createUntimedLyrics } from "../visualizer/untimed-lyrics";
@@ -248,14 +249,10 @@ export function PlaybackPage() {
             />
           </div>
           <Show when={error()}>
-            <p class="notice" role="alert">
-              {error()}
-            </p>
+            <Feedback error persistent message={error()} />
           </Show>
           <Show when={words.error()}>
-            <p class="notice" role="alert">
-              {words.error()}
-            </p>
+            <Feedback error persistent message={words.error()} />
           </Show>
         </div>
       </Show>

@@ -153,6 +153,7 @@ pub fn run() -> Result<(), tauri::Error> {
             playback::playback_start,
             playback::playback_append,
             playback::playback_control,
+            aede::aede_session,
             aede::aede_login,
             aede::aede_logout,
             aede::aede_sync,

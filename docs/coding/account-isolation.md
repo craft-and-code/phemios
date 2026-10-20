@@ -18,6 +18,12 @@ Private interface preferences use a separate anonymous base and an owner-scoped 
 
 Portable preference backups now explicitly include the selected authenticated account’s podcasts/listened evidence and saved articles. Export captures the requesting profile and native session; import previews attribution and the current destination, then adds absent records without replacing existing identities. Both store budgets are validated before publication; a filesystem failure between the two atomic writes can leave safe additions and supports idempotent retry. Legacy unassigned records and all credentials remain excluded. See [backup contracts](../design/local-engine.md#portable-preferences-and-private-document-backup).
 
+## Interface reload and native identity
+
+The running native process can outlive a webview/frontend reload. `aede_session` reads its public account/authority and opaque generation under the same source-session mutex, without creating a bearer, contacting a service or returning credentials. The runtime advertises `native_session_read`; older hosts are not sent that additive command. Startup cache/session admission prevents a late restoration from undoing an explicit login, logout or disposal. Real application exit still discards credentials; this is not persistent automatic sign-in.
+
+If an older host refuses login because it still owns a session, the login form exposes an explicit Disconnect action. A capable host also restores the actual current identity so its ordinary disconnect control is available. Recovering the old identity after a refused account switch does not treat the attempted new login as successful or clear its diagnostic.
+
 ## Persistence and role policies
 
 | State             | Native bound                                                      | Mutations                                                         |
@@ -36,7 +42,7 @@ Regression fixtures use fictional Clients and temporary roots only. Red tests re
 
 A server mutation already accepted before logout/revocation cannot be undone by the client. The live role probe and later local filesystem commit are not one atomic server transaction; native generation admission is atomic locally, not a server revocation lease. Retained reads require their current native principal, without claiming continuous online revocation validation. Explicit completed downloads remain user-owned artifacts outside the private browser state.
 
-The source-session mutex serializes one application process. Two independent application instances can still race a same-owner read/modify/write before acquiring the exclusive pending file and lose one update; this is not cross-owner reassignment. Same-OS hostile path/ancestor replacement between metadata checks and open/rename remains a filesystem TOCTOU limitation; Windows inherited ACLs are not Unix-mode enforcement. OS IO on an unusual mounted application-data folder may block while the bounded native commit holds its mutex. An out-of-order login IPC response could retain an older desktop wrapper ticket and cause a refused operation; it cannot admit that ticket under a newer native generation.
+The source-session mutex serializes one application process. Two independent application instances can still race a same-owner read/modify/write before acquiring the exclusive pending file and lose one update; this is not cross-owner reassignment. Same-OS hostile path/ancestor replacement between metadata checks and open/rename remains a filesystem TOCTOU limitation; Windows inherited ACLs are not Unix-mode enforcement. OS IO on an unusual mounted application-data folder may block while the bounded native commit holds its mutex. Frontend login/start acknowledgements and native-session restoration also retain a per-source operation generation. A late reply cannot reinstall an old wrapper ticket after logout, local Stop or a replacement login.
 
 The public cache is populated from explicit public presentation routes, not from private response caches. Its validator accepts additional public server fields; no reproducible private-data path through that cache was established.
 

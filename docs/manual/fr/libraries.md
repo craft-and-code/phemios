@@ -23,12 +23,16 @@ Un dossier réseau doit être monté par votre système. Vérifiez sa disponibil
 
 Renseignez son adresse et connectez votre compte dans la section Serveur Aède. Le voyant indique la connexion. Pour une connexion à l’App serveur Aède, utilisez son profil de connexion exporté. [Le guide de l’App Aède](https://craft-and-code.github.io/aede/docs/fr/server/reference/desktop.html) explique son démarrage et le certificat local.
 
+Dans l’App Aède, le démarrage du serveur et les changements de dossiers pendant son fonctionnement lancent un scan en arrière-plan. Attendez son résultat : Phémios détecte ensuite le nouveau catalogue automatiquement, sans changer de vue. Avec la CLI, utilisez les commandes de gestion des dossiers et de scan dans le répertoire de données du serveur connecté. Une commande avec `--no-scan` laisse volontairement le contenu en attente du prochain scan.
+
+Pour un administrateur, **Dossiers fournis par Aède** affiche les racines du serveur en lecture seule. Modifiez les dossiers dans l’App Aède ou la CLI : Phémios ne conserve aucune seconde liste éditable. **Scanner les dossiers du serveur** permet de demander un nouveau scan des racines connues d’Aède. Le bouton d’actualisation relit uniquement leur liste.
+
 Les mots de passe et clés de services ne sont pas inclus dans une sauvegarde de préférences. Les permissions du compte déterminent les actions disponibles.
 
 ## Scanner ou synchroniser ?
 
-- **Scanner** inspecte les dossiers du moteur et découvre les fichiers ajoutés ou déplacés. Appliquer les dossiers et scanner prend aussi en compte vos modifications de racines.
+- **Scanner** inspecte les dossiers du moteur et découvre les fichiers ajoutés ou déplacés. Les dossiers distants restent configurés dans Aède.
 - **Synchroniser la bibliothèque** relit le catalogue déjà construit par Aède et met à jour la copie de navigation de Phémios. Cette action ne découvre pas seule un nouvel album sur disque.
 - **Actualiser les dossiers** relit leur configuration ; ce n’est pas un scan.
 
-Après un ajout, scannez la bonne source, attendez la fin de la tâche, puis synchronisez. La navigation hors ligne utilise le cache disponible ; elle ne rend pas un fichier distant accessible sans son serveur.
+Après un ajout de fichiers, scannez la bonne source et attendez la fin de la tâche. Phémios vérifie toutes les cinq secondes les catalogues des sessions connectées et les recharge lorsqu’ils changent. Le rechargement manuel reste disponible en cas de besoin. La navigation hors ligne utilise le cache disponible ; elle ne rend pas un fichier distant accessible sans son serveur.

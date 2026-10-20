@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { readServerRoots, scanRootSelection } from "./server-roots";
+import { readServerRoots } from "./server-roots";
 it("reads all watched roots without confusing exclusions or orphan rows", async () => {
   const roots = await readServerRoots(async (offset) => ({
     items: offset
@@ -15,7 +15,7 @@ it("reads all watched roots without confusing exclusions or orphan rows", async 
   }));
   expect(roots).toEqual(["/first", "/second"]);
 });
-it("refuses malformed or mixed-epoch roots and incomplete replacement", async () => {
+it("refuses malformed or mixed-epoch roots", async () => {
   await expect(
     readServerRoots(async (offset) => ({
       items: [{ path: "/one", status: "watched" }],
@@ -24,10 +24,4 @@ it("refuses malformed or mixed-epoch roots and incomplete replacement", async ()
       scanned_at: offset ? 2 : 1,
     })),
   ).rejects.toThrow();
-  expect(() => scanRootSelection([])).toThrow();
-  expect(scanRootSelection([" /one ", "/one", "C:\\Music"])).toEqual({
-    folders: ["/one", "C:\\Music"],
-    replace: true,
-  });
-  expect(() => scanRootSelection(["relative"])).toThrow();
 });

@@ -528,9 +528,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
       <Show when={reads.loading() && !reads.page()}>
         <PageLoader />
       </Show>
-      <Show when={reads.page()?.error}>
-        <p role="alert">{reads.page()?.error}</p>
-      </Show>
+      <Feedback error persistent message={reads.page()?.error ?? ""} />
       <Show
         when={
           (!library.session() && ["collections", "history"].includes(props.section)) ||

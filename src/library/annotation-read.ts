@@ -1,3 +1,4 @@
+import { retryAedeReadOnRecovery } from "./aede-availability";
 import { createMemo, createResource, onCleanup } from "solid-js";
 import { annotationScope } from "./annotation-scope";
 import { parseAnnotationResponse } from "./annotation-loading";
@@ -40,6 +41,12 @@ export function createAnnotationRead(
       row = answer();
     return !disposed && held.session && row?.scope === held ? row : undefined;
   });
+  retryAedeReadOnRecovery(
+    () => admitted()?.error,
+    () => {
+      if (!answer.loading && !disposed) return refetch();
+    },
+  );
   return {
     scope,
     current: () => (disposed ? undefined : admitted()?.annotation),

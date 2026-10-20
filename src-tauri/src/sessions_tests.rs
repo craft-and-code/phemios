@@ -307,3 +307,27 @@ fn private_file_mutations_require_live_write_rights_and_the_same_owner() {
         assert_eq!(writes.load(Ordering::SeqCst), usize::from(allowed));
     }
 }
+
+#[test]
+fn frontend_reload_can_read_public_session_identity_without_reauthentication_or_credentials() {
+    let (first, _) = sessions();
+    let session = Mutex::new(Some(first.clone()));
+    let generation = AtomicU64::new(17);
+    let public = current(&session, &generation).unwrap().unwrap();
+    assert_eq!(public["account"], first.account()["account"]);
+    assert_eq!(public["server"], first.account()["server"]);
+    assert_eq!(public["nativeSession"], "17");
+    assert!(public.get("token").is_none());
+    assert!(!public.to_string().contains(&"a".repeat(64)));
+    assert_eq!(generation.load(Ordering::SeqCst), 17);
+    assert!(
+        session
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .same_session(&first)
+    );
+    invalidate(&session, &generation).unwrap();
+    assert_eq!(current(&session, &generation).unwrap(), None);
+}

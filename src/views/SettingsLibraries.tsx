@@ -1,6 +1,5 @@
 import { CoverSize } from "../components/CoverSize";
 import { ServerRoots } from "../components/ServerRoots";
-import { scanRootSelection } from "../library/server-roots";
 import { Feedback } from "../components/Feedback";
 import { createToolPreferences } from "../library/tool-preferences";
 import { t } from "../i18n";
@@ -239,7 +238,7 @@ export function SettingsLibraries() {
             )}
           </For>
           <Show when={roots.error}>
-            <p role="alert">{String(roots.error)}</p>
+            <Feedback error persistent message={String(roots.error)} />
           </Show>
         </details>
       </div>
@@ -255,15 +254,14 @@ export function SettingsLibraries() {
             revision={
               taskSource() === "server" && task()?.status === "completed" ? task()!.task_id : 0
             }
-            scan={(paths) =>
+            scan={() =>
               void perform(async () => {
-                const selection = scanRootSelection(paths);
                 await scan.start("server", (owner) =>
                   requestAede<{ task_id: number; status: "queued" }>(
                     "/api/admin/v1/scan",
                     {},
                     "POST",
-                    { ...selection, full: full(), threads: threads() },
+                    { full: full(), threads: threads() },
                     "server",
                     owner,
                   ),

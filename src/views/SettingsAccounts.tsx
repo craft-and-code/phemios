@@ -96,7 +96,7 @@ export function SettingsAccounts() {
         }
       >
         <Show when={accounts.error()}>
-          <p role="alert">{String(accounts.error())}</p>
+          <Feedback error persistent message={String(accounts.error())} />
         </Show>
         <For each={accounts.values()}>
           {(account) => (

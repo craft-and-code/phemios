@@ -1,3 +1,4 @@
+import { Feedback } from "../components/Feedback";
 import { createCatalogDetail } from "../library/catalog-detail";
 import { referenceSource } from "../library/sources";
 import { CoverPlay } from "../components/CoverPlay";
@@ -50,9 +51,7 @@ export function TrackPage(props: {
         <PageLoader label={t("Chargement du titre…")} />
       </Show>
       <Show when={detailRead.error()}>
-        <p role="alert">
-          {t("Titre indisponible :")} {String(detailRead.error())}
-        </p>
+        <Feedback error persistent message={String(detailRead.error())} />
       </Show>
       <Show when={!detailRead.loading() && !detailRead.error() && detail()}>
         {(row) => (

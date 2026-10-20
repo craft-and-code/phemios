@@ -1,4 +1,7 @@
 {
+  "Dossiers fournis par Aède": "Folders supplied by Aède",
+  "Scanner les dossiers du serveur": "Scan the server folders",
+  "Les dossiers sont gérés dans l’application Aède ou avec la CLI. Phémios recharge automatiquement le catalogue après un scan.": "Manage folders in the Aède app or CLI. Phémios reloads the catalogue automatically after a scan.",
   "Télécharger la biographie complète": "Download the complete biography",
   " (par défaut)": " (default)",
   " · Écrêtage détecté": " · Clipping detected",
@@ -2189,5 +2192,7 @@
   "Inspectez puis vérifiez l’empreinte du récepteur Cast.": "Inspect and verify the Cast receiver fingerprint.",
   "Sélectionnez de 1 à 64 pistes de la même bibliothèque pour le lecteur réseau.": "Select 1 to 64 tracks from the same library for the network player.",
   "Indiquez une adresse IPv4 privée pour le lecteur SlimProto.": "Enter a private IPv4 address for the SlimProto player.",
-  "Mode appliqué aux prochains titres, sans interrompre la lecture.": "Mode changes apply to upcoming tracks without interrupting playback."
+  "Mode appliqué aux prochains titres, sans interrompre la lecture.": "Mode changes apply to upcoming tracks without interrupting playback.",
+  "Arrêter l’enrichissement": "Stop enrichment",
+  "Une biographie nécessite une identité validée et un lien Wikidata fourni par MusicBrainz. Sans identifiant dans les fichiers, les correspondances proposées doivent être validées dans Aède. Trouver un nom dans l’Encyclopédie ne suffit pas ; Picard est une possibilité, pas une obligation.": "A biography requires a confirmed identity and a Wikidata link supplied by MusicBrainz. Without an identifier in the files, proposed matches must be approved in Aède. Finding a name in the Encyclopedia is not enough; Picard is an option, not a requirement."
 }

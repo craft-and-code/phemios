@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { PageLoader } from "./PageLoader";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -34,7 +35,7 @@ export function StatisticsTable(props: {
         <PageLoader inline />
       </Show>
       <Show when={report.error()}>
-        <p role="alert">{String(report.error())}</p>
+        <Feedback error persistent message={String(report.error())} />
         <button onClick={() => report.refetch()}>{t("Réessayer")}</button>
       </Show>
       <Show when={!report.loading() && !report.error()}>

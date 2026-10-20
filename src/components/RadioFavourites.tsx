@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { For, Show } from "solid-js";
 import { t, countryName } from "../i18n";
 import { Icon } from "./Icon";
@@ -17,7 +18,7 @@ export function RadioFavourites(props: {
     <section class="radio-favourites">
       <h2>{t("Radios favorites")}</h2>
       <Show when={props.favourites.error()}>
-        <p role="alert">{props.favourites.error()}</p>
+        <Feedback error persistent message={props.favourites.error()} />
       </Show>
       <Show
         when={props.favourites.stations().length}

@@ -1,3 +1,4 @@
+import { Feedback } from "./Feedback";
 import { activeReleaseJob } from "../library/jobs";
 import { t } from "../i18n";
 import { createSignal, For, Show } from "solid-js";
@@ -80,7 +81,7 @@ export function JobControls(props: {
         )}{" "}
       </small>
       <Show when={error() || library.tasks.error()}>
-        <p role="alert">{error() || library.tasks.error()}</p>
+        <Feedback error persistent message={error() || library.tasks.error()} />
       </Show>
       <div aria-live="polite">
         <For

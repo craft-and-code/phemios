@@ -1,3 +1,4 @@
+import { aedeAvailability } from "../library/aede-availability";
 import { concertConfig } from "../concerts/config";
 import { engineVersions } from "../library/product-versions";
 import { wikipediaDocument } from "../encyclopedia/document";
@@ -11,6 +12,7 @@ export interface RuntimeInfo {
   name: string;
   version: string;
   native: boolean;
+  capabilities?: readonly string[];
   embedded?: { aede: string; flaccompagnon: string };
 }
 
@@ -37,6 +39,7 @@ async function nativeCall<T>(command: string, args: Record<string, unknown> = {}
   }
 }
 const nativeSessions: Partial<Record<SourceId, string>> = {};
+const sessionOperations: Record<SourceId, number> = { local: 0, server: 0 };
 /** An opaque non-secret process ticket binds queued IPC to its original session, not a caller-supplied owner. */
 function rememberNativeSession(
   source: SourceId,
@@ -44,6 +47,45 @@ function rememberNativeSession(
 ) {
   if (typeof account.nativeSession === "string") nativeSessions[source] = account.nativeSession;
   else delete nativeSessions[source];
+  aedeAvailability.owner(source, nativeSessions[source]);
+}
+/** Recover only a process-owned login; a newer login/logout always retires this read. */
+export async function restoreAedeSession(
+  source: SourceId,
+): Promise<import("../library/server").AccountSession | undefined> {
+  const operation = sessionOperations[source];
+  const runtime = await getRuntimeInfo();
+  if (
+    operation !== sessionOperations[source] ||
+    !runtime.capabilities?.includes("native_session_read")
+  )
+    return;
+  const value = await nativeCall<import("../library/server").AccountSession | null>(
+    "aede_session",
+    { source },
+  );
+  if (operation !== sessionOperations[source]) return;
+  if (value === null) {
+    delete nativeSessions[source];
+    aedeAvailability.owner(source);
+    return;
+  }
+  if (
+    !value ||
+    typeof value.nativeSession !== "string" ||
+    !/^\d+$/.test(value.nativeSession) ||
+    typeof value.server !== "string" ||
+    !value.server ||
+    !value.account ||
+    typeof value.account.id !== "string" ||
+    !value.account.id ||
+    typeof value.account.username !== "string" ||
+    !value.account.username ||
+    !["admin", "user", "auditor"].includes(value.account.role)
+  )
+    throw new Error(t("Session native indisponible."));
+  rememberNativeSession(source, value);
+  return value;
 }
 /** An imported public certificate applies only to this explicit local login. */
 export interface LocalServerProfile {
@@ -61,12 +103,15 @@ export async function loginAede(
   password: string,
   certificate?: number[],
 ) {
+  const operation = ++sessionOperations.server;
   const account = await nativeCall<import("../library/server").AccountSession>("aede_login", {
     server,
     username,
     password,
     ...(certificate ? { certificate } : {}),
   });
+  if (operation !== sessionOperations.server)
+    throw new Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
   rememberNativeSession("server", account);
   return account;
 }
@@ -76,11 +121,29 @@ export const downloadAede = (id: string, source: SourceId = requestSource) =>
 export const downloadAnalysisAede = (reference: string) =>
   nativeCall<string>("aede_download_analysis", { reference });
 export function logoutAede() {
+  sessionOperations.server++;
   delete nativeSessions.server;
+  aedeAvailability.owner("server");
   return nativeCall<void>("aede_logout");
 }
 export const syncAede = (source: SourceId = requestSource) =>
-  nativeCall<unknown>("aede_sync", { source });
+  reachableCall<unknown>(source, nativeSessions[source], "aede_sync", { source });
+/** Do not replay mutations; only publish availability for the login captured before IPC. */
+async function reachableCall<T>(
+  source: SourceId,
+  ticket: string | undefined,
+  command: string,
+  args: Record<string, unknown>,
+): Promise<T> {
+  try {
+    const result = await nativeCall<T>(command, args);
+    aedeAvailability.success(source, ticket);
+    return result;
+  } catch (failure) {
+    aedeAvailability.failure(source, ticket, failure);
+    throw failure;
+  }
+}
 export const cachedAede = (source: SourceId = "server") =>
   nativeCall<unknown | null>("aede_cache", { source });
 export const artworkAede = (reference: string, kind: string) =>
@@ -104,7 +167,7 @@ export function requestAede<T>(
       : undefined);
   const origin = typeof entity === "string" ? referenceSource(entity) : source;
   const expectedSession = expectedAccount ? expectedAccount.nativeSession : nativeSessions[origin];
-  return nativeCall<T>("aede_request", {
+  return reachableCall<T>(origin, expectedSession, "aede_request", {
     path,
     query,
     method,
@@ -177,12 +240,17 @@ export interface LocalStatus {
 }
 export const localStatus = () => nativeCall<LocalStatus>("local_status");
 export async function startLocal() {
+  const operation = ++sessionOperations.local;
   const account = await nativeCall<import("../library/server").AccountSession>("local_start");
+  if (operation !== sessionOperations.local)
+    throw new Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
   rememberNativeSession("local", account);
   return account;
 }
 export function stopLocal() {
+  sessionOperations.local++;
   delete nativeSessions.local;
+  aedeAvailability.owner("local");
   return nativeCall<void>("local_stop");
 }
 export const pickLocalRoots = () => nativeCall<void>("local_pick_roots");

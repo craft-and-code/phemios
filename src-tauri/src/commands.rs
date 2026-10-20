@@ -8,6 +8,7 @@ pub(crate) struct RuntimeInfo {
     version: &'static str,
     native: bool,
     embedded: serde_json::Value,
+    capabilities: &'static [&'static str],
 }
 
 #[tauri::command]
@@ -17,6 +18,7 @@ pub(crate) fn runtime_info() -> Result<RuntimeInfo, String> {
         name: "Phémios",
         version: env!("CARGO_PKG_VERSION"),
         native: true,
+        capabilities: &["native_session_read"],
         embedded: serde_json::from_str(include_str!("../binaries/versions.json"))
             .map_err(|_| "Embedded version metadata is invalid".to_string())?,
     })
