@@ -21,7 +21,7 @@ impl Client {
             return Err("Original audio invalide ou trop volumineux.".into());
         }
         valid()?;
-        self.require_unrestricted_download()?;
+        self.require_unrestricted_download_admitted(valid)?;
         let mut response = self
             .agent
             .get(format!("{}/api/me/v1/exports/original", self.server))

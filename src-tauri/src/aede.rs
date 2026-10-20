@@ -201,7 +201,9 @@ pub(crate) async fn aede_cache(
             .clone();
         if let Some(client) = client
             && client
-                .parental_status()?
+                .parental_status_admitted(|| {
+                    crate::sessions::dispatch(&session, &client, || Ok(()))
+                })?
                 .is_some_and(|value| value["policy"]["enabled"] == true)
         {
             let snapshot = retained
@@ -210,7 +212,9 @@ pub(crate) async fn aede_cache(
                 .clone();
             return snapshot
                 .map(|value| {
-                    client.admit_snapshot(&value)?;
+                    client.admit_snapshot_admitted(&value, || {
+                        crate::sessions::dispatch(&session, &client, || Ok(()))
+                    })?;
                     Ok(value.as_ref().clone())
                 })
                 .transpose();
@@ -261,6 +265,15 @@ pub(crate) async fn aede_request(
             expected_session.as_deref(),
             &client,
             || {
+                let current = || {
+                    crate::sessions::scoped_dispatch(
+                        &session,
+                        &generation,
+                        expected_session.as_deref(),
+                        &client,
+                        || Ok(()),
+                    )
+                };
                 if method == "POST" && path == "/api/admin/v1/fetch" {
                     if client.account()["account"]["role"] != "admin" {
                         return Err("Un administrateur Aède est nécessaire.".into());
@@ -270,7 +283,7 @@ pub(crate) async fn aede_request(
                         .map_err(|_| "Moteur local occupé.")?
                         .fetch_keys()?;
                     let status = if keys.as_object().is_some_and(|rows| !rows.is_empty()) {
-                        client.request("GET", "/api/v1/status", &[], None)?
+                        client.request_admitted("GET", "/api/v1/status", &[], None, &current)?
                     } else {
                         serde_json::json!({})
                     };
@@ -291,7 +304,13 @@ pub(crate) async fn aede_request(
                     &client,
                     || {
                         public(
-                            client.request(&method, &path, &query, body.as_ref())?,
+                            client.request_admitted(
+                                &method,
+                                &path,
+                                &query,
+                                body.as_ref(),
+                                &current,
+                            )?,
                             origin,
                         )
                     },
@@ -328,8 +347,10 @@ pub(crate) async fn aede_artwork(
         .ok_or("Synchronisez le catalogue avant les images.")?;
     let bytes = blocking(move || {
         crate::sessions::generation_dispatch(&sessions, &generation, ticket, || {
+            let current =
+                || crate::sessions::with_generation(&sessions, &generation, ticket, || Ok(()));
             if let Some(client) = &session {
-                crate::snapshots::admit_artwork(client, &snapshot, &reference)?;
+                crate::snapshots::admit_artwork(client, &snapshot, &reference, &current)?;
             }
             if let Some(bytes) =
                 crate::sessions::with_generation(&sessions, &generation, ticket, || {
@@ -346,7 +367,7 @@ pub(crate) async fn aede_artwork(
             {
                 return Err("Synchronisez le compte connecté avant ses images.".into());
             }
-            let bytes = client.artwork(&reference, &kind)?;
+            let bytes = client.artwork_admitted(&reference, &kind, &current)?;
             crate::sessions::with_generation(&sessions, &generation, ticket, || {
                 cache.save_image(&snapshot, &reference, &kind, &bytes)
             })?;
@@ -387,8 +408,10 @@ pub(crate) async fn aede_missing_cover(
         .ok_or("Synchronisez le catalogue avant les images.")?;
     let bytes = blocking(move || {
         crate::sessions::generation_dispatch(&sessions, &generation, ticket, || {
+            let current =
+                || crate::sessions::with_generation(&sessions, &generation, ticket, || Ok(()));
             if let Some(client) = &session {
-                crate::snapshots::admit_artwork(client, &snapshot, &artist)?;
+                crate::snapshots::admit_artwork(client, &snapshot, &artist, &current)?;
             }
             if group.len() != 36
                 || !group.bytes().enumerate().all(|(i, b)| {
@@ -451,7 +474,21 @@ pub(crate) async fn aede_download(
         crate::sessions::scoped_dispatch(&session, &generation, Some(&ticket), &client, || {
             let library_file = id.starts_with("m3u-file-");
             let route = if library_file { "m3u-files" } else { "m3u" };
-            let response = client.request("GET", &format!("/api/me/v1/{route}/{id}"), &[], None)?;
+            let response = client.request_admitted(
+                "GET",
+                &format!("/api/me/v1/{route}/{id}"),
+                &[],
+                None,
+                || {
+                    crate::sessions::with_current(
+                        &session,
+                        &generation,
+                        &ticket,
+                        &client,
+                        || Ok(()),
+                    )
+                },
+            )?;
             crate::sessions::with_current(&session, &generation, &ticket, &client, || {
                 let path = if library_file {
                     phemios_core::download::publish_library_m3u(&folder, &id, &response)?
@@ -474,13 +511,15 @@ pub(crate) async fn aede_download_analysis(
     bridge(version)?;
     let (origin, reference) = phemios_core::federation::resolve(&reference)?;
     let client = client(state.owner(origin))?;
+    let session = state.owner(origin).session.clone();
     let folder = state.downloads.clone();
     blocking(move || {
-        let response = client.request(
+        let response = client.request_admitted(
             "GET",
             "/api/v1/analysis/report",
             &[("ref", reference.as_str())],
             None,
+            || crate::sessions::dispatch(&session, &client, || Ok(())),
         )?;
         let path = phemios_core::download::publish_analysis(&folder, &reference, &response)?;
         Ok(path.to_string_lossy().into_owned())
@@ -497,9 +536,12 @@ pub(crate) async fn aede_download_spectrum(
     bridge(version)?;
     let (origin, reference) = phemios_core::federation::resolve(&reference)?;
     let client = client(state.owner(origin))?;
+    let session = state.owner(origin).session.clone();
     let folder = state.downloads.clone();
     blocking(move || {
-        let bytes = client.spectrum_download(&reference)?;
+        let bytes = client.spectrum_download_admitted(&reference, || {
+            crate::sessions::dispatch(&session, &client, || Ok(()))
+        })?;
         let path = phemios_core::download::publish_spectrum(&folder, &reference, &bytes)?;
         Ok(path.to_string_lossy().into_owned())
     })

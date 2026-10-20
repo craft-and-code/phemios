@@ -7,6 +7,7 @@ mod analysis_import;
 mod articles;
 mod awake;
 mod cd;
+mod cd_accounts;
 mod cd_image;
 mod commands;
 mod concerts;

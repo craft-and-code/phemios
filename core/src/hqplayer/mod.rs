@@ -141,7 +141,19 @@ impl Controller {
             if !current() {
                 return Err("Lecture annulée ou session remplacée.".into());
             }
-            let detail = client.request("GET", "/api/v1/track", &[("ref", reference)], None)?;
+            let detail = client.request_admitted(
+                "GET",
+                "/api/v1/track",
+                &[("ref", reference)],
+                None,
+                || {
+                    if current() {
+                        Ok(())
+                    } else {
+                        Err("Lecture annulée ou session remplacée.".into())
+                    }
+                },
+            )?;
             if detail["reference"].as_str() != Some(reference) {
                 return Err("Identité de piste Aède invalide.".into());
             }

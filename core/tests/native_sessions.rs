@@ -9,3 +9,7 @@ mod sessions;
 #[allow(dead_code)]
 #[path = "../../src-tauri/src/snapshots.rs"]
 mod snapshots;
+
+#[allow(dead_code)]
+#[path = "../../src-tauri/src/cd_accounts.rs"]
+mod cd_accounts;

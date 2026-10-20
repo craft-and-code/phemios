@@ -93,7 +93,9 @@ fn execute(
             Ok(())
         };
         valid()?;
-        item.owner.client.require_unrestricted_download()?;
+        item.owner
+            .client
+            .require_unrestricted_download_admitted(&valid)?;
         if let Target::Mounted(mount) = &preview.target {
             mount.confirm()?;
         }

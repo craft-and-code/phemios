@@ -55,7 +55,15 @@ pub(crate) async fn podcast_download(
                 .as_deref()
                 .ok_or("Session remplacée ou déconnectée. Reconnectez-vous.")?;
             crate::sessions::scoped_dispatch(&session, &generation, Some(ticket), client, || {
-                client.require_unrestricted_download()
+                client.require_unrestricted_download_admitted(|| {
+                    crate::sessions::scoped_dispatch(
+                        &session,
+                        &generation,
+                        expected_session.as_deref(),
+                        client,
+                        || Ok(()),
+                    )
+                })
             })?;
         } else if expected_session.is_some() {
             return Err("Session remplacée ou déconnectée. Reconnectez-vous.".into());
@@ -71,7 +79,17 @@ pub(crate) async fn podcast_download(
                         &generation,
                         expected_session.as_deref(),
                         client,
-                        || client.require_unrestricted_download(),
+                        || {
+                            client.require_unrestricted_download_admitted(|| {
+                                crate::sessions::scoped_dispatch(
+                                    &session,
+                                    &generation,
+                                    expected_session.as_deref(),
+                                    client,
+                                    || Ok(()),
+                                )
+                            })
+                        },
                     )
                 } else if generation.load(std::sync::atomic::Ordering::SeqCst) != epoch {
                     Err("Session remplacée ou déconnectée. Reconnectez-vous.".into())

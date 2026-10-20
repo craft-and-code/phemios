@@ -6,14 +6,15 @@ use std::sync::{Arc, Mutex};
 /// Share the native retained projection with its blocking publication worker.
 pub(crate) type Snapshot = Arc<Mutex<Option<Arc<Value>>>>;
 
-/// Fetch without holding state locks, then admit disk and memory publication to the same session.
+/// Admit every network stage without holding state locks through IO, then publish to the same session.
 pub(crate) fn synchronize(
     session: Arc<Mutex<Option<Client>>>,
     retained: Snapshot,
     cache: Cache,
     client: Client,
 ) -> Result<Value, String> {
-    let next = client.snapshot()?;
+    let next =
+        client.snapshot_admitted(|| crate::sessions::dispatch(&session, &client, || Ok(())))?;
     publish(&session, &retained, &cache, &client, next)
 }
 
@@ -86,8 +87,9 @@ pub(crate) fn admit_artwork(
     client: &Client,
     snapshot: &Value,
     reference: &str,
+    current: impl Fn() -> Result<(), String>,
 ) -> Result<(), String> {
-    client.admit_artwork_snapshot(snapshot)?;
+    client.admit_artwork_snapshot_admitted(snapshot, current)?;
     if snapshot["parentalEnabled"] == true && !projection_contains(snapshot, reference) {
         return Err("Cette image est masquée par le contrôle parental.".into());
     }
@@ -104,3 +106,7 @@ fn projection_contains(snapshot: &Value, reference: &str) -> bool {
 #[cfg(test)]
 #[path = "snapshots_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "snapshots_test_support.rs"]
+pub(crate) mod test_support;

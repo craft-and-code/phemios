@@ -153,7 +153,10 @@ pub(crate) fn private_write<T>(
     work: impl FnOnce() -> Result<T, String>,
 ) -> Result<T, String> {
     scoped_dispatch(session, generation, Some(ticket), expected, || {
-        let current = expected.request("GET", "/api/auth/v1/session", &[], None)?;
+        let current =
+            expected.request_admitted("GET", "/api/auth/v1/session", &[], None, || {
+                with_current(session, generation, ticket, expected, || Ok(()))
+            })?;
         if current["id"] != expected.account()["account"]["id"]
             || current["enabled"] != true
             || !matches!(current["role"].as_str(), Some("user" | "admin"))

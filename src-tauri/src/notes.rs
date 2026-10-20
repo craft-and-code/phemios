@@ -22,8 +22,15 @@ pub(crate) async fn note_export(
         .map_err(|_| "Dossier de téléchargement inaccessible.")?;
     blocking(move || {
         crate::sessions::scoped_dispatch(&held, &generation, Some(&ticket), &client, || {
-            let response =
-                client.request("GET", "/api/me/v1/annotation", &[("ref", &reference)], None)?;
+            let current =
+                || crate::sessions::with_current(&held, &generation, &ticket, &client, || Ok(()));
+            let response = client.request_admitted(
+                "GET",
+                "/api/me/v1/annotation",
+                &[("ref", &reference)],
+                None,
+                &current,
+            )?;
             let endpoint = if reference.starts_with("artist:") {
                 "/api/v1/artist"
             } else if reference.starts_with("release:") {
@@ -31,7 +38,8 @@ pub(crate) async fn note_export(
             } else {
                 "/api/v1/track"
             };
-            let detail = client.request("GET", endpoint, &[("ref", &reference)], None)?;
+            let detail =
+                client.request_admitted("GET", endpoint, &[("ref", &reference)], None, &current)?;
             crate::sessions::with_current(&held, &generation, &ticket, &client, || {
                 let saved =
                     phemios_core::download::publish_note(&folder, &reference, &response, &detail)?;

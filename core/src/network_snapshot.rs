@@ -24,12 +24,30 @@ impl SnapshotBudget {
         serde_json::to_writer(self, value).map_err(|_| "Catalogue trop grand pour ce cache.".into())
     }
 }
+/// Admission holds no network lock and also discards a reply retired during its request.
+fn admitted<T>(
+    current: &impl Fn() -> Result<(), String>,
+    work: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
+    current()?;
+    let result = work();
+    current()?;
+    result
+}
 impl Client {
     /// Synchronize complete same-epoch public projections under the cache's shared JSON-byte limit.
     /// Oversized pages fail before retention; differing projection epochs allow three attempts.
     pub fn snapshot(&self) -> Result<Value, String> {
+        self.snapshot_admitted(|| Ok(()))
+    }
+    /// Check the caller's exact session before/after each policy, page and detail request.
+    /// Retiring admission prevents follow-up IO; an already dispatched request may finish.
+    pub fn snapshot_admitted(
+        &self,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<Value, String> {
         for _ in 0..3 {
-            let policy = self.parental_status()?;
+            let policy = admitted(&current, || self.parental_status_admitted(&current))?;
             let mut budget = SnapshotBudget {
                 remaining: crate::cache::MAX_CATALOG,
             };
@@ -41,9 +59,9 @@ impl Client {
             {
                 budget.reserve(&json!({"parentalEnabled": true, "parentalRevision":status["revision"], "parentalPolicy":status["policy"]}))?;
             }
-            let artists = self.pages("/api/v1/presentation/artists", &mut budget)?;
-            let albums = self.pages("/api/v1/presentation/albums", &mut budget)?;
-            let mut tracks = self.pages("/api/v1/presentation/tracks", &mut budget)?;
+            let artists = self.pages("/api/v1/presentation/artists", &mut budget, &current)?;
+            let albums = self.pages("/api/v1/presentation/albums", &mut budget, &current)?;
+            let mut tracks = self.pages("/api/v1/presentation/tracks", &mut budget, &current)?;
             for track in &mut tracks.0 {
                 let fields = track.as_object_mut().ok_or("Piste Aède invalide.")?;
                 fields.retain(|key, _| {
@@ -63,25 +81,27 @@ impl Client {
                     )
                 });
             }
-            let summaries = self.pages("/api/v1/labels", &mut budget)?;
+            let summaries = self.pages("/api/v1/labels", &mut budget, &current)?;
             if artists.1 == albums.1 && artists.1 == tracks.1 && artists.1 == summaries.1 {
-                let labels = self.label_details(summaries.0, &mut budget)?;
+                let labels = self.label_details(summaries.0, &mut budget, &current)?;
                 if !labels.is_empty() {
                     // Detail responses have no epoch: a final label probe refuses torn associations.
-                    let probe = self.request(
-                        "GET",
-                        "/api/v1/labels",
-                        &[("offset", "0"), ("limit", "1")],
-                        None,
-                    )?;
+                    let probe = admitted(&current, || {
+                        self.request_admitted(
+                            "GET",
+                            "/api/v1/labels",
+                            &[("offset", "0"), ("limit", "1")],
+                            None,
+                            &current,
+                        )
+                    })?;
                     if probe["scanned_at"].as_u64() != Some(artists.1)
                         || probe["total"].as_u64() != Some(labels.len() as u64)
                     {
                         continue;
                     }
                 }
-                if self
-                    .parental_status()?
+                if admitted(&current, || self.parental_status_admitted(&current))?
                     .as_ref()
                     .map(|v| (&v["revision"], &v["policy"]))
                     != policy.as_ref().map(|v| (&v["revision"], &v["policy"]))
@@ -103,13 +123,16 @@ impl Client {
         &self,
         summaries: Vec<Value>,
         budget: &mut SnapshotBudget,
+        current: &impl Fn() -> Result<(), String>,
     ) -> Result<Vec<Value>, String> {
         let mut labels = Vec::with_capacity(summaries.len());
         for summary in summaries {
             let reference = summary["reference"]
                 .as_str()
                 .ok_or("Label Aède invalide.")?;
-            let detail = self.request("GET", "/api/v1/label", &[("ref", reference)], None)?;
+            let detail = admitted(current, || {
+                self.request_admitted("GET", "/api/v1/label", &[("ref", reference)], None, current)
+            })?;
             if detail["reference"] != summary["reference"]
                 || detail["name"] != summary["name"]
                 || !detail["releases"].is_array()
@@ -136,14 +159,26 @@ impl Client {
         }
         Ok(labels)
     }
-    fn pages(&self, path: &str, budget: &mut SnapshotBudget) -> Result<(Vec<Value>, u64), String> {
+    fn pages(
+        &self,
+        path: &str,
+        budget: &mut SnapshotBudget,
+        current: &impl Fn() -> Result<(), String>,
+    ) -> Result<(Vec<Value>, u64), String> {
         let mut items = Vec::new();
         let mut stamp = None;
         let mut total = None;
         loop {
             let offset = items.len().to_string();
-            let mut page =
-                self.request("GET", path, &[("offset", &offset), ("limit", "200")], None)?;
+            let mut page = admitted(current, || {
+                self.request_admitted(
+                    "GET",
+                    path,
+                    &[("offset", &offset), ("limit", "200")],
+                    None,
+                    current,
+                )
+            })?;
             let count = page["total"]
                 .as_u64()
                 .and_then(|count| usize::try_from(count).ok())

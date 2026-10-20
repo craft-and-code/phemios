@@ -6,6 +6,8 @@ use std::time::{Duration, Instant};
 mod errors;
 #[path = "network_parental.rs"]
 mod parental;
+#[path = "network_request.rs"]
+mod request;
 #[path = "network_snapshot.rs"]
 mod snapshot;
 #[path = "network_tls.rs"]
@@ -151,93 +153,17 @@ impl Client {
     pub fn account(&self) -> Value {
         json!({"account":self.account,"server":self.server})
     }
-    /// Explicit supported JSON operations; never accept a second authority or arbitrary URL.
-    pub fn request(
-        &self,
-        method: &str,
-        path: &str,
-        query: &[(&str, &str)],
-        body: Option<&Value>,
-    ) -> Result<Value, String> {
-        if !allowed(method, path) {
-            return Err("Opération native non prise en charge.".into());
-        }
-        let url = format!("{}{}", self.server, path);
-        let response = if method == "GET" {
-            read_response(|| {
-                let mut request = self
-                    .agent
-                    .get(&url)
-                    .header("Authorization", format!("Bearer {}", self.token));
-                for (key, value) in query {
-                    request = request.query(key, value);
-                }
-                request.call()
-            })
-        } else if method == "DELETE" {
-            let mut request = self
-                .agent
-                .delete(&url)
-                .header("Authorization", format!("Bearer {}", self.token));
-            for (key, value) in query {
-                request = request.query(key, value);
-            }
-            if path == "/api/me/v1/history" {
-                let data = body.unwrap_or(&Value::Null).to_string();
-                if data.len() > 1024 {
-                    return Err("Confirmation trop grande.".into());
-                }
-                request
-                    .force_send_body()
-                    .header("Content-Type", "application/json")
-                    .send(data.as_bytes())
-            } else {
-                request.call()
-            }
-        } else {
-            // Absence is an empty HTTP body, never JSON null (notably task Stop).
-            let data = body.map(Value::to_string).unwrap_or_default();
-            if data.len() > 16 * 1024 {
-                return Err("Requête trop grande.".into());
-            }
-            let mut request = if method == "PATCH" {
-                self.agent.patch(&url)
-            } else if method == "PUT" {
-                self.agent.put(&url)
-            } else {
-                self.agent.post(&url)
-            };
-            request = request
-                .header("Authorization", format!("Bearer {}", self.token))
-                .header("Content-Type", "application/json");
-            for (key, value) in query {
-                request = request.query(key, value);
-            }
-            request.send(data.as_bytes())
-        }
-        .map_err(|_| "Impossible de joindre Aède.".to_string())?;
-        if !response.status().is_success() {
-            let status = response.status().as_u16();
-            let mut response = response;
-            let detail = response
-                .body_mut()
-                .with_config()
-                .limit(8192)
-                .read_to_vec()
-                .ok()
-                .and_then(|bytes| serde_json::from_slice(&bytes).ok());
-            return Err(errors::request_failure(
-                status,
-                method,
-                path,
-                body.is_some_and(|v| v["create_only"] == true),
-                detail.as_ref(),
-            ));
-        }
-        decode(&bytes(response, JSON_LIMIT)?)
-    }
     /// Fetch only catalog-selected local artwork, never an external image URL.
     pub fn artwork(&self, reference: &str, kind: &str) -> Result<Vec<u8>, String> {
+        self.artwork_admitted(reference, kind, || Ok(()))
+    }
+    /// Admit each artwork attempt to its captured native session, including busy retries.
+    pub fn artwork_admitted(
+        &self,
+        reference: &str,
+        kind: &str,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<Vec<u8>, String> {
         if reference.len() > 16 * 1024
             || !matches!(
                 kind,
@@ -251,7 +177,7 @@ impl Client {
         } else {
             "1920"
         };
-        self.read_artwork(reference, kind, Some(size))
+        self.read_artwork(reference, kind, Some(size), &current)
     }
     /// Read an unowned group's cached cover or explicitly request archive acquisition on Aède.
     /// Retain the session's TLS identity while allowing a longer per-request timeout.
@@ -308,51 +234,50 @@ impl Client {
     }
     /// Export a retained track spectrum at its original dimensions, without thumbnail rendering.
     pub fn spectrum_download(&self, reference: &str) -> Result<Vec<u8>, String> {
+        self.spectrum_download_admitted(reference, || Ok(()))
+    }
+    /// Retire pending spectrum retries without publishing under a replacement session.
+    pub fn spectrum_download_admitted(
+        &self,
+        reference: &str,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<Vec<u8>, String> {
         if !reference.starts_with("track:") || reference.len() > 4096 {
             return Err("Référence de spectre invalide.".into());
         }
-        self.read_artwork(reference, "spectrum", None)
+        self.read_artwork(reference, "spectrum", None, &current)
     }
     fn read_artwork(
         &self,
         reference: &str,
         kind: &str,
         size: Option<&str>,
+        current: &impl Fn() -> Result<(), String>,
     ) -> Result<Vec<u8>, String> {
-        let response = read_response(|| {
-            let mut request = self
-                .agent
-                .get(format!("{}/api/v1/artwork", self.server))
-                .query("ref", reference)
-                .query("kind", kind);
-            if let Some(size) = size {
-                request = request.query("size", size);
-            }
-            request
-                .header("Authorization", format!("Bearer {}", self.token))
-                .call()
-        })
-        .map_err(|_| "Image Aède inaccessible.".to_string())?;
+        let response = request::read_response(
+            || {
+                let mut request = self
+                    .agent
+                    .get(format!("{}/api/v1/artwork", self.server))
+                    .query("ref", reference)
+                    .query("kind", kind);
+                if let Some(size) = size {
+                    request = request.query("size", size);
+                }
+                request
+                    .header("Authorization", format!("Bearer {}", self.token))
+                    .call()
+                    .map_err(|_| "Image Aède inaccessible.".to_string())
+            },
+            current,
+        )?;
         let data = bytes(response, 32 * 1024 * 1024)?;
+        current()?;
         if !data.starts_with(&[0xff, 0xd8, 0xff]) && !data.starts_with(b"\x89PNG\r\n\x1a\n") {
             return Err("Format d’image Aède invalide.".into());
         }
         Ok(data)
     }
-}
-// Only idempotent GET operations enter this retry boundary; writes are never replayed.
-fn read_response(
-    call: impl Fn() -> Result<ureq::http::Response<ureq::Body>, ureq::Error>,
-) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
-    for attempt in 0..4 {
-        let response = call()?;
-        if !matches!(response.status().as_u16(), 409 | 429 | 503) {
-            return Ok(response);
-        }
-        drop(response);
-        std::thread::sleep(Duration::from_millis(150 << attempt));
-    }
-    call()
 }
 /// Protect the application-owned principal on the managed-local source only.
 /// Server accounts remain governed by the selected server's own administration rules.

@@ -4,16 +4,32 @@ use super::{Client, Value};
 impl Client {
     /// Old servers expose no parental marker. New servers must return this owner's valid status.
     pub fn parental_status(&self) -> Result<Option<Value>, String> {
+        self.parental_status_admitted(|| Ok(()))
+    }
+    /// Policy lookups retire busy retries with their captured account admission.
+    pub fn parental_status_admitted(
+        &self,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<Option<Value>, String> {
+        current()?;
         if self.account["role"] == "admin" || !self.account["parental_enabled"].is_boolean() {
             return Ok(None);
         }
-        let value = self.request("GET", "/api/me/v1/parental", &[], None)?;
+        let value = self.request_admitted("GET", "/api/me/v1/parental", &[], None, current)?;
         validate(&value, self.account["id"].as_str().unwrap_or_default())?;
         Ok(Some(value))
     }
     /// Recheck the live policy before serving a retained projection to a supervised account.
     pub fn admit_snapshot(&self, snapshot: &Value) -> Result<(), String> {
-        if let Some(status) = self.parental_status()? {
+        self.admit_snapshot_admitted(snapshot, || Ok(()))
+    }
+    /// Retained projection checks share the caller's cancellable network admission.
+    pub fn admit_snapshot_admitted(
+        &self,
+        snapshot: &Value,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<(), String> {
+        if let Some(status) = self.parental_status_admitted(current)? {
             admit(
                 &status,
                 snapshot,
@@ -28,6 +44,15 @@ impl Client {
     /// failed reads fail closed; a failure is not retained. Network and cached images use the same
     /// projection validation, while native process generations still fence account replacements.
     pub fn admit_artwork_snapshot(&self, snapshot: &Value) -> Result<(), String> {
+        self.admit_artwork_snapshot_admitted(snapshot, || Ok(()))
+    }
+    /// Native session admission remains independent of the one-second policy cache.
+    pub fn admit_artwork_snapshot_admitted(
+        &self,
+        snapshot: &Value,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<(), String> {
+        current()?;
         if self.account["role"] == "admin" || !self.account["parental_enabled"].is_boolean() {
             return Ok(());
         }
@@ -44,7 +69,7 @@ impl Client {
         if cached.is_none() {
             // Start the bound before IO, so even a slow response cannot extend the grace period.
             let checked = std::time::Instant::now();
-            if let Some(status) = self.parental_status()? {
+            if let Some(status) = self.parental_status_admitted(&current)? {
                 *cached = Some((checked, status));
             }
         }
@@ -59,8 +84,15 @@ impl Client {
     }
     /// Episode files cannot carry the account's continuous listening limits into another player.
     pub fn require_unrestricted_download(&self) -> Result<(), String> {
+        self.require_unrestricted_download_admitted(|| Ok(()))
+    }
+    /// Retire the policy lookup before another account or cancelled transfer can dispatch a retry.
+    pub fn require_unrestricted_download_admitted(
+        &self,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<(), String> {
         if self
-            .parental_status()?
+            .parental_status_admitted(current)?
             .is_some_and(|v| v["policy"]["enabled"] == true)
         {
             return Err(
@@ -71,8 +103,15 @@ impl Client {
     }
     /// An external player cannot enforce this server's continuous listening limits.
     pub fn require_unrestricted_output(&self) -> Result<(), String> {
+        self.require_unrestricted_output_admitted(|| Ok(()))
+    }
+    /// Output preparation retains its caller's cancellation and native session admission.
+    pub fn require_unrestricted_output_admitted(
+        &self,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<(), String> {
         if self
-            .parental_status()?
+            .parental_status_admitted(current)?
             .is_some_and(|v| v["policy"]["enabled"] == true)
         {
             return Err("HQPlayer est indisponible pour un compte supervisé.".into());

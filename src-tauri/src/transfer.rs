@@ -200,16 +200,16 @@ pub(crate) async fn transfer_prepare(
                 let batch=&rows[offset..end];offset=end;
                 let owner = &batch[0].2;
                 owner.confirm()?;
-                owner.client.require_unrestricted_download()?;
+                owner.client.require_unrestricted_download_admitted(|| owner.confirm())?;
                 if scanned_at.is_none() {
-                    let status = owner.client.request("GET", "/api/v1/status", &[], None)?;
+                    let status = owner.client.request_admitted("GET", "/api/v1/status", &[], None, || owner.confirm())?;
                     if !status["capabilities"].as_array().is_some_and(|v| v.iter().any(|v| v == "original_exports")) { return Err("Mettez à jour puis redémarrez Aède pour transférer les originaux audio.".into()); }
                     if converted && !status["capabilities"].as_array().is_some_and(|v| v.iter().any(|v| v == "export_conversion_plans")) { return Err("Mettez à jour puis redémarrez Aède pour afficher les noms après conversion.".into()); }
                 }
                 let references: Vec<_> = batch.iter().map(|(_,r,_)| r.as_str()).collect();
                 let mut payload = json!({"references":references});
                 if converted { payload["format"] = options["format"].clone(); }
-                let value = owner.client.request("POST", "/api/me/v1/exports/plan", &[], Some(&payload))?;
+                let value = owner.client.request_admitted("POST", "/api/me/v1/exports/plan", &[], Some(&payload), || owner.confirm())?;
                 owner.confirm()?;
                 let stamp = value["scanned_at"].as_u64().ok_or("Plan de copie invalide ; mettez à jour Aède.")?;
                 if scanned_at.is_some_and(|previous| previous != stamp) { return Err("Le catalogue a changé ; recommencez l’aperçu.".into()); }
