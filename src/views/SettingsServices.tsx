@@ -1,3 +1,4 @@
+import { errorMessage, isAedeConnectionError } from "../library/aede-availability";
 import { completeServiceKeySave } from "../library/service-key-save";
 import { interfaceProfileIdentity } from "../library/account-preferences";
 import { createServiceCancellation } from "../library/service-cancellation";
@@ -238,58 +239,73 @@ export function SettingsServices() {
           {t("Discogs · biographies des labels")}
         </label>
       </div>
-      <ActionButton
-        icon="refresh"
-        busy={launching() || enrichmentActive()}
-        disabled={
-          busy() ||
-          launching() ||
-          enrichmentActive() ||
-          !targets().some((s) => !excluded().includes(s)) ||
-          ![summaries(), covers(), fanartPass(), lyrics(), discogs()].some(Boolean)
-        }
-        onClick={async () => {
-          if (busy() || launching() || enrichmentActive()) return;
-          setMessage("");
-          setFailure(false);
-          const options = {
-            musicbrainz: true,
-            summaries: summaries(),
-            covers: covers(),
-            images: covers(),
-            fanart: fanartPass(),
-            lyrics: lyrics(),
-            labels: discogs(),
-            discogs: discogs(),
-            yes: true,
-          };
-          try {
-            const results = await library.tasks.enrich(
-              targets().filter((s) => !excluded().includes(s)),
-              options,
-            );
-            if (!results) return;
-            setFailure(results.some((result) => "error" in result));
-            setMessage(
-              results
-                .map((result) =>
-                  "error" in result
-                    ? `${sourceLabel(result.source)} · ${result.error}`
-                    : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
-                )
-                .join("\n"),
-            );
-          } catch (error) {
-            setFailure(true);
-            setMessage(String(error));
+      <div class="enrichment-actions">
+        <ActionButton
+          icon="refresh"
+          busy={launching() || enrichmentActive()}
+          disabled={
+            busy() ||
+            launching() ||
+            enrichmentActive() ||
+            !targets().some((s) => !excluded().includes(s)) ||
+            ![summaries(), covers(), fanartPass(), lyrics(), discogs()].some(Boolean)
           }
-        }}
-      >
-        {t("Lancer l’enrichissement")}
-      </ActionButton>
+          onClick={async () => {
+            if (busy() || launching() || enrichmentActive()) return;
+            setMessage("");
+            setFailure(false);
+            const options = {
+              musicbrainz: true,
+              summaries: summaries(),
+              covers: covers(),
+              images: covers(),
+              fanart: fanartPass(),
+              lyrics: lyrics(),
+              labels: discogs(),
+              discogs: discogs(),
+              yes: true,
+            };
+            try {
+              const results = await library.tasks.enrich(
+                targets().filter((s) => !excluded().includes(s)),
+                options,
+              );
+              if (!results) return;
+              setFailure(results.some((result) => "error" in result));
+              setMessage(
+                results
+                  .map((result) =>
+                    "error" in result
+                      ? `${sourceLabel(result.source)} · ${result.error}`
+                      : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
+                  )
+                  .join("\n"),
+              );
+            } catch (error) {
+              setFailure(true);
+              setMessage(String(error));
+            }
+          }}
+        >
+          {t("Lancer l’enrichissement")}
+        </ActionButton>
+        <ActionButton
+          icon="stop"
+          busy={cancellation.pending()}
+          disabled={!enrichmentActive() || cancellation.pending()}
+          onClick={() => void cancellation.stopEnrichment(library.tasks.jobs())}
+        >
+          {t("Arrêter l’enrichissement")}
+        </ActionButton>
+      </div>
       <p class="muted">
         {t(
           "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.",
+        )}
+      </p>
+      <p class="muted">
+        {t(
+          "Une biographie nécessite une identité validée et un lien Wikidata fourni par MusicBrainz. Sans identifiant dans les fichiers, les correspondances proposées doivent être validées dans Aède. Trouver un nom dans l’Encyclopédie ne suffit pas ; Picard est une possibilité, pas une obligation.",
         )}
       </p>
       <Show
@@ -348,6 +364,7 @@ export function SettingsServices() {
                       class="icon-button quiet"
                       title={t("Annuler la tâche")}
                       aria-label={t("Annuler la tâche")}
+                      disabled={cancellation.pendingJob(job.task_id, job.source ?? "server")}
                       onClick={() => void cancellation.cancel(job.task_id, job.source ?? "server")}
                     >
                       <Icon name="close" />
@@ -355,7 +372,11 @@ export function SettingsServices() {
                   </Show>
                 </div>
                 <p>
-                  {job.tracking_error ??
+                  {(job.tracking_error
+                    ? isAedeConnectionError(job.tracking_error)
+                      ? t("Suivi de tâche interrompu.")
+                      : errorMessage(job.tracking_error)
+                    : undefined) ??
                     {
                       queued: t("En attente"),
                       running: t("Enrichissement en cours…"),

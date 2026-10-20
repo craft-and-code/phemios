@@ -31,4 +31,8 @@ Après avoir scanné vos dossiers, lancez l’enrichissement pour compléter les
 
 Une connexion Internet est nécessaire à la récupération. Les correspondances incertaines peuvent demander une validation dans Aède. Aucun fournisseur ne garantit une image pour chaque artiste ou chaque album : une tâche terminée peut laisser des images absentes. Phémios réutilise ensuite les images en cache ; consulter une page ne relance pas tout l’enrichissement.
 
+Le bouton **Arrêter l’enrichissement** annule les tâches d’enrichissement actives sur les sources concernées ; il est désactivé au repos. Les données déjà enregistrées restent disponibles. Attendez la confirmation d’annulation avant de relancer.
+
+Une biographie nécessite une identité validée et un lien Wikidata dans les données MusicBrainz. Sans identifiant dans les tags, la recherche propose une correspondance à valider dans Aède (`aede review --interactive`). Un résultat de recherche Wikipédia dans l’Encyclopédie ne constitue pas cette validation. Picard peut fournir les identifiants dans les fichiers, mais il n’est pas obligatoire. Répéter une passe d’enrichissement ne valide jamais automatiquement une proposition et ne complète pas une fiche déjà en cache sans une actualisation explicite côté Aède.
+
 Les albums manquants sont des suggestions de discographie, pas des fichiers que vous pouvez lire. Leur affichage est configurable ; la croix masque une suggestion, que vous pourrez retrouver dans les suggestions masquées. [Aède](https://craft-and-code.github.io/aede/docs/fr/index.html) documente les fournisseurs, la provenance et l’identification.

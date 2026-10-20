@@ -31,4 +31,8 @@ After scanning folders, run enrichment to retrieve available covers, portraits, 
 
 Retrieval needs an Internet connection. Uncertain matches may need confirmation in Aède. No provider guarantees an image for every artist or album: a completed task can leave artwork missing. Phémios subsequently reuses cached images; opening a page does not restart all enrichment.
 
+**Stop enrichment** cancels active enrichment tasks for the relevant sources; it is disabled while idle. Previously saved results remain available. Wait for cancellation confirmation before launching again.
+
+A biography requires an approved identity and a Wikidata link in the MusicBrainz data. Without identifiers in the tags, name searches propose matches for approval in Aède (`aede review --interactive`). A Wikipedia search result in the Encyclopedia is not that approval. Picard can supply file identifiers, but is not required. Repeating enrichment never automatically approves a proposal or fills an already cached record without an explicit refresh in Aède.
+
 Missing albums are discography suggestions, not playable files. Their display is configurable; the cross hides a suggestion, which remains accessible among hidden suggestions. [Aède](https://craft-and-code.github.io/aede/docs/en/index.html) documents providers, attribution and identification.
