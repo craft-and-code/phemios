@@ -20,9 +20,13 @@ Use the latest verified checkpoint in [current state](current-state.md) and the 
 
 It does not prove exhaustive unit coverage of every rendering component or Tauri adapter. No percentage claim is made. macOS native observations are recorded in [UI acceptance](ui-acceptance.md). Windows/Linux execution, platform radio decoding, minimum-toolchain execution, acoustic/digital fidelity and physical network-mount/copy acceptance remain separate work. Keep tests aimed at meaningful behavior rather than mirroring JSX or claiming unsupported hardware guarantees.
 
+### Provider integration checks without the App
+
+Vitest compiles the actual Solid library provider in the Node environment with mocked IPC, browser globals and timers. Dedicated test-only fixtures instantiate and dispose its reactive root; no live engine, DOM renderer or hardware is involved. These cases exercise lifecycle and catalogue-authority admission rather than certify the native bridge. Fixture exports have explicit portable return types so declaration emission succeeds; test/fixture modules remain omitted from the public HTML reference.
+
 ### Native account and cache checks without Tauri
 
-`cargo test -p phemios-core --test native_sessions --locked --offline` runs the actual framework-independent session and snapshot modules from `src-tauri/` through the core integration harness. It covers exact-login admission, rejected login cleanup, private-write authorization, late disk-cache reads and supervised snapshot publication without compiling the Tauri application. The same sibling test files remain part of the native host's own suite; this harness does not certify the rest of its IPC wiring or native UI.
+`cargo test -p phemios-core --test native_sessions --locked --offline` runs the actual framework-independent session, snapshot and optical-account admission modules from `src-tauri/` through the core integration harness. It covers exact-login admission, rejected login cleanup, private-write authorization, interrupted catalogue pagination/label reads and busy-response retries, late disk-cache reads, supervised snapshot publication and CD policy retirement without compiling the Tauri application or accessing an optical device. The same sibling test files remain part of the native host's own suite; this harness does not certify the rest of its IPC wiring or native UI.
 
 ## Shared hardening policy
 
