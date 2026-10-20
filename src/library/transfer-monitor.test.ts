@@ -132,3 +132,124 @@ it("keeps current-owner errors visible but never dispatches or publishes after d
   expect(error).toHaveBeenCalledOnce();
   expect(read).toHaveBeenCalledTimes(2);
 });
+
+it.each(["replacement", "round-trip", "disposal"] as const)(
+  "never publishes retired transfer command feedback after %s",
+  async (retirement) => {
+    const original = {},
+      [owner, setOwner] = createSignal<object>(original);
+    let dispose!: () => void, reject!: (failure: Error) => void;
+    const failure = vi.fn(),
+      accepted = vi.fn(),
+      read = vi.fn(async () => ({ phase: "idle", running: false }));
+    const monitor = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createTransferMonitor(owner, read, () => true, failure);
+    });
+    try {
+      const pending = monitor.command(
+        () =>
+          new Promise((_resolve, refuse) => {
+            reject = refuse;
+          }),
+        accepted,
+      );
+      if (retirement === "disposal") dispose();
+      else {
+        setOwner({});
+        if (retirement === "round-trip") setOwner(original);
+      }
+      reject(Error("Retired transfer command refused"));
+      await pending;
+      expect(failure).not.toHaveBeenCalled();
+      expect(accepted).not.toHaveBeenCalled();
+      expect(read).not.toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+  },
+);
+
+it("keeps current transfer command failures visible and refreshes only confirmed starts", async () => {
+  const failure = vi.fn(),
+    accepted = vi.fn(),
+    read = vi.fn(async () => ({ phase: "copying", running: true }));
+  let dispose!: () => void;
+  const monitor = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createTransferMonitor(
+      () => "owner",
+      read,
+      () => true,
+      failure,
+    );
+  });
+  try {
+    const refusal = Error("Current transfer refused");
+    await monitor.command(async () => {
+      throw refusal;
+    }, accepted);
+    expect(failure).toHaveBeenCalledWith(refusal);
+    expect(accepted).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalled();
+    await monitor.command(async () => undefined, accepted);
+    expect(accepted).toHaveBeenCalledOnce();
+    expect(read).toHaveBeenCalledOnce();
+    expect(monitor.status()).toEqual({ phase: "copying", running: true });
+  } finally {
+    dispose();
+  }
+});
+
+it.each(["replacement", "round-trip", "disposal"] as const)(
+  "never acknowledges a retired transfer command or polls a successor after %s",
+  async (retirement) => {
+    const original = {},
+      [owner, setOwner] = createSignal<object>(original);
+    let dispose!: () => void, finish!: () => void;
+    const failure = vi.fn(),
+      accepted = vi.fn(),
+      read = vi.fn(async () => ({ phase: "copying", running: true }));
+    const monitor = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createTransferMonitor(owner, read, () => true, failure);
+    });
+    try {
+      const pending = monitor.command(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+        accepted,
+      );
+      if (retirement === "disposal") dispose();
+      else {
+        setOwner({});
+        if (retirement === "round-trip") setOwner(original);
+      }
+      finish();
+      await pending;
+      expect(accepted).not.toHaveBeenCalled();
+      expect(read).not.toHaveBeenCalled();
+      expect(failure).not.toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+  },
+);
+
+it("never dispatches transfer commands after disposal or outside the native host", async () => {
+  const work = vi.fn(async () => undefined);
+  let dispose!: () => void;
+  const [native, setNative] = createSignal(false);
+  const monitor = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createTransferMonitor(() => "owner", vi.fn(), native, vi.fn());
+  });
+  await monitor.command(work);
+  expect(work).not.toHaveBeenCalled();
+  setNative(true);
+  dispose();
+  await monitor.command(work);
+  expect(work).not.toHaveBeenCalled();
+});

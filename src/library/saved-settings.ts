@@ -76,6 +76,8 @@ export function createSavedSettings(
     const identity = session(),
       origin = source(),
       epoch = ++generation;
+    // Retired patches retain their own guards but must not delay this profile's first write.
+    queue = Promise.resolve();
     loaded = false;
     loading = !!identity;
     edited = new Map();

@@ -37,15 +37,17 @@ export function createAccountSavedArticles(
 ) {
   const scope = createMemo(() => {
     const owner = session();
-    return owner ? { owner, source: source() } : undefined;
+    // Serialization belongs to this exact login/source, not to a retired request's lifetime.
+    return owner
+      ? { owner, source: source(), tail: Promise.resolve<unknown>(undefined) }
+      : undefined;
   });
   type Scope = NonNullable<ReturnType<typeof scope>>;
   const [snapshot, setSnapshot] = createSignal<{ scope: Scope; rows: WikipediaArticle[] }>(),
     [failure, setFailure] = createSignal<{ scope: Scope; message: string }>(),
     [loading, setLoading] = createSignal(false),
     [pending, setPending] = createSignal(false);
-  let alive = true,
-    tail: Promise<unknown> = Promise.resolve();
+  let alive = true;
   const current = (held: Scope | undefined) => alive && !!held && scope() === held;
   const rows = () => (current(snapshot()?.scope) ? snapshot()!.rows : []);
   createEffect(() => {
@@ -78,7 +80,7 @@ export function createAccountSavedArticles(
       !["user", "admin"].includes(held.owner.account.role)
     )
       return false;
-    const work = tail.then(async () => {
+    const work = held.tail.then(async () => {
       if (!current(held)) return false;
       setPending(true);
       setFailure(undefined);
@@ -94,7 +96,7 @@ export function createAccountSavedArticles(
         if (current(held)) setPending(false);
       }
     });
-    tail = work;
+    held.tail = work;
     return work;
   }
   return {

@@ -23,11 +23,14 @@ export function createTransferMonitor(
     disposed = true;
     generation++;
   });
-  async function poll() {
-    if (disposed || polling || !native()) return;
+  function capture() {
     const held = scope(),
       epoch = generation;
-    const current = () => !disposed && held === scope() && epoch === generation;
+    return () => !disposed && held === scope() && epoch === generation;
+  }
+  async function poll() {
+    if (disposed || polling || !native()) return;
+    const current = capture();
     polling = true;
     try {
       const next = await read();
@@ -38,5 +41,18 @@ export function createTransferMonitor(
       polling = false;
     }
   }
-  return { status, poll };
+  /** Retire acknowledgements and diagnostics, not an already accepted native transfer. */
+  async function command(work: () => Promise<unknown>, accepted?: () => void) {
+    if (disposed || !native()) return;
+    const current = capture();
+    try {
+      await work();
+      if (!current()) return;
+      accepted?.();
+      if (current()) await poll();
+    } catch (failure) {
+      if (current()) error(failure);
+    }
+  }
+  return { status, poll, command };
 }

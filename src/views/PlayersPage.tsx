@@ -39,8 +39,11 @@ export function PlayersPage() {
     local: library.localSession(),
     server: library.serverSession(),
   }));
-  const { status, poll } = createTransferMonitor(ownerScope, transferStatus, isNative, (failure) =>
-    setError(String(failure)),
+  const { status, poll, command } = createTransferMonitor(
+    ownerScope,
+    transferStatus,
+    isNative,
+    (failure) => setError(failure instanceof Error ? failure.message : String(failure)),
   );
   let disposed = false,
     operation = 0;
@@ -160,13 +163,12 @@ export function PlayersPage() {
     setPreparing(true);
     setError("");
     try {
-      await startTransfer(value.id);
-      setPreview(undefined);
-      await poll();
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
+      await command(
+        () => startTransfer(value.id),
+        () => setPreview(undefined),
+      );
     } finally {
-      setPreparing(false);
+      if (!disposed) setPreparing(false);
     }
   }
   return (
@@ -244,11 +246,7 @@ export function PlayersPage() {
         }}
         onPreview={() => void prepare()}
         onStart={() => void start()}
-        onCancel={() =>
-          void cancelTransfer()
-            .then(poll)
-            .catch((failure) => setError(String(failure)))
-        }
+        onCancel={() => void command(cancelTransfer)}
       />
     </section>
   );

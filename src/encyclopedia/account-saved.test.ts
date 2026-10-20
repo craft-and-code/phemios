@@ -2,6 +2,7 @@ import { createRoot, createSignal } from "solid-js";
 import { expect, it, vi } from "vitest";
 import { createAccountSavedArticles } from "./account-saved";
 import type { AccountSession } from "../library/server";
+import type { SourceId } from "../library/sources";
 import { article } from "./wikipedia.test-fixtures";
 const owner = (id: string, role = "user"): AccountSession => ({
   server: "https://music.example",
@@ -301,6 +302,104 @@ it("does not publish resource links or delayed failures from a retired account s
       expect(copies.error()).toBe("");
       expect(copies.writable()).toBe(true);
     } finally {
+      dispose();
+    }
+  });
+});
+
+it.each(["account", "relogin", "source"] as const)(
+  "does not let an unresolved retired article save block the current %s scope",
+  async (change) => {
+    await createRoot(async (dispose) => {
+      const alice = owner("alice");
+      const [session, setSession] = createSignal<AccountSession | undefined>(alice);
+      const [source, setSource] = createSignal<SourceId>("server");
+      let finishOld!: (value: unknown) => void, finishCurrent!: (value: unknown) => void;
+      const oldReply = new Promise((resolve) => {
+        finishOld = resolve;
+      });
+      const currentReply = new Promise((resolve) => {
+        finishCurrent = resolve;
+      });
+      const update = vi
+        .fn()
+        .mockImplementationOnce(() => oldReply)
+        .mockImplementationOnce(() => currentReply);
+      const copies = createAccountSavedArticles(session, source, {
+        read: async () => state([]),
+        update,
+      });
+      const currentArticle = { ...article, pageId: 43, title: "Current private copy" };
+      const writes: Promise<unknown>[] = [];
+      try {
+        await settle();
+        writes.push(copies.save(article), copies.remove(article));
+        await settle();
+        expect(update).toHaveBeenCalledOnce();
+        if (change === "source") setSource("local");
+        else {
+          setSession(undefined);
+          setSession(
+            change === "relogin" ? { ...alice, nativeSession: "second-login" } : owner("bob"),
+          );
+        }
+        await settle();
+        expect(copies.writable()).toBe(true);
+        writes.push(copies.save(currentArticle));
+        await settle();
+        expect(update).toHaveBeenCalledTimes(2);
+        expect(update).toHaveBeenLastCalledWith("save", currentArticle, source(), session());
+        expect(copies.pending()).toBe(true);
+        finishOld(state([{ ...article, title: "Retired private copy" }]));
+        expect(await writes[0]).toBe(false);
+        expect(await writes[1]).toBe(false);
+        expect(copies.pending()).toBe(true);
+        expect(copies.rows()).toEqual([]);
+        finishCurrent(state([currentArticle]));
+        expect(await writes[2]).toBe(true);
+        expect(copies.rows()).toEqual([currentArticle]);
+        expect(copies.error()).toBe("");
+      } finally {
+        finishOld(state([]));
+        finishCurrent(state([currentArticle]));
+        await Promise.allSettled(writes);
+        dispose();
+      }
+    });
+  },
+);
+
+it("keeps article mutations ordered within one active login", async () => {
+  await createRoot(async (dispose) => {
+    let complete!: (value: unknown) => void;
+    const firstReply = new Promise((resolve) => {
+      complete = resolve;
+    });
+    const update = vi
+      .fn()
+      .mockImplementationOnce(() => firstReply)
+      .mockResolvedValueOnce(state([]));
+    const alice = owner("alice");
+    const copies = createAccountSavedArticles(
+      () => alice,
+      () => "server",
+      { read: async () => state([]), update },
+    );
+    const writes: Promise<unknown>[] = [];
+    try {
+      await settle();
+      writes.push(copies.save(article), copies.remove(article));
+      await settle();
+      expect(update).toHaveBeenCalledOnce();
+      complete(state());
+      expect(await writes[0]).toBe(true);
+      expect(await writes[1]).toBe(true);
+      expect(update.mock.calls.map((call) => call[0])).toEqual(["save", "remove"]);
+      expect(copies.rows()).toEqual([]);
+      expect(copies.pending()).toBe(false);
+    } finally {
+      complete(state());
+      await Promise.allSettled(writes);
       dispose();
     }
   });

@@ -48,7 +48,10 @@ export function createAccountPodcasts(
 ) {
   const scope = createMemo(() => {
     const owner = session();
-    return owner ? { owner, source: source() } : undefined;
+    // Serialization belongs to this exact login/source, not to a retired request's lifetime.
+    return owner
+      ? { owner, source: source(), tail: Promise.resolve<unknown>(undefined) }
+      : undefined;
   });
   type Scope = NonNullable<ReturnType<typeof scope>>;
   const [revision, setRevision] = createSignal(0);
@@ -57,8 +60,7 @@ export function createAccountPodcasts(
   const [error, setError] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [pending, setPending] = createSignal(false);
-  let alive = true,
-    tail: Promise<unknown> = Promise.resolve();
+  let alive = true;
   const current = (held: Scope | undefined) => alive && !!held && scope() === held;
   const admitted = () => (current(row()?.scope) ? row()?.data : undefined);
   createEffect(() => {
@@ -96,7 +98,7 @@ export function createAccountPodcasts(
         !["user", "admin"].includes(held.owner.account.role)
       )
         return false;
-      const work = tail.then(async () => {
+      const work = held.tail.then(async () => {
         if (!active()) return false;
         const epoch = loadEpoch;
         const admittedWrite = () => active() && epoch === loadEpoch;
@@ -114,7 +116,7 @@ export function createAccountPodcasts(
           if (admittedWrite()) setPending(false);
         }
       });
-      tail = work;
+      held.tail = work;
       return work;
     }
     return {

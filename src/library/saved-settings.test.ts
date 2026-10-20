@@ -308,3 +308,93 @@ it("synchronizes cover sizes to the captured Aède account and restores them in 
   );
   dispose();
 });
+
+it.each(["account", "relogin", "source"] as const)(
+  "does not let an unresolved retired preference patch block the current %s scope",
+  async (change) => {
+    const original = account("one");
+    const [session, setSession] = createSignal<AccountSession | undefined>(original);
+    const [source, setSource] = createSignal<"server" | "local">("server");
+    const completions: (() => void)[] = [];
+    vi.mocked(requestAede).mockImplementation(async (path, _query, method) => {
+      if (path === "/api/v1/status") return { capabilities: ["account_preferences"] };
+      if (method === "GET") return { values: {} };
+      return new Promise<void>((resolve) => completions.push(resolve));
+    });
+    let dispose!: () => void;
+    const settings = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createSavedSettings(session, source);
+    });
+    const patches = () => vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
+    try {
+      await settle();
+      announceSetting("phemios.duration", "true");
+      announceSetting("phemios.visualizer", '"waves"');
+      await settle();
+      expect(patches()).toHaveLength(1);
+      if (change === "source") setSource("local");
+      else
+        setSession(
+          change === "relogin" ? { ...original, nativeSession: "second-login" } : account("two"),
+        );
+      await settle();
+      announceSetting("phemios.duration", "false");
+      await settle();
+      expect(patches()).toHaveLength(2);
+      expect(patches()[1]?.[4]).toBe(source());
+      expect(patches()[1]?.[5]).toBe(session());
+      completions[0]?.();
+      await settle();
+      expect(patches()).toHaveLength(2);
+      expect(settings.status()).toContain("Enregistrement");
+      completions[1]?.();
+      await settle();
+      expect(settings.error()).toBe("");
+      expect(settings.status()).toContain("Enregistré");
+    } finally {
+      dispose();
+      completions.forEach((complete) => complete());
+      await settle();
+    }
+  },
+);
+
+it("keeps patches for the active preference profile ordered", async () => {
+  const completions: (() => void)[] = [];
+  vi.mocked(requestAede).mockImplementation(async (path, _query, method) => {
+    if (path === "/api/v1/status") return { capabilities: ["account_preferences"] };
+    if (method === "GET") return { values: {} };
+    return new Promise<void>((resolve) => completions.push(resolve));
+  });
+  const original = account("one");
+  let dispose!: () => void;
+  createRoot((cleanup) => {
+    dispose = cleanup;
+    createSavedSettings(
+      () => original,
+      () => "server",
+    );
+  });
+  const patches = () => vi.mocked(requestAede).mock.calls.filter((call) => call[2] === "PATCH");
+  try {
+    await settle();
+    announceSetting("phemios.duration", "true");
+    announceSetting("phemios.duration", "false");
+    await settle();
+    expect(patches()).toHaveLength(1);
+    completions[0]?.();
+    await settle();
+    expect(patches()).toHaveLength(2);
+    expect(patches().map((call) => call[3])).toEqual([
+      { values: { "phemios.duration": true } },
+      { values: { "phemios.duration": false } },
+    ]);
+    completions[1]?.();
+    await settle();
+  } finally {
+    dispose();
+    completions.forEach((complete) => complete());
+    await settle();
+  }
+});

@@ -174,3 +174,92 @@ it("reloads after private backup restoration and refuses older in-flight snapsho
     view.dispose();
   }
 });
+
+it.each(["account", "relogin", "source"] as const)(
+  "does not let an unresolved retired podcast mutation block the current %s scope",
+  async (change) => {
+    vi.mocked(readPodcastState).mockResolvedValue(empty);
+    let finishOld!: (value: unknown) => void, failCurrent!: (reason: unknown) => void;
+    const oldReply = new Promise((resolve) => {
+      finishOld = resolve;
+    });
+    const currentReply = new Promise((_resolve, reject) => {
+      failCurrent = reject;
+    });
+    vi.mocked(updatePodcastState)
+      .mockImplementationOnce(() => oldReply)
+      .mockImplementationOnce(() => currentReply);
+    const view = scope();
+    const writes: Promise<unknown>[] = [];
+    try {
+      await settle();
+      writes.push(view.store.save(feed), view.store.mark(feed.url, "retired"));
+      await settle();
+      expect(updatePodcastState).toHaveBeenCalledOnce();
+      if (change === "source") view.setSource("local");
+      else view.setSession(change === "relogin" ? account("one", "2") : account("two", "2"));
+      await settle();
+      expect(view.store.writable()).toBe(true);
+      writes.push(view.store.save(feed));
+      await settle();
+      expect(updatePodcastState).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(updatePodcastState).mock.calls[1]?.[2]).toBe(
+        change === "source" ? "local" : "server",
+      );
+      expect(vi.mocked(updatePodcastState).mock.calls[1]?.[3].nativeSession).toBe(
+        change === "source" ? "1" : "2",
+      );
+      expect(view.store.pending()).toBe(true);
+      finishOld(retained);
+      expect(await writes[0]).toBe(false);
+      expect(await writes[1]).toBe(false);
+      expect(view.store.feeds()).toEqual([]);
+      expect(view.store.pending()).toBe(true);
+      failCurrent(new Error("Current mutation unavailable"));
+      expect(await writes[2]).toBe(false);
+      expect(view.store.error()).toContain("Current mutation unavailable");
+      expect(view.store.pending()).toBe(false);
+    } finally {
+      finishOld(empty);
+      failCurrent(new Error("fixture finished"));
+      await Promise.allSettled(writes);
+      view.dispose();
+    }
+  },
+);
+
+it("keeps same-login podcast mutations ordered through a backup reload", async () => {
+  vi.mocked(readPodcastState).mockResolvedValue(retained);
+  let complete!: (value: unknown) => void;
+  const firstReply = new Promise((resolve) => {
+    complete = resolve;
+  });
+  vi.mocked(updatePodcastState)
+    .mockImplementationOnce(() => firstReply)
+    .mockResolvedValueOnce(retained);
+  const view = scope();
+  const writes: Promise<unknown>[] = [];
+  try {
+    await settle();
+    writes.push(view.store.save(feed));
+    await settle();
+    view.store.reload();
+    await settle();
+    writes.push(view.store.mark(feed.url, "current"));
+    await settle();
+    expect(updatePodcastState).toHaveBeenCalledOnce();
+    complete(empty);
+    expect(await writes[0]).toBe(false);
+    expect(await writes[1]).toBe(true);
+    expect(vi.mocked(updatePodcastState).mock.calls.map((call) => call[0])).toEqual([
+      "save",
+      "mark",
+    ]);
+    expect(view.store.feeds()).toEqual([feed]);
+    expect(view.store.pending()).toBe(false);
+  } finally {
+    complete(empty);
+    await Promise.allSettled(writes);
+    view.dispose();
+  }
+});
