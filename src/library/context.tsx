@@ -1,5 +1,6 @@
 import { activeNativeSessionConflict } from "./connection-recovery";
 import { createNetworkAudio } from "../network-audio/controller";
+import { prepareNetworkPlayback } from "../network-audio/local-handoff";
 import { createDisplayAwake, anyAudioPlaying } from "./display-awake";
 import { cdReference } from "../cd/model";
 import { createAlbumLyrics } from "./album-lyrics";
@@ -385,11 +386,7 @@ export function LibraryProvider(props: ParentProps) {
     beforeStart: async () => {
       radio.stop();
       podcast.stop();
-      if (["playing", "paused", "connecting"].includes(player.state().status)) {
-        await player.action("stop");
-        if (["playing", "paused", "connecting"].includes(player.state().status))
-          throw new Error(t("Arrêtez la lecture locale avant UPnP."));
-      }
+      await prepareNetworkPlayback(player, t("Arrêtez la lecture locale avant UPnP."));
     },
   });
   const queueLyrics = createQueueLyrics({ queue: player.queue, sessionFor, tasks });
