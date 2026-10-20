@@ -36,6 +36,12 @@ The Genres glyph uses the Lucide `piano` SVG (Lucide Icons and Contributors, ISC
 
 The explicitly approved `cd-da-reader` 1.0.0 (MIT, complete license retained at `public/licenses/cd-da-reader.txt`) is isolated in `crates/phemios-cd`. It uses native macOS/Linux/Windows CD-drive APIs, with libc/cc or windows-sys as platform dependencies. Phémios adds no unsafe block, decoder, resampler, privilege-escalation helper or external CD service. The existing CPAL/rtrb transport remains responsible for output. Cargo.lock retains all dependency versions and About's generated Cargo credits include the new library. See [CD playback](../design/cd-playback.md) for device rights, bounded streaming, account restrictions and physical acceptance limits.
 
+## Display inhibition dependency review
+
+The explicitly approved `keepawake` 0.6.1 supplies the display/idle guard described in [native integration](../design/native-integration.md#display-and-idle-inhibition-during-playback). The following is retained review evidence, not a fresh advisory lookup.
+
+Dependency review queried the 41 newly locked registry versions. The Linux D-Bus graph carries three maintenance notices published on 2026-10-17: [RUSTSEC-2026-0370](https://rustsec.org/advisories/RUSTSEC-2026-0370.html) (`zvariant` 5.15.1), [RUSTSEC-2026-0371](https://rustsec.org/advisories/RUSTSEC-2026-0371.html) (`zbus_names` 4.3.5), and [RUSTSEC-2026-0372](https://rustsec.org/advisories/RUSTSEC-2026-0372.html) (`zvariant_derive` 5.15.1). These packages were folded into zbus 6; the approved keepawake release still uses the zbus 5 Linux backend. No security advisory was returned for these added versions in that query. No audit exemption or policy was changed. This review does not claim a clean full-workspace audit or Linux runtime acceptance.
+
 ## Security follow-up
 
 The resolved Linux GTK3 chain retains `glib 0.18.5`, affected by [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), and the `proc-macro-error` maintenance notice. This dependency is not compiled on macOS; absence of authored `VariantStrIter` calls does not prove upstream Linux reachability is safe. Tungstenite also retains a `rustls-pemfile` maintenance follow-up. Reassess the compatible native stack before distribution; do not silently broaden exceptions from another repository. Aède's separate desktop policy records its exact explicitly approved GTK combinations. Lockfiles, fresh registry checks and applicable target trees remain authoritative; Git dependencies and external tools need their own review.
