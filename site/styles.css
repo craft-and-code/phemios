@@ -236,6 +236,42 @@ h1 span {
   color: var(--accent);
   margin-right: 10px;
 }
+/* The name's origin pairs the product identity with its literary source. */
+.name-origin {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 32px;
+  margin-top: 32px;
+  padding: 28px 32px;
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 10px 10px 0;
+}
+.name-origin h2 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+.name-origin h2 span {
+  color: var(--accent);
+}
+.name-origin small,
+.name-origin p {
+  color: var(--muted);
+}
+.name-origin p {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.name-origin .name-origin-today {
+  color: var(--text);
+}
+.name-origin a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
 .section {
   padding-block: 105px 20px;
 }
@@ -514,6 +550,11 @@ h3 {
   }
   .lead {
     font-size: 15px;
+  }
+  .name-origin {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 22px;
   }
   .promise-strip {
     flex-direction: column;
