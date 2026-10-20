@@ -20,6 +20,10 @@ Use the latest verified checkpoint in [current state](current-state.md) and the 
 
 It does not prove exhaustive unit coverage of every rendering component or Tauri adapter. No percentage claim is made. macOS native observations are recorded in [UI acceptance](ui-acceptance.md). Windows/Linux execution, platform radio decoding, minimum-toolchain execution, acoustic/digital fidelity and physical network-mount/copy acceptance remain separate work. Keep tests aimed at meaningful behavior rather than mirroring JSX or claiming unsupported hardware guarantees.
 
+### Native account and cache checks without Tauri
+
+`cargo test -p phemios-core --test native_sessions --locked --offline` runs the actual framework-independent session and snapshot modules from `src-tauri/` through the core integration harness. It covers exact-login admission, rejected login cleanup, private-write authorization, late disk-cache reads and supervised snapshot publication without compiling the Tauri application. The same sibling test files remain part of the native host's own suite; this harness does not certify the rest of its IPC wiring or native UI.
+
 ## Shared hardening policy
 
 See [client hardening](hardening.md) for transactional preferences, owner-bound reads, inert text and WebView media limits. Behavioral tests protect these contracts; successful type/lint checks do not prove complete dead-code elimination or security coverage.
