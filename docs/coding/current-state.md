@@ -20,7 +20,7 @@ The application includes artist presentations, Albums/Cover Flow, tracks, countr
 
 ## Verification status
 
-The 2026-10-20 non-App-build MusicBrainz checkpoint passed 1,131 frontend cases, 30 Node tooling cases and 280 Rust core/native-session harness cases, strict App/component TypeScript, lint/format, bridge-version validation, core Clippy and Rustdoc. Generated TypeScript contracts, Storybook and all 26 bilingual website/manual pages with local links also passed. These are software checks; no live-provider or physical-device acceptance is implied.
+The 2026-10-20 frontend verification passed 1,133 cases and 30 Node tooling cases, strict App/component TypeScript, lint/format, bridge-version validation, generated TypeScript contracts and all 26 bilingual website/manual pages with local links. This includes the network-playback heartbeat and logout regressions. The unchanged Rust core/native-session checkpoint passed 280 cases with core Clippy and Rustdoc; Storybook was also verified at that checkpoint. These are software checks; no live-provider or physical-device acceptance is implied.
 
 The authoritative `tools/check.sh` also builds the embedded engine, frontend and native host; its App-build stages were deliberately omitted from this checkpoint. Use [verification procedures](frontend-documentation.md) for the individual checks. Actual App bundling, native-host execution, physical listening/transfers, minimum-toolchain execution and target-platform acceptance remain distinct checks. See [UI acceptance](ui-acceptance.md).
 

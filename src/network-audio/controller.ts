@@ -97,6 +97,8 @@ export function createNetworkAudio(options: {
     setBusy(true);
     setError("");
     clearTimeout(timer);
+    // Discovery/inspection can outlast the server lease of an audible run.
+    if (active()) poll(held, ticket);
     try {
       await work(held, ticket);
     } catch (failure) {

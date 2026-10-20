@@ -469,3 +469,45 @@ it.each([
     expect(vi.getTimerCount()).toBe(0);
   },
 );
+
+it.each(["discovery", "inspection"] as const)(
+  "keeps the playback lease alive during a pending %s and retires it on logout",
+  async (operation) => {
+    const { audio, setSession } = setup();
+    await discoverProfiles(audio);
+    await audio.start("192.168.1.10", "openhome:http://192.168.1.20/device.xml");
+    let finish!: (value: unknown) => void;
+    request.mockClear();
+    request.mockImplementation(async (path) => {
+      if (
+        path === `/api/admin/v1/network-audio/${operation === "discovery" ? "discover" : "inspect"}`
+      )
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      if (path === "/api/v1/status")
+        return { capabilities: ["network_audio_upnp", "network_audio_profiles"] };
+      return { id: 7, status: "running" };
+    });
+    const pending =
+      operation === "discovery"
+        ? audio.discover("192.168.1.10")
+        : audio.inspect("googlecast:192.168.1.21:8009");
+    await vi.advanceTimersByTimeAsync(6000);
+    const heartbeats = request.mock.calls.filter(
+      ([path, , method]) => path === "/api/admin/v1/network-audio" && method === "GET",
+    );
+    setSession(undefined);
+    const retiredCount = request.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(6000);
+    finish(operation === "discovery" ? { items: [] } : { sha256: "a".repeat(64) });
+    await pending;
+    expect(heartbeats).toHaveLength(6);
+    for (const heartbeat of heartbeats) expect(heartbeat.slice(4)).toEqual(["server", owner]);
+    expect(request.mock.calls).toHaveLength(retiredCount);
+    expect(audio.run()).toBeUndefined();
+    expect(audio.observed()).toBeUndefined();
+    expect(audio.devices()).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
