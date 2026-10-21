@@ -367,6 +367,95 @@ it("stops playback when moving to HQPlayer and sends the engine mute toggle", as
   });
 });
 
+it("releases an ended HQPlayer queue before configuring and starting a local output", async () => {
+  await createRoot(async (dispose) => {
+    let ownsHq = false;
+    vi.mocked(playbackControl).mockImplementation(async (command) => {
+      if (command === "stop") ownsHq = false;
+      else if (ownsHq && command === "crossfade")
+        throw new Error("Commande HQPlayer non prise en charge.");
+      return null;
+    });
+    vi.mocked(playbackStart).mockImplementation(async (_tracks, output) => {
+      ownsHq = output === "@hqplayer";
+    });
+    vi.mocked(playbackState).mockImplementation(async () =>
+      ownsHq
+        ? {
+            ...idlePlayback,
+            status: "ended",
+            reference: "track:two",
+            total: 2,
+            index: 1,
+            device: "@hqplayer",
+            policy: "hqplayer",
+          }
+        : { ...idlePlayback },
+    );
+    const player = createPlayback(() => true);
+    try {
+      await player.chooseOutput("@hqplayer");
+      await player.start(tracks, album, "Fixture");
+      expect(player.state().status).toBe("ended");
+      vi.mocked(playbackStart).mockClear();
+      vi.mocked(playbackControl).mockClear();
+      await player.chooseOutput("local-output");
+      await player.start(tracks, album, "Fixture");
+      expect(playbackStart).toHaveBeenCalledWith(
+        ["track:one", "track:two"],
+        "local-output",
+        0,
+        "without-effects",
+      );
+      expect(vi.mocked(playbackControl).mock.calls[0]).toEqual(["stop", "local-output"]);
+      expect(player.error()).toBe("");
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it.each(["refused", "retired"] as const)(
+  "keeps output ownership scoped when an ended HQPlayer retirement is %s",
+  async (outcome) => {
+    await createRoot(async (dispose) => {
+      vi.mocked(playbackState).mockResolvedValue({
+        ...idlePlayback,
+        status: "ended",
+        reference: "track:two",
+        total: 2,
+        index: 1,
+        device: "@hqplayer",
+        policy: "hqplayer",
+      });
+      const player = createPlayback(() => true);
+      try {
+        await player.chooseOutput("@hqplayer");
+        await player.start(tracks, album, "Fixture");
+        vi.mocked(playbackStart).mockClear();
+        let refuse!: (reason: Error) => void;
+        vi.mocked(playbackControl).mockImplementationOnce(
+          () =>
+            new Promise((_, reject) => {
+              refuse = reject;
+            }),
+        );
+        const switching = player.chooseOutput("local-output");
+        expect(player.busy()).toBe(true);
+        if (outcome === "retired") player.reset();
+        refuse(new Error("HQPlayer unavailable"));
+        await switching;
+        expect(player.device()).toBe(outcome === "retired" ? "" : "@hqplayer");
+        expect(player.error()).toBe(outcome === "retired" ? "" : "HQPlayer unavailable");
+        expect(player.busy()).toBe(false);
+        expect(playbackStart).not.toHaveBeenCalled();
+      } finally {
+        dispose();
+      }
+    });
+  },
+);
+
 it("does not start audio when logout occurs during preference configuration", async () => {
   await createRoot(async (dispose) => {
     let release!: () => void;
@@ -2892,6 +2981,121 @@ it("retains an accepted repeat mode across starts when saving it fails", async (
       await player.start(tracks, album, "Artist");
       expect(repeat).toBe("off");
     } finally {
+      dispose();
+    }
+  });
+});
+
+it.each(["@hqplayer", "local-output"])(
+  "retires coalesced seeks before replacing the same track on %s",
+  async (output) => {
+    await createRoot(async (dispose) => {
+      const initial = {
+        ...idlePlayback,
+        status: "playing",
+        reference: "track:one",
+        duration_ms: 5000,
+        total: 2,
+        index: 0,
+        queue_id: output === "@hqplayer" ? 0 : 1,
+        device: output,
+        policy: output === "@hqplayer" ? "hqplayer" : "without-effects",
+      };
+      vi.mocked(playbackState).mockResolvedValue(initial);
+      vi.mocked(playbackControl).mockResolvedValue(null);
+      vi.mocked(playbackStart).mockResolvedValue(undefined);
+      const player = createPlayback(() => true);
+      await player.chooseOutput(output);
+      await player.start(tracks, album, "Fixture");
+      let finishSeek!: (reply: unknown) => void;
+      let dispatched = 0;
+      vi.mocked(playbackControl).mockImplementation(async (command) => {
+        if (command !== "seek") return null;
+        if (dispatched++ > 0) return { seek_id: 2 };
+        return new Promise((resolve) => {
+          finishSeek = resolve;
+        });
+      });
+      const firstSeek = player.seek(1000);
+      await player.seek(3000);
+      let finishSnapshot!: (reply: unknown) => void;
+      vi.mocked(playbackState).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishSnapshot = resolve;
+          }),
+      );
+      const restarting = player.start(tracks, album, "Fixture");
+      try {
+        await vi.waitFor(() => expect(finishSnapshot).toBeTypeOf("function"));
+        expect(playbackStart).toHaveBeenCalledTimes(2);
+        // The new queue is already accepted; its first metadata reply is delayed.
+        finishSeek({ seek_id: 1 });
+        await firstSeek;
+        const seeks = vi
+          .mocked(playbackControl)
+          .mock.calls.filter(([command]) => command === "seek");
+        expect(seeks).toEqual([["seek", 1000]]);
+        expect(player.seeking()).toBe(false);
+      } finally {
+        finishSeek?.({ seek_id: 1 });
+        await firstSeek;
+        finishSnapshot?.({ ...initial, queue_id: output === "@hqplayer" ? 0 : 2 });
+        await restarting;
+        dispose();
+      }
+    });
+  },
+);
+
+it("keeps a replacement HQPlayer seek owned when the previous run rejects its seek late", async () => {
+  await createRoot(async (dispose) => {
+    const current = {
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      duration_ms: 5000,
+      total: 2,
+      device: "@hqplayer",
+      policy: "hqplayer",
+    };
+    vi.mocked(playbackState).mockResolvedValue(current);
+    vi.mocked(playbackControl).mockResolvedValue(null);
+    const player = createPlayback(() => true);
+    await player.chooseOutput("@hqplayer");
+    await player.start(tracks, album, "Fixture");
+    let failOld!: (error: Error) => void;
+    let first = true;
+    vi.mocked(playbackControl).mockImplementation(async (command) => {
+      if (command !== "seek") return null;
+      if (!first) return { seek_id: 2 };
+      first = false;
+      return new Promise((_, reject) => {
+        failOld = reject;
+      });
+    });
+    const previous = player.seek(1000);
+    try {
+      await player.start(tracks, album, "Fixture");
+      await player.seek(2000);
+      failOld(new Error("retired seek failure"));
+      await previous;
+      expect(vi.mocked(playbackControl).mock.calls.filter(([action]) => action === "seek")).toEqual(
+        [
+          ["seek", 1000],
+          ["seek", 2000],
+        ],
+      );
+      expect(player.error()).toBe("");
+      expect(player.seeking()).toBe(true);
+      expect(player.seekPosition()).toBe(2000);
+      vi.mocked(playbackState).mockResolvedValue({ ...current, position_ms: 2000, seek_id: 2 });
+      await vi.advanceTimersByTimeAsync(250);
+      expect(player.seeking()).toBe(false);
+      expect(player.seekPosition()).toBe(2000);
+    } finally {
+      failOld?.(new Error("retired seek failure"));
+      await previous;
       dispose();
     }
   });

@@ -194,3 +194,83 @@ it.each([
     });
   },
 );
+
+it.each([false, true])(
+  "keeps the latest queued seek after an older refusal (latest refused: %s)",
+  async (latestRefused) => {
+    await createRoot(async (dispose) => {
+      const [state, setState] = createSignal({
+        ...idlePlayback,
+        status: "playing" as const,
+        reference: "track:one",
+        position_ms: 1234,
+        duration_ms: 10000,
+      });
+      let refuse!: (error: Error) => void;
+      const send = vi.fn().mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            refuse = reject;
+          }),
+      );
+      if (latestRefused) send.mockRejectedValue(new Error("latest seek refused"));
+      else send.mockResolvedValue({ seek_id: 2 });
+      const failure = vi.fn();
+      const progress = createSeekProgress(state, send, failure);
+      const initial = progress.seek(4000);
+      await progress.seek(6000);
+      await progress.seek(7000);
+      refuse(new Error("Lecteur occupé, réessayez."));
+      await initial;
+      expect(send.mock.calls.map(([position]) => position)).toEqual([4000, 7000]);
+      if (latestRefused) {
+        expect(failure).toHaveBeenCalledExactlyOnceWith("latest seek refused");
+        expect(progress.pending()).toBe(false);
+        expect(progress.position()).toBe(1234);
+      } else {
+        expect(failure).not.toHaveBeenCalled();
+        expect(progress.pending()).toBe(true);
+        expect(progress.position()).toBe(7000);
+        setState((value) => ({ ...value, position_ms: 7100, seek_id: 2 }));
+        expect(progress.pending()).toBe(false);
+        expect(progress.position()).toBe(7100);
+      }
+      dispose();
+    });
+  },
+);
+
+it("stops queued seeks when the native acknowledgement cannot confirm any seek ticket", async () => {
+  await createRoot(async (dispose) => {
+    const state = {
+      ...idlePlayback,
+      status: "playing" as const,
+      reference: "track:one",
+      position_ms: 1234,
+      duration_ms: 10000,
+    };
+    let finish!: (reply: unknown) => void;
+    const send = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValue({ seek_id: 2 });
+    const failure = vi.fn();
+    const progress = createSeekProgress(() => state, send, failure);
+    const first = progress.seek(4000);
+    await progress.seek(7000);
+    finish({});
+    await first;
+    expect(send).toHaveBeenCalledExactlyOnceWith(4000);
+    expect(failure).toHaveBeenCalledExactlyOnceWith(
+      "Déplacement non confirmé ; mettez à jour puis redémarrez Phémios.",
+    );
+    expect(progress.pending()).toBe(false);
+    expect(progress.position()).toBe(1234);
+    dispose();
+  });
+});

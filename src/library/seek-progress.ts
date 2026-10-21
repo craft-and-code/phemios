@@ -71,7 +71,15 @@ export function createSeekProgress(
         const selected = queue,
           selectedSerial = serial;
         queue = undefined;
-        const reply = await send(selected);
+        let reply: unknown;
+        try {
+          reply = await send(selected);
+        } catch (error) {
+          synchronizeScope();
+          // A newer explicit choice is separate work, not a retry of the refused position.
+          if (epoch === lifetime && queue !== undefined && selectedSerial !== serial) continue;
+          throw error;
+        }
         synchronizeScope();
         if (epoch !== lifetime) break;
         const ticket = (reply as { seek_id?: unknown } | null)?.seek_id;

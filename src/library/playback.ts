@@ -189,6 +189,9 @@ export function createPlayback(
   }
   async function startRows(rows: PlayableSelection[], index: number, epoch: number) {
     if (rows.some((row) => !canStart(row.reference))) throw new Error(t("Lecture indisponible."));
+    // A new run may retain the same reference/index (HQPlayer has no queue ticket).
+    // Retire unsent seeks before startup IO, rather than waiting for its first snapshot.
+    progress.reset();
     setPendingReference(rows[index]?.reference ?? rows[0]?.reference ?? "");
     await configureAudio(epoch);
     if (epoch !== generation) return;
@@ -673,9 +676,12 @@ export function createPlayback(
       held = lifetime,
       profile = interfaceProfileIdentity();
     setDevice(id);
-    if (!["idle", "ended", "error"].includes(state().status)) {
+    // HQPlayer retains its queue after natural completion; retire that owner before PCM settings.
+    if (state().device === "@hqplayer" || !["idle", "ended", "error"].includes(state().status)) {
       const applied = await action(
-        id === "@hqplayer" || previous === "@hqplayer" ? "stop" : "output",
+        id === "@hqplayer" || previous === "@hqplayer" || state().device === "@hqplayer"
+          ? "stop"
+          : "output",
         id,
       );
       if (
