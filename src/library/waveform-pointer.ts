@@ -25,7 +25,8 @@ export function createWaveformPointer(options: {
       | { pointer: number; target: HTMLInputElement; identity: ReturnType<typeof identity> }
       | undefined,
     disposed = false;
-  function cancel() {
+  function cancel(event?: Event) {
+    if (event && "pointerId" in event && held && event.pointerId !== held.pointer) return;
     const previous = held;
     held = undefined;
     if (previous?.target.hasPointerCapture(previous.pointer))
@@ -44,7 +45,8 @@ export function createWaveformPointer(options: {
   });
   return {
     down(event: Pointer) {
-      if (disposed || options.disabled() || event.button !== 0) return;
+      if (disposed || options.disabled() || event.button !== 0 || event.isPrimary === false || held)
+        return;
       cancel();
       event.preventDefault();
       event.currentTarget.focus();
@@ -54,6 +56,8 @@ export function createWaveformPointer(options: {
       options.preview(options.position(event));
     },
     move(event: Pointer) {
+      if (disposed || event.isPrimary === false || (held && held.pointer !== event.pointerId))
+        return;
       options.hover(event);
       if (held?.pointer !== event.pointerId) return;
       if (!valid()) {

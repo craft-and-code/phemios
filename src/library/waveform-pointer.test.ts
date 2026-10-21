@@ -95,3 +95,51 @@ it("keeps a live gesture across clock and pause updates and commits only its poi
     dispose();
   });
 });
+
+it("keeps the original waveform gesture when another touch reaches the control", () => {
+  createRoot((dispose) => {
+    const [state] = createSignal({ ...idlePlayback, reference: "track:one" });
+    const seek = vi.fn(),
+      preview = vi.fn(),
+      hover = vi.fn();
+    const captured = new Set<number>();
+    const target = {
+      focus: vi.fn(),
+      setPointerCapture: (id: number) => captured.add(id),
+      releasePointerCapture: (id: number) => captured.delete(id),
+      hasPointerCapture: (id: number) => captured.has(id),
+    } as unknown as HTMLInputElement;
+    const pointer = (id: number, x: number, primary = true) =>
+      ({
+        button: 0,
+        pointerId: id,
+        isPrimary: primary,
+        clientX: x,
+        currentTarget: target,
+        preventDefault: vi.fn(),
+      }) as unknown as PointerEvent & { currentTarget: HTMLInputElement };
+    const gesture = createWaveformPointer({
+      state,
+      disabled: () => false,
+      seek,
+      preview,
+      hover,
+      position: (event) => event.clientX,
+      clear: vi.fn(),
+    });
+    gesture.down(pointer(1, 1000));
+    gesture.down(pointer(2, 7000, false));
+    gesture.move(pointer(2, 8000, false));
+    gesture.up(pointer(2, 8000, false));
+    gesture.cancel(pointer(2, 8000, false));
+    expect(seek).not.toHaveBeenCalled();
+    expect(preview).toHaveBeenCalledExactlyOnceWith(1000);
+    expect(hover).toHaveBeenCalledTimes(1);
+    expect(captured.has(1)).toBe(true);
+    gesture.move(pointer(1, 3000));
+    gesture.up(pointer(1, 4000));
+    expect(seek).toHaveBeenCalledExactlyOnceWith(4000);
+    expect(captured.size).toBe(0);
+    dispose();
+  });
+});
