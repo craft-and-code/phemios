@@ -19,6 +19,7 @@ mod local;
 mod notes;
 mod personal_backup;
 mod playback;
+mod playback_routing;
 mod podcast;
 mod radio;
 mod server_profile;

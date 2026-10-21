@@ -13,3 +13,6 @@ mod snapshots;
 #[allow(dead_code)]
 #[path = "../../src-tauri/src/cd_accounts.rs"]
 mod cd_accounts;
+
+#[path = "../../src-tauri/src/playback_routing.rs"]
+mod playback_routing;

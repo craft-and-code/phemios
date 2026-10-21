@@ -152,48 +152,46 @@ pub(crate) async fn playback_control(
         None
     };
     blocking(move || {
-        let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-        if action == "clear" {
-            if generation != Some(epoch.load(std::sync::atomic::Ordering::SeqCst)) {
-                return Err("La liste de lecture a changé.".into());
+        crate::playback_routing::control(&routing, &epoch, generation, &action, || {
+            if action == "clear" {
+                controller.clear()?;
+                player.clear()?;
+                return player.snapshot();
             }
-            controller.clear()?;
-            player.clear()?;
-            return player.snapshot();
-        }
-        if action == "remove" {
+            if action == "remove" {
+                if controller.active() {
+                    return Err("Le retrait de piste HQPlayer n’est pas pris en charge.".into());
+                }
+                let id = value["queue_id"]
+                    .as_u64()
+                    .ok_or("File de lecture invalide.")?;
+                let occurrence = value["index"]
+                    .as_u64()
+                    .filter(|index| *index < 4096)
+                    .ok_or("File de lecture invalide.")? as usize;
+                player.remove(id, occurrence)?;
+                let origin = *source.lock().map_err(|_| "État audio indisponible.")?;
+                return public_snapshot(player.snapshot()?, origin);
+            }
             if controller.active() {
-                return Err("Le retrait de piste HQPlayer n’est pas pris en charge.".into());
+                if action == "stop" {
+                    controller.halt()?;
+                    return Ok(Value::Null);
+                }
+                return controller.control(&action, value);
             }
-            let id = value["queue_id"]
-                .as_u64()
-                .ok_or("File de lecture invalide.")?;
-            let occurrence = value["index"]
-                .as_u64()
-                .filter(|index| *index < 4096)
-                .ok_or("File de lecture invalide.")? as usize;
-            player.remove(id, occurrence)?;
-            let origin = *source.lock().map_err(|_| "État audio indisponible.")?;
-            return public_snapshot(player.snapshot()?, origin);
-        }
-        if controller.active() {
+            if action == "seek" {
+                return player
+                    .seek(value.as_u64().ok_or("Position invalide.")?)
+                    .map(|ticket| serde_json::json!({"seek_id": ticket}));
+            }
             if action == "stop" {
-                controller.halt()?;
-                return Ok(Value::Null);
+                player.halt()?;
+            } else {
+                player.control(&action, value)?;
             }
-            return controller.control(&action, value);
-        }
-        if action == "seek" {
-            return player
-                .seek(value.as_u64().ok_or("Position invalide.")?)
-                .map(|ticket| serde_json::json!({"seek_id": ticket}));
-        }
-        if action == "stop" {
-            player.halt()?;
-        } else {
-            player.control(&action, value)?;
-        }
-        Ok(Value::Null)
+            Ok(Value::Null)
+        })
     })
     .await
 }
