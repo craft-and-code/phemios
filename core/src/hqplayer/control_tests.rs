@@ -18,6 +18,7 @@ fn owned_endpoint(
             .set_read_timeout(Some(std::time::Duration::from_secs(3)))
             .unwrap();
         let mut names = Vec::new();
+        let mut shuffled = false;
         loop {
             let mut frame = Vec::new();
             loop {
@@ -43,8 +44,14 @@ fn owned_endpoint(
                 .to_owned();
             let reply = match name.as_str() {
                 "Status" => format!(
-                    "<Status state=\"{state}\" tracks_total=\"1\" position=\"120\" length=\"120\" volume=\"-30\"><metadata uri=\"file:///fixture/a.flac\"/></Status>"
+                    "<Status state=\"{state}\" tracks_total=\"1\" position=\"120\" length=\"120\" volume=\"-30\" random=\"{}\"><metadata uri=\"file:///fixture/a.flac\"/></Status>",
+                    u8::from(shuffled)
                 ),
+                "SetRandom" => {
+                    assert!(xml.contains("value=\"0\"") || xml.contains("value=\"1\""));
+                    shuffled = xml.contains("value=\"1\"");
+                    "<SetRandom result=\"OK\"/>".into()
+                }
                 "Volume" if refuse_volume => "<Volume result=\"Error\"/>".into(),
                 "Stop" | "Volume" => format!("<{name} result=\"OK\"/>"),
                 _ => panic!("unexpected command {name}"),
@@ -129,6 +136,9 @@ fn rejected_control_values_do_not_retire_a_healthy_connection() {
         ("seek", json!(604800001u64)),
         ("jump", json!(1)),
         ("jump", Value::Null),
+        ("shuffle", Value::Null),
+        ("shuffle", json!("true")),
+        ("shuffle", json!(1)),
         ("policy", json!("dsp")),
         ("output", json!("local-device")),
         ("unknown", Value::Null),
@@ -154,4 +164,37 @@ fn rejected_control_keeps_audio(action: &str, value: Value) {
     assert!(connected);
     assert_eq!(snapshot.unwrap()["status"], "playing");
     assert_eq!(names, ["Status", "Stop"]);
+}
+
+#[test]
+fn shuffle_honors_the_explicit_state_even_when_it_already_matches() {
+    let (controller, worker) = owned_endpoint(2, true, false);
+    let requested = [false, false, true, true, false, false];
+    let mut observed = Vec::new();
+    for enabled in requested {
+        controller
+            .control("shuffle", json!(enabled))
+            .expect("shuffle request");
+        observed.push(
+            controller.snapshot().expect("actual protocol state")["shuffled"]
+                .as_bool()
+                .expect("shuffle state"),
+        );
+    }
+    let active = controller.active();
+    controller.halt().expect("fixture cleanup");
+    drop(controller);
+    let commands = worker.join().expect("endpoint worker");
+    assert_eq!(
+        observed, requested,
+        "HQPlayer inverted the requested shuffle state"
+    );
+    assert!(active);
+    assert_eq!(
+        commands
+            .iter()
+            .filter(|name| name.as_str() == "SetRandom")
+            .count(),
+        requested.len()
+    );
 }

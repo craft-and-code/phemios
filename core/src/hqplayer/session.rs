@@ -121,12 +121,10 @@ impl Session {
                 )
             }
             "shuffle" => {
-                let current = self.read_state().map_err(ControlError::Transport)?["shuffled"]
-                    .as_bool()
-                    .unwrap_or(false);
+                let enabled = value.as_bool().ok_or("Lecture aléatoire invalide.")?;
                 (
                     "SetRandom",
-                    vec![("value", if current { "0" } else { "1" }.into())],
+                    vec![("value", if enabled { "1" } else { "0" }.into())],
                 )
             }
             "policy" => {

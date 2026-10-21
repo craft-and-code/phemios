@@ -68,7 +68,8 @@ fn real_tcp_fragmented_protocol_drives_transport_without_resetting_during_probe(
                 volume = -60.;
             }
             if name == "SetRandom" {
-                random = 1;
+                assert!(text.contains("value=\"0\"") || text.contains("value=\"1\""));
+                random = u8::from(text.contains("value=\"1\""));
             }
             let reply = match name.as_str() {
                 "GetInfo" => {
@@ -115,7 +116,7 @@ fn real_tcp_fragmented_protocol_drives_transport_without_resetting_during_probe(
     assert_eq!(player.snapshot().unwrap()["volume"], 0.75);
     player.control("mute", Value::Null).unwrap();
     assert_eq!(player.snapshot().unwrap()["volume"], 0.);
-    player.control("shuffle", Value::Null).unwrap();
+    player.control("shuffle", json!(true)).unwrap();
     assert_eq!(player.snapshot().unwrap()["shuffled"], true);
     player.disconnect().unwrap();
     assert!(!player.connected());
