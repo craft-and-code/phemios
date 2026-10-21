@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: craft-and-code/aede
-          ref: v0.6.1
+          ref: d8c0f1a8c134b7366da0983367a9f063527085b7 # Same source as workspace.dependencies.aede-audio
           path: .engine-cache/aede-source
           persist-credentials: false
       - uses: actions/setup-node@v4

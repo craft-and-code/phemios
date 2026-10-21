@@ -6,6 +6,10 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MPL-2.0"
+[workspace.dependencies]
+# Shared audio is immutable and available without a sibling Aède checkout.
+aede-audio = { git = "https://github.com/craft-and-code/aede", rev = "d8c0f1a8c134b7366da0983367a9f063527085b7", default-features = false }
+
 [profile.release]
 opt-level = 3
 lto = true

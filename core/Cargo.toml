@@ -5,8 +5,8 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 [dependencies]
-# Shared catalogue-independent PCM foundation, developed alongside Aède.
-aede-audio = { path = "../../aede/crates/aede-audio", features = ["queue"] }
+# Shared catalogue-independent PCM foundation, pinned by the workspace.
+aede-audio = { workspace = true, features = ["queue"] }
 phemios-cd = { path = "../crates/phemios-cd" }
 ureq = "=3.4.0"
 serde_json = "1"
