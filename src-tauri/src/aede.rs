@@ -15,6 +15,7 @@ pub(crate) struct Aede {
     pub(crate) server: SourceState,
     pub(crate) local: SourceState,
     pub(crate) engine: Arc<Mutex<phemios_core::local::Engine>>,
+    pub(crate) local_lifecycle: Arc<crate::local_lifecycle::Lifecycle>,
     pub(crate) playback_source: Arc<Mutex<phemios_core::federation::Source>>,
     pub(crate) articles: Arc<Mutex<phemios_core::article_store::Store>>,
     pub(crate) podcasts: Arc<Mutex<phemios_core::podcast_store::Store>>,

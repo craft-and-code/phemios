@@ -16,6 +16,7 @@ mod encyclopedia;
 mod exports;
 mod hqplayer;
 mod local;
+mod local_lifecycle;
 mod notes;
 mod personal_backup;
 mod playback;
@@ -60,6 +61,7 @@ pub fn run() -> Result<(), tauri::Error> {
                         executable,
                     ),
                 )),
+                local_lifecycle: std::sync::Arc::new(local_lifecycle::Lifecycle::default()),
                 playback_source: std::sync::Arc::new(std::sync::Mutex::new(
                     phemios_core::federation::Source::Server,
                 )),

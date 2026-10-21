@@ -16,3 +16,6 @@ mod cd_accounts;
 
 #[path = "../../src-tauri/src/playback_routing.rs"]
 mod playback_routing;
+
+#[path = "../../src-tauri/src/local_lifecycle.rs"]
+mod local_lifecycle;

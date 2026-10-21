@@ -12,20 +12,33 @@ pub(crate) async fn local_status(version: u32, state: State<'_, Aede>) -> Result
 #[tauri::command]
 pub(crate) async fn local_start(version: u32, state: State<'_, Aede>) -> Result<Value, String> {
     bridge(version)?;
-    let generation = state
-        .local
-        .generation
-        .load(std::sync::atomic::Ordering::SeqCst);
+    let lifecycle = state.local_lifecycle.clone();
+    let (ticket, generation) = lifecycle.begin(|| {
+        Ok(state
+            .local
+            .generation
+            .load(std::sync::atomic::Ordering::SeqCst))
+    })?;
     let engine = state.engine.clone();
-    let client =
-        blocking(move || engine.lock().map_err(|_| "Moteur local occupé.")?.start()).await?;
-    crate::sessions::publish_login(
-        &state.local.session,
-        &state.local.generation,
-        generation,
-        client,
-        true,
-    )
+    let session = state.local.session.clone();
+    let owner_generation = state.local.generation.clone();
+    blocking(move || {
+        lifecycle
+            .with_resource(&engine, ticket, |engine| {
+                let client = engine.start()?;
+                lifecycle.publish(ticket, || {
+                    crate::sessions::publish_login(
+                        &session,
+                        &owner_generation,
+                        generation,
+                        client,
+                        true,
+                    )
+                })
+            })?
+            .ok_or_else(|| "Démarrage local annulé.".into())
+    })
+    .await
 }
 #[tauri::command]
 pub(crate) async fn local_stop(
@@ -35,8 +48,11 @@ pub(crate) async fn local_stop(
     hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    crate::sessions::invalidate(&state.local.session, &state.local.generation)?;
+    let lifecycle = state.local_lifecycle.clone();
+    let (ticket, ()) = lifecycle.begin(|| {
+        hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        crate::sessions::invalidate(&state.local.session, &state.local.generation).map(|_| ())
+    })?;
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
@@ -45,18 +61,25 @@ pub(crate) async fn local_stop(
     blocking(move || {
         phemios_core::session_cleanup::complete(
             || {
-                let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-                if *source.lock().map_err(|_| "État audio indisponible.")?
-                    == phemios_core::federation::Source::Local
-                {
-                    return phemios_core::session_cleanup::complete(
-                        || player.halt(),
-                        || controller.halt(),
-                    );
-                }
-                Ok(())
+                lifecycle
+                    .with_resource(&routing, ticket, |_| {
+                        if *source.lock().map_err(|_| "État audio indisponible.")?
+                            == phemios_core::federation::Source::Local
+                        {
+                            return phemios_core::session_cleanup::complete(
+                                || player.halt(),
+                                || controller.halt(),
+                            );
+                        }
+                        Ok(())
+                    })
+                    .map(|_| ())
             },
-            || engine.lock().map_err(|_| "Moteur local occupé.")?.stop(),
+            || {
+                lifecycle
+                    .with_resource(&engine, ticket, |engine| engine.stop())
+                    .map(|_| ())
+            },
         )
     })
     .await
