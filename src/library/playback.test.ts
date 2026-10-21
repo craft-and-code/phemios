@@ -2415,3 +2415,484 @@ it.each(["volume", "crossfade"] as const)(
     });
   },
 );
+
+it("does not restore an old volume from a state reply after mute was confirmed", async () => {
+  await createRoot(async (dispose) => {
+    const snapshot = {
+      ...idlePlayback,
+      status: "playing" as const,
+      reference: "track:one",
+      total: 2,
+      volume: 0.5,
+    };
+    vi.mocked(playbackState).mockResolvedValue(snapshot);
+    const player = createPlayback(() => true);
+    try {
+      await player.start(tracks, album, "Artist");
+      let finish!: (value: unknown) => void;
+      vi.mocked(playbackState).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      await vi.advanceTimersByTimeAsync(60);
+      await player.toggleMute();
+      expect(player.state().volume).toBe(0);
+      finish({ ...snapshot, position_ms: 60 });
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(player.state().volume).toBe(0);
+      expect(player.state().position_ms).toBe(60);
+      await player.toggleMute();
+      expect(playbackControl).toHaveBeenLastCalledWith("volume", 0.5);
+      vi.mocked(playbackState).mockResolvedValue({ ...snapshot, volume: 0.6, position_ms: 120 });
+      await vi.advanceTimersByTimeAsync(60);
+      expect(player.state().volume).toBe(0.6);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it.each([false, true])(
+  "retains both rapid mute toggles while the first reply is pending (initially muted: %s)",
+  async (muted) => {
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => true);
+      await player.volume(0.7);
+      if (muted) await player.toggleMute();
+      const initial = player.state().volume;
+      let finish!: () => void;
+      vi.mocked(playbackControl).mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const first = player.toggleMute();
+      try {
+        await player.toggleMute();
+        finish();
+        await first;
+        expect(player.state().volume).toBe(initial);
+        expect(playbackControl).toHaveBeenLastCalledWith("volume", initial);
+      } finally {
+        finish();
+        await first;
+        dispose();
+      }
+    });
+  },
+);
+
+it("discards a failed mute intent before the next explicit toggle", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    try {
+      await player.volume(0.7);
+      vi.mocked(playbackControl).mockRejectedValueOnce(new Error("mute refused"));
+      await player.toggleMute();
+      expect(player.state().volume).toBe(0.7);
+      await player.toggleMute();
+      expect(playbackControl).toHaveBeenLastCalledWith("volume", 0);
+      expect(player.state().volume).toBe(0);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it.each(["reset", "profile"])("cannot reuse a retired mute intent after %s", async (change) => {
+  await createRoot(async (dispose) => {
+    activateInterfaceProfile("first-mute-owner", (values) => values);
+    const player = createPlayback(() => true);
+    await player.volume(0.7);
+    let finish!: () => void;
+    vi.mocked(playbackControl).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const old = player.toggleMute();
+    try {
+      if (change === "reset") player.reset();
+      else activateInterfaceProfile("next-mute-owner", (values) => values);
+      await player.toggleMute();
+      expect(playbackControl).toHaveBeenLastCalledWith("volume", 0);
+      expect(player.state().volume).toBe(0);
+      finish();
+      await old;
+      expect(player.state().volume).toBe(0);
+    } finally {
+      finish();
+      await old;
+      dispose();
+    }
+  });
+});
+
+it("does not restore a refused volume when unmuting", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    try {
+      await player.volume(0.3);
+      vi.mocked(playbackControl).mockRejectedValueOnce(new Error("volume refused"));
+      await player.volume(0.9);
+      expect(player.state().volume).toBe(0.3);
+      await player.toggleMute();
+      expect(player.state().volume).toBe(0);
+      await player.toggleMute();
+      expect(playbackControl).toHaveBeenLastCalledWith("volume", 0.3);
+      expect(player.state().volume).toBe(0.3);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it("waits for an explicit volume choice before applying startup gain", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    await player.volume(0.4);
+    let nativeVolume = 0.4;
+    let releaseConfiguration!: () => void, releaseVolume!: () => void;
+    let firstVolume = true;
+    vi.mocked(playbackControl).mockImplementation((command, value) => {
+      if (command === "crossfade")
+        return new Promise<void>((resolve) => {
+          releaseConfiguration = resolve;
+        });
+      if (command === "volume") {
+        nativeVolume = value as number;
+        if (value === 0.2 && firstVolume) {
+          firstVolume = false;
+          return new Promise<void>((resolve) => {
+            releaseVolume = resolve;
+          });
+        }
+      }
+      return Promise.resolve();
+    });
+    vi.mocked(playbackState).mockImplementation(async () => ({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      volume: nativeVolume,
+    }));
+    const starting = player.start(tracks, album, "Artist");
+    const choosing = player.volume(0.2);
+    try {
+      await vi.waitFor(() => expect(releaseConfiguration).toBeTypeOf("function"));
+      releaseConfiguration();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(playbackStart).not.toHaveBeenCalled();
+      releaseVolume();
+      await choosing;
+      await starting;
+      expect(nativeVolume).toBe(0.2);
+      expect(player.state().volume).toBe(0.2);
+    } finally {
+      releaseConfiguration();
+      releaseVolume();
+      await choosing;
+      await starting;
+      dispose();
+    }
+  });
+});
+
+it("rechecks a newer mute after a delayed startup gain finishes", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    await player.volume(0.4);
+    let nativeVolume = 0.4,
+      first = true;
+    let release!: () => void;
+    vi.mocked(playbackControl).mockImplementation((command, value) => {
+      if (command === "volume") {
+        if (first) {
+          first = false;
+          return new Promise<void>((resolve) => {
+            release = () => {
+              nativeVolume = value as number;
+              resolve();
+            };
+          });
+        }
+        nativeVolume = value as number;
+      }
+      return Promise.resolve();
+    });
+    vi.mocked(playbackState).mockImplementation(async () => ({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      volume: nativeVolume,
+    }));
+    const starting = player.start(tracks, album, "Artist");
+    try {
+      await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+      await player.toggleMute();
+      expect(nativeVolume).toBe(0);
+      release();
+      await starting;
+      expect(nativeVolume).toBe(0);
+      expect(player.state().volume).toBe(0);
+    } finally {
+      release();
+      await starting;
+      dispose();
+    }
+  });
+});
+
+it("preserves a pending crossfade choice when starting another selection", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    await player.choosePolicy("dsp");
+    await player.chooseCrossfade(0);
+    let nativeFade = 0,
+      pending = true;
+    let finish!: () => void;
+    vi.mocked(playbackControl).mockImplementation((command, value) => {
+      if (command === "crossfade") {
+        nativeFade = value as number;
+        if (pending) {
+          pending = false;
+          return new Promise<void>((resolve) => {
+            finish = resolve;
+          });
+        }
+      }
+      return Promise.resolve();
+    });
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    const choosing = player.chooseCrossfade(3000);
+    const starting = player.start(tracks, album, "Artist");
+    try {
+      await vi.advanceTimersByTimeAsync(1);
+      expect(playbackStart).not.toHaveBeenCalled();
+      finish();
+      await choosing;
+      await starting;
+      expect(nativeFade).toBe(3000);
+      expect(player.crossfade()).toBe(3000);
+    } finally {
+      finish();
+      await choosing;
+      await starting;
+      dispose();
+    }
+  });
+});
+
+it("allows a replacement start while a retired startup waits for a crossfade reply", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    await player.choosePolicy("dsp");
+    let finish!: () => void,
+      first = true;
+    vi.mocked(playbackControl).mockImplementation((command) => {
+      if (command === "crossfade" && first) {
+        first = false;
+        return new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+      }
+      return Promise.resolve();
+    });
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    const oldChoice = player.chooseCrossfade(3000);
+    const oldStart = player.start(tracks, album, "Artist");
+    try {
+      player.reset();
+      await player.chooseCrossfade(5000);
+      await player.start(tracks, album, "Artist");
+      expect(playbackStart).toHaveBeenCalledTimes(1);
+      finish();
+      await oldChoice;
+      await oldStart;
+      expect(playbackStart).toHaveBeenCalledTimes(1);
+      expect(player.crossfade()).toBe(5000);
+      expect(player.error()).toBe("");
+    } finally {
+      finish();
+      await oldChoice;
+      await oldStart;
+      dispose();
+    }
+  });
+});
+
+it.each(["volume", "crossfade"] as const)(
+  "does not publish an obsolete %s failure over its successful queued replacement",
+  async (command) => {
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => true);
+      if (command === "crossfade") await player.choosePolicy("dsp");
+      const choose = (value: number) =>
+        command === "volume" ? player.volume(value) : player.chooseCrossfade(value);
+      let reject!: (error: Error) => void;
+      vi.mocked(playbackControl)
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((_, fail) => {
+              reject = fail;
+            }),
+        )
+        .mockResolvedValue(undefined);
+      const firstValue = command === "volume" ? 0.2 : 1000;
+      const latestValue = command === "volume" ? 0.7 : 5000;
+      const first = choose(firstValue);
+      try {
+        await choose(latestValue);
+        reject(new Error("superseded setting failed"));
+        await first;
+        expect(playbackControl).toHaveBeenLastCalledWith(command, latestValue);
+        expect(command === "volume" ? player.state().volume : player.crossfade()).toBe(latestValue);
+        expect(player.error()).toBe("");
+      } finally {
+        reject(new Error("cleanup"));
+        await first;
+        dispose();
+      }
+    });
+  },
+);
+
+it.each(["volume", "crossfade"] as const)(
+  "retains the final %s failure when both queued choices are refused",
+  async (command) => {
+    await createRoot(async (dispose) => {
+      const player = createPlayback(() => true);
+      if (command === "crossfade") await player.choosePolicy("dsp");
+      const choose = (value: number) =>
+        command === "volume" ? player.volume(value) : player.chooseCrossfade(value);
+      const initial = command === "volume" ? player.state().volume : player.crossfade();
+      let reject!: (error: Error) => void;
+      vi.mocked(playbackControl)
+        .mockImplementationOnce(
+          () =>
+            new Promise<void>((_, fail) => {
+              reject = fail;
+            }),
+        )
+        .mockRejectedValue(new Error("latest setting failed"));
+      const first = choose(command === "volume" ? 0.2 : 1000);
+      try {
+        await choose(command === "volume" ? 0.7 : 5000);
+        reject(new Error("superseded setting failed"));
+        await first;
+        expect(player.error()).toBe("latest setting failed");
+        expect(command === "volume" ? player.state().volume : player.crossfade()).toBe(initial);
+      } finally {
+        reject(new Error("cleanup"));
+        await first;
+        dispose();
+      }
+    });
+  },
+);
+
+it("keeps the applied crossfade visible when saving it fails", async () => {
+  await createRoot(async (dispose) => {
+    let refuseSave = false,
+      nativeFade = 0;
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        if (refuseSave) throw new Error("preference storage full");
+        values.set(key, value);
+      },
+    });
+    const player = createPlayback(() => true);
+    await player.choosePolicy("dsp");
+    vi.mocked(playbackControl).mockImplementation(async (command, value) => {
+      if (command === "crossfade") nativeFade = value as number;
+    });
+    vi.mocked(playbackState).mockResolvedValue({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+    });
+    try {
+      refuseSave = true;
+      await player.chooseCrossfade(3000);
+      expect(nativeFade).toBe(3000);
+      expect(player.error()).toBe("preference storage full");
+      expect(JSON.parse(interfacePreferences.getItem("phemios.audio.v1")!).crossfadeMs).toBe(0);
+      expect(player.crossfade()).toBe(3000);
+      await player.start(tracks, album, "Artist");
+      expect(nativeFade).toBe(3000);
+      refuseSave = false;
+      vi.mocked(playbackControl).mockRejectedValueOnce(new Error("new fade refused"));
+      await player.chooseCrossfade(5000);
+      expect(player.crossfade()).toBe(3000);
+      expect(nativeFade).toBe(3000);
+      expect(player.error()).toBe("new fade refused");
+      player.reset();
+      expect(player.crossfade()).toBe(0);
+      await player.start(tracks, album, "Artist");
+      expect(nativeFade).toBe(0);
+    } finally {
+      dispose();
+    }
+  });
+});
+
+it("retains an accepted repeat mode across starts when saving it fails", async () => {
+  await createRoot(async (dispose) => {
+    let refuseSave = false;
+    let repeat = "off";
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        if (refuseSave) throw new Error("preference storage full");
+        values.set(key, value);
+      },
+    });
+    vi.mocked(playbackControl).mockImplementation(async (command, value) => {
+      if (command === "repeat") repeat = value as string;
+    });
+    vi.mocked(playbackState).mockImplementation(async () => ({
+      ...idlePlayback,
+      status: "playing",
+      reference: "track:one",
+      total: 2,
+      repeat,
+    }));
+    const player = createPlayback(() => true);
+    try {
+      await player.start(tracks, album, "Artist");
+      refuseSave = true;
+      await player.action("repeat", "all");
+      expect(player.state().repeat).toBe("all");
+      expect(player.error()).toBe("preference storage full");
+      await player.start(tracks, album, "Artist");
+      expect(repeat).toBe("all");
+      expect(player.state().repeat).toBe("all");
+      player.reset();
+      await player.start(tracks, album, "Artist");
+      expect(repeat).toBe("off");
+    } finally {
+      dispose();
+    }
+  });
+});

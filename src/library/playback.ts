@@ -61,13 +61,19 @@ export function createPlayback(
   const [discTarget, setDiscTarget] = createSignal<CdDisc>();
   const [audio, setAudio] = createSignal<AudioPreferences>({ ...defaultAudioPreferences });
   const [crossfade, setCrossfade] = createSignal(defaultAudioPreferences.crossfadeMs);
-  let audibleVolume = 0.5;
+  let audibleVolume = 0.5,
+    volumeRevision = 0,
+    appliedCrossfade = defaultAudioPreferences.crossfadeMs,
+    appliedRepeat = defaultAudioPreferences.repeat;
   function restoreAudio() {
     try {
       const next = parseAudioPreferences(interfacePreferences.getItem(audioPreferenceKey));
       setAudio(next);
-      setCrossfade(next.crossfadeMs);
+      appliedRepeat = next.repeat;
+      appliedCrossfade = next.crossfadeMs;
+      setCrossfade(appliedCrossfade);
       setPolicy(next.policy);
+      volumeRevision++;
       setState((current) => ({ ...current, volume: next.volume }));
       audibleVolume = next.volume > 0 ? next.volume : 0.5;
     } catch (failure) {
@@ -84,22 +90,37 @@ export function createPlayback(
   }
   async function configureAudio(epoch: number) {
     if (device() === "@hqplayer") return;
-    await playbackControl("crossfade", audio().crossfadeMs);
+    await writeCrossfade.settled();
     if (epoch !== generation) return;
-    await playbackControl("repeat", audio().repeat);
+    await playbackControl("crossfade", appliedCrossfade);
     if (epoch !== generation) return;
-    await playbackControl("volume", state().volume);
+    await playbackControl("repeat", appliedRepeat);
+    if (epoch !== generation) return;
+    // Startup gain and interactive volume must agree before the stream can begin.
+    while (epoch === generation) {
+      await writeVolume.settled();
+      if (epoch !== generation) return;
+      const revision = volumeRevision;
+      await playbackControl("volume", state().volume);
+      if (epoch !== generation) return;
+      await writeVolume.settled();
+      if (revision === volumeRevision) return;
+    }
   }
   const audioSettingScope = () => ({ lifetime, profile: interfaceProfileIdentity() });
+  let requestedVolume: (ReturnType<typeof audioSettingScope> & { value: number }) | undefined;
   const writeCrossfade = createAudioSettingQueue(
     audioSettingScope,
     async (ms, current, pending) => {
       try {
         if (ready() && device() !== "@hqplayer") await playbackControl("crossfade", ms);
-        if (current()) saveAudio({ ...audio(), crossfadeMs: ms });
-      } catch (failure) {
         if (current()) {
-          if (!pending()) setCrossfade(audio().crossfadeMs);
+          appliedCrossfade = ms;
+          saveAudio({ ...audio(), crossfadeMs: ms });
+        }
+      } catch (failure) {
+        if (current() && !pending()) {
+          setCrossfade(appliedCrossfade);
           setError(message(failure));
         }
       }
@@ -439,6 +460,7 @@ export function createPlayback(
   async function refresh(epoch: number, rows?: PlayableSelection[]) {
     if (epoch !== generation) return;
     try {
+      const volumeTicket = volumeRevision;
       const value = parsePlayback(await playbackState());
       if (epoch !== generation) return;
       const selected = rows ?? selection();
@@ -449,7 +471,11 @@ export function createPlayback(
         if (rows) setSelection(rows);
         if (rows || value.queue.length)
           setRetainedOrder(value.queue.length ? value.queue : selected.map((_, index) => index));
-        setState(value);
+        // A snapshot captured before an acknowledged gain write must not undo the footer's mute.
+        const snapshot =
+          volumeTicket === volumeRevision ? value : { ...value, volume: state().volume };
+        if (snapshot.volume > 0) audibleVolume = snapshot.volume;
+        setState(snapshot);
       });
       if (!["idle", "ended", "error"].includes(value.status))
         timer = setTimeout(
@@ -498,8 +524,14 @@ export function createPlayback(
     try {
       await playbackControl(command, value);
       if (epoch !== generation) return;
-      if (currentProfile() && command === "repeat" && ["off", "one", "all"].includes(String(value)))
-        saveAudio({ ...audio(), repeat: value as AudioPreferences["repeat"] });
+      if (
+        currentProfile() &&
+        command === "repeat" &&
+        ["off", "one", "all"].includes(String(value))
+      ) {
+        appliedRepeat = value as AudioPreferences["repeat"];
+        saveAudio({ ...audio(), repeat: appliedRepeat });
+      }
       await refresh(epoch);
       if (currentProfile()) return true;
     } catch (failure) {
@@ -573,20 +605,28 @@ export function createPlayback(
       if (epoch === lifetime) cancelDiscovery();
     }
   }
-  const writeVolume = createAudioSettingQueue(audioSettingScope, async (value, current) => {
-    try {
-      await playbackControl("volume", value);
-      if (current()) {
-        setState((s) => ({ ...s, volume: value }));
-        saveAudio({ ...audio(), volume: value });
+  const writeVolume = createAudioSettingQueue(
+    audioSettingScope,
+    async (value, current, pending) => {
+      try {
+        await playbackControl("volume", value);
+        if (current()) {
+          if (value > 0) audibleVolume = value;
+          volumeRevision++;
+          setState((s) => ({ ...s, volume: value }));
+          saveAudio({ ...audio(), volume: value });
+        }
+      } catch (failure) {
+        if (current() && !pending()) setError(message(failure));
+      } finally {
+        if (current() && !pending()) requestedVolume = undefined;
       }
-    } catch (failure) {
-      if (current()) setError(message(failure));
-    }
-  });
+    },
+  );
   function rememberVolume(value: number) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
     if (value > 0) audibleVolume = value;
+    volumeRevision++;
     setState((s) => ({ ...s, volume: value }));
     try {
       saveAudio({ ...audio(), volume: value });
@@ -600,12 +640,19 @@ export function createPlayback(
       rememberVolume(value);
       return;
     }
-    if (value > 0) audibleVolume = value;
+    requestedVolume = { ...audioSettingScope(), value };
     await writeVolume(value);
   }
   async function toggleMute() {
     if (state().device === "@hqplayer") await action("mute");
-    else await volume(state().volume > 0 ? 0 : audibleVolume);
+    else {
+      const intent = requestedVolume;
+      const latest =
+        intent?.lifetime === lifetime && intent.profile === interfaceProfileIdentity()
+          ? intent.value
+          : state().volume;
+      await volume(latest > 0 ? 0 : audibleVolume);
+    }
   }
   async function chooseOutput(id: string) {
     if (busy()) return;
@@ -738,7 +785,9 @@ export function createPlayback(
     cancelDiscovery();
     cancel();
     const epoch = generation;
-    setCrossfade(audio().crossfadeMs);
+    appliedRepeat = audio().repeat;
+    appliedCrossfade = audio().crossfadeMs;
+    setCrossfade(appliedCrossfade);
     batch(() => {
       setAppending(false);
       setBusy(true);
@@ -791,7 +840,9 @@ export function createPlayback(
     cancelDiscovery();
     cancel();
     setBusy(false);
-    setCrossfade(audio().crossfadeMs);
+    appliedRepeat = audio().repeat;
+    appliedCrossfade = audio().crossfadeMs;
+    setCrossfade(appliedCrossfade);
     batch(() => {
       setState({ ...idlePlayback, volume: state().volume });
       setSelection([]);
