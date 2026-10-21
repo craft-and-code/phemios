@@ -135,7 +135,7 @@ pub(crate) async fn aede_logout(
     hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    let generation = hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    let generation = hq.reserve_cleanup();
     let published = hq.published_epoch.clone();
     let session = crate::sessions::invalidate(&state.server.session, &state.server.generation)?;
     let player = player.inner().clone();

@@ -27,10 +27,7 @@ pub(crate) async fn hqplayer_disconnect(
     state: State<'_, HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    let ticket = state.reserve();
-    state
-        .epoch
-        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let ticket = state.begin_disconnect();
     let state = state.inner().clone();
     blocking(move || state.disconnect(ticket)).await
 }

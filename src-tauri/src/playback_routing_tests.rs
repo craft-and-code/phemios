@@ -261,3 +261,114 @@ fn unaccepted_replacement_does_not_cancel_stop_or_clear() {
         }
     }
 }
+
+#[test]
+fn queued_transport_controls_cannot_reach_a_replacement_output() {
+    for action in [
+        "seek", "pause", "resume", "next", "previous", "jump", "shuffle", "queue", "remove",
+        "mute", "output",
+    ] {
+        let routing = Mutex::new(());
+        let published = AtomicU64::new(1);
+        // Capture the audible output before scheduling the blocking IPC worker.
+        assert!(targets_output(action));
+        let captured = published.load(Ordering::SeqCst);
+        let position = Cell::new(0);
+        {
+            let _guard = routing.lock().expect("replacement routing");
+            publish(&published, 3, || Ok(())).expect("replacement source/account output");
+        }
+        let result = control(&routing, &published, Some(captured), action, || {
+            position.set(7000);
+            Ok(())
+        });
+        assert_eq!(
+            position.get(),
+            0,
+            "queued {action} changed the replacement output"
+        );
+        assert!(result.is_err(), "retired {action} was acknowledged");
+    }
+}
+
+#[test]
+fn current_transport_controls_survive_an_unaccepted_replacement() {
+    for action in [
+        "seek", "pause", "resume", "next", "previous", "jump", "shuffle", "queue", "remove",
+        "mute", "output",
+    ] {
+        let routing = Mutex::new(());
+        let published = AtomicU64::new(1);
+        let captured = published.load(Ordering::SeqCst);
+        let result = publish(&published, 3, || Err::<(), _>("preparation refused".into()));
+        assert!(result.is_err());
+        let applied = Cell::new(false);
+        control(&routing, &published, Some(captured), action, || {
+            applied.set(true);
+            Ok(())
+        })
+        .expect("control still belongs to the current output");
+        assert!(applied.get());
+    }
+}
+
+#[test]
+fn transport_controls_require_a_captured_output_but_not_a_retirement_request() {
+    let routing = Mutex::new(());
+    let published = AtomicU64::new(1);
+    let applied = Cell::new(false);
+    assert!(
+        control(&routing, &published, None, "seek", || {
+            applied.set(true);
+            Ok(())
+        })
+        .is_err()
+    );
+    assert!(!applied.get());
+    control(&routing, &published, Some(1), "seek", || {
+        applied.set(true);
+        Ok(())
+    })
+    .expect("current seek");
+    assert!(applied.get());
+}
+
+#[test]
+fn delayed_hqplayer_mute_cannot_change_a_replacement_output() {
+    delayed_route_setting("mute");
+}
+
+#[test]
+fn delayed_output_selection_cannot_reroute_a_replacement_output() {
+    delayed_route_setting("output");
+}
+
+fn delayed_route_setting(action: &str) {
+    let routing = Mutex::new(());
+    let published = AtomicU64::new(1);
+    let captured = published.load(Ordering::SeqCst);
+    let muted = Cell::new(false);
+    let device = Cell::new("replacement DAC");
+    {
+        let _guard = routing.lock().expect("replacement routing");
+        publish(&published, 3, || Ok(())).expect("new source/account output");
+    }
+    let result = control(&routing, &published, Some(captured), action, || {
+        if action == "mute" {
+            muted.set(!muted.get());
+        } else {
+            device.set("retired DAC");
+        }
+        Ok(())
+    });
+    assert!(
+        !muted.get(),
+        "old HQPlayer mute changed the replacement run"
+    );
+    assert_eq!(
+        device.get(),
+        "replacement DAC",
+        "old output selection rerouted the replacement run"
+    );
+    assert!(result.is_err());
+}

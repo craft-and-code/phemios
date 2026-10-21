@@ -50,7 +50,7 @@ pub(crate) async fn local_stop(
     bridge(version)?;
     let lifecycle = state.local_lifecycle.clone();
     let (ticket, audio_stop) = lifecycle.begin(|| {
-        let generation = hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        let generation = hq.reserve_cleanup();
         crate::sessions::invalidate(&state.local.session, &state.local.generation)?;
         Ok(generation)
     })?;

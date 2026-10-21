@@ -79,19 +79,17 @@ pub(crate) async fn playback_start(
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
-    let epoch = hq.epoch.clone();
     let published = hq.published_epoch.clone();
-    let generation = epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    let endpoint = (device == phemios_core::hqplayer::OUTPUT).then(|| hq.capture_profile());
+    let generation = hq.reserve_transport();
     let output = hq.inner().clone();
     blocking(move || {
         crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || Ok(()))?;
-        let configured = if device == phemios_core::hqplayer::OUTPUT {
-            Some(output.profile()?)
-        } else {
-            None
-        };
+        let configured = endpoint
+            .map(|ticket| output.profile_at(ticket))
+            .transpose()?;
         let current = || {
-            epoch.load(std::sync::atomic::Ordering::SeqCst) == generation
+            output.transport_current(generation)
                 && owner_generation
                     .load(std::sync::atomic::Ordering::SeqCst)
                     .to_string()
@@ -135,16 +133,21 @@ pub(crate) async fn playback_start(
                 })
             },
             || {
-                player.halt()?;
-                controller.halt()
+                crate::playback_routing::stop_for_start(
+                    configured.is_some(),
+                    || player.halt(),
+                    || player.clear(),
+                    || controller.halt(),
+                )
             },
             || {
-                *source.lock().map_err(|_| "État audio indisponible.")? = origin;
-                if let Some(selection) = prepared {
-                    controller.start(selection, current)
-                } else {
-                    player.start(client.clone(), tracks, device, index, &policy)
-                }
+                crate::playback_routing::with_source(&source, origin, || {
+                    if let Some(selection) = prepared {
+                        controller.start(selection, current)
+                    } else {
+                        player.start(client.clone(), tracks, device, index, &policy)
+                    }
+                })
             },
         )
     })
@@ -164,10 +167,11 @@ pub(crate) async fn playback_control(
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
     let source = state.playback_source.clone();
-    let epoch = hq.epoch.clone();
     let published = hq.published_epoch.clone();
     let generation = if matches!(action.as_str(), "stop" | "clear") {
-        Some(epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1)
+        Some(hq.reserve_transport())
+    } else if crate::playback_routing::targets_output(&action) {
+        Some(published.load(std::sync::atomic::Ordering::SeqCst))
     } else {
         None
     };

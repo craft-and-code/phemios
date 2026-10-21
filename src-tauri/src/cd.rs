@@ -3,7 +3,7 @@ use crate::aede::{Aede, blocking, bridge};
 use crate::cd_accounts::admit;
 use phemios_core::playback::Player;
 use serde_json::{Value, json};
-use std::sync::{Arc, Mutex, atomic::Ordering};
+use std::sync::{Arc, Mutex};
 use tauri::State;
 #[derive(Default)]
 pub(crate) struct Cd(pub(crate) Arc<Mutex<phemios_cd::Library>>);
@@ -71,9 +71,9 @@ pub(crate) async fn cd_start(
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
-    let epoch = hq.epoch.clone();
+    let output = hq.inner().clone();
     let published = hq.published_epoch.clone();
-    let generation = epoch.fetch_add(1, Ordering::SeqCst) + 1;
+    let generation = hq.reserve_transport();
     blocking(move || {
         let disc = cd
             .lock()
@@ -98,7 +98,7 @@ pub(crate) async fn cd_start(
             generation,
             || {
                 admit(&stamps, || {
-                    if epoch.load(Ordering::SeqCst) == generation {
+                    if output.transport_current(generation) {
                         Ok(())
                     } else {
                         Err("Lecture CD annulée.".into())
@@ -140,7 +140,7 @@ pub(crate) async fn cd_eject(
     let cd = cd.0.clone();
     let player = player.inner().clone();
     let routing = hq.routing.clone();
-    let epoch = hq.epoch.clone();
+    let output = hq.inner().clone();
     blocking(move || {
         let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
         let mut library = cd.lock().map_err(|_| "Lecteurs CD indisponibles.")?;
@@ -155,7 +155,7 @@ pub(crate) async fn cd_eject(
             .map(|disc| disc.token.as_str());
         let current = player.snapshot()?;
         require_eject_idle(&current, disc_token)?;
-        epoch.fetch_add(1, Ordering::SeqCst);
+        output.reserve_transport();
         let owns_disc = current["source"] == "cd"
             && disc_token.is_some_and(|token| current["cd_disc"] == token);
         if owns_disc {
