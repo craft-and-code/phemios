@@ -327,35 +327,35 @@ export function LibraryProvider(props: ParentProps) {
     resolveRadio,
     async () => {
       podcast.stop();
-      if (["playing", "paused", "connecting"].includes(player.state().status)) {
-        await player.action("stop");
-        if (["playing", "paused", "connecting"].includes(player.state().status))
-          throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."));
-      }
+      await prepareNetworkPlayback(
+        player,
+        t("Arrêtez la lecture de la bibliothèque avant de lancer la radio."),
+      );
     },
     browserRadioMedia,
-    () => player.state().volume,
+    player.settledVolume,
     radioGuard.authorize,
     player.rememberVolume,
+    player.unmutedVolume,
   );
   const podcastListened = createAccountPodcasts(session, source);
   const podcast = createPodcastPlayback(
     async () => {
       radio.stop();
-      if (["playing", "paused", "connecting"].includes(player.state().status)) {
-        await player.action("stop");
-        if (["playing", "paused", "connecting"].includes(player.state().status))
-          throw new Error(t("Arrêtez la lecture de la bibliothèque avant de lancer le podcast."));
-      }
+      await prepareNetworkPlayback(
+        player,
+        t("Arrêtez la lecture de la bibliothèque avant de lancer le podcast."),
+      );
     },
     browserPodcastMedia,
     (feed, id) => {
       void podcastListened.mark(feed, id);
     },
-    () => player.state().volume,
+    player.settledVolume,
     () => podcastListened.capture().current,
     podcastGuard.authorize,
     player.rememberVolume,
+    player.unmutedVolume,
   );
   createEffect(() => radioGuard.observe(radio.status()));
   createEffect(() => podcastGuard.observe(podcast.status()));

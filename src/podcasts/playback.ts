@@ -67,10 +67,11 @@ export function createPodcastPlayback(
   beforePlay: () => Promise<void>,
   createMedia = browserPodcastMedia,
   completed: (feed: string, id: string) => void = () => {},
-  initialVolume?: () => number,
+  initialVolume?: () => number | Promise<number>,
   captureOwner: () => () => boolean = () => () => true,
   authorize?: (media: ExternalParentalMedia) => Promise<void>,
   rememberVolume?: (value: number) => void,
+  unmutedVolume?: () => number,
 ) {
   const [episode, setEpisode] = createSignal<Episode>(),
     [podcast, setPodcast] = createSignal<Podcast>(),
@@ -85,6 +86,8 @@ export function createPodcastPlayback(
     epoch = 0,
     playAttempt = 0,
     audible = 0.5,
+    volumeRevision = 0,
+    inheritingVolume = false,
     stall: ReturnType<typeof setTimeout> | undefined,
     retainedOwner: (() => boolean) | undefined;
   function release() {
@@ -118,8 +121,9 @@ export function createPodcastPlayback(
   async function start(feed: Podcast, row: Episode) {
     const ownerCurrent = captureOwner();
     if (!ownerCurrent()) return;
-    if (["idle", "ended", "error"].includes(status()) && initialVolume)
-      changeVolume(initialVolume(), false);
+    const inheritVolume = ["idle", "ended", "error"].includes(status()) || inheritingVolume,
+      volumeTicket = volumeRevision;
+    inheritingVolume = inheritVolume && !!initialVolume;
     release();
     const held = epoch,
       attempt = ++playAttempt;
@@ -133,6 +137,12 @@ export function createPodcastPlayback(
       const url = podcastUrl(row.url);
       await beforePlay();
       if (epoch !== held || attempt !== playAttempt || !ownerCurrent()) return;
+      if (inheritVolume && initialVolume) {
+        const initial = initialVolume();
+        const value = typeof initial === "number" ? initial : await initial;
+        if (epoch !== held || attempt !== playAttempt || !ownerCurrent()) return;
+        if (volumeTicket === volumeRevision) changeVolume(value, false);
+      }
       const audio = createMedia();
       media = audio;
       retainedOwner = ownerCurrent;
@@ -214,6 +224,8 @@ export function createPodcastPlayback(
   }
   function changeVolume(n: number, remember = true) {
     if (!Number.isFinite(n) || n < 0 || n > 1) return;
+    volumeRevision++;
+    inheritingVolume = false;
     setVolume(n);
     media?.volume(n);
     if (n > 0) audible = n;
@@ -243,6 +255,6 @@ export function createPodcastPlayback(
     stop,
     seek,
     changeVolume,
-    mute: () => changeVolume(volume() === 0 ? audible : 0),
+    mute: () => changeVolume(volume() === 0 ? (unmutedVolume?.() ?? audible) : 0),
   };
 }

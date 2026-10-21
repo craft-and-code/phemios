@@ -417,3 +417,28 @@ it.each(["resolve", "reject"] as const)(
     });
   },
 );
+
+it("inherits shared gain on retry when the first source handoff was refused", async () => {
+  await createRoot(async (dispose) => {
+    const audio = media();
+    const prepare = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("native busy"))
+      .mockResolvedValue(undefined);
+    const player = createRadioPlayback(
+      async (uuid) => ({ stationuuid: uuid, url: "https://radio.example.org/live.mp3" }),
+      prepare,
+      () => audio,
+      async () => 0.2,
+    );
+    try {
+      await player.start(station);
+      expect(audio.play).not.toHaveBeenCalled();
+      await player.start(station);
+      expect(audio.volume).toHaveBeenLastCalledWith(0.2);
+      expect(player.volume()).toBe(0.2);
+    } finally {
+      dispose();
+    }
+  });
+});

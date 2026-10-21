@@ -63,6 +63,7 @@ export function createPlayback(
   const [crossfade, setCrossfade] = createSignal(defaultAudioPreferences.crossfadeMs);
   let audibleVolume = 0.5,
     volumeRevision = 0,
+    volumeLifetime = 0,
     appliedCrossfade = defaultAudioPreferences.crossfadeMs,
     appliedRepeat = defaultAudioPreferences.repeat;
   function restoreAudio() {
@@ -108,7 +109,11 @@ export function createPlayback(
     }
   }
   const audioSettingScope = () => ({ lifetime, profile: interfaceProfileIdentity() });
-  let requestedVolume: (ReturnType<typeof audioSettingScope> & { value: number }) | undefined;
+  const volumeSettingScope = () => ({
+    lifetime: volumeLifetime,
+    profile: interfaceProfileIdentity(),
+  });
+  let requestedVolume: (ReturnType<typeof volumeSettingScope> & { value: number }) | undefined;
   const writeCrossfade = createAudioSettingQueue(
     audioSettingScope,
     async (ms, current, pending) => {
@@ -606,7 +611,7 @@ export function createPlayback(
     }
   }
   const writeVolume = createAudioSettingQueue(
-    audioSettingScope,
+    volumeSettingScope,
     async (value, current, pending) => {
       try {
         await playbackControl("volume", value);
@@ -623,8 +628,16 @@ export function createPlayback(
       }
     },
   );
+  /** Browser media inherit the last admitted gain, including an unfinished native choice. */
+  async function settledVolume() {
+    await writeVolume.settled();
+    return state().volume;
+  }
   function rememberVolume(value: number) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
+    // A browser-media gain supersedes pending native writes and their unsent choices.
+    volumeLifetime++;
+    requestedVolume = undefined;
     if (value > 0) audibleVolume = value;
     volumeRevision++;
     setState((s) => ({ ...s, volume: value }));
@@ -640,7 +653,7 @@ export function createPlayback(
       rememberVolume(value);
       return;
     }
-    requestedVolume = { ...audioSettingScope(), value };
+    requestedVolume = { ...volumeSettingScope(), value };
     await writeVolume(value);
   }
   async function toggleMute() {
@@ -648,7 +661,7 @@ export function createPlayback(
     else {
       const intent = requestedVolume;
       const latest =
-        intent?.lifetime === lifetime && intent.profile === interfaceProfileIdentity()
+        intent?.lifetime === volumeLifetime && intent.profile === interfaceProfileIdentity()
           ? intent.value
           : state().volume;
       await volume(latest > 0 ? 0 : audibleVolume);
@@ -781,6 +794,7 @@ export function createPlayback(
     if (revocation?.epoch === generation) return revocation.pending;
     addition++;
     lifetime++;
+    volumeLifetime++;
     progress.reset();
     cancelDiscovery();
     cancel();
@@ -837,6 +851,7 @@ export function createPlayback(
     setAppending(false);
     progress.reset();
     lifetime++;
+    volumeLifetime++;
     cancelDiscovery();
     cancel();
     setBusy(false);
@@ -877,6 +892,7 @@ export function createPlayback(
       window.removeEventListener("phemios-settings-loaded", restoreAudio);
     progress.reset();
     lifetime++;
+    volumeLifetime++;
     cancelDiscovery();
     cancel();
   });
@@ -980,6 +996,9 @@ export function createPlayback(
     discover,
     chooseOutput,
     volume,
+    settledVolume,
+    /** Last confirmed positive gain of the current interface profile, shared by browser media. */
+    unmutedVolume: () => audibleVolume,
     rememberVolume,
     reset,
     queue: orderedQueue,

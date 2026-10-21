@@ -1,6 +1,6 @@
 import type { createPlayback } from "../library/playback";
 
-/** Confirm local transport shutdown before admitting a network renderer. */
+/** Confirm local transport shutdown before admitting another audio source. */
 export async function prepareNetworkPlayback(
   player: Pick<ReturnType<typeof createPlayback>, "busy" | "state" | "action">,
   failure: string,

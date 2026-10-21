@@ -20,9 +20,10 @@ export function createRadioPlayback(
   resolve: (uuid: string) => Promise<unknown>,
   beforePlay: () => Promise<void>,
   createMedia = browserRadioMedia,
-  initialVolume?: () => number,
+  initialVolume?: () => number | Promise<number>,
   authorize?: (media: ExternalParentalMedia) => Promise<void>,
   rememberVolume?: (value: number) => void,
+  unmutedVolume?: () => number,
 ) {
   const [station, setStation] = createSignal<Station>(),
     [status, setStatus] = createSignal<"idle" | "connecting" | "playing" | "paused" | "error">(
@@ -35,6 +36,8 @@ export function createRadioPlayback(
     media: RadioMedia | undefined,
     epoch = 0,
     audible = 0.5,
+    volumeRevision = 0,
+    inheritingVolume = false,
     stall: ReturnType<typeof setTimeout> | undefined;
   function release() {
     epoch++;
@@ -59,7 +62,9 @@ export function createRadioPlayback(
   async function start(selected: Station) {
     if (!alive) return;
     setRevision((value) => value + 1);
-    if (status() === "idle" && initialVolume) changeVolume(initialVolume(), false);
+    const inheritVolume = status() === "idle" || volumeRevision === 0 || inheritingVolume,
+      volumeTicket = volumeRevision;
+    inheritingVolume = inheritVolume && !!initialVolume;
     release();
     const held = epoch;
     setStation(selected);
@@ -71,6 +76,12 @@ export function createRadioPlayback(
       audio.prepare?.();
       await beforePlay();
       if (held !== epoch) return;
+      if (inheritVolume && initialVolume) {
+        const initial = initialVolume();
+        const value = typeof initial === "number" ? initial : await initial;
+        if (held !== epoch || !alive) return;
+        if (volumeTicket === volumeRevision) changeVolume(value, false);
+      }
       const url = parseResolved(await resolve(selected.uuid), selected.uuid);
       if (held !== epoch) return;
       const watch = () => {
@@ -140,6 +151,8 @@ export function createRadioPlayback(
   }
   function changeVolume(value: number, remember = true) {
     if (!Number.isFinite(value) || value < 0 || value > 1) return;
+    volumeRevision++;
+    inheritingVolume = false;
     setVolume(value);
     media?.volume(value);
     if (value > 0) audible = value;
@@ -167,6 +180,6 @@ export function createRadioPlayback(
       if (selected) void start(selected);
     },
     changeVolume,
-    mute: () => changeVolume(volume() === 0 ? audible : 0),
+    mute: () => changeVolume(volume() === 0 ? (unmutedVolume?.() ?? audible) : 0),
   };
 }

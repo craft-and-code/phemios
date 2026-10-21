@@ -1,3 +1,4 @@
+import { controlAudioShortcut, toggleAudioShortcut } from "./navigation/audio-shortcut";
 import { ConnectionNotice } from "./components/ConnectionNotice";
 import type { BiographyReturn } from "./library/biography-navigation";
 import { CatalogSearch } from "./components/CatalogSearch";
@@ -194,6 +195,13 @@ export function App() {
       else if (action === "playback") navigation.navigate("#/playback");
       else if (action === "queue") {
         if (section() === "playback") window.dispatchEvent(new Event("phemios-queue-toggle"));
+      } else if (
+        action === "mute" ||
+        action === "stop" ||
+        action === "next" ||
+        action === "previous"
+      ) {
+        void controlAudioShortcut(action, library);
       } else if (!player.busy()) {
         if (action === "toggle") {
           const reference = contextualReference(
@@ -207,40 +215,8 @@ export function App() {
               visible: button.getClientRects().length > 0,
             })),
           );
-          const keyboardTransport = footerTransport({
-            queueView: true,
-            queued: player.queue().length > 0,
-            podcast: !!library.podcast.episode(),
-            radio: !!library.radio.station(),
-          });
-          const media =
-            keyboardTransport === "podcast"
-              ? library.podcast
-              : keyboardTransport === "radio"
-                ? library.radio
-                : undefined;
-          if (media?.status() === "playing") {
-            media.pause();
-            return;
-          }
-          if (media?.status() === "paused") {
-            void media.resume();
-            return;
-          }
-          if (player.queue().length) {
-            void player.togglePlayback();
-            return;
-          }
-          void (player.state().status === "playing"
-            ? player.action("pause")
-            : player.state().status === "paused"
-              ? player.action("resume")
-              : reference
-                ? player.startReference(reference)
-                : Promise.resolve());
-        } else if (action === "mute") void player.toggleMute();
-        else if (["playing", "paused", "ended"].includes(player.state().status))
-          void player.action(action);
+          void toggleAudioShortcut(library, reference);
+        }
       }
     }
     window.addEventListener("keydown", key);
