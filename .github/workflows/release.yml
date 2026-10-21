@@ -9,7 +9,26 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  audio-source:
+    runs-on: ubuntu-22.04
+    outputs:
+      release: ${{ steps.audio.outputs.release }}
+      revision: ${{ steps.audio.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Select the latest published stable Aède release once
+        id: audio
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/audio-source.mjs --resolve
+
   desktop:
+    needs: audio-source
+    env:
+      AEDE_AUDIO_RELEASE: ${{ needs.audio-source.outputs.release }}
     strategy:
       fail-fast: false
       matrix:
@@ -29,12 +48,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: craft-and-code/aede
-          ref: d8c0f1a8c134b7366da0983367a9f063527085b7 # Same source as workspace.dependencies.aede-audio
-          path: .engine-cache/aede-source
-          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -42,11 +55,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Prepare the selected stable audio dependency
+        run: node scripts/audio-source.mjs
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
             . -> target
-            .engine-cache/aede-source -> target
+            .audio-source/aede-${{ needs.audio-source.outputs.revision }} -> target
       - name: Install Linux prerequisites
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf libasound2-dev libdbus-1-dev libssl-dev build-essential autoconf automake libtool squashfs-tools
@@ -64,10 +79,6 @@ jobs:
       - run: npm ci
       - name: Verify manifest and tag versions
         run: node scripts/release.mjs verify
-      - name: Fetch locked dependencies explicitly
-        run: |
-          cargo fetch --locked
-          cargo fetch --locked --manifest-path .engine-cache/aede-source/Cargo.toml
       - name: Verify frontend and tooling
         run: |
           npm run format:check
@@ -80,8 +91,6 @@ jobs:
           cargo test -p phemios-core --locked
           cargo clippy -p phemios-core --all-targets --locked -- -D warnings
       - name: Build native installers with the pinned engine
-        env:
-          PHEMIOS_AEDE_SOURCE: ${{ github.workspace }}/.engine-cache/aede-source
         run: npx --no-install tauri build --ci --bundles ${{ matrix.bundles }} -- --locked
       - name: Name installers and generate SHA-256 sidecars
         run: node scripts/release.mjs package ${{ matrix.label }}

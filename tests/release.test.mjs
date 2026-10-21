@@ -59,20 +59,17 @@ test("missing and ambiguous installers never produce a partial release", () =>
     assert.throws(() => packageRelease(root, "macOS-AppleSilicon"), /exactly one/);
   }));
 
-// This source is fetched before the offline native build, independently of Cargo.
-test("release engine and audio dependency select the same immutable public source", () => {
-  const cargo = readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8");
-  const audio = cargo.match(/^aede-audio\s*=\s*\{([^}]+)\}/m)?.[1] ?? "";
-  assert.match(audio, /git\s*=\s*"https:\/\/github\.com\/craft-and-code\/aede"/);
-  assert.doesNotMatch(audio, /\b(?:path|branch|tag)\s*=/);
-  const revision = audio.match(/\brev\s*=\s*"([0-9a-f]{40})"/)?.[1];
-  assert.ok(revision, "audio dependency requires a full commit SHA");
+test("release platforms share one stable selection with the native engine hook", () => {
   const workflow = readFileSync(
     new URL("../.github/workflows/release.yml", import.meta.url),
     "utf8",
   );
-  const engine = workflow.match(
-    /repository:\s*craft-and-code\/aede\s*\n\s*ref:\s*([0-9a-f]{40})(?:\s|$)/,
-  )?.[1];
-  assert.equal(engine, revision, "bundled engine must use the audio dependency's source");
+  assert.equal((workflow.match(/run: node scripts\/audio-source\.mjs --resolve/g) ?? []).length, 1);
+  assert.match(workflow, /desktop:\s*\n\s*needs: audio-source/);
+  assert.match(workflow, /AEDE_AUDIO_RELEASE: \$\{\{ needs\.audio-source\.outputs\.release \}\}/);
+  assert.doesNotMatch(workflow, /PHEMIOS_AEDE_SOURCE|repository: craft-and-code\/aede/);
+  const config = JSON.parse(
+    readFileSync(new URL("../src-tauri/tauri.conf.json", import.meta.url), "utf8"),
+  );
+  assert.match(config.build.beforeBuildCommand, /node scripts\/prepare-engine\.mjs/);
 });

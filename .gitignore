@@ -17,3 +17,6 @@ dist-site/
 dist-analysis/
 
 dist-release/
+
+# Build-time stable Aède source and selection (never personal/runtime data).
+.audio-source/
