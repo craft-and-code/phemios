@@ -103,6 +103,7 @@ fn real_tcp_fragmented_protocol_drives_transport_without_resetting_during_probe(
             vec!["track:a".into()],
             vec!["file:///music/a.flac".into()],
             0,
+            || true,
         )
         .unwrap();
     assert_eq!(player.snapshot().unwrap()["status"], "playing");

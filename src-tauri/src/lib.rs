@@ -15,6 +15,7 @@ mod display_awake;
 mod encyclopedia;
 mod exports;
 mod hqplayer;
+mod hqplayer_state;
 mod local;
 mod local_lifecycle;
 mod notes;

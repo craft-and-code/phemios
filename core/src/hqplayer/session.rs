@@ -2,6 +2,17 @@
 use super::protocol::Attributes;
 use super::{OUTPUT, Session};
 use serde_json::{Value, json};
+/// Local validation never changes transport ownership; protocol uncertainty does.
+pub(super) enum ControlError {
+    Rejected(&'static str),
+    Transport(String),
+}
+impl From<&'static str> for ControlError {
+    fn from(message: &'static str) -> Self {
+        Self::Rejected(message)
+    }
+}
+
 pub(super) fn number(a: &Attributes, key: &str) -> Result<f64, String> {
     a.get(key)
         .and_then(|s| s.parse::<f64>().ok())
@@ -62,7 +73,7 @@ impl Session {
         self.snapshot = json!({"status":status,"reference":self.tracks[index],"index":index,"total":total,"position_ms":position,"duration_ms":duration,"sample_rate":0,"volume":volume,"history_confirmed":false,"device":OUTPUT,"policy":"hqplayer","error":"","seek_id":self.seek,"level":0,"levels":[0,0,0,0],"shuffled":shuffled,"queue":[]});
         Ok(self.snapshot.clone())
     }
-    pub(super) fn control(&mut self, action: &str, value: Value) -> Result<Value, String> {
+    pub(super) fn control(&mut self, action: &str, value: Value) -> Result<Value, ControlError> {
         let (name, attrs) = match action {
             "mute" => ("VolumeMute", vec![]),
             "pause" => ("Pause", vec![]),
@@ -82,20 +93,21 @@ impl Session {
                     .as_u64()
                     .filter(|ms| *ms <= 604800000)
                     .ok_or("Position invalide.")?;
-                self.connection
-                    .call("Seek", &[("position", (ms / 1000).to_string())], true)?;
                 let ticket = self
                     .seek_pending
                     .map_or(self.seek, |(ticket, _)| ticket)
                     .checked_add(1)
                     .ok_or("Position invalide.")?;
+                self.connection
+                    .call("Seek", &[("position", (ms / 1000).to_string())], true)
+                    .map_err(ControlError::Transport)?;
                 self.seek_pending = Some((ticket, ms));
                 return Ok(json!({"seek_id":ticket}));
             }
             "volume" => {
                 if !self.volume_enabled {
                     return Err("Activez le volume dans HQPlayer.".into());
-                };
+                }
                 let v = value
                     .as_f64()
                     .filter(|n| n.is_finite() && (0. ..=1.).contains(n))
@@ -109,7 +121,9 @@ impl Session {
                 )
             }
             "shuffle" => {
-                let current = self.read_state()?["shuffled"].as_bool().unwrap_or(false);
+                let current = self.read_state().map_err(ControlError::Transport)?["shuffled"]
+                    .as_bool()
+                    .unwrap_or(false);
                 (
                     "SetRandom",
                     vec![("value", if current { "0" } else { "1" }.into())],
@@ -120,9 +134,13 @@ impl Session {
             }
             _ => return Err("Commande HQPlayer non prise en charge.".into()),
         };
-        self.connection.call(name, &attrs, true)?;
+        self.connection
+            .call(name, &attrs, true)
+            .map_err(ControlError::Transport)?;
         if action == "jump" {
-            self.connection.call("Play", &[], true)?;
+            self.connection
+                .call("Play", &[], true)
+                .map_err(ControlError::Transport)?;
         }
         Ok(Value::Null)
     }

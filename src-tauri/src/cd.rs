@@ -72,6 +72,7 @@ pub(crate) async fn cd_start(
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
     let epoch = hq.epoch.clone();
+    let published = hq.published_epoch.clone();
     let generation = epoch.fetch_add(1, Ordering::SeqCst) + 1;
     blocking(move || {
         let disc = cd
@@ -92,14 +93,28 @@ pub(crate) async fn cd_start(
         }
         permission()?;
         let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-        if epoch.load(Ordering::SeqCst) != generation {
-            return Err("Lecture CD annulée.".into());
-        }
-        admit(&stamps, || {
-            player.halt()?;
-            controller.halt()?;
-            player.start_cd(disc, tracks, device, index, Some(permission))
-        })
+        crate::playback_routing::replace(
+            &published,
+            generation,
+            || {
+                admit(&stamps, || {
+                    if epoch.load(Ordering::SeqCst) == generation {
+                        Ok(())
+                    } else {
+                        Err("Lecture CD annulée.".into())
+                    }
+                })
+            },
+            || {
+                player.halt()?;
+                controller.halt()
+            },
+            || {
+                admit(&stamps, || {
+                    player.start_cd(disc, tracks, device, index, Some(permission))
+                })
+            },
+        )
     })
     .await
 }

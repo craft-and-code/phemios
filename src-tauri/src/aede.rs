@@ -135,7 +135,8 @@ pub(crate) async fn aede_logout(
     hq: State<'_, crate::hqplayer::HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let generation = hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    let published = hq.published_epoch.clone();
     let session = crate::sessions::invalidate(&state.server.session, &state.server.generation)?;
     let player = player.inner().clone();
     let controller = hq.controller.clone();
@@ -144,16 +145,17 @@ pub(crate) async fn aede_logout(
     blocking(move || {
         phemios_core::session_cleanup::complete(
             || {
-                let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-                if *source.lock().map_err(|_| "État audio indisponible.")?
-                    == phemios_core::federation::Source::Server
-                {
-                    return phemios_core::session_cleanup::complete(
-                        || player.halt(),
-                        || controller.halt(),
-                    );
-                }
-                Ok(())
+                crate::playback_routing::retire(&routing, &published, generation, || {
+                    if *source.lock().map_err(|_| "État audio indisponible.")?
+                        == phemios_core::federation::Source::Server
+                    {
+                        return phemios_core::session_cleanup::complete(
+                            || player.halt(),
+                            || controller.halt(),
+                        );
+                    }
+                    Ok(())
+                })
             },
             || match session {
                 Some(client) => client

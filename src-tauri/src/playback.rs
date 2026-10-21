@@ -80,12 +80,27 @@ pub(crate) async fn playback_start(
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
     let epoch = hq.epoch.clone();
+    let published = hq.published_epoch.clone();
     let generation = epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-    let mappings = hq.mappings.lock().map_err(|_| "HQPlayer occupé.")?.clone();
+    let output = hq.inner().clone();
     blocking(move || {
         crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || Ok(()))?;
-        let current = || epoch.load(std::sync::atomic::Ordering::SeqCst) == generation;
-        let prepared = if device == phemios_core::hqplayer::OUTPUT {
+        let configured = if device == phemios_core::hqplayer::OUTPUT {
+            Some(output.profile()?)
+        } else {
+            None
+        };
+        let current = || {
+            epoch.load(std::sync::atomic::Ordering::SeqCst) == generation
+                && owner_generation
+                    .load(std::sync::atomic::Ordering::SeqCst)
+                    .to_string()
+                    == ticket
+                && configured
+                    .as_ref()
+                    .is_none_or(|(profile, _)| output.profile_current(*profile))
+        };
+        let prepared = if let Some((_, mappings)) = configured.as_ref() {
             client.require_unrestricted_output_admitted(|| {
                 crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || {
                     Ok(())
@@ -100,34 +115,38 @@ pub(crate) async fn playback_start(
                 &client,
                 tracks.clone(),
                 index,
-                &mappings,
+                mappings,
                 current,
             )?)
         } else {
             None
         };
         let _guard = routing.lock().map_err(|_| "État audio indisponible.")?;
-        if !current()
-            || owner_generation
-                .load(std::sync::atomic::Ordering::SeqCst)
-                .to_string()
-                != ticket
-            || !owner
-                .lock()
-                .map_err(|_| "Session native indisponible.")?
-                .as_ref()
-                .is_some_and(|held| held.same_session(&client))
-        {
-            return Err("Lecture annulée ou session remplacée.".into());
-        }
-        player.halt()?;
-        controller.halt()?;
-        *source.lock().map_err(|_| "État audio indisponible.")? = origin;
-        if let Some(selection) = prepared {
-            controller.start(selection)
-        } else {
-            player.start(client, tracks, device, index, &policy)
-        }
+        crate::playback_routing::replace(
+            &published,
+            generation,
+            || {
+                crate::sessions::with_current(&owner, &owner_generation, &ticket, &client, || {
+                    if current() {
+                        Ok(())
+                    } else {
+                        Err("Lecture annulée ou session remplacée.".into())
+                    }
+                })
+            },
+            || {
+                player.halt()?;
+                controller.halt()
+            },
+            || {
+                *source.lock().map_err(|_| "État audio indisponible.")? = origin;
+                if let Some(selection) = prepared {
+                    controller.start(selection, current)
+                } else {
+                    player.start(client.clone(), tracks, device, index, &policy)
+                }
+            },
+        )
     })
     .await
 }
@@ -146,13 +165,14 @@ pub(crate) async fn playback_control(
     let routing = hq.routing.clone();
     let source = state.playback_source.clone();
     let epoch = hq.epoch.clone();
+    let published = hq.published_epoch.clone();
     let generation = if matches!(action.as_str(), "stop" | "clear") {
         Some(epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1)
     } else {
         None
     };
     blocking(move || {
-        crate::playback_routing::control(&routing, &epoch, generation, &action, || {
+        crate::playback_routing::control(&routing, &published, generation, &action, || {
             if action == "clear" {
                 controller.clear()?;
                 player.clear()?;

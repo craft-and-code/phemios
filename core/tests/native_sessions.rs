@@ -19,3 +19,7 @@ mod playback_routing;
 
 #[path = "../../src-tauri/src/local_lifecycle.rs"]
 mod local_lifecycle;
+
+#[allow(dead_code)]
+#[path = "../../src-tauri/src/hqplayer_state.rs"]
+mod hqplayer_state;

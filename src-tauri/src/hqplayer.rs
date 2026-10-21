@@ -1,25 +1,9 @@
 //! Optional HQPlayer connector; no authenticated Aède URL leaves the application.
 use crate::aede::{blocking, bridge};
+pub(crate) use crate::hqplayer_state::HqPlayer;
 use phemios_core::hqplayer::Controller;
-use serde_json::{Value, json};
-use std::sync::{Arc, Mutex};
+use serde_json::Value;
 use tauri::State;
-pub(crate) struct HqPlayer {
-    pub controller: Arc<Controller>,
-    pub mappings: Arc<Mutex<Value>>,
-    pub routing: Arc<Mutex<()>>,
-    pub epoch: Arc<std::sync::atomic::AtomicU64>,
-}
-impl Default for HqPlayer {
-    fn default() -> Self {
-        Self {
-            controller: Arc::new(Controller::default()),
-            mappings: Arc::new(Mutex::new(json!([]))),
-            routing: Arc::new(Mutex::new(())),
-            epoch: Arc::new(std::sync::atomic::AtomicU64::new(0)),
-        }
-    }
-}
 #[tauri::command]
 pub(crate) async fn hqplayer_connect(
     version: u32,
@@ -33,16 +17,9 @@ pub(crate) async fn hqplayer_connect(
         return Err("Correspondance HQPlayer invalide.".into());
     }
     Controller::validate_mapping(&mappings)?;
-    let controller = state.controller.clone();
-    let routing = state.routing.clone();
-    let saved = state.mappings.clone();
-    blocking(move || {
-        let _guard = routing.lock().map_err(|_| "HQPlayer occupé.")?;
-        let result = controller.connect(&host, port)?;
-        *saved.lock().map_err(|_| "HQPlayer occupé.")? = mappings;
-        Ok(result)
-    })
-    .await
+    let ticket = state.reserve();
+    let state = state.inner().clone();
+    blocking(move || state.connect(ticket, &host, port, mappings)).await
 }
 #[tauri::command]
 pub(crate) async fn hqplayer_disconnect(
@@ -50,14 +27,10 @@ pub(crate) async fn hqplayer_disconnect(
     state: State<'_, HqPlayer>,
 ) -> Result<(), String> {
     bridge(version)?;
-    let controller = state.controller.clone();
+    let ticket = state.reserve();
     state
         .epoch
         .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-    let routing = state.routing.clone();
-    blocking(move || {
-        let _guard = routing.lock().map_err(|_| "HQPlayer occupé.")?;
-        controller.disconnect()
-    })
-    .await
+    let state = state.inner().clone();
+    blocking(move || state.disconnect(ticket)).await
 }

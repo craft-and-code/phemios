@@ -49,10 +49,12 @@ pub(crate) async fn local_stop(
 ) -> Result<(), String> {
     bridge(version)?;
     let lifecycle = state.local_lifecycle.clone();
-    let (ticket, ()) = lifecycle.begin(|| {
-        hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        crate::sessions::invalidate(&state.local.session, &state.local.generation).map(|_| ())
+    let (ticket, audio_stop) = lifecycle.begin(|| {
+        let generation = hq.epoch.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+        crate::sessions::invalidate(&state.local.session, &state.local.generation)?;
+        Ok(generation)
     })?;
+    let published = hq.published_epoch.clone();
     let player = player.inner().clone();
     let controller = hq.controller.clone();
     let routing = hq.routing.clone();
@@ -61,19 +63,17 @@ pub(crate) async fn local_stop(
     blocking(move || {
         phemios_core::session_cleanup::complete(
             || {
-                lifecycle
-                    .with_resource(&routing, ticket, |_| {
-                        if *source.lock().map_err(|_| "État audio indisponible.")?
-                            == phemios_core::federation::Source::Local
-                        {
-                            return phemios_core::session_cleanup::complete(
-                                || player.halt(),
-                                || controller.halt(),
-                            );
-                        }
-                        Ok(())
-                    })
-                    .map(|_| ())
+                crate::playback_routing::retire(&routing, &published, audio_stop, || {
+                    if *source.lock().map_err(|_| "État audio indisponible.")?
+                        == phemios_core::federation::Source::Local
+                    {
+                        return phemios_core::session_cleanup::complete(
+                            || player.halt(),
+                            || controller.halt(),
+                        );
+                    }
+                    Ok(())
+                })
             },
             || {
                 lifecycle

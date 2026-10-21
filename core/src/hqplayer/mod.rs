@@ -178,23 +178,34 @@ impl Controller {
             index,
         })
     }
-    /// Publish only a selection prepared from the authenticated catalog, never arbitrary frontend paths.
-    pub fn start(&self, selection: Selection) -> Result<(), String> {
-        self.start_uris(selection.tracks, selection.uris, selection.index)
+    /// Publish only an authenticated selection, checking admission between protocol commands.
+    /// An in-flight command may finish; cancellation prevents subsequent queue/Play commands.
+    pub fn start(&self, selection: Selection, current: impl Fn() -> bool) -> Result<(), String> {
+        self.start_uris(selection.tracks, selection.uris, selection.index, current)
     }
     fn start_uris(
         &self,
         tracks: Vec<String>,
         uris: Vec<String>,
         index: usize,
+        current: impl Fn() -> bool,
     ) -> Result<(), String> {
         let mut held = self.session.lock().map_err(|_| "HQPlayer occupé.")?;
         let s = held
             .as_mut()
             .ok_or("Testez la connexion HQPlayer dans les paramètres.")?;
+        let admit = || {
+            if current() {
+                Ok(())
+            } else {
+                Err("Lecture annulée ou session remplacée.".to_owned())
+            }
+        };
+        admit()?;
         let result = (|| {
             s.connection.call("Stop", &[], true)?;
             for (i, uri) in uris.iter().enumerate() {
+                admit()?;
                 s.connection.call(
                     "PlaylistAdd",
                     &[
@@ -207,9 +218,12 @@ impl Controller {
                     true,
                 )?;
             }
+            admit()?;
             s.connection
                 .call("SelectTrack", &[("index", index.to_string())], true)?;
+            admit()?;
             s.connection.call("Play", &[], true)?;
+            admit()?;
             Ok::<(), String>(())
         })();
         if result.is_err() {
@@ -239,12 +253,15 @@ impl Controller {
     pub fn control(&self, action: &str, value: Value) -> Result<Value, String> {
         let mut held = self.session.lock().map_err(|_| "HQPlayer occupé.")?;
         let s = held.as_mut().ok_or("Connexion HQPlayer perdue.")?;
-        let result = s.control(action, value);
-        if result.is_err() && !matches!(action, "policy" | "output") {
-            let _ = s.connection.call("Stop", &[], true);
-            *held = None;
+        match s.control(action, value) {
+            Ok(value) => Ok(value),
+            Err(session::ControlError::Rejected(message)) => Err(message.into()),
+            Err(session::ControlError::Transport(error)) => {
+                let _ = s.connection.call("Stop", &[], true);
+                *held = None;
+                Err(error)
+            }
         }
-        result
     }
 }
 #[cfg(test)]
@@ -254,3 +271,11 @@ mod tests;
 #[cfg(test)]
 #[path = "clear_tests.rs"]
 mod clear_tests;
+
+#[cfg(test)]
+#[path = "start_tests.rs"]
+mod start_tests;
+
+#[cfg(test)]
+#[path = "control_tests.rs"]
+mod control_tests;
