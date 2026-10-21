@@ -12,6 +12,7 @@ The application includes artist presentations, Albums/Cover Flow, tracks, countr
 - Process-owned native sessions can be restored after a frontend reload; older hosts expose explicit disconnection recovery after an active-session conflict. Application exit still discards credentials.
 - The embedded engine uses explicit locked/offline preparation. Published-engine updates are explicit; running processes must be restarted to expose changed native contracts.
 - Native PCM has DSP/without-effects modes, bounded preloading, repeat/shuffle, consumed-time seeking and optional DSP crossfade. Mode changes apply to future preparation without reopening audible/prepared visits. Bit-perfect is unavailable on this remote f32/CPAL route. See [audio continuity](../design/audio-continuity.md).
+- The shared `aede-audio`/`aede-dsp` source now supplies callback transitions, ring handoff and crossfade mathematics. Its development path binding requires the sibling Aède checkout; independently published builds need a pinned shared source first.
 - HQPlayer is a separate optional output. UPnP, OpenHome, Cast and SlimProto share one source/account-owned network-device selector through Aède. AirPlay remains deferred.
 - CUE/BIN, CUE/FLAC and CUE/WAV use the local CD player without an Aède login; APE requires FFmpeg/FFprobe. Physical optical/device acceptance remains pending.
 - JamBase uses a protected native key and a persisted fail-closed request budget. Live provider access is not established by fixture tests.

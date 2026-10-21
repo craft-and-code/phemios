@@ -1,6 +1,6 @@
+use aede_audio::ring::{Consumer, Producer, RingBuffer};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, FromSample, SampleFormat, SizedSample, StreamConfig, SupportedStreamConfig};
-use rtrb::{Consumer, Producer, RingBuffer};
 use serde_json::{Value, json};
 use std::sync::{
     Arc,

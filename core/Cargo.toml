@@ -5,12 +5,13 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 [dependencies]
+# Shared catalogue-independent PCM foundation, developed alongside Aède.
+aede-audio = { path = "../../aede/crates/aede-audio", features = ["queue"] }
 phemios-cd = { path = "../crates/phemios-cd" }
 ureq = "=3.4.0"
 serde_json = "1"
 
 cpal = "=0.18.1"
-rtrb = "=0.4.0"
 tungstenite = { version = "=0.24.0", features = ["rustls-tls-native-roots"] }
 getrandom = "=0.4.3"
 quick-xml = "=0.42.0"

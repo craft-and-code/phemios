@@ -188,7 +188,7 @@ fn delayed_retired_confirmation_does_not_block_the_active_producer() {
             assert!(!source.retire().unwrap());
             assert_eq!(source.handle.as_ref().unwrap().thread().id(), worker);
         }
-        let (mut tx, mut rx) = rtrb::RingBuffer::new(256);
+        let (mut tx, mut rx) = aede_audio::ring::RingBuffer::new(256);
         for _ in 0..256 {
             tx.push([0.25_f32, -0.25]).unwrap();
         }

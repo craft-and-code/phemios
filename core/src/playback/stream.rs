@@ -235,7 +235,7 @@ pub(super) fn stream(
                     loop {
                         match output.producer.push(frame) {
                             Ok(()) => break,
-                            Err(rtrb::PushError::Full(value)) => frame = value,
+                            Err(aede_audio::ring::PushError::Full(value)) => frame = value,
                         }
                         if output.failed.load(Ordering::Relaxed) {
                             return Err("La sortie audio a signalé une erreur.".into());
