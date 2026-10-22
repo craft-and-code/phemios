@@ -132,3 +132,7 @@ The embedded development engine is prepared with `--locked --offline`. It now re
 To use the separate Aède Tauri server on the same computer, export its public connection JSON and import it under Settings → Aède server. Enter its displayed account/password separately. The import pins only that exact loopback certificate, including audio WSS; it never disables TLS verification or imports a private key. See [the local-engine design](docs/design/local-engine.md).
 
 External-player copying supports reviewed selected music, conversion and read-back through Aède, native MTP and an optional podkit adapter for supported Apple iPods. See [device transfer prerequisites and limits](docs/design/external-transfers.md).
+
+## Quality assurance templates
+
+The [quality workflow](docs/quality/README.md), [audit scope](docs/quality/audit-scope.md), [findings register](docs/quality/findings.md) and [release checklist](docs/quality/release-checklist.md) are reusable preparation templates, not records of completed audits. Role prompts are provided for the [code auditor](docs/quality/prompts/auditor.md), [test engineer](docs/quality/prompts/test-engineer.md), [adversarial reviewer](docs/quality/prompts/adversarial-reviewer.md) and [release validator](docs/quality/prompts/release-validator.md).
