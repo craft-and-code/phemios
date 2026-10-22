@@ -1,3 +1,4 @@
+import { changePasswordForSession } from "../library/account-password";
 import { createAccountDrafts } from "../library/account-drafts";
 import { sourceLabel } from "../library/sources";
 import { RoleHelp } from "../components/RoleHelp";
@@ -233,10 +234,14 @@ export function SettingsAccounts() {
             const body = { current_password: currentPassword(), new_password: newPassword() };
             setCurrentPassword("");
             setNewPassword("");
-            void perform(async () => {
-              await requestAede("/api/auth/v1/password", {}, "PUT", body, "server");
-              await library.disconnect();
-            });
+            void perform(() =>
+              changePasswordForSession({
+                session: library.serverSession,
+                change: (owner) =>
+                  requestAede("/api/auth/v1/password", {}, "PUT", body, "server", owner),
+                disconnect: library.disconnect,
+              }),
+            );
           }}
         >
           <h3>{t("Changer mon mot de passe")}</h3>

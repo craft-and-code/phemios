@@ -79,3 +79,19 @@ export function visibleEnrichmentJobs(jobs: readonly Job[]): Job[] {
     ...rows.filter((job) => !["queued", "running"].includes(job.status)).slice(0, 3),
   ];
 }
+
+/** Settings display the initiating profile's launch result; accepted jobs retain their own lifetime. */
+export async function completeEnrichmentLaunch(options: {
+  current: () => boolean;
+  launch: () => Promise<Awaited<ReturnType<typeof startEnrichment>> | undefined>;
+  confirm: (results: Awaited<ReturnType<typeof startEnrichment>>) => void;
+  failure: (failure: unknown) => void;
+}): Promise<void> {
+  if (!options.current()) return;
+  try {
+    const results = await options.launch();
+    if (results && options.current()) options.confirm(results);
+  } catch (failure) {
+    if (options.current()) options.failure(failure);
+  }
+}

@@ -12,7 +12,11 @@ import { localStatus, saveLocalKeys } from "../platform/desktop";
 import { useLibrary } from "../library/context";
 import type { SourceId } from "../library/sources";
 import { sourceLabel } from "../library/sources";
-import { hasActiveEnrichment, visibleEnrichmentJobs } from "../library/enrichment";
+import {
+  completeEnrichmentLaunch,
+  hasActiveEnrichment,
+  visibleEnrichmentJobs,
+} from "../library/enrichment";
 import { ActionButton } from "../components/ActionButton";
 import { Icon } from "../components/Icon";
 /** One private native key store serves explicit jobs on either library; no automatic enrichment. */
@@ -267,26 +271,37 @@ export function SettingsServices() {
               discogs: discogs(),
               yes: true,
             };
-            try {
-              const results = await library.tasks.enrich(
-                targets().filter((s) => !excluded().includes(s)),
-                options,
-              );
-              if (!results) return;
-              setFailure(results.some((result) => "error" in result));
-              setMessage(
-                results
-                  .map((result) =>
-                    "error" in result
-                      ? `${sourceLabel(result.source)} · ${result.error}`
-                      : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
-                  )
-                  .join("\n"),
-              );
-            } catch (error) {
-              setFailure(true);
-              setMessage(String(error));
-            }
+            const profile = interfaceProfileIdentity(),
+              local = library.localSession(),
+              server = library.serverSession();
+            await completeEnrichmentLaunch({
+              current: () =>
+                alive &&
+                profile === interfaceProfileIdentity() &&
+                local === library.localSession() &&
+                server === library.serverSession(),
+              launch: () =>
+                library.tasks.enrich(
+                  targets().filter((s) => !excluded().includes(s)),
+                  options,
+                ),
+              confirm: (results) => {
+                setFailure(results.some((result) => "error" in result));
+                setMessage(
+                  results
+                    .map((result) =>
+                      "error" in result
+                        ? `${sourceLabel(result.source)} · ${result.error}`
+                        : t("Tâche #{0} lancée sur {1}.", result.task, sourceLabel(result.source)),
+                    )
+                    .join("\n"),
+                );
+              },
+              failure: (error) => {
+                setFailure(true);
+                setMessage(String(error));
+              },
+            });
           }}
         >
           {t("Lancer l’enrichissement")}

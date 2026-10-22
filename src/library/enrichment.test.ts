@@ -1,3 +1,4 @@
+import { completeEnrichmentLaunch } from "./enrichment";
 import { expect, it, vi } from "vitest";
 import { requestAede } from "../platform/desktop";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
@@ -98,4 +99,54 @@ it("keeps every running enrichment plus only the three latest finished jobs", ()
   expect(hasActiveEnrichment(jobs.filter((job) => job.task_id === 6))).toBe(true);
   expect(hasActiveEnrichment(jobs.filter((job) => [2, 7].includes(job.task_id)))).toBe(false);
   expect(jobs.length).toBe(7);
+});
+
+it.each(["acknowledgement", "failure"])(
+  "does not overwrite successor settings feedback with a late enrichment %s",
+  async (outcome) => {
+    let current = true,
+      finish!: (value: Awaited<ReturnType<typeof startEnrichment>>) => void,
+      reject!: (error: Error) => void;
+    let message = "Original settings";
+    const pending = completeEnrichmentLaunch({
+      current: () => current,
+      launch: () =>
+        new Promise((resolve, fail) => {
+          finish = resolve;
+          reject = fail;
+        }),
+      confirm: () => {
+        message = "Former enrichment result";
+      },
+      failure: () => {
+        message = "Former enrichment error";
+      },
+    });
+    current = false;
+    message = "Successor settings saved";
+    if (outcome === "failure") reject(new Error("Old account error"));
+    else finish([{ source: "server", task: 42 }]);
+    await pending;
+    expect(message).toBe("Successor settings saved");
+  },
+);
+
+it("keeps current launch outcomes while ignoring duplicate and already-retired submissions", async () => {
+  const result = [{ source: "server" as const, task: 42 }];
+  const launch = vi.fn<() => Promise<typeof result | undefined>>(async () => result);
+  const confirm = vi.fn(),
+    failure = vi.fn();
+  let current = true;
+  const options = { current: () => current, launch, confirm, failure };
+  await completeEnrichmentLaunch(options);
+  expect(confirm).toHaveBeenCalledExactlyOnceWith(result);
+  launch.mockRejectedValueOnce(new Error("Current launch error"));
+  await completeEnrichmentLaunch(options);
+  expect(failure.mock.calls[0]?.[0]).toEqual(new Error("Current launch error"));
+  launch.mockResolvedValueOnce(undefined);
+  await completeEnrichmentLaunch(options);
+  expect(confirm).toHaveBeenCalledOnce();
+  current = false;
+  await completeEnrichmentLaunch(options);
+  expect(launch).toHaveBeenCalledTimes(3);
 });
