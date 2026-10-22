@@ -3,10 +3,14 @@ import { t, countryName } from "../i18n";
 import { selectedGenres } from "../library/filtering";
 import type { Filters, Interval } from "../library/types";
 import type { Section } from "./routes";
-/** Filters belong to their navigation view; entering another view never inherits an invisible selection. */
-export function createScopedFilters(section: Accessor<Section>, domain: Accessor<Interval>) {
+/** Filters belong to their view and exact account/source generation, never a successor login. */
+export function createScopedFilters(
+  section: Accessor<Section>,
+  domain: Accessor<Interval>,
+  identity: Accessor<unknown> = () => undefined,
+) {
   const [saved, setSaved] = createSignal<
-    Partial<Record<Section, { value: Filters; domain: Interval }>>
+    Partial<Record<Section, { value: Filters; domain: Interval; identity: unknown }>>
   >({});
   const defaults = (scope: Section): Filters => ({
     mode: ["countries", "artists", "albums", "composers"].includes(scope) ? "none" : "years",
@@ -17,7 +21,7 @@ export function createScopedFilters(section: Accessor<Section>, domain: Accessor
   });
   function read(scope: Section): Filters {
     const held = saved()[scope];
-    if (!held) return defaults(scope);
+    if (!held || held.identity !== identity()) return defaults(scope);
     const bounds = domain(),
       old = held.domain;
     const years: Interval =
@@ -32,11 +36,18 @@ export function createScopedFilters(section: Accessor<Section>, domain: Accessor
   return {
     value: () => read(section()),
     set: (value: Filters) =>
-      setSaved((held) => ({ ...held, [section()]: { value, domain: domain() } })),
+      setSaved((held) => ({
+        ...held,
+        [section()]: { value, domain: domain(), identity: identity() },
+      })),
     select: (scope: Section, patch: Partial<Filters>) =>
       setSaved((held) => ({
         ...held,
-        [scope]: { value: { ...defaults(scope), ...patch }, domain: domain() },
+        [scope]: {
+          value: { ...defaults(scope), ...patch },
+          domain: domain(),
+          identity: identity(),
+        },
       })),
   };
 }

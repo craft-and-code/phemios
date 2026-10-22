@@ -120,7 +120,8 @@ export function App() {
     ),
   );
   const [sidebar, setSidebar] = createSignal(true);
-  const scopedFilters = createScopedFilters(navigation.section, yearDomain);
+  const filterOwner = createMemo(() => ({ session: library.session(), source: library.source() }));
+  const scopedFilters = createScopedFilters(navigation.section, yearDomain, filterOwner);
   const filters = scopedFilters.value,
     setFilters = scopedFilters.set;
   const trackPaging = createTrackPaging(
@@ -130,6 +131,11 @@ export function App() {
   );
   const [selectedTag, setSelectedTag] = createSignal<readonly string[]>([]);
   const [tagOffset, setTagOffset] = createSignal(0);
+  createEffect(() => {
+    filterOwner();
+    setSelectedTag([]);
+    setTagOffset(0);
+  });
   const [reverse, setReverse] = createSignal(false);
   const [coverFlow, setCoverFlow] = createSignal(true);
   const coverPosition = createCoverPosition();

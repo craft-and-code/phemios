@@ -94,3 +94,44 @@ it("starts Albums without rails and keeps an explicit year selection visible", (
     dispose();
   });
 });
+
+it("does not reveal a previous login's searches in either visible or retained views", () => {
+  createRoot((dispose) => {
+    const [section, setSection] = createSignal<Section>("tags");
+    const [owner, setOwner] = createSignal<object>({});
+    const filters = createScopedFilters(section, () => [1980, 2026], owner);
+    filters.set({ ...filters.value(), query: "Private tag" });
+    setSection("collections");
+    filters.set({ ...filters.value(), query: "Private collection" });
+    setSection("albums");
+    filters.set({ ...filters.value(), query: "Personal note text" });
+    setOwner({});
+    expect(filters.value().query).toBe("");
+    setSection("tags");
+    expect(filters.value().query).toBe("");
+    setSection("collections");
+    expect(filters.value().query).toBe("");
+    // Returning to the same account has a new exact context generation.
+    setOwner({});
+    expect(filters.value().query).toBe("");
+    dispose();
+  });
+});
+
+it("retains current-owner criteria on catalogue refresh and retires navigation-provided searches too", () => {
+  createRoot((dispose) => {
+    const [owner, setOwner] = createSignal<object>({});
+    const [domain, setDomain] = createSignal<readonly [number, number]>([1980, 2025]);
+    const filters = createScopedFilters(() => "albums", domain, owner);
+    filters.select("albums", { query: "Current note", mode: "alphabet", alphabet: [3, 9] });
+    setDomain([1970, 2026]);
+    expect(filters.value()).toMatchObject({
+      query: "Current note",
+      mode: "alphabet",
+      alphabet: [3, 9],
+    });
+    setOwner({});
+    expect(filters.value()).toMatchObject({ query: "", mode: "none", years: [1970, 2026] });
+    dispose();
+  });
+});

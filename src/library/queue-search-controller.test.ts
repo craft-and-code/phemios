@@ -236,3 +236,88 @@ it("finds numeric cached albums without a connected account while keeping privat
     dispose();
   }
 });
+
+it.each(
+  (["replace", "same-account-relogin", "logout", "source"] as const).flatMap((transition) =>
+    [false, true].map((debouncing) => [transition, debouncing] as const),
+  ),
+)(
+  "retires typed terms and paging on %s, including pending debounce=%s",
+  async (transition, debouncing) => {
+    const [session, setSession] = createSignal<typeof owner | undefined>(owner);
+    const [source, setSource] = createSignal<"server" | "local">("server");
+    const request = vi.fn<Parameters<typeof createQueueSearch>[1]>(async (_path, query) => ({
+      items: [],
+      total: 0,
+      offset: Number(query.offset),
+      limit: 50,
+      scanned_at: 1,
+    }));
+    let dispose!: () => void;
+    const search = createRoot((cleanup) => {
+      dispose = cleanup;
+      return createQueueSearch(
+        () => ({
+          ...context(),
+          owners: session() ? [{ source: source(), session: session()! }] : [],
+        }),
+        request,
+      );
+    });
+    try {
+      await settle();
+      search.setQuery("private old-account term");
+      search.submit();
+      await settle();
+      search.setOffset(50);
+      if (debouncing) search.setQuery("private pending draft");
+      request.mockClear();
+      if (transition === "source") setSource("local");
+      else
+        setSession(
+          transition === "logout"
+            ? undefined
+            : {
+                ...owner,
+                account: {
+                  ...owner.account,
+                  id: transition === "replace" ? "next" : owner.account.id,
+                },
+              },
+        );
+      await settle();
+      await vi.advanceTimersByTimeAsync(250);
+      await settle();
+      expect(search.query()).toBe("");
+      expect(search.offset()).toBe(0);
+      expect(request.mock.calls.every(([, query]) => !query.q && query.offset === "0")).toBe(true);
+      if (transition === "logout") expect(request).not.toHaveBeenCalled();
+      else expect(request).toHaveBeenCalled();
+    } finally {
+      dispose();
+    }
+  },
+);
+
+it("preserves terms and pagination when catalogue metadata changes under the same logins", async () => {
+  const [albums, setAlbums] = createSignal(context().albums);
+  let dispose!: () => void;
+  const search = createRoot((cleanup) => {
+    dispose = cleanup;
+    return createQueueSearch(() => ({ ...context(), albums: albums() }), vi.fn());
+  });
+  try {
+    search.chooseCategory("albums");
+    search.setQuery("Northern");
+    search.submit();
+    search.setOffset(50);
+    await settle();
+    setAlbums([...albums()]);
+    await settle();
+    expect(search.query()).toBe("Northern");
+    expect(search.offset()).toBe(50);
+    expect(search.category()).toBe("albums");
+  } finally {
+    dispose();
+  }
+});
