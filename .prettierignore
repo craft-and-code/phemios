@@ -12,3 +12,6 @@ licenses/
 src-tauri/binaries/
 
 .engine-cache/
+
+# Preserve published third-party source formatting; local changes are reviewed separately.
+vendor/glib/

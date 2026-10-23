@@ -78,13 +78,17 @@ This requires a separate source/test lot: Message Text/Binary use Utf8Bytes/Byte
 
 ### Lot 3 — GTK3/GLib and proc-macro-error (PH-003 / PH-006)
 
+D-PH-07 implements the subsequently authorized **Lot 3a only**: reviewed local GLib pointer backport, eight public-API tests, provenance checks and visible supplemental advisory assessment. [Validation and outstanding Linux work](lot-3a-validation.md). Lot 3b macro changes remain proposed. The earlier D-PH-06 planning authority below is historical.
+
+D-PH-06 has now checked current releases and upstream fixes: see the [detailed Lot 3 proposal](lot-3-plan.md). Recommended order is a minimal GLib soundness backport, then the larger upstream-derived Syn diagnostic port at both macro owners. GTK 0.19 exists but the current Tauri/WebKitGTK owners reject that generation. proc-macro-error2 is archived. Local-source patches also require an explicit advisory inventory because cargo-audit skips them. This is a proposal only; no dependency change or commit is authorized by that planning request. The prior outline below remains historical context.
+
 Actual Linux branch includes `Tauri 2.12.1 / wry 0.57.0 / gtk 0.18.2 → glib 0.18.5`; proc-macro-error 1.0.4 is pulled by **both** glib-macros 0.18.5 and gtk3-macros 0.18.2. Updating only one macro owner cannot eliminate its warning.
 
 The checked GLib source has the affected `VariantStrIter::impl_get` output-pointer code. Upstream's fixed range starts at GLib 0.20, which is not a drop-in version for this GTK3 graph. Do not force a registry resolution or change only the package version to claim a fix.
 
 First evaluate a compatible upstream GTK3/native-stack release carrying the correction. If unavailable, propose a narrowly scoped, provenance-pinned GLib 0.18 backport of the upstream fix, with a Linux optimized iterator regression, alongside a separately reviewed macro-dependency migration. Prefer upstream coordination; introducing a maintained fork/vendor source requires an explicit reviewed source decision. No message is sent upstream by this plan.
 
-A backport under a version still matched by RustSec may fix the code **while cargo-audit still reports the warning**. Keep that warning and its backport evidence visible until upstream advisory/source metadata can truthfully recognize the correction. Do not add an ignore, fabricate a 0.20 version or present a clean audit. If no compatible maintained solution exists, record this branch as unresolved rather than pretend all alerts are removable today.
+A registry backport under a version still matched by RustSec may fix the code **while cargo-audit still reports the warning**. D-PH-06 additionally confirms that a path/Git backport falls outside the installed scanner’s default registry coverage; its advisory must be retained in an explicit supplemental inventory rather than assumed to remain in raw scanner output. Keep that warning and its backport evidence visible until upstream advisory/source metadata can truthfully recognize the correction. Do not add an ignore, fabricate a 0.20 version or present a clean audit. If no compatible maintained solution exists, record this branch as unresolved rather than pretend all alerts are removable today.
 
 Acceptance: actual Linux native graph, optimized affected-iterator cases, native App/UI integration, source provenance/license review and fresh full audit. macOS success provides no GTK3 validation. No silent Linux feature removal or GTK4 rewrite in a patch update.
 

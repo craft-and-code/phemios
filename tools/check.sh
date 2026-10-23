@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 npm run format:check
 npm run lint
+npm run check:vendor
 npm test
 npm run build
 npm run analysis:build
@@ -19,6 +20,9 @@ if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
     export PHEMIOS_REQUIRE_FFMPEG=1
 fi
 cargo test --workspace --locked
+if [[ "$(uname -s)" == Linux ]]; then
+    cargo test -p phemios-glib-regression --release --locked
+fi
 cargo clippy --workspace --all-targets --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 node scripts/build-site.mjs --reuse-technical

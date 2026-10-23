@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: Lot 0 is committed as cc1f9fa and Lot 1 as f4cedb3. The maintainer authorized implementing, verifying and committing Lot 2 (Tungstenite), retaining all other warnings. Current Lot 2 base is `f4cedb327568a9bf477ccc8d891f973d5c335145`. No Lot 3/4 implementation, suppression, source-pin replacement, push or release is authorized; earlier phase ledgers are historical.
+- Current phase: D-PH-07 explicitly authorizes implementing/checking/committing Lot 3a, preserving D-PH-06 planning records and retaining every other alert. Local GLib source, targeted source selection, test/tooling/provenance/credits and documentation changes only; no macro migration, push or release. Linux acceptance remains pending.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -98,3 +98,11 @@ The four targeted advisory records have verified package corrections; PH-003/006
 ## D-PH-05 — Authorized Tungstenite migration and commits
 
 The maintainer explicitly authorized the Lot 1 commit, then implementing/checking/committing Lot 2 while retaining every other alert. Lot 1 is f4cedb3; Lot 2 starts from f4cedb327568a9bf477ccc8d891f973d5c335145. Only the existing Tungstenite transport, required transitive graph, sibling tests and supporting documentation are in scope. No dependency warning suppression, shared-engine pin replacement, Lot 3/4 migration, push, release or independent-review claim. Current validation and residual limits supersede earlier historical phase snapshots in the final checklist section.
+
+## D-PH-06 — Lot 3 investigation before modification
+
+The [Lot 3 proposal](lot-3-plan.md) records current registry/native-owner constraints, exact upstream backports, the archived replacement, scanner source-coverage diagnostics and planned Linux acceptance. Fresh actual lockfile audit retains all five warnings. Source/lock SHA-256 fingerprints remain identical to c36149e. Synthetic registry/path scanner fixtures are isolated outside the repository and do not clear the product audit. No implementation, independent review or commit in this phase.
+
+## D-PH-07 — Authorized GLib backport
+
+Lot 3a implementation, tests, possible checks and a final commit are explicitly authorized by the maintainer. The [validation record](lot-3a-validation.md) preserves the real optimized old-source failure, corrected host-library checks, source integrity and all visible advisories. No other resolved dependency is upgraded; test-only/tooling controls do not waive Linux or whole-campaign acceptance.

@@ -4,7 +4,7 @@
 
 - Campaign `PH-STAB-001`, initial pass on 2026-10-23, branch `main`.
 - Software candidate `397912b95f79d54a3eb23e64dfe589df7e3c03e7`, version 0.1.0; initially clean. The initial pass changed eight quality Markdown files; D-PH-02 also adds the remediation plan and diagnostic source under this directory. D-PH-03 additionally implements the authorized Lot 0 source/tests/docs correction; dependency files remain unchanged.
-- Current authority: Lot 0 committed as cc1f9fa and Lot 1 as f4cedb3; Lot 2 implementation/checks/commit explicitly authorized. No suppression, tag, push or release. Earlier ledgers retain their historical authority/results.
+- Current authority: Lots 0–2 committed through c36149e; Lot 3a implementation/checks/final commit explicitly authorized. No suppression, tag, push or release. Earlier ledgers retain their historical authority/results.
 - Host: macOS/Darwin 27.0.0 arm64; Node 26.10.0, npm 11.19.1, Rust/Cargo 1.99.0 Homebrew, cargo-audit 0.22.2. Rust 1.90 and other platforms are not tested.
 - FFmpeg and FFprobe 9.0.2 installed. Rust checks set `PHEMIOS_REQUIRE_FFMPEG=1`, `CARGO_INCREMENTAL=0`, `RUSTDOCFLAGS="-D warnings"`. Rust commands use existing locked/offline dependencies.
 - Shared audio remains pinned to Aède revision `d8c0f1a8c134b7366da0983367a9f063527085b7`. Existing sidecar metadata says Aède 0.6.1 / FlacCompagnon 0.9.6 and has no audio revision. No rebuilt/coherent current sidecar is claimed.
@@ -20,20 +20,20 @@
 
 ## 2. Automated controls
 
-These current controls incorporate D-PH-05; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
+These current controls incorporate D-PH-07; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
 
-| Control                             | Result  | Evidence / limit                                                                                                                                                               |
-| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PH-C01 complete App gate            | BLOCKED | `tools/check.sh` attempted before each commit; stable Aède v0.6.1 lacks shared crates. Frontend stages PASS; pins/locks unchanged.                                             |
-| PH-C02 formatting/lint              | PASS    | Prettier and oxlint successful; formatting rechecked after quality records finalized.                                                                                          |
-| PH-C03 Node/Vitest                  | PASS    | 46 Node tests + 1,334 Vitest tests in 241 files, no skips/failures reported.                                                                                                   |
-| PH-C04 types/frontend/analysis      | PASS    | Strict App/component TypeScript, App build and standalone analysis build successful.                                                                                           |
-| PH-C05 Rust workspace/harness       | PASS    | 520 Rust executions: 111 native + 285 core + 80 native-session harness + 30 CD + 14 transfer. FFmpeg required; no ignored cases.                                               |
-| PH-C06 Rust format/lint/docs        | PASS    | Full workspace format, Clippy all-targets and Rustdoc with warnings denied. Initial native Clippy failure retained, then corrected and rerun.                                  |
-| PH-C07 bridge/generated docs/site   | PASS    | Bridge, 450 TS modules, component types/static build, full workspace Rustdoc, bilingual site/local links (26 pages).                                                           |
-| PH-C08 fresh advisory assessment    | PASS    | D-PH-05 scans exit 0: npm 0 vulnerabilities; Cargo 0 vulnerability matches, 5 visible warnings (GLib + 4 maintenance). Open warning disposition remains a closure requirement. |
-| PH-C09 native/MSRV/installer matrix | NOT RUN | Current macOS native tests and linked workspace build PASS. Rust 1.90, Linux/Windows, installers remain unexecuted; this whole matrix is not PASS.                             |
-| PH-C10 regression/independent pair  | NOT RUN | PH-007 before/after regression PASS; the required independent review pair has not run.                                                                                         |
+| Control                             | Result  | Evidence / limit                                                                                                                                                                             |
+| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PH-C01 complete App gate            | BLOCKED | `tools/check.sh` attempted before each commit; stable Aède v0.6.1 lacks shared crates. Frontend stages PASS; pins/locks unchanged.                                                           |
+| PH-C02 formatting/lint              | PASS    | Prettier and oxlint successful; formatting rechecked after quality records finalized.                                                                                                        |
+| PH-C03 Node/Vitest                  | PASS    | 55 Node tests + 1,334 Vitest tests in 241 files, no skips/failures reported.                                                                                                                 |
+| PH-C04 types/frontend/analysis      | PASS    | Strict App/component TypeScript, App build and standalone analysis build successful.                                                                                                         |
+| PH-C05 Rust workspace/harness       | PASS    | 520 Rust executions: 111 native + 285 core + 80 native-session harness + 30 CD + 14 transfer. FFmpeg required; no ignored cases.                                                             |
+| PH-C06 Rust format/lint/docs        | PASS    | Full workspace format, Clippy all-targets and Rustdoc with warnings denied. Initial native Clippy failure retained, then corrected and rerun.                                                |
+| PH-C07 bridge/generated docs/site   | PASS    | Bridge, 450 TS modules, component types/static build, full workspace Rustdoc, bilingual site/local links (26 pages).                                                                         |
+| PH-C08 fresh advisory assessment    | PASS    | D-PH-07: npm 0 vulnerabilities; Cargo 0 vulnerability matches, 4 raw maintenance notices + GLib in explicit local-source assessment. Open warning disposition remains a closure requirement. |
+| PH-C09 native/MSRV/installer matrix | NOT RUN | Current macOS native tests and linked workspace build PASS. Rust 1.90, Linux/Windows, installers remain unexecuted; this whole matrix is not PASS.                                           |
+| PH-C10 regression/independent pair  | NOT RUN | PH-007 and GLib host before/after regressions PASS; Linux GLib and independent review pair remain pending.                                                                                   |
 
 ### Execution ledger
 
@@ -234,3 +234,54 @@ Repository-root cwd; ignored local evidence under `target/quality/PH-STAB-001/lo
 The bilingual site was regenerated from current Markdown and fresh technical outputs; all 26 pages/local links pass. Final Markdown source links/anchors, Prettier and Git whitespace checks are also verified before committing.
 
 The gate exit 1 is the explicit stable-engine prerequisite above; individual software checks do not clear PH-C01/C09/C10. Campaign verdict remains **FIX AND REVALIDATE**. PH-003/006 remain open, PH-007 still needs independent review; no whole-product security, hardware or release approval claim.
+
+## 10. D-PH-06 — Lot 3 planning, no dependency modification
+
+Base `c36149e23dd9e3d88b781a319c399fa00e985be2`, initially clean. Maintainer requested possible solutions and a plan before changing dependencies. The [proposal](lot-3-plan.md) verifies Tauri/Wry/GTK constraints and exact upstream correction commits. GTK 0.19 / GLib 0.22 now exist but need Rust 1.92 and are rejected by current native-owner constraints; proc-macro-error2 is archived. Recommend separate local GLib pointer and Syn-based macro backports only after approval. No Cargo/npm/source/policy modification or commit.
+
+Fresh `cargo audit --json --file Cargo.lock`: exit 0, zero vulnerability matches, the same five warnings (GLib; proc-macro-error; zbus_names; zvariant; zvariant_derive), RustSec database 84d943a6deeb8cc6c6f632531aaf4f1c62275239. Locked/offline target trees retain both macro owners on Linux and no GLib on the current macOS target. Manifest/lock SHA-256 values were compared before/after and are unchanged. Local evidence: `/private/tmp/phemios-lot3-review/`; no new product tests or Linux/MSRV execution claimed.
+
+Two isolated scanner-only fixtures using the same actual GLib 0.18.5 version show its warning present for registry source, absent for local path. Installed RustSec source confirms non-default-registry packages are skipped. This is a coverage gap to address in the proposed local-source advisory inventory, not a product fix or reason to hide an alert. No actual lockfile was rewritten for the diagnostic; every current warning stays visible. Source-plan formatting, links and whitespace are checked separately. Campaign recommendation remains FIX AND REVALIDATE; the stable-engine preparation blocker and missing Linux/minimum/native acceptance are unchanged.
+
+## 11. D-PH-07 — GLib 0.18 soundness backport
+
+Base `c36149e23dd9e3d88b781a319c399fa00e985be2` plus preserved D-PH-06 planning documentation. The maintainer explicitly authorizes implementing/testing/checking/committing Lot 3a only. Published GLib 0.18.5 archive checksum was verified before import; all 121 upstream files remain, and only two pointer lines in src/variant_iter.rs change. The lock diff removes the registry source/checksum from GLib and adds one Linux-dev-only regression package; all other package blocks are byte-identical. Product dependency declarations, npm lockfile and Aède pin are unchanged. GLib macro and D-Bus migrations remain outside this lot.
+
+The unmodified library passes eight debug cases, then genuinely crashes with SIGSEGV in release/LTO at the forward-string iteration regression (Cargo exit 101). The exact upstream two-line correction makes all eight pass in release. The final optional macOS host runner imports the same tests and vendored source: eight pass in debug and eight in release. Permanent regressions are Linux-only and do not add an SDK dependency to Mac/Windows workspace checks. No Linux execution is claimed. Upstream inline tests/source formatting remain unchanged, with the existing 34 host compiler lifetime-syntax warnings retained; no broad lint suppression. See [Lot 3a validation](lot-3a-validation.md) for exact pending Linux/minimum/UI work.
+
+Source checks verify every imported byte, patch digest and effective locked Cargo source. Advisory scans use a private fresh RustSec snapshot for normal registry and explicit vendored upstream identities. Four raw maintenance notices plus GLib RUSTSEC-2024-0429 with “upstream fix backported; Linux validation pending” remain visible: no ignore/allowlist, fake fixed version or feature removal. New source advisory/disposition/integrity mismatches fail their controls. The credits regression first fails because local GLib disappears, then passes after the existing reader retains reviewed local packages; the original MIT license is also distributed.
+
+Current macOS checks: **520 workspace Rust executions preserved**, **eight additional GLib cases through the separate host harness in each debug/release profile**, **1,334 Vitest + 55 Node**. Workspace format/Clippy all-targets/Rustdoc with warnings denied and native linked build pass. Full-gate frontend format/lint, offline provenance, tests, App/analysis builds, TS contracts, component types/static output and bridge pass. The required `bash tools/check.sh` then exits 1 at engine preparation because official stable Aède v0.6.1 / 9f1d9a066a0d90600174130e19637e7f84f3514a lacks shared crates; manifests/locks stay unchanged during that attempt. No full-gate PASS, rebuilt coherent engine, installer, Windows/Linux, minimum-toolchain or independent closure claim.
+
+### Lot 3a execution ledger
+
+Repo-root cwd, existing sidecar, PHEMIOS_REQUIRE_FFMPEG=1, CARGO_INCREMENTAL=0, RUSTDOCFLAGS=-D warnings for workspace checks; locked/offline Cargo. Timestamped actual command exits and sanitized log digests live under ignored target/quality/PH-STAB-001/lot-3a/. Preliminary results are retained, including the first fail-closed audit wrapper's fetched/no-fetch metadata mismatch before the private-snapshot correction. No partial result substitutes for a final check.
+
+| Check        | Command                                                                                                                    | Exit | Sanitized log SHA-256                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------ |
+| tests        | `cargo test --workspace --locked --offline`                                                                                | 0    | `1eeb4afdebe76fc4032f518ecb35ce7889281793599948e4c0dbfe8b4021b63f` |
+| format-rust  | `cargo fmt --all -- --check`                                                                                               | 0    | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| clippy       | `cargo clippy --workspace --all-targets --locked --offline -- -D warnings`                                                 | 0    | `0acaedcb15d1aba42d2027d3b7079216bea7d24263b531794089f8dad198b468` |
+| rustdoc      | `cargo doc --workspace --no-deps --locked --offline`                                                                       | 0    | `42a1172e93440a45d2d3a172ec8ea7f57b1ffed6707c284eb4949183b3c69905` |
+| native-build | `cargo build --workspace --locked --offline`                                                                               | 0    | `24ea42552922af3b8630c4d2524e3aa631f73df1ec92f565799e41d5727a1ac1` |
+| host-debug   | `node scripts/glib-regression.mjs`                                                                                         | 0    | `15c1a65a7d070a480646d979f356c41c1ba11ccb4bef18ad92f617c026560fc3` |
+| host-release | `node scripts/glib-regression.mjs --release`                                                                               | 0    | `c7acf6b0045be99c48a201109d045e24380f1915520b1ce15aefa90b9dd2429d` |
+| cargo-audit  | `cargo audit --json --file Cargo.lock`                                                                                     | 0    | `ffa190b1dd35ceee729d6c3a7234254e3592f0c8dc6f77eb6a2edaae1d1d4135` |
+| vendor-audit | `npm run audit:dependencies`                                                                                               | 0    | `1017553840d36c258c8b9461d4452c8d513e1d99082a72aea83df967eb0590c2` |
+| npm-audit    | `npm audit --json --audit-level=low`                                                                                       | 0    | `38a76f6a733e83cdd8ac8c395294119a829620692b2b038c6210a3178283884f` |
+| npm-tree     | `npm ls storybook @storybook/addon-docs @storybook/builder-vite @storybook/react-dom-shim dompurify react react-dom --all` | 0    | `f732456df16384cd5e0c6efa564127507c9e6c497eda27fd5e4c0187e2c34bbf` |
+| commit-gate  | `bash tools/check.sh`                                                                                                      | 1    | `c72d6fec2cb37d5166edd901cc1199800a99199e319420c5b4063f49e2d54473` |
+| site-build   | `node scripts/build-site.mjs --reuse-technical`                                                                            | 0    | `fe910e8fff2c9e616898811ba0f0b525864dd6872286b9686cada51adb667c05` |
+| site-check   | `node scripts/check-site.mjs dist-site`                                                                                    | 0    | `eaded947d2e59ec1ad54389913820301652914826b479aa43757fe29f7582721` |
+
+All 26 bilingual site pages/local links pass with fresh technical outputs. Final authored Markdown links/anchors, offline source checks, Prettier and Git whitespace are checked before the commit.
+
+Original optimized failure log SHA-256: `25ae3f5ba05ff2ca49e5bddd0c35e872edc328e38e5702d2b559c3069379da65` (SIGSEGV, Cargo exit 101); corrected original release run SHA-256: `9485692e2a5e1bfcce0a8a0d7331092d0425b478b6e02e09a5dca643881bcd81`. Source-only hash comparison against the verified archive changes exactly src/variant_iter.rs.
+
+Verdict remains **FIX AND REVALIDATE**: PH-003 source-corrected pending Linux/independent validation; PH-006 maintenance remains open and PH-007 still needs independent review. Lot 3b is unimplemented. This authorized commit is not release approval.
+
+### Lot 3a final staged-source review
+
+The initial pre-staging `git diff --check` covered tracked authored changes and passed. After adding the original third-party files, `git diff --cached --check` reported three expected preservation diagnostics: original GLib LICENSE and its identical distributed copy retain an upstream final blank line; the valid unified patch retains a space-prefixed blank context line. These were visible and retained without a Git whitespace exemption. They do not change the source-only two-line correction, but the earlier authored check must not be read as an entirely clean import whitespace result. No runtime/test/dependency change follows this evidence clarification. The mandatory full gate is attempted again before amending this same task commit.
+
+Pre-amend gate: `bash tools/check.sh`, 2026-10-23T19:34:50.039008+00:00, exit 1 at the same official stable-engine shared-crates prerequisite after frontend/provenance checks pass. Dependency fingerprints unchanged; sanitized log SHA-256 `9bf0960d91c88646035dd099cc421a8c50ca806e8f44a9564267f38a6f90fc0e`, evidence `target/quality/PH-STAB-001/lot-3a/amend/commit-gate.{log,json}`. Authored documentation is formatted and rechecked before the amended commit.

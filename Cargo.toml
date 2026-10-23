@@ -1,6 +1,7 @@
 [workspace]
-members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer"]
+members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer", "crates/phemios-glib-regression"]
 resolver = "2"
+exclude = ["vendor/glib"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
@@ -15,3 +16,7 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+[patch.crates-io]
+# GLib 0.18 API with the upstream VariantStrIter soundness correction.
+glib = { path = "vendor/glib" }

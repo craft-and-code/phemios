@@ -8,4 +8,5 @@ export function dependencyCredits(root?: string): DependencyCredit[];
 export function lockedCredits(
   npm: { packages?: Record<string, { name?: string; version?: string; dev?: boolean }> },
   cargo: string,
+  local?: { name: string; version: string }[],
 ): DependencyCredit[];

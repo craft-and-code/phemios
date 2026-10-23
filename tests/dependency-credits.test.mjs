@@ -24,3 +24,8 @@ test("the application inventories its real lockfiles without launching an engine
   assert.ok(rows.some((r) => r.name === "solid-js" && r.version === "1.9.17"));
   assert.ok(rows.some((r) => r.name === "rustls"));
 });
+
+test("the reviewed local GLib source remains in third-party credits", () => {
+  const rows = dependencyCredits();
+  assert.equal(rows.filter((r) => r.name === "glib" && r.version === "0.18.5").length, 1);
+});

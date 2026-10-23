@@ -17,7 +17,7 @@ Initial discovery reproduced no destructive transfer. The authorized follow-up n
 | ------ | ------------------------------------------------ | ------------------------------ | -------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
 | PH-001 | Dependency advisory correction                   | High (historical)              | HIGH version/audit evidence                  | VERIFIED          | TLS verifier/root packages patched; both matches removed           |
 | PH-002 | Dependency advisory correction                   | High (historical provisional)  | HIGH version/audit evidence                  | VERIFIED          | Tokio 1.53.3 removes the targeted unsoundness match                |
-| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | TO CONFIRM        | GLib 0.18.5 has the VariantStrIter unsoundness warning             |
+| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | FIXED — TO VERIFY | GLib pointer fix backported; Linux validation pending              |
 | PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | DOMPurify 3.4.17 removes all three package matches                 |
 | PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches        |
 | PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Four unmaintained Rust packages remain visible; PEM branch removed |
@@ -61,7 +61,7 @@ Original records retain their discovery candidate/locations; D-PH-04 records cur
 
 ### PH-003 — GLib 0.18.5 has the VariantStrIter unsoundness warning
 
-- Kind/status: Dependency match / Linux reachability hypothesis; `TO CONFIRM`.
+- Kind/status: Dependency match / Linux reachability hypothesis; `FIXED — TO VERIFY`.
 - Severity/confidence: High (provisional); HIGH match; LOW affected-call reachability.
 - Locations: `Cargo.lock:1651`; Linux GTK3/native WebView dependency graph.
 - Trigger and expected/actual behavior: The affected VariantStrIter iterator is used, especially in optimized code. Expected: valid C-string/output-pointer handling. Actual established fact: GLib 0.18.5 matches RUSTSEC-2024-0429; affected iterator use in the Phémios Linux host is not demonstrated.
@@ -69,6 +69,8 @@ Original records retain their discovery candidate/locations; D-PH-04 records cur
 - Evidence and limits: PH-C08 unsoundness warning; the reviewed run is macOS arm64. A compatible GTK3 dependency solution and Linux optimized reproduction remain unverified.
 - Sources: [RustSec GLib advisory](https://rustsec.org/advisories/RUSTSEC-2024-0429.html).
 - Required investigation/correction and validation: Investigate the Tauri/GTK3 constraint and upstream-compatible backport or migration. Do not force GLib 0.20 into the GTK3 graph or add an ignore. Verify on Linux with the actual native graph before disposition.
+
+- D-PH-07 correction: the published 0.18.5 source is locally patched with upstream #1343 only. Actual optimized old-source SIGSEGV and corrected debug/release public-API passes were recorded on macOS; Linux App/optimized/minimum-version and independent acceptance remain pending. Raw cargo-audit skips the local package, so `npm run audit:dependencies` retains this exact advisory as an explicit upstream affected-version/local-backport record. Macro/D-Bus warnings remain unchanged. [Evidence and remaining Linux checks](lot-3a-validation.md).
 
 ### PH-004 — DOMPurify 3.4.16 matches three sanitizer advisories
 
@@ -177,3 +179,7 @@ Current recommendation: `FIX AND REVALIDATE` because GLib/maintenance dispositio
 ### D-PH-05 — Tungstenite revalidation
 
 Lot 1 was committed as f4cedb3. Lot 2 is checked against that base: Tungstenite 0.30.0 / rustls-native-certs 0.8.5 removes rustls-pemfile and RUSTSEC-2025-0134 from the full lock graph. PH-006 remains CONFIRMED for the other four maintenance notices; PH-003 GLib unsoundness remains visible. No ignore/policy exception, source-pin replacement or feature removal. 520 Rust executions, 1,334 Vitest and 46 Node pass; all prior Rust test names retained, three real-socket regressions added, wrong-pin WSS refusal extended. Native build/Clippy/Rustdoc pass. The required full gate reaches the known missing-shared-crates stable-engine blocker with pins/locks unchanged. Exact evidence and unexecuted platform/independent acceptance are in the checklist; no campaign closure or release claim.
+
+### D-PH-07 — GLib soundness backport, Linux acceptance pending
+
+The maintainer authorized implementing/checking/committing Lot 3a. Published GLib 0.18.5 is retained with a verified local upstream pointer correction. Eight real GLib API regressions reproduce the old release-mode SIGSEGV and pass after the fix on macOS. PH-003 is source-corrected pending Linux/native/minimum/independent validation, not whole-product clearance. All four maintenance notices remain unchanged; the GLib upstream advisory is retained in the explicit local-source assessment instead of silently disappearing from cargo-audit. The complete implementation/verification scope is [Lot 3a validation](lot-3a-validation.md). Lot 3b remains unimplemented.

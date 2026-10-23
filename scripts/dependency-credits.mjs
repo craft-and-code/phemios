@@ -5,10 +5,11 @@ import { fileURLToPath } from "node:url";
 export function dependencyCredits(root = fileURLToPath(new URL("../", import.meta.url))) {
   const npm = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
   const cargo = readFileSync(join(root, "Cargo.lock"), "utf8");
-  return lockedCredits(npm, cargo);
+  const local = JSON.parse(readFileSync(join(root, "vendor/manifest.json"), "utf8"));
+  return lockedCredits(npm, cargo, local.packages);
 }
 /** Runtime npm packages and third-party Cargo lock entries; optional platform crates remain explicit. */
-export function lockedCredits(npm, cargo) {
+export function lockedCredits(npm, cargo, local = []) {
   const found = new Map();
   for (const [location, item] of Object.entries(npm.packages ?? {})) {
     if (!location || item.dev || !item.version) continue;
@@ -25,7 +26,8 @@ export function lockedCredits(npm, cargo) {
     const field = (name) => block.match(new RegExp(`^${name} = "([^"\\n]+)"`, "m"))?.[1];
     const name = field("name"),
       version = field("version");
-    if (!field("source") || !name || !version) continue;
+    const reviewedLocal = local.some((p) => p.name === name && p.version === version);
+    if ((!field("source") && !reviewedLocal) || !name || !version) continue;
     found.set(`cargo:${name}:${version}`, {
       name,
       version,
