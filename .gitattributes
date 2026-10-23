@@ -1,0 +1,6 @@
+# Preserve the published LF/CRLF bytes covered by vendor/manifest.json.
+vendor/** -text
+public/licenses/glib.txt -text
+public/licenses/glib-macros.txt -text
+public/licenses/gtk3-macros.txt -text
+public/licenses/keepawake.txt -text

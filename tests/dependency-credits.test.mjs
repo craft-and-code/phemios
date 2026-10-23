@@ -39,3 +39,8 @@ test("both reviewed local macro packages retain third-party credits", () => {
     assert.equal(rows.filter((row) => row.name === name && row.version === version).length, 1);
   }
 });
+
+test("the reviewed keepawake migration retains its original third-party credit", () => {
+  const rows = dependencyCredits();
+  assert.equal(rows.filter((row) => row.name === "keepawake" && row.version === "0.6.1").length, 1);
+});

@@ -150,3 +150,22 @@ test("both assessments use one private database despite no-fetch omitting revisi
     assert.ok(!calls[0].includes("--no-fetch"));
     assert.ok(calls[1].includes("--no-fetch"));
   }));
+
+test("a local migration records its actual base revision instead of inventing an upstream fix", async () =>
+  fixture(async ({ root, inventory, metadata }) => {
+    const item = inventory.packages[0];
+    item.upstreamRevision = "c".repeat(40);
+    const patch = item.patches[0];
+    delete patch.upstreamCommit;
+    patch.baseRevision = item.upstreamRevision;
+    patch.reason = "Reviewed local migration; no upstream fix commit exists.";
+    await verifyVendoredSources(root, inventory, metadata);
+    patch.baseRevision = "d".repeat(40);
+    await assert.rejects(verifyVendoredSources(root, inventory, metadata), /patch changed/);
+    patch.baseRevision = item.upstreamRevision;
+    patch.upstreamCommit = "b".repeat(40);
+    await assert.rejects(verifyVendoredSources(root, inventory, metadata), /patch changed/);
+    delete patch.upstreamCommit;
+    patch.reason = "";
+    await assert.rejects(verifyVendoredSources(root, inventory, metadata), /patch changed/);
+  }));

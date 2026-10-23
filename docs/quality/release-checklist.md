@@ -20,20 +20,20 @@
 
 ## 2. Automated controls
 
-These current controls incorporate D-PH-08; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
+These current controls incorporate D-PH-10; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
 
-| Control                             | Result  | Evidence / limit                                                                                                                                                                                   |
-| ----------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PH-C01 complete App gate            | BLOCKED | `tools/check.sh` attempted before each commit; stable Aède v0.6.1 lacks shared crates. Frontend stages PASS; pins/locks unchanged.                                                                 |
-| PH-C02 formatting/lint              | PASS    | Prettier and oxlint successful; formatting rechecked after quality records finalized.                                                                                                              |
-| PH-C03 Node/Vitest                  | PASS    | 55 Node tests + 1,334 Vitest tests in 241 files, no skips/failures reported.                                                                                                                       |
-| PH-C04 types/frontend/analysis      | PASS    | Strict App/component TypeScript, App build and standalone analysis build successful.                                                                                                               |
-| PH-C05 Rust workspace/harness       | PASS    | 520 Rust executions: 111 native + 285 core + 80 native-session harness + 30 CD + 14 transfer. FFmpeg required; no ignored cases.                                                                   |
-| PH-C06 Rust format/lint/docs        | PASS    | Full workspace format, Clippy all-targets and Rustdoc with warnings denied. Initial native Clippy failure retained, then corrected and rerun.                                                      |
-| PH-C07 bridge/generated docs/site   | PASS    | Bridge, 450 TS modules, component types/static build, full workspace Rustdoc, bilingual site/local links (26 pages).                                                                               |
-| PH-C08 fresh advisory assessment    | PASS    | D-PH-08: npm 0 vulnerabilities; Cargo 0 vulnerability matches, 3 raw D-Bus maintenance notices + GLib in explicit local-source assessment. Open warning disposition remains a closure requirement. |
-| PH-C09 native/MSRV/installer matrix | NOT RUN | Current macOS native tests and linked workspace build PASS. Rust 1.90, Linux/Windows, installers remain unexecuted; this whole matrix is not PASS.                                                 |
-| PH-C10 regression/independent pair  | NOT RUN | PH-007 and GLib host before/after regressions PASS; Linux GLib and independent review pair remain pending.                                                                                         |
+| Control                             | Result  | Evidence / limit                                                                                                                                                                        |
+| ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PH-C01 complete App gate            | BLOCKED | `tools/check.sh` attempted before each commit; stable Aède v0.6.1 lacks shared crates. Frontend stages PASS; pins/locks unchanged.                                                      |
+| PH-C02 formatting/lint              | PASS    | Prettier and oxlint successful; formatting rechecked after quality records finalized.                                                                                                   |
+| PH-C03 Node/Vitest                  | PASS    | 60 Node tests + 1,334 Vitest tests in 241 files, no skips/failures reported.                                                                                                            |
+| PH-C04 types/frontend/analysis      | PASS    | Strict App/component TypeScript, App build and standalone analysis build successful.                                                                                                    |
+| PH-C05 Rust workspace/harness       | PASS    | 520 Rust executions: 111 native + 285 core + 80 native-session harness + 30 CD + 14 transfer. FFmpeg required; no ignored cases.                                                        |
+| PH-C06 Rust format/lint/docs        | PASS    | Full workspace format, Clippy all-targets and Rustdoc with warnings denied. Initial native Clippy failure retained, then corrected and rerun.                                           |
+| PH-C07 bridge/generated docs/site   | PASS    | Bridge, 450 TS modules, component types/static build, full workspace Rustdoc, bilingual site/local links (26 pages).                                                                    |
+| PH-C08 fresh advisory assessment    | PASS    | D-PH-10: npm 0 vulnerabilities; raw Cargo 0 matches/notices; GLib remains explicit in the supplemental local-source assessment. Open warning disposition remains a closure requirement. |
+| PH-C09 native/MSRV/installer matrix | NOT RUN | Current macOS native tests and linked workspace build PASS. Rust 1.90, Linux/Windows, installers remain unexecuted; this whole matrix is not PASS.                                      |
+| PH-C10 regression/independent pair  | NOT RUN | PH-007, GLib and keepawake host before/after cases PASS; Linux native/desktop and independent review remain pending.                                                                    |
 
 ### Execution ledger
 
@@ -324,3 +324,47 @@ Separate host evidence (complete PASS output; unchanged upstream warning message
 The separately executed locked workspace checks preserve 520 Rust cases. The full gate passes its frontend steps, including 1,334 Vitest / 57 Node cases. All 26 bilingual site pages/local links pass. Macro tests do not substitute for Linux GTK/native acceptance. Verdict remains **FIX AND REVALIDATE**; no new ignore, feature removal, release approval or push.
 
 The final staged whitespace inspection reports preserved upstream LICENSE final blank lines (including identical distributed copies), an unchanged upstream documentation blank line with spaces, and unified-patch context lines with their required leading space. Original source bytes are verified against the archive; no Git whitespace exemption or unrelated cleanup is added. Authored source/documentation passes the whitespace check; the whole imported patch is not described as whitespace-clean.
+
+## 13. D-PH-09 — Lot 4 planning only
+
+Clean base 8eedcbe, the separately authorized Lot 3b commit. The [Lot 4 proposal](lot-4-plan.md) checks published keepawake 0.6.1 and zbus 6.1.0 metadata, upstream Linux/runtime migration sources and the locked all-target reverse tree. No compatible published keepawake update is established. The proposed scoped Linux port requires new private-bus lifetime/failure tests and real Linux/native/minimum-toolchain acceptance. No migration implementation, Cargo/npm/source-pin/feature/advisory-policy change or new test result is claimed by this planning phase. Dependency fingerprints remain unchanged; every current warning remains visible.
+
+## 14. D-PH-10 — Linux keepawake migration
+
+Base 8eedcbe plus the preserved D-PH-09 plan. The maintainer explicitly authorizes source/dependency migration, tests/checks, visible advisories, pending Linux acceptance and final commit. The [validation](lot-4-validation.md) records the exact 21-file source import, two changed files, patch replay, retained Windows/num_enum resolutions, required existing-Tokio edges and fourteen actual Linux-module cases on private Unix buses. All other original source/test behavior is preserved. No ignore/allowlist, Linux inhibition removal, published fork, push or release.
+
+The first workspace test run fails an unchanged JamBase configuration projection case with a busy budget; isolated retry passes. That failure and the initial graph/checks remain in target/quality/PH-STAB-001/lot-4/initial/. No JamBase source/test is changed or ignored and no root cause/permanent fix is claimed. The final full suite result is reported below. Fresh raw audit has no vulnerability/maintenance matches; the supplemental inventory retains GLib RUSTSEC-2024-0429 with its local-fix/Linux-pending disposition, and also scans local keepawake. Linux package/App/desktop/logind, Rust 1.90, Windows and independent acceptance remain pending. Verdict stays **FIX AND REVALIDATE**.
+
+### Lot 4 execution ledger
+
+Actual final commands, exits and sanitized digests follow. Repository-root cwd; Rust 1.99/macOS arm64, required FFmpeg/FFprobe and existing sidecar. Logs remain ignored local evidence under target/quality/PH-STAB-001/lot-4/.
+
+| Check        | Actual command                                                                                                             | Exit | Sanitized log SHA-256                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------ |
+| tests        | `cargo test --workspace --locked --offline`                                                                                | 0    | `40d15f50df20db30ab95f44572e612b4a42b3beb7a7b63815b6571fd956cea89` |
+| format-rust  | `cargo fmt --all -- --check`                                                                                               | 0    | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| clippy       | `cargo clippy --workspace --all-targets --locked --offline -- -D warnings`                                                 | 0    | `339e049216e65f6621a2767ebd3201ebc4d972d01ab0e7a61d9c6280ac7d15ee` |
+| rustdoc      | `cargo doc --workspace --no-deps --locked --offline`                                                                       | 0    | `d20d0e7b81d7b23353219777ec644180eeabedcf2cf48f2f8e780cb1b6c32beb` |
+| native-build | `cargo build --workspace --locked --offline`                                                                               | 0    | `894555e2cec978fdea6c07e88aa8e91fb06898d948283720176f2bbaa7cfbde0` |
+| cargo-audit  | `cargo audit --json --file Cargo.lock`                                                                                     | 0    | `f812a1091986d650023ba8c5d6e6721af0f9e541a915f75c750df7f2f9cbcbeb` |
+| vendor-audit | `npm run audit:dependencies`                                                                                               | 0    | `978d1c640c6471273878138d08735768d9cb4b1bf5905468ca45509123bc9c1e` |
+| npm-audit    | `npm audit --json --audit-level=low`                                                                                       | 0    | `38a76f6a733e83cdd8ac8c395294119a829620692b2b038c6210a3178283884f` |
+| npm-tree     | `npm ls storybook @storybook/addon-docs @storybook/builder-vite @storybook/react-dom-shim dompurify react react-dom --all` | 0    | `f732456df16384cd5e0c6efa564127507c9e6c497eda27fd5e4c0187e2c34bbf` |
+| site-build   | `node scripts/build-site.mjs --reuse-technical`                                                                            | 0    | `fe910e8fff2c9e616898811ba0f0b525864dd6872286b9686cada51adb667c05` |
+| site-check   | `node scripts/check-site.mjs dist-site`                                                                                    | 0    | `eaded947d2e59ec1ad54389913820301652914826b479aa43757fe29f7582721` |
+| commit-gate  | `bash tools/check.sh`                                                                                                      | 1    | `9e51ea3655860786cd2581811182e292fc86a6b618adf202b5f4c9167600dd39` |
+
+The final full workspace run preserves all **520 Rust cases**, with no ignored tests. The gate passes all frontend/provenance stages, including **1,334 Vitest cases in 241 files and 60 Node cases**, App/analysis/type/component/bridge/docs checks. It then exits 1 at the official stable Aède v0.6.1 / 9f1d9a066a0d90600174130e19637e7f84f3514a missing-shared-crates prerequisite, without changing dependencies. Separate locked Rust format/Clippy/Rustdoc/linked build and all 26 site pages/local links pass. This is not a full-gate PASS or Linux/installer acceptance.
+
+| Separate evidence | Result                                                                                                                  | Sanitized log SHA-256                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| before            | Old actual Linux module: UnInhibit refusal panics; regression fails, Cargo exit 101                                     | `f6aab3bfc68a07ebe3ac0156cf0ef265af3e4c196887b9403ed2a8c3399b2d6f` |
+| host-final        | Client-only feature compilation plus all-target Clippy with warnings denied and 14 private-bus actual-module cases PASS | `3612d5d596badab9fd8aaf966db28fde31fd363259380b28938574186a5e4ccb` |
+| concert-retry     | Unchanged isolated JamBase case PASS after retained initial failure                                                     | `5aaed2b0194239be46223c7e869bc642948f074aa10f42a9a17bb1a867cc76cb` |
+| provenance-before | New local-migration provenance test fails before source-check adaptation                                                | `b6864603ddabdfcfdcd96706e2873c708aabc7c6b205886024d6b5a935d08f73` |
+
+Exact patch replay against a newly extracted verified archive reproduces all 21 current source hashes. Added registry packages declare Rust 1.89 (zbus/macros/utils) or 1.88 (zruntime) and MIT licenses; the local keepawake manifest declares 1.89. Actual minimum-toolchain execution is still pending. The final graph changes only the keepawake and required Tokio edges among common retained package blocks; all unrelated Windows/num_enum resolutions remain valid and unchanged. No Cargo/npm exception or unrelated application fix.
+
+The explicit `cargo run -p phemios --example display_awake_probe --locked --offline` exits 0: macOS process assertions are acquired and released with the actual local source package. Sanitized log SHA-256 `3579bff4a1e50fd56c6b08fcc4b9cc9cc3997a8043e108f4d06813509ebe632a`. This is assertion-level host acceptance, not screen-saver timer/Linux/Windows acceptance. Git attributes retain the published LF/CRLF source/license bytes across checkouts without a whitespace exemption.
+
+Final staged-blob verification covers every file in all four vendor inventories and matches the recorded SHA-256 exactly. Full staged whitespace diagnostics are retained: they are confined to original published CRLF files, the identical keepawake license copy, and exact unified-patch/context bytes. Authored files, including the rewritten Linux module, pass their whitespace inspection. No source normalization, Git whitespace exemption or advisory suppression is applied.

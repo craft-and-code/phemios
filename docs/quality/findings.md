@@ -11,17 +11,17 @@
 
 ## Findings summary
 
-Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; D-PH-05 removes rustls-pemfile through Tungstenite. D-PH-08 removes proc-macro-error from both owners; three D-Bus maintenance notices plus the supplemental GLib record remain visible.
+Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; D-PH-05 removes rustls-pemfile through Tungstenite. D-PH-08 removes proc-macro-error from both owners; D-PH-10 removes the three retired D-Bus packages through the reviewed keepawake Linux migration. GLib remains explicit in the supplemental source assessment; Linux/independent acceptance is pending.
 
-| ID     | Kind                                             | Severity                       | Confidence                                   | Status            | Summary                                                            |
-| ------ | ------------------------------------------------ | ------------------------------ | -------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
-| PH-001 | Dependency advisory correction                   | High (historical)              | HIGH version/audit evidence                  | VERIFIED          | TLS verifier/root packages patched; both matches removed           |
-| PH-002 | Dependency advisory correction                   | High (historical provisional)  | HIGH version/audit evidence                  | VERIFIED          | Tokio 1.53.3 removes the targeted unsoundness match                |
-| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | FIXED — TO VERIFY | GLib pointer fix backported; Linux validation pending              |
-| PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | DOMPurify 3.4.17 removes all three package matches                 |
-| PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches        |
-| PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Three D-Bus maintenance notices remain; PEM/macro branches removed |
-| PH-007 | Conditional transfer data-integrity defect       | High                           | HIGH regression before/after                 | FIXED — TO VERIFY | Retained root admission implemented; independent review pending    |
+| ID     | Kind                                             | Severity                       | Confidence                                 | Status            | Summary                                                         |
+| ------ | ------------------------------------------------ | ------------------------------ | ------------------------------------------ | ----------------- | --------------------------------------------------------------- |
+| PH-001 | Dependency advisory correction                   | High (historical)              | HIGH version/audit evidence                | VERIFIED          | TLS verifier/root packages patched; both matches removed        |
+| PH-002 | Dependency advisory correction                   | High (historical provisional)  | HIGH version/audit evidence                | VERIFIED          | Tokio 1.53.3 removes the targeted unsoundness match             |
+| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability | FIXED — TO VERIFY | GLib pointer fix backported; Linux validation pending           |
+| PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                | VERIFIED          | DOMPurify 3.4.17 removes all three package matches              |
+| PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches     |
+| PH-006 | Maintenance correction                           | Medium (historical)            | HIGH graph/host evidence; Linux pending    | FIXED — TO VERIFY | Retired packages removed; local Linux port awaits acceptance    |
+| PH-007 | Conditional transfer data-integrity defect       | High                           | HIGH regression before/after               | FIXED — TO VERIFY | Retained root admission implemented; independent review pending |
 
 ## Required detailed record fields
 
@@ -98,16 +98,15 @@ Original records retain their discovery candidate/locations; D-PH-04 records cur
 
 - D-PH-04 correction evidence: the accepted patched versions are installed/locked; the targeted advisory IDs no longer match in fresh full audits. Existing TLS/editor/native/tooling suites pass. No ignore/override or broader security certification. See the current execution ledger; historical trigger and severity above are retained.
 
-### PH-006 — Three D-Bus maintenance notices remain
+### PH-006 — Retired maintenance branches removed, Linux port pending acceptance
 
-- Kind/status: Maintenance risk; `CONFIRMED` for three remaining D-Bus packages. The rustls-pemfile subcase is corrected and verified by the D-PH-05 graph/audit; the combined record remains open.
-- Severity/confidence: Medium; HIGH inventory; runtime consequence unproven.
-- Historical discovery: proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1 were all reported. The original RUSTSEC-2025-0134 evidence is retained in the earlier ledgers.
-- Current locations: Cargo.lock zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1; RUSTSEC-2026-0371, RUSTSEC-2026-0370 and RUSTSEC-2026-0372. D-PH-05 removes rustls-pemfile; D-PH-08 removes proc-macro-error/proc-macro-error-attr from both macro owners. See [Lot 3b validation](lot-3b-validation.md).
-- Trigger/expected/actual: a future upstream defect/platform change needs maintained support; three resolved D-Bus versions remain unmaintained. These are maintenance warnings, not demonstrated vulnerabilities.
-- Impact/evidence: reduced upstream maintenance of GTK macro and Linux D-Bus dependencies. Current all-target reverse trees retain keepawake’s Linux branch; both reviewed macro owners now use Syn diagnostics. No runtime consequence established; no policy/ignore or feature removal.
-- Verification: fresh full Cargo/npm audits, locked metadata, real socket/TLS regressions and existing suites/builds. Git sources, prebuilt engine and system dependencies are not comprehensively audited by lockfile matching. See D-PH-05 for exits/counts and missing acceptance.
-- Remaining correction: assess keepawake/zbus migration in Lot 4 before changing dependencies; Linux macro/GLib integration and independent acceptance remain pending.
+- Kind/status: maintenance correction; `FIXED — TO VERIFY`. Package removal is established; the local Linux backend still requires actual Linux/independent acceptance.
+- Severity/confidence: historical Medium; HIGH resolved-graph/Unix protocol evidence, no physical Linux acceptance.
+- Historical discovery: proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1. Original advisory evidence remains in the earlier ledgers.
+- Correction/locations: D-PH-05 removes rustls-pemfile; D-PH-08 removes both macro-error owners. D-PH-10 selects vendor/keepawake/src/sys/linux.rs with zbus 6.1.0; all three retired D-Bus package blocks disappear from Cargo.lock. See [Lot 4 validation](lot-4-validation.md).
+- Trigger/expected/actual: the standalone crates are no longer maintained. Their APIs move into zbus 6 rather than being renamed or ignored. The former synchronous API is explicitly adapted with bounded private runtime/cleanup and unchanged inhibition semantics.
+- Evidence: checksum-verified published source, exact patch replay, locked all-target sole-owner graph and fresh full/supplemental audits. An old UnInhibit refusal panics in Drop; the corrected actual module passes fourteen private-bus cases on macOS and all-target Clippy with warnings denied. Tests do not contact the workstation buses. No current unmaintained-package warning matches, but local-source maintenance remains an obligation.
+- Remaining verification: actual Linux package/native App/desktop/logind/service restart/timer checks, Rust 1.90, Windows and independent review. GLib's separate RUSTSEC-2024-0429 record remains explicit and open; do not infer whole-product audit clearance.
 
 ### PH-007 — Returning watched root permits overwrite after preview
 
@@ -187,3 +186,11 @@ The maintainer authorized implementing/checking/committing Lot 3a. Published GLi
 ### D-PH-08 — Macro diagnostic ports, Linux acceptance pending
 
 Same coordinator context, not independent acceptance. Both published 0.18 macro sources are checksum-inventoried and ported to Syn diagnostics. The old malformed-flags macro panic is reproduced before correction; 25 macro Rust cases (all 21 upstream cases preserved; one additional interface-registration and three GTK cases) and 13 explicit compiler refusals pass afterwards. proc-macro-error/proc-macro-error-attr and unused Syn 1 are removed from the real graph. Three D-Bus notices and the explicit GLib record remain visible; Linux/native/minimum-toolchain acceptance and the separate stable-engine prerequisite remain pending. [Validation](lot-3b-validation.md) and the execution ledger distinguish checks from acceptance.
+
+### D-PH-09 — keepawake/zbus investigation, no dependency change
+
+After clean Lot 3b commit 8eedcbe, the maintainer requests the Lot 4 proposal. Locked all-target tree confirms keepawake 0.6.1 is the sole zbus 5.19.0 owner. Registry/upstream source confirms no published keepawake migration, published zbus 6.1.0 / declared Rust 1.89, and removal of the blocking API used by keepawake. Static inspection identifies an un_inhibit unwrap in Drop and partial-acquisition/runtime/deadline cases requiring Linux tests; no native crash or migrated backend execution is claimed. PH-006's three notices remain open and GLib's supplemental warning remains visible. [Options and implementation/acceptance plan](lot-4-plan.md). Only quality documentation changes in this phase.
+
+### D-PH-10 — Linux keepawake migration, acceptance pending
+
+The maintainer authorizes the source port, tests, checks and final commit. Local keepawake 0.6.1 uses zbus 6.1.0 / existing Tokio 1.53.3, with reviewed archive/base-revision provenance and no invented upstream fix. Fourteen private-bus actual-module tests cover lifetimes, partial failures, deadlines and no-panic cleanup after reproducing the old refusal panic. The three notices disappear by real dependency removal; GLib stays explicitly assessed. Mac/Windows source bytes and compatible retained resolutions are preserved. [Validation and remaining Linux work](lot-4-validation.md). No independent or release approval is claimed.

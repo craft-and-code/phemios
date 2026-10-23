@@ -17,3 +17,4 @@ src-tauri/binaries/
 vendor/glib/
 vendor/glib-macros/
 vendor/gtk3-macros/
+vendor/keepawake/

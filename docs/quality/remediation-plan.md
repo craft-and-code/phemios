@@ -94,6 +94,10 @@ Acceptance: actual Linux native graph, optimized affected-iterator cases, native
 
 ### Lot 4 — keepawake's Linux D-Bus migration (PH-006)
 
+D-PH-10 subsequently implements the authorized migration: [Lot 4 validation and remaining acceptance](lot-4-validation.md). The prior D-PH-09 investigation and outline below remain historical.
+
+D-PH-09 investigates this branch after Lot 3b commit 8eedcbe: [detailed Lot 4 proposal](lot-4-plan.md). zbus 6.1.0 is published but removes the blocking API keepawake uses; a Linux source/runtime/lifetime port is required. No dependency modification is authorized by that planning request. The earlier outline below is retained.
+
 Actual branch: `keepawake 0.6.1 → zbus 5.19.0 → zvariant 5.15.1 / zbus_names 4.3.5 / zvariant_derive 5.15.1`. The three notices describe standalone crates folded into zbus 6. keepawake **0.6.1 remains the current registry stable release** at this lookup, so a simple released patch update is not established.
 
 Prefer a keepawake upstream release migrating its Linux backend to zbus 6. If none exists when implementing, review a small upstreamable/pinned fork rather than adding a parallel zbus dependency to Phémios; a second direct zbus 6 would leave keepawake's old branch intact. Preserve Windows/macOS behavior and existing Linux display/system inhibition semantics; do not remove keepawake or disable Linux inhibition just to silence audit.

@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: D-PH-08 authorizes implementing/checking/committing Lot 3b at both macro owners, retaining every other alert. Published-source ports, targeted lock pruning, tests/provenance/credits and documentation only; no keepawake/zbus modification, push or release. Lot 4 investigation is separately authorized; Linux acceptance remains pending.
+- Current phase: D-PH-10 authorizes Lot 4 Linux keepawake/zbus 6.1.0 implementation, tests, available checks and final commit after the D-PH-09 plan. Local source/provenance/credits, targeted lock/runtime/test/tooling/doc changes only. Retain every other advisory; no suppression, push, release or published fork. Actual Linux/native/minimum-toolchain acceptance remains pending.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -110,3 +110,11 @@ Lot 3a implementation, tests, possible checks and a final commit are explicitly 
 ## D-PH-08 — Authorized macro diagnostic backports
 
 The maintainer authorizes Lot 3b implementation, tests, available checks and a final commit, preserving other warnings. [Validation](lot-3b-validation.md) records exact published-source ports, preserved upstream suites, new diagnostic regressions and remaining Linux/native/minimum-toolchain acceptance. The later Lot 4 request permits investigation and a plan before modifying those dependencies; this lot leaves keepawake/zbus unchanged.
+
+## D-PH-09 — Lot 4 investigation before dependency modification
+
+The maintainer requests solutions and a plan for keepawake/zbus while retaining other warnings. The [proposal](lot-4-plan.md) confirms the sole Linux owner, current releases, removed blocking APIs, runtime/lifetime implications, cleanup risks, options and test/acceptance requirements. This planning phase changes only quality documentation and starts after the clean Lot 3b commit 8eedcbe. No migration, upstream message, push or release is authorized.
+
+## D-PH-10 — Authorized Linux keepawake migration
+
+The maintainer explicitly approves implementing zbus 6.1.0 in keepawake's Linux backend, adding tests, running available checks, retaining other alerts, naming pending Linux acceptance and committing. [Validation](lot-4-validation.md) records exact published-source provenance, scoped graph changes, old-source release panic, fourteen actual-module/private-bus cases and acceptance limits. No upstream publication/message, push or release is authorized.

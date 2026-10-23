@@ -4,6 +4,9 @@ cd "$(dirname "$0")/.."
 npm run format:check
 npm run lint
 npm run check:vendor
+if [[ "$(uname -s)" == Linux ]]; then
+    node scripts/keepawake-regression.mjs --fetch
+fi
 npm test
 npm run build
 npm run analysis:build

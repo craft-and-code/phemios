@@ -77,12 +77,23 @@ export async function verifyVendoredSources(root, inventory, metadata) {
       Object.keys(actual).some((file) => !item.upstreamFiles[file])
     )
       throw Error(`Incomplete upstream provenance: ${key}`);
-    for (const patch of item.patches)
+    for (const patch of item.patches) {
+      const upstream =
+        /^[a-f0-9]{40}$/.test(patch.upstreamCommit) &&
+        patch.baseRevision === undefined &&
+        patch.reason === undefined;
+      const local =
+        patch.upstreamCommit === undefined &&
+        /^[a-f0-9]{40}$/.test(patch.baseRevision) &&
+        patch.baseRevision === item.upstreamRevision &&
+        typeof patch.reason === "string" &&
+        patch.reason.trim().length > 0;
       if (
-        !/^[a-f0-9]{40}$/.test(patch.upstreamCommit) ||
+        (!upstream && !local) ||
         digest(await readFile(confined(root, patch.path))) !== patch.sha256
       )
-        throw Error(`Backport patch changed: ${key}`);
+        throw Error(`Reviewed patch changed: ${key}`);
+    }
     for (const advisory of item.advisories)
       if (!/^RUSTSEC-\d{4}-\d{4}$/.test(advisory.id) || !advisory.localStatus || !advisory.evidence)
         throw Error(`Unreviewed advisory disposition: ${key}`);

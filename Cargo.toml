@@ -1,7 +1,7 @@
 [workspace]
 members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer", "crates/phemios-glib-regression"]
 resolver = "2"
-exclude = ["vendor/glib", "vendor/glib-macros", "vendor/gtk3-macros"]
+exclude = ["vendor/glib", "vendor/glib-macros", "vendor/gtk3-macros", "vendor/keepawake"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
@@ -22,3 +22,4 @@ strip = true
 glib = { path = "vendor/glib" }
 glib-macros = { path = "vendor/glib-macros" }
 gtk3-macros = { path = "vendor/gtk3-macros" }
+keepawake = { path = "vendor/keepawake" }
