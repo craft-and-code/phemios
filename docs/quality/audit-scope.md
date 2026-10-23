@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: D-PH-10 authorizes Lot 4 Linux keepawake/zbus 6.1.0 implementation, tests, available checks and final commit after the D-PH-09 plan. Local source/provenance/credits, targeted lock/runtime/test/tooling/doc changes only. Retain every other advisory; no suppression, push, release or published fork. Actual Linux/native/minimum-toolchain acceptance remains pending.
+- Current phase: D-PH-12 authorizes implementing the reviewed JamBase lease correction, adding tests, running verification and committing, while keeping all other alerts visible. Base 14f382a plus D-PH-11 documentation. No dependency/pin/policy change, push or release is authorized.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -118,3 +118,11 @@ The maintainer requests solutions and a plan for keepawake/zbus while retaining 
 ## D-PH-10 — Authorized Linux keepawake migration
 
 The maintainer explicitly approves implementing zbus 6.1.0 in keepawake's Linux backend, adding tests, running available checks, retaining other alerts, naming pending Linux acceptance and committing. [Validation](lot-4-validation.md) records exact published-source provenance, scoped graph changes, old-source release panic, fourteen actual-module/private-bus cases and acceptance limits. No upstream publication/message, push or release is authorized.
+
+## D-PH-11 — JamBase failure investigation before code changes
+
+The maintainer requests the cause and a correction plan, retaining other alerts. [Investigation and proposal](jambase-lock-plan.md) records unchanged-test stress, isolated lock inheritance, original-test syscall tracing and the proposed std-only RAII correction. PH-008 is confirmed, not corrected. Diagnostics use fictional temporary roots/keys without provider traffic, and never install the interposer globally. Source/dependency fingerprints remain unchanged; only documentation is edited.
+
+## D-PH-12 — Authorized JamBase lease correction
+
+The maintainer authorizes the [reviewed plan](jambase-lock-plan.md), sibling regression tests, available verification and a final commit. A private std-only lease explicitly unlocks successful ownership before handle close, including journal-construction errors and unwinding. No dependency, journal schema, quota, API, provider policy or advisory exception changes. [Validation and limits](jambase-lock-validation.md) retain before/after results and pending platform/independent acceptance.

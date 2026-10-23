@@ -12,11 +12,28 @@ const ERROR: &str = "Budget JamBase illisible ou occupé. Aucune recherche envoy
 pub(super) const EXHAUSTED: &str = "Plafond JamBase atteint. Aucune recherche envoyée.";
 /// Cross-process lease is retained until the HTTP operation finishes, including quota preflight.
 pub struct Budget {
-    _lease: File,
+    _lease: Lease,
     root: PathBuf,
     attempts: Vec<u64>,
     now: u64,
     remote: Option<Value>,
+}
+// Closing alone can retain a Unix lock through a duplicated/inherited descriptor.
+// Construct only after successful acquisition, including before fallible journal reads.
+struct Lease(File);
+impl Lease {
+    fn acquire(file: File) -> Result<Self, String> {
+        file.try_lock().map_err(|_| ERROR)?;
+        Ok(Self(file))
+    }
+}
+impl Drop for Lease {
+    fn drop(&mut self) {
+        if self.0.unlock().is_err() {
+            // Drop must not panic or disclose a credential, journal path or OS error text.
+            let _ = writeln!(std::io::stderr().lock(), "JamBase budget unlock failed.");
+        }
+    }
 }
 fn admitted(path: &Path) -> Result<bool, String> {
     let meta = match fs::symlink_metadata(path) {
@@ -64,7 +81,10 @@ impl Budget {
             .truncate(false)
             .open(lock)
             .map_err(|_| ERROR)?;
-        lease.try_lock().map_err(|_| ERROR)?;
+        let lease = Lease::acquire(lease)?;
+        Self::read_retained(root, now, lease)
+    }
+    fn read_retained(root: PathBuf, now: u64, lease: Lease) -> Result<Self, String> {
         let path = root.join("jambase-budget.json");
         let mut attempts = Vec::new();
         let mut remote = None;

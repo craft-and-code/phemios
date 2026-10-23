@@ -274,3 +274,89 @@ fn legacy_high_water_ledgers_survive_and_invalid_retained_ceilings_fail_closed()
         assert_eq!(fs::read_to_string(&path).unwrap(), bytes);
     }
 }
+
+#[test]
+fn dropping_a_budget_releases_its_lock_even_with_a_duplicated_handle() {
+    let root = Sandbox::new();
+    let mut budget = Budget::at(root.0.clone(), 1_800_000_000).unwrap();
+    budget.reserve().unwrap();
+    let duplicate = budget._lease.0.try_clone().unwrap();
+    // Failed admission must not release the active owner's lock.
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+    drop(budget);
+
+    let successor = Budget::at(root.0.clone(), 1_800_000_001).unwrap();
+    assert_eq!(successor.status()["used"], 1);
+    // Closing a retired owner's duplicate cannot unlock a newly acquired lease.
+    drop(duplicate);
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+    drop(successor);
+    assert_eq!(
+        Budget::at(root.0.clone(), 1_800_000_002).unwrap().status()["used"],
+        1
+    );
+}
+
+#[test]
+fn unwinding_a_budget_releases_its_lock_with_a_duplicated_handle() {
+    let root = Sandbox::new();
+    let budget = Budget::at(root.0.clone(), 1_800_000_000).unwrap();
+    let duplicate = budget._lease.0.try_clone().unwrap();
+    let outcome = std::panic::catch_unwind(move || {
+        let _owned = budget;
+        panic!("fictional request fails while owning the budget");
+    });
+    assert!(outcome.is_err());
+    let successor = Budget::at(root.0.clone(), 1_800_000_001).unwrap();
+    assert_eq!(successor.status()["used"], 0);
+    drop(duplicate);
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+}
+
+#[test]
+fn rejected_journals_release_the_lease_before_a_budget_can_be_constructed() {
+    for broken in [
+        "not JSON",
+        r#"{"version":2,"attempts":[]}"#,
+        r#"{"version":1,"attempts":[1800000001,1800000000]}"#,
+        r#"{"version":1,"attempts":[1800000002]}"#,
+        r#"{"version":1,"attempts":[],"remote":{"periodStart":"invalid"}}"#,
+    ] {
+        let root = Sandbox::new();
+        let mut initial = Budget::at(root.0.clone(), 1_800_000_000).unwrap();
+        initial.reserve().unwrap();
+        let path = root.0.join("jambase-budget.json");
+        let retained = fs::read(&path).unwrap();
+        let duplicate = initial._lease.0.try_clone().unwrap();
+        let lease = initial._lease;
+        fs::write(&path, broken).unwrap();
+
+        assert!(Budget::read_retained(root.0.clone(), 1_800_000_001, lease).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), broken);
+        // Repair only the fictional fixture, retaining its original charged attempt.
+        fs::write(&path, retained).unwrap();
+        let successor = Budget::at(root.0.clone(), 1_800_000_001).unwrap();
+        assert_eq!(successor.status()["used"], 1);
+        assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+        drop(duplicate);
+        assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+    }
+}
+
+#[test]
+fn journal_admission_errors_release_the_lease_with_a_duplicated_handle() {
+    let root = Sandbox::new();
+    let initial = Budget::at(root.0.clone(), 1_800_000_000).unwrap();
+    let duplicate = initial._lease.0.try_clone().unwrap();
+    let path = root.0.join("jambase-budget.json");
+    fs::create_dir(&path).unwrap();
+    assert!(Budget::read_retained(root.0.clone(), 1_800_000_001, initial._lease).is_err());
+    assert!(path.is_dir(), "refused storage must remain untouched");
+    fs::remove_dir(&path).unwrap();
+    let successor = Budget::at(root.0.clone(), 1_800_000_001).unwrap();
+    drop(duplicate);
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_err());
+    drop(successor);
+    assert!(Budget::at(root.0.clone(), 1_800_000_001).is_ok());
+}

@@ -20,7 +20,7 @@
 
 ## 2. Automated controls
 
-These current controls incorporate D-PH-10; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
+These current controls incorporate D-PH-12; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
 
 | Control                             | Result  | Evidence / limit                                                                                                                                                                        |
 | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,10 +28,10 @@ These current controls incorporate D-PH-10; the first execution ledger below rem
 | PH-C02 formatting/lint              | PASS    | Prettier and oxlint successful; formatting rechecked after quality records finalized.                                                                                                   |
 | PH-C03 Node/Vitest                  | PASS    | 60 Node tests + 1,334 Vitest tests in 241 files, no skips/failures reported.                                                                                                            |
 | PH-C04 types/frontend/analysis      | PASS    | Strict App/component TypeScript, App build and standalone analysis build successful.                                                                                                    |
-| PH-C05 Rust workspace/harness       | PASS    | 520 Rust executions: 111 native + 285 core + 80 native-session harness + 30 CD + 14 transfer. FFmpeg required; no ignored cases.                                                        |
+| PH-C05 Rust workspace/harness       | PASS    | D-PH-12: all 524 Rust cases pass; four added regressions and bounded default-parallel stress pass. Other-platform and independent validation remain pending.                            |
 | PH-C06 Rust format/lint/docs        | PASS    | Full workspace format, Clippy all-targets and Rustdoc with warnings denied. Initial native Clippy failure retained, then corrected and rerun.                                           |
 | PH-C07 bridge/generated docs/site   | PASS    | Bridge, 450 TS modules, component types/static build, full workspace Rustdoc, bilingual site/local links (26 pages).                                                                    |
-| PH-C08 fresh advisory assessment    | PASS    | D-PH-10: npm 0 vulnerabilities; raw Cargo 0 matches/notices; GLib remains explicit in the supplemental local-source assessment. Open warning disposition remains a closure requirement. |
+| PH-C08 fresh advisory assessment    | PASS    | D-PH-12: npm 0 vulnerabilities; raw Cargo 0 matches/notices; GLib remains explicit in the supplemental local-source assessment. Open warning disposition remains a closure requirement. |
 | PH-C09 native/MSRV/installer matrix | NOT RUN | Current macOS native tests and linked workspace build PASS. Rust 1.90, Linux/Windows, installers remain unexecuted; this whole matrix is not PASS.                                      |
 | PH-C10 regression/independent pair  | NOT RUN | PH-007, GLib and keepawake host before/after cases PASS; Linux native/desktop and independent review remain pending.                                                                    |
 
@@ -368,3 +368,52 @@ Exact patch replay against a newly extracted verified archive reproduces all 21 
 The explicit `cargo run -p phemios --example display_awake_probe --locked --offline` exits 0: macOS process assertions are acquired and released with the actual local source package. Sanitized log SHA-256 `3579bff4a1e50fd56c6b08fcc4b9cc9cc3997a8043e108f4d06813509ebe632a`. This is assertion-level host acceptance, not screen-saver timer/Linux/Windows acceptance. Git attributes retain the published LF/CRLF source/license bytes across checkouts without a whitespace exemption.
 
 Final staged-blob verification covers every file in all four vendor inventories and matches the recorded SHA-256 exactly. Full staged whitespace diagnostics are retained: they are confined to original published CRLF files, the identical keepawake license copy, and exact unified-patch/context bytes. Authored files, including the rewritten Linux module, pass their whitespace inspection. No source normalization, Git whitespace exemption or advisory suppression is applied.
+
+## 15. D-PH-11 — JamBase diagnosis and correction proposal
+
+Clean main base 14f382a; the maintainer requests investigation and a plan before source changes, retaining other alerts. [Proposal and primary contracts](jambase-lock-plan.md). Original budget/local source bytes are identical across Lots 3b/4 and throughout this phase; no production/test source, manifest/lock/pin/feature/policy modification or commit. Temporary standalone helpers and syscall interposition are local diagnostics only, never installed globally or presented as an implemented fix.
+
+PH-008 is **CONFIRMED**. Unchanged local tests reproduce three failing runs in fourteen parallel runs; a serial control passes 100 runs and a pure two-JamBase-test control passes 200. Excluding only the explicit cat spawner still fails because mount inspection also creates processes. A projection+cat-only pair fails once in 200 runs. Final tracing reproduces flock LOCK_EX|LOCK_NB / EWOULDBLOCK with close-on-exec already set; the same message is not attributed to corrupt data or a live JamBase outage. Controlled actual public APIs confirm inherited-handle ownership after parent Budget drop, original key/usage preservation and recovery after child exit. Explicit std File unlock succeeds in a separate mechanism control. No correction has been applied.
+
+All samples are bounded diagnostic runs, not production rates. The initial trace helper failed to build against an unavailable SDK convenience header; those failed-load attempts are not counted as test acceptance. The final standalone interposition contract and captured errno-preserving trace replace that setup attempt as evidence. No test is removed or permanently serialized/skipped. No HTTP/provider quota, live credential or original music file is used.
+
+Fresh `npm run audit:dependencies` exits 0, with raw registry 0 vulnerabilities/notices and GLib RUSTSEC-2024-0429 explicitly retained in the supplemental inventory. This changes no advisory disposition or campaign acceptance. Existing Linux/minimum/Windows/installer, stable-Aède shared-crates prerequisite and independent review limits remain. No full gate/release approval is claimed in this read-only planning phase. Verdict remains **FIX AND REVALIDATE**.
+
+D-PH-11 evidence digests (2026-10-23), relative to `target/quality/PH-STAB-001/jambase-review/`:
+
+| Evidence                    | Interpretation                                                          | SHA-256                                                            |
+| --------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `baseline.json`             | Source/dependency/inventory fingerprints; all nine rechecked unchanged  | `60fcd0f2bdf087678d0f990630aafec659092b256af23d6325cc24c51d0c5138` |
+| `local-stress.json`         | Original local test selection, 12 threads; three failing runs out of 14 | `61f686318f7b5cb4e03891ef1707a734aec3ad34b8ae85fe88d711e4886469fe` |
+| `isolation.json`            | Process-spawn pair, exclusion and serial diagnostic comparisons         | `de9ef22ea288dcd337a79f8834ddd8ebef906503c09fd5a9d220b1ca89332260` |
+| `additional-isolation.json` | Pure JamBase control and explicitly invalid initial trace setup         | `c4f1d78354f5589bd7eb4b717ec2e95663558855f84b241fc6c8c7b72a43a74f` |
+| `traced-failure.log`        | Final unchanged-test flock trace; exit 101                              | `ce698e046dffaf31531608c7fd8b90570d89fbb116b5e171e111eb5196cd6f6f` |
+| `fork-reproduction.log`     | Actual public API ownership reproduction and explicit-unlock control    | `384f7d25a964a65cd203d28efe8416179e4209a29ec1ff4da38d90919874a41a` |
+| `vendor-audit.log`          | Fresh npm run audit:dependencies; exit 0; supplemental GLib retained    | `978d1c640c6471273878138d08735768d9cb4b1bf5905468ca45509123bc9c1e` |
+
+## 16. D-PH-12 — JamBase lease correction
+
+Base main 14f382a plus D-PH-11 documentation; the maintainer authorizes the reviewed implementation, tests, checks and final commit. [Validation](jambase-lock-validation.md) records a private std-only successful-owner guard, explicit unlock on normal/early-error/unwind paths, preserved genuine-owner exclusion and charged journal state. No API/schema/dependency/pin/advisory-policy change. Scope is the budget implementation, existing sibling tests and supporting docs; all other source/tests are retained byte-for-byte. No push, release or independent-review claim.
+
+Before: two new safe handle-duplication regressions fail on the unchanged code; all eleven old budget cases pass. After: four new cases and all unchanged cases pass, 25 selected concert cases and the unfiltered 524-case workspace. The unchanged 15-case local selection passes 200 default-parallel runs; 15 budget cases pass 100 default-parallel runs, without sleeps/retries/global serialization/permanent filters. Closing a retired plain File duplicate does not release a successor's lock. Five refused journal bodies plus non-file admission confirm cleanup before Budget construction. No real key/provider quota/audio originals are used.
+
+Actual commands from the repository root, macOS arm64/Rust 1.99.0/Node 26.10.0. Rust profiles use CARGO_INCREMENTAL=0; workspace tests require FFmpeg/FFprobe and the existing PHEMIOS_TRANSFER_ENGINE sidecar. Rustdoc denies warnings. Logs below are sanitized local evidence under target/quality/PH-STAB-001/jambase-fix/.
+
+| Check        | Actual command                                                                           | Exit | Sanitized log SHA-256                                              |
+| ------------ | ---------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------ |
+| before       | `cargo test -p phemios-core --locked --offline concerts::budget::tests:: -- --nocapture` | 101  | `7eedd314ac8edb1bf3e439f577d836ac6b8b37cc185e3843616aa3dd13f2bb5b` |
+| targeted     | `cargo test -p phemios-core --locked --offline concerts:: -- --nocapture`                | 0    | `923fbc57c8385122205075289cb1afc0c695aa45459334d36c3ccc8910f7b276` |
+| commit-gate  | `bash tools/check.sh`                                                                    | 1    | `1b0567a78a0b42949ec9981423aab6270543dae90fa4feb75918cb8e117f203e` |
+| tests        | `cargo test --workspace --locked --offline`                                              | 0    | `d53648cb2c8e3e14c6cdb872d2ad44c67c35b5f43c871cde7d1a810493f08a79` |
+| format-rust  | `cargo fmt --all -- --check`                                                             | 0    | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| clippy       | `cargo clippy --workspace --all-targets --locked --offline -- -D warnings`               | 0    | `b7883ce17bc4d1c98fca22355f637ea644a2e63f0d0cfb8d03f2c4c0fe53f75c` |
+| rustdoc      | `cargo doc --workspace --no-deps --locked --offline`                                     | 0    | `34b8c63502763e0eea592a7edb675739b7d494f73a0cd028879d003f3661d76e` |
+| native-build | `cargo build --workspace --locked --offline`                                             | 0    | `396c04a2ef52402ea288f25037b92a021478d1f00a09dddde2849709c0e4d395` |
+| vendor-audit | `npm run audit:dependencies`                                                             | 0    | `978d1c640c6471273878138d08735768d9cb4b1bf5905468ca45509123bc9c1e` |
+| npm-audit    | `npm audit --json --audit-level=low`                                                     | 0    | `38a76f6a733e83cdd8ac8c395294119a829620692b2b038c6210a3178283884f` |
+| site-build   | `node scripts/build-site.mjs --reuse-technical`                                          | 0    | `fe910e8fff2c9e616898811ba0f0b525864dd6872286b9686cada51adb667c05` |
+| site-check   | `node scripts/check-site.mjs dist-site`                                                  | 0    | `eaded947d2e59ec1ad54389913820301652914826b479aa43757fe29f7582721` |
+
+Stress command: the built phemios_core unit binary with filter `local::tests::` repeated 200 times, then `concerts::budget::tests::` repeated 100 times, without a test-threads override. JSON SHA-256 `f7d259d8989cf17bf104d2a5d470172156ee92893bef4cc9177c188c1449f203`. Source/dependency fingerprints JSON SHA-256 `c1ea3c26100365a330d5628809396b21f62ab3920d8038d4b6cee070b1ac008a`.
+
+All frontend stages pass (1,334 Vitest/241 files, 60 Node). Full gate exits 1 at the unchanged published stable Aède v0.6.1 missing-shared-crates prerequisite before Rust stages; separate locked Rust checks/native build pass. This does not make PH-C01/C09/independent review green. Actual Linux/Windows, Rust 1.90, installer/provider/physical acceptance remain unexecuted. Fresh raw registry audit has no vulnerabilities/notices; supplemental GLib RUSTSEC-2024-0429 remains explicit, with its local backport/Linux-pending disposition. Existing bundler/deprecation warnings remain visible in the gate log. No suppression or dependency changes. PH-008 becomes **FIXED — TO VERIFY**; verdict remains **FIX AND REVALIDATE**, not campaign or release closure.
