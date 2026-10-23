@@ -4,7 +4,7 @@
 
 On 2026-10-23 the maintainer requested a remediation **plan** and verification of PH-007, with no hidden warnings. This follow-up authorizes read-only dependency/source investigation, disposable reproductions and quality records. That planning pass changed no production code/tests/dependencies. D-PH-03 subsequently changes only the authorized Lot 0 source/tests/documentation; manifests, lockfiles, dependency policies and native-source pins remain unchanged. No commit/publication. Candidate remains `397912b95f79d54a3eb23e64dfe589df7e3c03e7`.
 
-Lot 0 was committed as cc1f9fa. Lot 1 has now been authorized, implemented and revalidated in D-PH-04; Lots 2–4 remain proposed and unexecuted. Recheck registry/advisory metadata when implementing; do not turn these version targets into a blanket update. No `cargo audit --ignore`, deny allowlist/exception, npm `audit=false`, `--omit=dev` clearance, `npm audit fix --force`, fake patched version or dependency removal that silently disables a feature.
+Lot 0 was committed as cc1f9fa. Lot 1 was committed as f4cedb3 after D-PH-04. The maintainer subsequently authorized implementing, checking and committing Lot 2; Lots 3–4 remain proposed and unexecuted. Recheck registry/advisory metadata when implementing; do not turn these version targets into a blanket update. No `cargo audit --ignore`, deny allowlist/exception, npm `audit=false`, `--omit=dev` clearance, `npm audit fix --force`, fake patched version or dependency removal that silently disables a feature.
 
 ## PH-007 verification — confirmed conditional overwrite
 
@@ -48,7 +48,7 @@ Acceptance: the reproduced replacement case refuses before modifying the retaine
 
 ### Lot 1 — Small security updates (PH-001, PH-002, PH-004, PH-005)
 
-**Implemented and revalidated in D-PH-04, not committed.** The exact approved versions resolve and all corresponding advisory matches disappear from fresh full lockfile audits. GLib and all five maintenance notices remain visible. The table/design below retains the accepted before/after targets; see the checklist for actual exits and hashes.
+**Implemented and revalidated in D-PH-04; committed as f4cedb3 after the required full-gate attempt.** The exact approved versions resolve and all corresponding advisory matches disappear from fresh full lockfile audits. GLib and all five maintenance notices remain visible. The table/design below retains the accepted before/after targets; see the checklist for actual exits and hashes.
 
 | Component            | Current → proposed  | Scope / check                                                                                                                                                                                                                                                             |
 | -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,6 +67,8 @@ Upstream Storybook guidance distinguishes vulnerable development servers from st
 Acceptance: fresh npm and Cargo audits show the exact targeted matches removed without new untriaged alerts; existing Node/Vitest, Rust library/harness tests, TLS tests, native check, formatting/lints, App/analysis builds, component types/static docs and site checks pass. Preserve all unrelated warnings. Run native/MSRV/platform acceptance appropriate to an actual release after coherent engine preparation; no pin change as a side effect of these updates.
 
 ### Lot 2 — Remove the rustls-pemfile branch through Tungstenite (PH-006)
+
+**Implemented and revalidated in D-PH-05 on base f4cedb327568a9bf477ccc8d891f973d5c335145.** Tungstenite 0.30.0 / rustls-native-certs 0.8.5 removes rustls-pemfile from the full graph. Native-root trust, exact owned-server trust, a 4 KiB read buffer, frame/message caps and TCP deadlines are retained. Three new real-socket regressions and extended wrong-pin WSS assertions pass. All prior test names remain; no audit exceptions. See the current ledger for full checks and platform/engine limits. The following paragraphs retain the accepted design rather than a new request for authorization.
 
 Actual branch: `phemios-core → tungstenite 0.24.0 → rustls-native-certs 0.7.3 → rustls-pemfile 2.2.0`. Phémios does not directly depend on or call rustls-pemfile; replacing authored PEM calls would not remove this branch.
 
@@ -108,7 +110,7 @@ Implementation status/order: Lot 0 implemented, regressions/checks passed, indep
 - [GLib advisory](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), [upstream pointer correction](https://github.com/gtk-rs/gtk-rs-core/pull/1343), [proc-macro-error maintenance notice](https://rustsec.org/advisories/RUSTSEC-2024-0370.html).
 - [zvariant consolidation notice](https://rustsec.org/advisories/RUSTSEC-2026-0370.html), [keepawake registry status](https://crates.io/api/v1/crates/keepawake), [keepawake upstream](https://github.com/segevfiner/keepawake-rs).
 
-## D-PH-04 current result
+## D-PH-04 result before Lot 2
 
 Lot 1 was authorized and implemented on base `cc1f9fa91092f93790b7b7f505fe8dbed29902aa` (Lot 0 commit `cc1f9fa`). Resolved versions: rustls-webpki 0.103.16, webpki-roots 1.0.10, Tokio 1.53.3, DOMPurify 3.4.17 and Storybook/addon-docs/builder-vite/react-dom-shim 10.6.3. No new direct runtime dependency, override, suppression, broad upgrade or source-pin change. React/react-dom remain 19.3.0; other package versions and Cargo dependency edges retain their prior valid choices. Only the three approved Cargo versions/checksums and five approved npm package versions change. The dependency graph validates with locked/offline Cargo metadata and a clean npm ci --ignore-scripts; npm ls reports no invalid peers.
 
@@ -117,3 +119,7 @@ Fresh npm audit: exit 0, **0 vulnerabilities**. Fresh cargo-audit: exit 0, **0 v
 Verification on macOS arm64 / Rust 1.99 / Node 26: 517 Rust executions, no ignored cases; 1,334 Vitest and 46 Node tests. Full workspace Clippy all-targets/Rustdoc with warnings denied and native build pass; frontend format/lint/build, analysis build, bridge, TS contracts, component types/static build and 26-page site/local link checks pass. Existing correct/wrong-certificate HTTPS/WSS and live loopback original/MP3 transfer tests pass. No new authored runtime code or tests required for these package patches; the audit before/after is the advisory-resolution regression, not a demonstrated hostile-certificate or browser exploit.
 
 All Cargo checks use --locked --offline after an explicit locked fetch. PHEMIOS_REQUIRE_FFMPEG=1, CARGO_INCREMENTAL=0, RUSTDOCFLAGS=-D warnings; PHEMIOS_TRANSFER_ENGINE points to the existing Aède 0.6.1 / FlacCompagnon 0.9.6 binary. No engine preparation/source replacement. The full tools/check.sh was attempted before the Lot 0 commit and stopped on the published v0.6.1 missing shared crates, with no manifest/lock changes; it is not falsely reported as a successful full gate for Lot 1. Rust 1.90, Linux/Windows, installers, real-device and independent reviews remain unexecuted.
+
+## D-PH-05 current result
+
+Lot 1 is committed as f4cedb3. Lot 2 replaces the Tungstenite 0.24/native-certs 0.7 branch with 0.30.0/0.8.5; rustls-pemfile and its notice are absent from the current full lock graph. Five warnings remain visible: GLib unsoundness and four maintenance notices. No ignore/policy/feature suppression or shared-audio pin change. 520 Rust executions (all prior 517 plus three socket regressions), 1,334 Vitest and 46 Node cases pass, along with locked native checks/builds and frontend tooling. The full gate remains blocked by the published stable engine missing shared crates; minimum/platform/physical/independent acceptance remains pending. Lots 3/4 stay proposed. See the current checklist ledger for exact exits, hashes and scope.

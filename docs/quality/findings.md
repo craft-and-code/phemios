@@ -3,7 +3,7 @@
 ## Current campaign
 
 - Campaign: `PH-STAB-001`, initial discovery on 2026-10-23.
-- Branch `main`, initial candidate `397912b95f79d54a3eb23e64dfe589df7e3c03e7`; current Lot 1 base `cc1f9fa91092f93790b7b7f505fe8dbed29902aa`, version 0.1.0 plus the recorded targeted uncommitted dependency/doc diff.
+- Branch `main`, initial candidate `397912b95f79d54a3eb23e64dfe589df7e3c03e7`; current Lot 2 base `f4cedb327568a9bf477ccc8d891f973d5c335145`, version 0.1.0 plus the recorded Tungstenite/source/test/doc diff. Lot 1 is committed as f4cedb3.
 - Initially clean; D-PH-01/02 changed quality records only. D-PH-03 additionally implements the authorized Lot 0 source/tests/documentation correction. Software/dependency fingerprints are checked in the [validation record](release-checklist.md).
 - Scope/permissions: [audit-scope.md](audit-scope.md); canonical policy: [README.md](README.md).
 - Previous generic `FC-*` rows were examples, not Phémios findings. No Aède finding or historical result is imported.
@@ -11,17 +11,17 @@
 
 ## Findings summary
 
-Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; the six remaining Rust warning records stay visible.
+Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; D-PH-05 removes rustls-pemfile through Tungstenite. Five current Rust warnings remain visible (GLib plus four maintenance notices).
 
-| ID     | Kind                                             | Severity                       | Confidence                                   | Status            | Summary                                                         |
-| ------ | ------------------------------------------------ | ------------------------------ | -------------------------------------------- | ----------------- | --------------------------------------------------------------- |
-| PH-001 | Dependency advisory correction                   | High (historical)              | HIGH version/audit evidence                  | VERIFIED          | TLS verifier/root packages patched; both matches removed        |
-| PH-002 | Dependency advisory correction                   | High (historical provisional)  | HIGH version/audit evidence                  | VERIFIED          | Tokio 1.53.3 removes the targeted unsoundness match             |
-| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | TO CONFIRM        | GLib 0.18.5 has the VariantStrIter unsoundness warning          |
-| PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | DOMPurify 3.4.17 removes all three package matches              |
-| PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches     |
-| PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Five unmaintained Rust packages remain visible                  |
-| PH-007 | Conditional transfer data-integrity defect       | High                           | HIGH regression before/after                 | FIXED — TO VERIFY | Retained root admission implemented; independent review pending |
+| ID     | Kind                                             | Severity                       | Confidence                                   | Status            | Summary                                                            |
+| ------ | ------------------------------------------------ | ------------------------------ | -------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
+| PH-001 | Dependency advisory correction                   | High (historical)              | HIGH version/audit evidence                  | VERIFIED          | TLS verifier/root packages patched; both matches removed           |
+| PH-002 | Dependency advisory correction                   | High (historical provisional)  | HIGH version/audit evidence                  | VERIFIED          | Tokio 1.53.3 removes the targeted unsoundness match                |
+| PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | TO CONFIRM        | GLib 0.18.5 has the VariantStrIter unsoundness warning             |
+| PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | DOMPurify 3.4.17 removes all three package matches                 |
+| PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches        |
+| PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Four unmaintained Rust packages remain visible; PEM branch removed |
+| PH-007 | Conditional transfer data-integrity defect       | High                           | HIGH regression before/after                 | FIXED — TO VERIFY | Retained root admission implemented; independent review pending    |
 
 ## Required detailed record fields
 
@@ -31,7 +31,7 @@ Lifecycle: `TO CONFIRM`, `CONFIRMED`, `IN CORRECTION`, `FIXED — TO VERIFY`, `V
 
 ## Detailed records
 
-Original records retain their discovery candidate/locations; D-PH-04 records current targeted package corrections against the committed Lot 0 base. Origin: coordinator discovery `D-PH-01`; no dependency correction/suppression, maintainer waiver or independent review has occurred. D-PH-03 implements PH-007 only, as recorded below. Owner for next triage: maintainer with coordinating assistant; proposed actions are unexecuted. Current advisory evidence is PH-C08 in the checklist.
+Original records retain their discovery candidate/locations; D-PH-04 records current targeted package corrections against the committed Lot 0 base. Origin: coordinator discovery `D-PH-01`; D-PH-04/05 supply targeted dependency corrections, without suppression, waiver or independent review. D-PH-03 implements PH-007 only, as recorded below. Owner for next triage: maintainer with coordinating assistant; proposed actions are unexecuted. Current advisory evidence is PH-C08 in the checklist.
 
 ### PH-001 — TLS verifier and bundled roots match the emSign distrust advisories
 
@@ -96,16 +96,16 @@ Original records retain their discovery candidate/locations; D-PH-04 records cur
 
 - D-PH-04 correction evidence: the accepted patched versions are installed/locked; the targeted advisory IDs no longer match in fresh full audits. Existing TLS/editor/native/tooling suites pass. No ignore/override or broader security certification. See the current execution ledger; historical trigger and severity above are retained.
 
-### PH-006 — Five unmaintained Rust packages remain visible
+### PH-006 — Four maintenance notices remain; rustls-pemfile branch removed
 
-- Kind/status: Maintenance risk; `CONFIRMED`.
+- Kind/status: Maintenance risk; `CONFIRMED` for four remaining packages. The rustls-pemfile subcase is corrected and verified by the D-PH-05 graph/audit; the combined record remains open.
 - Severity/confidence: Medium; HIGH inventory; runtime consequence unproven.
-- Locations: `Cargo.lock:3373` proc-macro-error 1.0.4; `:3736` rustls-pemfile 2.2.0; `:6112` zbus_names 4.3.5; `:6224` zvariant 5.15.1; `:6239` zvariant_derive 5.15.1.
-- Trigger and expected/actual behavior: A future bug/platform change needs an upstream fix. Expected: maintained support or an explicit risk decision. Actual: the fresh database reports RUSTSEC-2024-0370, RUSTSEC-2025-0134, RUSTSEC-2026-0371, RUSTSEC-2026-0370 and RUSTSEC-2026-0372. These are maintenance warnings, not five demonstrated vulnerabilities.
-- Impact: Reduced upstream maintenance/support across certificate parsing and native/transitive tooling. No runtime failure established.
-- Evidence and limits: All five warnings retained in PH-C08. Current branch has no deny/audit ignore policy introduced by this task. Git-pinned shared audio, system libraries and the prebuilt engine are not comprehensively scanned by Cargo.lock matching.
-- Sources: Exact IDs, titles and upstream links remain in the captured cargo-audit JSON output.
-- Required investigation/correction and validation: Map enabled platform/dependency owners, separate the Tungstenite/native-certs migration that removes rustls-pemfile from upstream GTK/Tauri/zbus migrations, and document any maintainer disposition per branch. Keep warnings visible. No mass upgrade or suppression applied.
+- Historical discovery: proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1 were all reported. The original RUSTSEC-2025-0134 evidence is retained in the earlier ledgers.
+- Current locations: named Cargo.lock package blocks for proc-macro-error 1.0.4, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1. Current advisories: RUSTSEC-2024-0370, RUSTSEC-2026-0371, RUSTSEC-2026-0370 and RUSTSEC-2026-0372. Tungstenite 0.30.0 / rustls-native-certs 0.8.5 removes rustls-pemfile from the entire lock graph.
+- Trigger/expected/actual: a future upstream defect/platform change needs maintained support; four resolved versions remain unmaintained. These are maintenance warnings, not four demonstrated vulnerabilities.
+- Impact/evidence: reduced upstream maintenance of GTK macro and Linux D-Bus dependencies. Current all-target reverse trees retain both glib-macros/gtk3-macros owners and the keepawake Linux branch. No runtime consequence established; no policy/ignore or feature removal.
+- Verification: fresh full Cargo/npm audits, locked metadata, real socket/TLS regressions and existing suites/builds. Git sources, prebuilt engine and system dependencies are not comprehensively audited by lockfile matching. See D-PH-05 for exits/counts and missing acceptance.
+- Remaining correction: separately assess the planned GTK/macro and keepawake/zbus migrations in Lots 3/4; no implementation or source/fork decision authorized by Lot 2.
 
 ### PH-007 — Returning watched root permits overwrite after preview
 
@@ -173,3 +173,7 @@ Coordinator package/evidence review, not an independent adversarial review. Curr
 5. Obtain two qualifying independent reviews after affected revalidation. Hardware/live-provider acceptance remains explicit.
 
 Current recommendation: `FIX AND REVALIDATE` because GLib/maintenance dispositions, full engine preparation and independent review remain open; discovery and independent reviews also remain incomplete. No campaign closure, commit or release approval.
+
+### D-PH-05 — Tungstenite revalidation
+
+Lot 1 was committed as f4cedb3. Lot 2 is checked against that base: Tungstenite 0.30.0 / rustls-native-certs 0.8.5 removes rustls-pemfile and RUSTSEC-2025-0134 from the full lock graph. PH-006 remains CONFIRMED for the other four maintenance notices; PH-003 GLib unsoundness remains visible. No ignore/policy exception, source-pin replacement or feature removal. 520 Rust executions, 1,334 Vitest and 46 Node pass; all prior Rust test names retained, three real-socket regressions added, wrong-pin WSS refusal extended. Native build/Clippy/Rustdoc pass. The required full gate reaches the known missing-shared-crates stable-engine blocker with pins/locks unchanged. Exact evidence and unexecuted platform/independent acceptance are in the checklist; no campaign closure or release claim.

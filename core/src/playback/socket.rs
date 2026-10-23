@@ -48,13 +48,13 @@ pub(super) fn connect(client: &Client) -> Result<Socket, String> {
             .parse()
             .map_err(|_| "Session audio invalide.")?,
     );
-    let config = tungstenite::protocol::WebSocketConfig {
-        write_buffer_size: 0,
-        max_write_buffer_size: 65536,
-        max_message_size: Some(32768),
-        max_frame_size: Some(32768),
-        ..Default::default()
-    };
+    // Retain the pre-migration read budget instead of the new 128 KiB default.
+    let config = tungstenite::protocol::WebSocketConfig::default()
+        .read_buffer_size(4096)
+        .write_buffer_size(0)
+        .max_write_buffer_size(65536)
+        .max_message_size(Some(32768))
+        .max_frame_size(Some(32768));
     let (socket, _) = tungstenite::client_tls_with_config(
         request,
         tcp,
@@ -74,3 +74,7 @@ pub(super) fn connect(client: &Client) -> Result<Socket, String> {
 pub(super) fn transient(error: &tungstenite::Error) -> bool {
     matches!(error,tungstenite::Error::Io(error) if matches!(error.kind(),std::io::ErrorKind::WouldBlock|std::io::ErrorKind::TimedOut))
 }
+
+#[cfg(test)]
+#[path = "socket_tests.rs"]
+mod tests;

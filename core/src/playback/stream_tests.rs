@@ -12,7 +12,9 @@ fn confirmed_stop(reply: Option<Value>) -> (Result<(), String>, bool) {
             serde_json::from_str(socket.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(request, json!({"type":"stop","epoch":3,"frames":1200}));
         if let Some(reply) = reply {
-            socket.send(Message::Text(reply.to_string())).unwrap();
+            socket
+                .send(Message::Text(reply.to_string().into()))
+                .unwrap();
         }
         socket.close(None).unwrap();
     });

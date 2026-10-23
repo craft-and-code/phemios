@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: maintainer authorized committing Lot 0 (done: `cc1f9fa`) and implementing Lot 1 targeted security updates, tests/checks and documentation. Only the specified Cargo/npm resolutions and two Storybook dev pins may change; other alerts remain visible. A Lot 1 commit message is requested, not a second commit or publication. Current base is `cc1f9fa91092f93790b7b7f505fe8dbed29902aa`; earlier phases are historical.
+- Current phase: Lot 0 is committed as cc1f9fa and Lot 1 as f4cedb3. The maintainer authorized implementing, verifying and committing Lot 2 (Tungstenite), retaining all other warnings. Current Lot 2 base is `f4cedb327568a9bf477ccc8d891f973d5c335145`. No Lot 3/4 implementation, suppression, source-pin replacement, push or release is authorized; earlier phase ledgers are historical.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -94,3 +94,7 @@ Verification on macOS arm64 / Rust 1.99 / Node 26: 517 Rust executions, no ignor
 All Cargo checks use --locked --offline after an explicit locked fetch. PHEMIOS_REQUIRE_FFMPEG=1, CARGO_INCREMENTAL=0, RUSTDOCFLAGS=-D warnings; PHEMIOS_TRANSFER_ENGINE points to the existing Aède 0.6.1 / FlacCompagnon 0.9.6 binary. No engine preparation/source replacement. The full tools/check.sh was attempted before the Lot 0 commit and stopped on the published v0.6.1 missing shared crates, with no manifest/lock changes; it is not falsely reported as a successful full gate for Lot 1. Rust 1.90, Linux/Windows, installers, real-device and independent reviews remain unexecuted.
 
 The four targeted advisory records have verified package corrections; PH-003/006 and independent closure requirements remain open. No Lot 1 commit, tag or push.
+
+## D-PH-05 — Authorized Tungstenite migration and commits
+
+The maintainer explicitly authorized the Lot 1 commit, then implementing/checking/committing Lot 2 while retaining every other alert. Lot 1 is f4cedb3; Lot 2 starts from f4cedb327568a9bf477ccc8d891f973d5c335145. Only the existing Tungstenite transport, required transitive graph, sibling tests and supporting documentation are in scope. No dependency warning suppression, shared-engine pin replacement, Lot 3/4 migration, push, release or independent-review claim. Current validation and residual limits supersede earlier historical phase snapshots in the final checklist section.

@@ -23,8 +23,8 @@ fn prebuffering_is_not_acknowledged_and_pause_confirms_only_each_rendered_voice(
                 let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
                 let reference = start["track"].as_str().unwrap().to_owned();
                 assert_eq!(start["normalize"], if reference == "track:outgoing" { "off" } else { "album" });
-                ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":reference,"sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
-                ws.send(Message::Binary(vec![0; 100 * 8])).unwrap();
+                ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":reference,"sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
+                ws.send(Message::Binary(vec![0; 100 * 8].into())).unwrap();
                 loop {
                     let message: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
                     if message["type"] == "ack" {
@@ -32,7 +32,7 @@ fn prebuffering_is_not_acknowledged_and_pause_confirms_only_each_rendered_voice(
                         reported.send((reference.clone(), message["frames"].as_u64().unwrap())).unwrap();
                     } else if message["type"] == "stop" {
                         reported.send((reference, message["frames"].as_u64().unwrap())).unwrap();
-                        ws.send(Message::Text(json!({"type":"saved"}).to_string())).unwrap();
+                        ws.send(Message::Text(json!({"type":"saved"}).to_string().into())).unwrap();
                         ws.close(None).unwrap();
                         break;
                     } else { panic!("unexpected frame"); }
@@ -88,8 +88,8 @@ fn seeks_reuse_one_authenticated_visit_and_discard_prebuffered_old_audio() {
         let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(start["type"], "start");
         for epoch in 0..=2 {
-            ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:one","sample_rate":48000,"channels":2,"epoch":epoch,"position_ms":if epoch==0 {0} else if epoch==1 {500} else {200},"duration_ms":1000}).to_string())).unwrap();
-            ws.send(Message::Binary(vec![0; 100 * 8])).unwrap();
+            ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:one","sample_rate":48000,"channels":2,"epoch":epoch,"position_ms":if epoch==0 {0} else if epoch==1 {500} else {200},"duration_ms":1000}).to_string().into())).unwrap();
+            ws.send(Message::Binary(vec![0; 100 * 8].into())).unwrap();
             loop {
                 let command: Value =
                     serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
@@ -101,7 +101,7 @@ fn seeks_reuse_one_authenticated_visit_and_discard_prebuffered_old_audio() {
                     assert_eq!(command["epoch"], epoch);
                     assert_eq!(command["frames"], if epoch == 0 { 40 } else { 25 });
                     assert_eq!(command["position_ms"], if epoch == 0 { 500 } else { 200 });
-                    ws.send(Message::Text(json!({"type":"reset","epoch":epoch+1,"position_ms":command["position_ms"]}).to_string())).unwrap();
+                    ws.send(Message::Text(json!({"type":"reset","epoch":epoch+1,"position_ms":command["position_ms"]}).to_string().into())).unwrap();
                     let ack: Value =
                         serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
                     assert_eq!(ack["type"], "reset_ack");
@@ -111,7 +111,7 @@ fn seeks_reuse_one_authenticated_visit_and_discard_prebuffered_old_audio() {
                 assert_eq!(command["type"], "stop");
                 assert_eq!(command["epoch"], 2);
                 assert_eq!(command["frames"], 10);
-                ws.send(Message::Text(json!({"type":"saved"}).to_string()))
+                ws.send(Message::Text(json!({"type":"saved"}).to_string().into()))
                     .unwrap();
                 ws.close(None).unwrap();
                 return;
@@ -160,8 +160,8 @@ fn delayed_retired_confirmation_does_not_block_the_active_producer() {
         tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
         let mut ws = tungstenite::accept(tcp).unwrap();
         let _: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
-        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
-        ws.send(Message::Binary(vec![0; 100 * 8])).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
+        ws.send(Message::Binary(vec![0; 100 * 8].into())).unwrap();
         loop {
             let command: Value =
                 serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
@@ -169,7 +169,7 @@ fn delayed_retired_confirmation_does_not_block_the_active_producer() {
                 assert_eq!(command["frames"], 100);
                 stopping.send(()).unwrap();
                 saving.recv_timeout(Duration::from_secs(5)).unwrap();
-                ws.send(Message::Text(json!({"type":"saved"}).to_string()))
+                ws.send(Message::Text(json!({"type":"saved"}).to_string().into()))
                     .unwrap();
                 ws.close(None).unwrap();
                 return;
@@ -220,10 +220,10 @@ fn retired_history_failures_remain_errors_without_claiming_confirmation() {
         tcp.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
         let mut ws = tungstenite::accept(tcp).unwrap();
         let _: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
-        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:retired","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
         let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(stop["type"], "stop");
-        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
+        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string().into())).unwrap();
     });
     let mut source = Source::open(&client, "track:retired".into(), 48000, 0, Policy::Dsp);
     assert!(matches!(next_packet(&source).unwrap(), Packet::Format(_)));
@@ -257,7 +257,7 @@ fn initial_seek_without_reset_cannot_hold_source_cleanup_indefinitely() {
         let mut ws = tungstenite::accept(tcp).unwrap();
         let start: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(start["type"], "start");
-        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:offset","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:offset","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
         let seek: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(seek["type"], "seek");
         assert_eq!(seek["position_ms"], 500);
@@ -300,7 +300,7 @@ fn delayed_start_format_cannot_cancel_an_already_requested_stop_deadline() {
         assert_eq!(start["type"], "start");
         let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(stop["type"], "stop");
-        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:late","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:late","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
         stopping.send(()).unwrap();
         released.recv_timeout(Duration::from_secs(20)).unwrap();
     });
@@ -337,13 +337,15 @@ fn queued_audio_tail_after_stop_does_not_override_saved_history() {
         let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(stop, json!({"type":"stop","epoch":0,"frames":0}));
         // These were already scheduled by the producer when Stop crossed it.
-        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:tail","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string())).unwrap();
-        ws.send(Message::Binary(vec![0; 16])).unwrap();
+        ws.send(Message::Text(json!({"type":"format","encoding":"f32le","track":"track:tail","sample_rate":48000,"channels":2,"epoch":0,"position_ms":0,"duration_ms":1000}).to_string().into())).unwrap();
+        ws.send(Message::Binary(vec![0; 16].into())).unwrap();
         ws.send(Message::Text(
-            json!({"type":"eof","epoch":0,"frames":2}).to_string(),
+            json!({"type":"eof","epoch":0,"frames":2})
+                .to_string()
+                .into(),
         ))
         .unwrap();
-        ws.send(Message::Text(json!({"type":"saved"}).to_string()))
+        ws.send(Message::Text(json!({"type":"saved"}).to_string().into()))
             .unwrap();
         ws.close(None).unwrap();
     });
@@ -372,12 +374,14 @@ fn ignored_tail_after_stop_never_hides_a_real_history_failure() {
         assert_eq!(start["type"], "start");
         let stop: Value = serde_json::from_str(ws.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(stop["type"], "stop");
-        ws.send(Message::Binary(vec![0; 16])).unwrap();
+        ws.send(Message::Binary(vec![0; 16].into())).unwrap();
         ws.send(Message::Text(
-            json!({"type":"eof","epoch":0,"frames":2}).to_string(),
+            json!({"type":"eof","epoch":0,"frames":2})
+                .to_string()
+                .into(),
         ))
         .unwrap();
-        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string())).unwrap();
+        ws.send(Message::Text(json!({"type":"error","message":"history storage remained busy; saving was not confirmed"}).to_string().into())).unwrap();
     });
     let mut source = Source::open(&client, "track:tail-error".into(), 48000, 0, Policy::Dsp);
     source.clock.stop.store(true, Ordering::Release);

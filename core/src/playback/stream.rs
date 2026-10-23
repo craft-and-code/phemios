@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use tungstenite::Message;
 fn send(socket: &mut socket::Socket, value: Value) -> Result<(), String> {
     socket
-        .send(Message::Text(value.to_string()))
+        .send(Message::Text(value.to_string().into()))
         .map_err(|_| "Commande audio interrompue.".into())
 }
 fn stop(
@@ -66,11 +66,9 @@ pub(super) fn stream(
     let mut output = Output::open(device, signals.clone())?;
     let mut socket = socket::connect(client)?;
     socket
-        .send(Message::Text(protocol::start(
-            reference,
-            output.rate,
-            policy,
-        )?))
+        .send(Message::Text(
+            protocol::start(reference, output.rate, policy)?.into(),
+        ))
         .map_err(|_| "Lancement audio interrompu.")?;
     let mut epoch = 0;
     let mut channels = None;

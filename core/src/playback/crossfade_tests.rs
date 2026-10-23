@@ -44,7 +44,8 @@ fn a_failed_inaudible_preload_is_retained_until_its_turn() {
         let _ = ws.read().unwrap();
         ws.send(tungstenite::Message::Text(
             serde_json::json!({"type":"error", "error":{"message":"next file unavailable"}})
-                .to_string(),
+                .to_string()
+                .into(),
         ))
         .unwrap();
     });
@@ -105,7 +106,9 @@ fn cancelling_a_failed_preload_does_not_depend_on_polling_its_error_first() {
             let mut ws = tungstenite::accept(tcp).unwrap();
             let _ = ws.read().unwrap();
             ws.send(tungstenite::Message::Text(
-                serde_json::json!({"type":"error","message":"future track refused"}).to_string(),
+                serde_json::json!({"type":"error","message":"future track refused"})
+                    .to_string()
+                    .into(),
             ))
             .unwrap();
         });

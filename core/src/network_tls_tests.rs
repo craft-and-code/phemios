@@ -22,8 +22,8 @@ fn peer() -> (String, Vec<u8>, thread::JoinHandle<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let address = format!("https://{}", listener.local_addr().unwrap());
     let task = thread::spawn(move || {
-        // Untrusted default, wrong process certificate, correct HTTPS, then the same identity on WSS.
-        for attempt in 0..4 {
+        // HTTPS and WSS both reject native-only/wrong-pin trust and accept the owned identity.
+        for attempt in 0..6 {
             let (socket, _) = listener.accept().unwrap();
             socket
                 .set_read_timeout(Some(std::time::Duration::from_secs(3)))
@@ -35,7 +35,7 @@ fn peer() -> (String, Vec<u8>, thread::JoinHandle<()>) {
                 rustls::ServerConnection::new(Arc::new(config.clone())).unwrap(),
                 socket,
             );
-            if attempt < 2 {
+            if matches!(attempt, 0 | 1 | 3 | 4) {
                 assert!(stream.read(&mut [0u8; 1]).is_err());
             } else if attempt == 2 {
                 let mut header = Vec::new();
@@ -94,6 +94,32 @@ fn embedded_https_and_wss_trust_only_the_same_process_certificate() {
     )
     .unwrap();
     let uri: ureq::http::Uri = address.parse().unwrap();
+    let mut wrong_roots = rustls::RootCertStore::empty();
+    wrong_roots.add(identity().cert.der().clone()).unwrap();
+    let wrong_tls = rustls::ClientConfig::builder()
+        .with_root_certificates(wrong_roots)
+        .with_no_client_auth();
+    for connector in [
+        None,
+        Some(tungstenite::Connector::Rustls(Arc::new(wrong_tls))),
+    ] {
+        let socket = TcpStream::connect(("127.0.0.1", uri.port_u16().unwrap())).unwrap();
+        socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
+        socket
+            .set_write_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
+        assert!(
+            tungstenite::client_tls_with_config(
+                address.replacen("https:", "wss:", 1),
+                socket,
+                None,
+                connector
+            )
+            .is_err()
+        );
+    }
     let socket = TcpStream::connect(("127.0.0.1", uri.port_u16().unwrap())).unwrap();
     socket
         .set_read_timeout(Some(std::time::Duration::from_secs(3)))

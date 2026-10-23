@@ -150,7 +150,7 @@ impl Drop for Source {
 }
 fn send(socket: &mut socket::Socket, value: Value) -> Result<(), String> {
     socket
-        .send(Message::Text(value.to_string()))
+        .send(Message::Text(value.to_string().into()))
         .map_err(|_| "Flux de fondu interrompu.".into())
 }
 fn pump(

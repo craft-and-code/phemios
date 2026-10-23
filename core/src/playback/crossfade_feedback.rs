@@ -9,7 +9,7 @@ use std::sync::{
 use std::time::{Duration, Instant};
 fn send(socket: &mut socket::Socket, value: Value) -> Result<(), String> {
     socket
-        .send(tungstenite::Message::Text(value.to_string()))
+        .send(tungstenite::Message::Text(value.to_string().into()))
         .map_err(|_| "Flux de fondu interrompu.".into())
 }
 pub(super) struct Feedback {
