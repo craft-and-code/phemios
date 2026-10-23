@@ -15,3 +15,5 @@ src-tauri/binaries/
 
 # Preserve published third-party source formatting; local changes are reviewed separately.
 vendor/glib/
+vendor/glib-macros/
+vendor/gtk3-macros/

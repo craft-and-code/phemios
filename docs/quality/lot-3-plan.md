@@ -29,7 +29,7 @@ Registry lookups are dated evidence, not an executed dependency resolution or cl
 
 ## Recommended implementation and subsequent authority
 
-D-PH-07: the maintainer subsequently approved implementing, testing and committing **Lot 3a only**. Its source correction and host evidence are recorded in [Lot 3a validation](lot-3a-validation.md). Lot 3b is still a proposal; no macro dependency change is included. The earlier planning statements above describe the prior phase.
+D-PH-07: the maintainer subsequently approved implementing, testing and committing **Lot 3a only**. Its source correction and host evidence are recorded in [Lot 3a validation](lot-3a-validation.md). D-PH-08 subsequently authorizes Lot 3b; its results are recorded in [Lot 3b validation](lot-3b-validation.md). No macro change was included in Lot 3a. The earlier planning statements above describe the prior phase.
 
 ### Lot 3a — GLib soundness backport
 
@@ -73,7 +73,7 @@ The three zbus-family notices remain unchanged and visible to the normal audit. 
 - Required `tools/check.sh` attempt before any later requested commit, plus individual locked native checks if its known stable-Aède shared-crates prerequisite still blocks. An engine-preparation failure is not a full-gate PASS.
 - Fresh full Cargo/npm audits and the explicit local-source advisory inventory; current remaining warnings and precise source-fix disposition retained in the campaign findings/checklist. No ignore/allowlist, fake package version, omitted development graph or disabled Linux support.
 
-Implementation has not started. Linux acceptance, minimum-toolchain execution and local-patch maintenance remain prerequisites for closing this lot; if unavailable, retain a pending-validation result.
+At the D-PH-06 planning baseline implementation had not started; subsequent authorized work is recorded in the Lot 3a/3b validation documents. Linux acceptance, minimum-toolchain execution and local-patch maintenance remain prerequisites for closing this lot; if unavailable, retain a pending-validation result.
 
 ## Primary references
 

@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: D-PH-07 explicitly authorizes implementing/checking/committing Lot 3a, preserving D-PH-06 planning records and retaining every other alert. Local GLib source, targeted source selection, test/tooling/provenance/credits and documentation changes only; no macro migration, push or release. Linux acceptance remains pending.
+- Current phase: D-PH-08 authorizes implementing/checking/committing Lot 3b at both macro owners, retaining every other alert. Published-source ports, targeted lock pruning, tests/provenance/credits and documentation only; no keepawake/zbus modification, push or release. Lot 4 investigation is separately authorized; Linux acceptance remains pending.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -106,3 +106,7 @@ The [Lot 3 proposal](lot-3-plan.md) records current registry/native-owner constr
 ## D-PH-07 — Authorized GLib backport
 
 Lot 3a implementation, tests, possible checks and a final commit are explicitly authorized by the maintainer. The [validation record](lot-3a-validation.md) preserves the real optimized old-source failure, corrected host-library checks, source integrity and all visible advisories. No other resolved dependency is upgraded; test-only/tooling controls do not waive Linux or whole-campaign acceptance.
+
+## D-PH-08 — Authorized macro diagnostic backports
+
+The maintainer authorizes Lot 3b implementation, tests, available checks and a final commit, preserving other warnings. [Validation](lot-3b-validation.md) records exact published-source ports, preserved upstream suites, new diagnostic regressions and remaining Linux/native/minimum-toolchain acceptance. The later Lot 4 request permits investigation and a plan before modifying those dependencies; this lot leaves keepawake/zbus unchanged.

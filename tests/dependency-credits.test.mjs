@@ -29,3 +29,13 @@ test("the reviewed local GLib source remains in third-party credits", () => {
   const rows = dependencyCredits();
   assert.equal(rows.filter((r) => r.name === "glib" && r.version === "0.18.5").length, 1);
 });
+
+test("both reviewed local macro packages retain third-party credits", () => {
+  const rows = dependencyCredits();
+  for (const [name, version] of [
+    ["glib-macros", "0.18.5"],
+    ["gtk3-macros", "0.18.2"],
+  ]) {
+    assert.equal(rows.filter((row) => row.name === name && row.version === version).length, 1);
+  }
+});

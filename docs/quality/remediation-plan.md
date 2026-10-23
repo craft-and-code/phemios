@@ -78,7 +78,7 @@ This requires a separate source/test lot: Message Text/Binary use Utf8Bytes/Byte
 
 ### Lot 3 — GTK3/GLib and proc-macro-error (PH-003 / PH-006)
 
-D-PH-07 implements the subsequently authorized **Lot 3a only**: reviewed local GLib pointer backport, eight public-API tests, provenance checks and visible supplemental advisory assessment. [Validation and outstanding Linux work](lot-3a-validation.md). Lot 3b macro changes remain proposed. The earlier D-PH-06 planning authority below is historical.
+D-PH-07 implements the subsequently authorized **Lot 3a only**: reviewed local GLib pointer backport, eight public-API tests, provenance checks and visible supplemental advisory assessment. [Validation and outstanding Linux work](lot-3a-validation.md). D-PH-08 subsequently implements both macro ports; see [Lot 3b validation](lot-3b-validation.md). The earlier D-PH-06 planning authority below is historical.
 
 D-PH-06 has now checked current releases and upstream fixes: see the [detailed Lot 3 proposal](lot-3-plan.md). Recommended order is a minimal GLib soundness backport, then the larger upstream-derived Syn diagnostic port at both macro owners. GTK 0.19 exists but the current Tauri/WebKitGTK owners reject that generation. proc-macro-error2 is archived. Local-source patches also require an explicit advisory inventory because cargo-audit skips them. This is a proposal only; no dependency change or commit is authorized by that planning request. The prior outline below remains historical context.
 

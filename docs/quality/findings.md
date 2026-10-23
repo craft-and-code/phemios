@@ -11,7 +11,7 @@
 
 ## Findings summary
 
-Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; D-PH-05 removes rustls-pemfile through Tungstenite. Five current Rust warnings remain visible (GLib plus four maintenance notices).
+Initial discovery reproduced no destructive transfer. The authorized follow-up now confirms PH-007 on disposable audio fixtures: a watched root returning after preview permits overwrite with replacement enabled. Six dependency records and this transfer defect are recorded below; D-PH-03 has since implemented/revalidated PH-007 pending independent review. A confirmed dependency match establishes the resolved affected version, not exploitation of Phémios. Provisional application severity and confidence limits remain explicit; the original npm **Critical** classifications are preserved historically. D-PH-04 removes their affected package resolutions; D-PH-05 removes rustls-pemfile through Tungstenite. D-PH-08 removes proc-macro-error from both owners; three D-Bus maintenance notices plus the supplemental GLib record remain visible.
 
 | ID     | Kind                                             | Severity                       | Confidence                                   | Status            | Summary                                                            |
 | ------ | ------------------------------------------------ | ------------------------------ | -------------------------------------------- | ----------------- | ------------------------------------------------------------------ |
@@ -20,7 +20,7 @@ Initial discovery reproduced no destructive transfer. The authorized follow-up n
 | PH-003 | Dependency match / Linux reachability hypothesis | High (provisional)             | HIGH match; LOW affected-call reachability   | FIXED — TO VERIFY | GLib pointer fix backported; Linux validation pending              |
 | PH-004 | Dependency advisory correction                   | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | DOMPurify 3.4.17 removes all three package matches                 |
 | PH-005 | Development-tool advisory correction             | Upstream Critical (historical) | HIGH version/audit evidence                  | VERIFIED          | Storybook 10.6.3 family removes targeted dev-server matches        |
-| PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Four unmaintained Rust packages remain visible; PEM branch removed |
+| PH-006 | Maintenance risk                                 | Medium                         | HIGH inventory; runtime consequence unproven | CONFIRMED         | Three D-Bus maintenance notices remain; PEM/macro branches removed |
 | PH-007 | Conditional transfer data-integrity defect       | High                           | HIGH regression before/after                 | FIXED — TO VERIFY | Retained root admission implemented; independent review pending    |
 
 ## Required detailed record fields
@@ -98,16 +98,16 @@ Original records retain their discovery candidate/locations; D-PH-04 records cur
 
 - D-PH-04 correction evidence: the accepted patched versions are installed/locked; the targeted advisory IDs no longer match in fresh full audits. Existing TLS/editor/native/tooling suites pass. No ignore/override or broader security certification. See the current execution ledger; historical trigger and severity above are retained.
 
-### PH-006 — Four maintenance notices remain; rustls-pemfile branch removed
+### PH-006 — Three D-Bus maintenance notices remain
 
-- Kind/status: Maintenance risk; `CONFIRMED` for four remaining packages. The rustls-pemfile subcase is corrected and verified by the D-PH-05 graph/audit; the combined record remains open.
+- Kind/status: Maintenance risk; `CONFIRMED` for three remaining D-Bus packages. The rustls-pemfile subcase is corrected and verified by the D-PH-05 graph/audit; the combined record remains open.
 - Severity/confidence: Medium; HIGH inventory; runtime consequence unproven.
 - Historical discovery: proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1 were all reported. The original RUSTSEC-2025-0134 evidence is retained in the earlier ledgers.
-- Current locations: named Cargo.lock package blocks for proc-macro-error 1.0.4, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1. Current advisories: RUSTSEC-2024-0370, RUSTSEC-2026-0371, RUSTSEC-2026-0370 and RUSTSEC-2026-0372. Tungstenite 0.30.0 / rustls-native-certs 0.8.5 removes rustls-pemfile from the entire lock graph.
-- Trigger/expected/actual: a future upstream defect/platform change needs maintained support; four resolved versions remain unmaintained. These are maintenance warnings, not four demonstrated vulnerabilities.
-- Impact/evidence: reduced upstream maintenance of GTK macro and Linux D-Bus dependencies. Current all-target reverse trees retain both glib-macros/gtk3-macros owners and the keepawake Linux branch. No runtime consequence established; no policy/ignore or feature removal.
+- Current locations: Cargo.lock zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1; RUSTSEC-2026-0371, RUSTSEC-2026-0370 and RUSTSEC-2026-0372. D-PH-05 removes rustls-pemfile; D-PH-08 removes proc-macro-error/proc-macro-error-attr from both macro owners. See [Lot 3b validation](lot-3b-validation.md).
+- Trigger/expected/actual: a future upstream defect/platform change needs maintained support; three resolved D-Bus versions remain unmaintained. These are maintenance warnings, not demonstrated vulnerabilities.
+- Impact/evidence: reduced upstream maintenance of GTK macro and Linux D-Bus dependencies. Current all-target reverse trees retain keepawake’s Linux branch; both reviewed macro owners now use Syn diagnostics. No runtime consequence established; no policy/ignore or feature removal.
 - Verification: fresh full Cargo/npm audits, locked metadata, real socket/TLS regressions and existing suites/builds. Git sources, prebuilt engine and system dependencies are not comprehensively audited by lockfile matching. See D-PH-05 for exits/counts and missing acceptance.
-- Remaining correction: separately assess the planned GTK/macro and keepawake/zbus migrations in Lots 3/4; no implementation or source/fork decision authorized by Lot 2.
+- Remaining correction: assess keepawake/zbus migration in Lot 4 before changing dependencies; Linux macro/GLib integration and independent acceptance remain pending.
 
 ### PH-007 — Returning watched root permits overwrite after preview
 
@@ -183,3 +183,7 @@ Lot 1 was committed as f4cedb3. Lot 2 is checked against that base: Tungstenite 
 ### D-PH-07 — GLib soundness backport, Linux acceptance pending
 
 The maintainer authorized implementing/checking/committing Lot 3a. Published GLib 0.18.5 is retained with a verified local upstream pointer correction. Eight real GLib API regressions reproduce the old release-mode SIGSEGV and pass after the fix on macOS. PH-003 is source-corrected pending Linux/native/minimum/independent validation, not whole-product clearance. All four maintenance notices remain unchanged; the GLib upstream advisory is retained in the explicit local-source assessment instead of silently disappearing from cargo-audit. The complete implementation/verification scope is [Lot 3a validation](lot-3a-validation.md). Lot 3b remains unimplemented.
+
+### D-PH-08 — Macro diagnostic ports, Linux acceptance pending
+
+Same coordinator context, not independent acceptance. Both published 0.18 macro sources are checksum-inventoried and ported to Syn diagnostics. The old malformed-flags macro panic is reproduced before correction; 25 macro Rust cases (all 21 upstream cases preserved; one additional interface-registration and three GTK cases) and 13 explicit compiler refusals pass afterwards. proc-macro-error/proc-macro-error-attr and unused Syn 1 are removed from the real graph. Three D-Bus notices and the explicit GLib record remain visible; Linux/native/minimum-toolchain acceptance and the separate stable-engine prerequisite remain pending. [Validation](lot-3b-validation.md) and the execution ledger distinguish checks from acceptance.

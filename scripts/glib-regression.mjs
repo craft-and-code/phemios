@@ -27,7 +27,7 @@ try {
     try {
       await writeFile(
         join(temp, "Cargo.toml"),
-        `[package]\nname = "phemios-glib-host-regression"\nversion = "0.0.0"\nedition = "2024"\nrust-version = "1.90"\n[workspace]\n[lib]\npath = "lib.rs"\n[dev-dependencies]\nglib = { path = ${JSON.stringify(join(root, "vendor/glib"))}, default-features = false }\n[profile.release]\nopt-level = 3\nlto = true\ncodegen-units = 1\n`,
+        `[package]\nname = "phemios-glib-host-regression"\nversion = "0.0.0"\nedition = "2024"\nrust-version = "1.90"\n[workspace]\n[lib]\npath = "lib.rs"\n[dev-dependencies]\nglib = { path = ${JSON.stringify(join(root, "vendor/glib"))}, default-features = false }\n[patch.crates-io]\nglib = { path = ${JSON.stringify(join(root, "vendor/glib"))} }\nglib-macros = { path = ${JSON.stringify(join(root, "vendor/glib-macros"))} }\ngtk3-macros = { path = ${JSON.stringify(join(root, "vendor/gtk3-macros"))} }\n[profile.release]\nopt-level = 3\nlto = true\ncodegen-units = 1\n`,
       );
       await writeFile(
         join(temp, "lib.rs"),

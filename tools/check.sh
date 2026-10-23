@@ -22,6 +22,7 @@ fi
 cargo test --workspace --locked
 if [[ "$(uname -s)" == Linux ]]; then
     cargo test -p phemios-glib-regression --release --locked
+    node scripts/macro-regression.mjs --fetch
 fi
 cargo clippy --workspace --all-targets --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked

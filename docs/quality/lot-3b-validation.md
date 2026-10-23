@@ -1,0 +1,31 @@
+# PH-STAB-001 — Lot 3b macro validation
+
+## Scope and source selection
+
+D-PH-08 starts from `4f18270` on main. The maintainer authorized removing proc-macro-error from both macro owners, adding tests, running available checks, keeping other warnings visible and committing. The subsequent Lot 4 request authorizes investigation and a proposal only; keepawake/zbus dependencies are unchanged here. No push or release is authorized.
+
+The exact published glib-macros 0.18.5 (28 files) and gtk3-macros 0.18.2 (9 files) are imported with their original MIT licenses and registry checksums. [The inventory](../../vendor/manifest.json) records every original/current file hash and each exact adapted patch; [vendor maintenance](../../vendor/README.md) describes the local-source obligation. Versions/API remain unchanged. Cargo.toml.orig is original release provenance and intentionally retains its historical dependency declaration; the normalized Cargo.toml and resolved graph are the active inputs.
+
+The diagnostic ports derive from upstream GLib commit [c74a40a](https://github.com/gtk-rs/gtk-rs-core/commit/c74a40a16b23a1b9c8e67842d32d02bc187f551d) and GTK commit [4578225](https://github.com/gtk-rs/gtk3-rs/commit/45782251fa35ecf8bfe759ffceb3db32659a0c97). They return Syn errors and emit compile_error at the procedural-macro boundary, retaining successful 0.18 expansion. Differences in the old object/interface/enum implementation were adapted rather than replacing their generated API with a newer generation. The old flags implementation additionally propagates malformed flags_value errors and reports missing discriminants, replacing its unwrap/expect paths with source diagnostics. No replacement macro-error dependency or new unsafe block is introduced.
+
+The targeted lock update changes source identity for the two macro packages and removes proc-macro-error 1.0.4, proc-macro-error-attr 1.0.4 and their now-unused Syn 1.0.109. Other package blocks are byte-identical, including keepawake 0.6.1 and zbus 5.19.0. The Aède source pin, npm lockfile, native feature selections and Rust minimum remain unchanged. The existing credits reader retains both reviewed local macros, and their complete MIT licenses are distributed.
+
+## Macro behavior and diagnostics
+
+`node scripts/macro-regression.mjs --fetch` bootstraps only a disposable test manifest, seeding its lock from the product. Later runs can omit --fetch and remain offline. The upstream test-only trybuild2 1.3.0 dependency and its helpers never enter the product graph. Normal Windows/macOS App checks gain no GLib/GTK SDK dependency. The optional Mac harness requires already-installed GLib; Linux enables the real GTK compile fixture and the full gate runs the harness there.
+
+The host run on macOS arm64 / Rust 1.99 / GLib 2.90.0 passes **25 Rust cases**: all 18 published GLib macro integration cases, all three upstream utils unit cases, and four new GLib/GTK cases. Original sources, tests, assertions and diagnostic snapshots are retained without edits. The clone_failure case exercises all 29 upstream rejection fixtures; the unit-tuple case exercises four successful compiler fixtures. The published GTK macro archive has no test suite.
+
+An additional real-library case verifies interface registration with generated default prerequisites and stable repeated type identity. Its unsafe trait implementation has an explicit layout safety justification. The three new GTK cases parse generated implementations and verify inline/resource/file templates, implicit/explicit child IDs, ignored ordinary fields and refusal of duplicate/unknown child arguments. The real gtk3-macros crate is compiled on this host, but its successful GTK expansion is type-checked against real GTK only by the Linux fixture. Token parsing is not presented as GTK runtime acceptance.
+
+Thirteen additional compiler checks require exit 101, a useful primary source diagnostic and no procedural-macro panic: invalid flags metadata/missing discriminants, enum placement/name, boxed/shared-boxed/error-domain names, misplaced subclass/interface/derived-properties attributes, and missing/malformed/unsupported GTK templates. Before the flags correction, the unknown flags attribute reproduces **custom attribute panicked**, with the original registry macros (baseline evidence flags-before.jsonl/.stderr); afterwards it produces the expected Syn diagnostic. The other refusals retain explicit failure instead of emitting a diagnostic with a successful build.
+
+Staged whitespace diagnostics retain original license EOF blank lines, an unchanged upstream documentation blank line and valid unified-patch context spaces. No Git whitespace exemption or unrelated cleanup is applied.
+
+The prior eight public GLib iterator regressions are rerun through the host harness in debug/release, now inheriting all three local-source patches. Logs retain the old GLib lifetime warnings, GTK dead-field warnings and upstream test warnings on Rust 1.99; no broad lint suppression or unrelated source cleanup is introduced.
+
+## Advisory visibility and acceptance limits
+
+The real full audit retains **three maintenance notices**: zbus_names 4.3.5 / RUSTSEC-2026-0371, zvariant 5.15.1 / RUSTSEC-2026-0370 and zvariant_derive 5.15.1 / RUSTSEC-2026-0372. The separate source assessment still displays GLib 0.18.5 / RUSTSEC-2024-0429 as upstream-affected, local pointer correction applied, Linux validation pending. Thus four review records remain visible. proc-macro-error's notice disappears because the dependency is removed from both owners, not because it is ignored. Both newly local macro identities are also queried in the supplemental inventory, with unknown findings failing review. No scanner exception is added.
+
+Linux debug/release iterator cases, real GTK compile fixture, native App startup/IPC/menu/dialog/shutdown, Rust 1.90, Windows and independent acceptance remain pending. No compatible Linux execution environment is available on this host. The full gate's separate official-stable-Aède shared-crates prerequisite remains a blocker, not a PASS. See the [execution ledger](release-checklist.md#12-d-ph-08--macro-diagnostic-backports) for actual commands, exits and remaining checks. Campaign verdict remains FIX AND REVALIDATE.
