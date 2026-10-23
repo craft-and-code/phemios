@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: maintainer-authorized Lot 0 correction of PH-007, sibling behavioral regressions and verification. Source/tests/design/current-state/quality records may change for this fix. Dependencies, manifests, locks, source pins and alert policy remain unchanged. A commit message is requested; no commit/tag/publication is authorized. Earlier read-only phases are retained below as historical scope.
+- Current phase: maintainer authorized committing Lot 0 (done: `cc1f9fa`) and implementing Lot 1 targeted security updates, tests/checks and documentation. Only the specified Cargo/npm resolutions and two Storybook dev pins may change; other alerts remain visible. A Lot 1 commit message is requested, not a second commit or publication. Current base is `cc1f9fa91092f93790b7b7f505fe8dbed29902aa`; earlier phases are historical.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -82,3 +82,15 @@ The maintainer subsequently requested a dependency remediation plan and verifica
 ## D-PH-03 — Authorized Lot 0 correction
 
 The maintainer explicitly authorized implementing Lot 0, adding tests and running verification while keeping dependency alerts visible. That authorization supersedes the earlier read-only phase for PH-007 only. The permanent native regression failed with an actual temporary-file overwrite before the correction. Retained source-qualified root admission now spans preview/start/file handoff, with configured local roots protected independently of selected origin. No dependency correction or suppression is included. Verification/limits live in the checklist; no independent reviewer or release is claimed.
+
+## D-PH-04 — Authorized Lot 1
+
+Lot 1 was authorized and implemented on base `cc1f9fa91092f93790b7b7f505fe8dbed29902aa` (Lot 0 commit `cc1f9fa`). Resolved versions: rustls-webpki 0.103.16, webpki-roots 1.0.10, Tokio 1.53.3, DOMPurify 3.4.17 and Storybook/addon-docs/builder-vite/react-dom-shim 10.6.3. No new direct runtime dependency, override, suppression, broad upgrade or source-pin change. React/react-dom remain 19.3.0; other package versions and Cargo dependency edges retain their prior valid choices. Only the three approved Cargo versions/checksums and five approved npm package versions change. The dependency graph validates with locked/offline Cargo metadata and a clean npm ci --ignore-scripts; npm ls reports no invalid peers.
+
+Fresh npm audit: exit 0, **0 vulnerabilities**. Fresh cargo-audit: exit 0, **0 vulnerability matches**, but **six warnings remain visible**: GLib 0.18.5 unsoundness RUSTSEC-2024-0429; proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1 maintenance notices. PH-003/006 and later migration lots remain open. No clean whole-product security claim: Git source, prebuilt embedded engine and system libraries are not cleared by these lockfile audits.
+
+Verification on macOS arm64 / Rust 1.99 / Node 26: 517 Rust executions, no ignored cases; 1,334 Vitest and 46 Node tests. Full workspace Clippy all-targets/Rustdoc with warnings denied and native build pass; frontend format/lint/build, analysis build, bridge, TS contracts, component types/static build and 26-page site/local link checks pass. Existing correct/wrong-certificate HTTPS/WSS and live loopback original/MP3 transfer tests pass. No new authored runtime code or tests required for these package patches; the audit before/after is the advisory-resolution regression, not a demonstrated hostile-certificate or browser exploit.
+
+All Cargo checks use --locked --offline after an explicit locked fetch. PHEMIOS_REQUIRE_FFMPEG=1, CARGO_INCREMENTAL=0, RUSTDOCFLAGS=-D warnings; PHEMIOS_TRANSFER_ENGINE points to the existing Aède 0.6.1 / FlacCompagnon 0.9.6 binary. No engine preparation/source replacement. The full tools/check.sh was attempted before the Lot 0 commit and stopped on the published v0.6.1 missing shared crates, with no manifest/lock changes; it is not falsely reported as a successful full gate for Lot 1. Rust 1.90, Linux/Windows, installers, real-device and independent reviews remain unexecuted.
+
+The four targeted advisory records have verified package corrections; PH-003/006 and independent closure requirements remain open. No Lot 1 commit, tag or push.

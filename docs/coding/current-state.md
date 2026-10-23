@@ -27,6 +27,8 @@ Storybook and the bilingual site/manual were regenerated and checked with local 
 
 The authoritative `tools/check.sh` automatically prepares/selects an engine source and may update dependency pins. For the transfer correction its checks were run individually with locked/offline Cargo resolution and the existing Aède 0.6.1 / FlacCompagnon 0.9.6 sidecar, preserving all manifests/lockfiles. Full native-host tests include temporary loopback HTTPS export and real scan/copy/conversion cases. Automatic engine preparation, App installer bundling, Rust 1.90, other target platforms and physical listening/transfers remain separate unexecuted acceptance. See [verification procedures](frontend-documentation.md) and [UI acceptance](ui-acceptance.md).
 
+The targeted security resolutions now use rustls-webpki 0.103.16, webpki-roots 1.0.10, Tokio 1.53.3, DOMPurify 3.4.17 and the Storybook 10.6.3 family. Fresh npm/Cargo lockfile audits have no vulnerability matches; the GLib unsoundness and five Rust maintenance notices remain visible and unresolved. See [dependencies](dependencies.md) and the [campaign ledger](../quality/release-checklist.md). The existing prebuilt engine and Git/system dependencies are outside that audit clearance.
+
 ## Documentation map
 
 - [Hardening contracts](hardening.md): account ownership, cancellation, searches, private data and provider boundaries.

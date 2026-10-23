@@ -45,3 +45,9 @@ Dependency review queried the 41 newly locked registry versions. The Linux D-Bus
 ## Security follow-up
 
 The resolved Linux GTK3 chain retains `glib 0.18.5`, affected by [RUSTSEC-2024-0429](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), and the `proc-macro-error` maintenance notice. This dependency is not compiled on macOS; absence of authored `VariantStrIter` calls does not prove upstream Linux reachability is safe. Tungstenite also retains a `rustls-pemfile` maintenance follow-up. Reassess the compatible native stack before distribution; do not silently broaden exceptions from another repository. Aède's separate desktop policy records its exact explicitly approved GTK combinations. Lockfiles, fresh registry checks and applicable target trees remain authoritative; Git dependencies and external tools need their own review.
+
+## Targeted security resolution — 2026-10-23
+
+rustls-webpki 0.103.16, webpki-roots 1.0.10, Tokio 1.53.3, DOMPurify 3.4.17 and Storybook/addon-docs/builder-vite/react-dom-shim 10.6.3. The Storybook Solid adapter remains 10.7.2 and its declared peer ranges accept the updated stack. React peers, native dependency versions outside the three Cargo patches, shared-audio source pins and product features remain unchanged.
+
+Fresh lockfile audits find zero npm vulnerabilities and zero Cargo vulnerability matches, while retaining GLib unsoundness and all five maintenance warnings described above. No allowlist/ignore or omitted development dependencies. Tests/builds and unresolved acceptance limits are recorded in the [Lot 1 campaign ledger](../quality/release-checklist.md#8-d-ph-04--lot-1-targeted-security-updates). This does not audit the prebuilt Aède engine or certify the entire application.

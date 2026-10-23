@@ -4,7 +4,7 @@
 
 On 2026-10-23 the maintainer requested a remediation **plan** and verification of PH-007, with no hidden warnings. This follow-up authorizes read-only dependency/source investigation, disposable reproductions and quality records. That planning pass changed no production code/tests/dependencies. D-PH-03 subsequently changes only the authorized Lot 0 source/tests/documentation; manifests, lockfiles, dependency policies and native-source pins remain unchanged. No commit/publication. Candidate remains `397912b95f79d54a3eb23e64dfe589df7e3c03e7`.
 
-Lot 0 has since been authorized and implemented in D-PH-03; Lots 1–4 remain proposed and unexecuted. Recheck registry/advisory metadata when implementing; do not turn these version targets into a blanket update. No `cargo audit --ignore`, deny allowlist/exception, npm `audit=false`, `--omit=dev` clearance, `npm audit fix --force`, fake patched version or dependency removal that silently disables a feature.
+Lot 0 was committed as cc1f9fa. Lot 1 has now been authorized, implemented and revalidated in D-PH-04; Lots 2–4 remain proposed and unexecuted. Recheck registry/advisory metadata when implementing; do not turn these version targets into a blanket update. No `cargo audit --ignore`, deny allowlist/exception, npm `audit=false`, `--omit=dev` clearance, `npm audit fix --force`, fake patched version or dependency removal that silently disables a feature.
 
 ## PH-007 verification — confirmed conditional overwrite
 
@@ -47,6 +47,8 @@ The embedded copy catalogue contains only staging. Do not assume its ordinary so
 Acceptance: the reproduced replacement case refuses before modifying the retained audio, default nonreplacement still preserves it, known disjoint remote transfers work, source/session changes retire jobs, and the existing native real-engine copy/conversion tests pass. Add a controlled transition test through the full job boundary; physical remount acceptance stays separate.
 
 ### Lot 1 — Small security updates (PH-001, PH-002, PH-004, PH-005)
+
+**Implemented and revalidated in D-PH-04, not committed.** The exact approved versions resolve and all corresponding advisory matches disappear from fresh full lockfile audits. GLib and all five maintenance notices remain visible. The table/design below retains the accepted before/after targets; see the checklist for actual exits and hashes.
 
 | Component            | Current → proposed  | Scope / check                                                                                                                                                                                                                                                             |
 | -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -96,7 +98,7 @@ Acceptance: verify all three obsolete standalone crates disappear from the enabl
 
 The locked target trees and current registry/source metadata were inspected on 2026-10-23. PH-C08 remains **FAIL**. Fresh D-PH-03 audits retain the same two Rust vulnerabilities, two unsoundness/five maintenance warnings and two npm Critical packages; no dependency fix or disposition applied. The reproduction is an isolated diagnostic, not an increase to the unit-test count or an independent review. Current campaign verdict remains **FIX AND REVALIDATE**.
 
-Implementation status/order: Lot 0 implemented, regressions/checks passed, independent review pending. Next proposed work is bounded Lot 1 security patches, then separate Tungstenite, GTK/native-stack and D-Bus migrations. Keep the original audit output and compare all warning classes after each accepted lot. No clean-audit claim until the actual relevant tools and platform gates support it.
+Implementation status/order: Lot 0 implemented, regressions/checks passed, independent review pending. Lot 1 targeted patches are implemented and revalidated; next proposed work is the separate Tungstenite, GTK/native-stack and D-Bus migrations. Keep the original audit output and compare all warning classes after each accepted lot. No clean-audit claim until the actual relevant tools and platform gates support it.
 
 ## Primary references
 
@@ -105,3 +107,13 @@ Implementation status/order: Lot 0 implemented, regressions/checks passed, indep
 - [Tungstenite 0.30 manifest](https://github.com/snapview/tungstenite-rs/blob/v0.30.0/Cargo.toml), [migration changelog](https://github.com/snapview/tungstenite-rs/blob/v0.30.0/CHANGELOG.md), [rustls-pemfile maintenance notice](https://rustsec.org/advisories/RUSTSEC-2025-0134.html).
 - [GLib advisory](https://rustsec.org/advisories/RUSTSEC-2024-0429.html), [upstream pointer correction](https://github.com/gtk-rs/gtk-rs-core/pull/1343), [proc-macro-error maintenance notice](https://rustsec.org/advisories/RUSTSEC-2024-0370.html).
 - [zvariant consolidation notice](https://rustsec.org/advisories/RUSTSEC-2026-0370.html), [keepawake registry status](https://crates.io/api/v1/crates/keepawake), [keepawake upstream](https://github.com/segevfiner/keepawake-rs).
+
+## D-PH-04 current result
+
+Lot 1 was authorized and implemented on base `cc1f9fa91092f93790b7b7f505fe8dbed29902aa` (Lot 0 commit `cc1f9fa`). Resolved versions: rustls-webpki 0.103.16, webpki-roots 1.0.10, Tokio 1.53.3, DOMPurify 3.4.17 and Storybook/addon-docs/builder-vite/react-dom-shim 10.6.3. No new direct runtime dependency, override, suppression, broad upgrade or source-pin change. React/react-dom remain 19.3.0; other package versions and Cargo dependency edges retain their prior valid choices. Only the three approved Cargo versions/checksums and five approved npm package versions change. The dependency graph validates with locked/offline Cargo metadata and a clean npm ci --ignore-scripts; npm ls reports no invalid peers.
+
+Fresh npm audit: exit 0, **0 vulnerabilities**. Fresh cargo-audit: exit 0, **0 vulnerability matches**, but **six warnings remain visible**: GLib 0.18.5 unsoundness RUSTSEC-2024-0429; proc-macro-error 1.0.4, rustls-pemfile 2.2.0, zbus_names 4.3.5, zvariant 5.15.1 and zvariant_derive 5.15.1 maintenance notices. PH-003/006 and later migration lots remain open. No clean whole-product security claim: Git source, prebuilt embedded engine and system libraries are not cleared by these lockfile audits.
+
+Verification on macOS arm64 / Rust 1.99 / Node 26: 517 Rust executions, no ignored cases; 1,334 Vitest and 46 Node tests. Full workspace Clippy all-targets/Rustdoc with warnings denied and native build pass; frontend format/lint/build, analysis build, bridge, TS contracts, component types/static build and 26-page site/local link checks pass. Existing correct/wrong-certificate HTTPS/WSS and live loopback original/MP3 transfer tests pass. No new authored runtime code or tests required for these package patches; the audit before/after is the advisory-resolution regression, not a demonstrated hostile-certificate or browser exploit.
+
+All Cargo checks use --locked --offline after an explicit locked fetch. PHEMIOS_REQUIRE_FFMPEG=1, CARGO_INCREMENTAL=0, RUSTDOCFLAGS=-D warnings; PHEMIOS_TRANSFER_ENGINE points to the existing Aède 0.6.1 / FlacCompagnon 0.9.6 binary. No engine preparation/source replacement. The full tools/check.sh was attempted before the Lot 0 commit and stopped on the published v0.6.1 missing shared crates, with no manifest/lock changes; it is not falsely reported as a successful full gate for Lot 1. Rust 1.90, Linux/Windows, installers, real-device and independent reviews remain unexecuted.
