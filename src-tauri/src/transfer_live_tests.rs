@@ -104,9 +104,24 @@ fn live_export(format: &str) {
     };
     let destination = root.join("player");
     fs::create_dir(&destination).unwrap();
+    let mount = Mounted::capture(destination.clone()).unwrap();
+    let engine = Arc::new(Mutex::new(engine));
+    let protection = super::roots::Protection::capture(
+        &mount,
+        engine.clone(),
+        &plan["roots"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect::<Vec<_>>(),
+        &[],
+    )
+    .unwrap();
     let preview = Preview {
         id: "live".into(),
-        target: Target::Mounted(Mounted::capture(destination.clone()).unwrap()),
+        target: Target::Mounted(mount),
+        protection: Some(protection),
         items: vec![Item {
             owner,
             reference,
@@ -144,5 +159,5 @@ fn live_export(format: &str) {
         assert_eq!(String::from_utf8_lossy(&probe.stdout).trim(), "mp3");
     }
     assert_eq!(fs::read(album.join("01.flac")).unwrap(), bytes);
-    engine.stop().unwrap();
+    engine.lock().unwrap().stop().unwrap();
 }

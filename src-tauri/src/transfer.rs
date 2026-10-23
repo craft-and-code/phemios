@@ -18,6 +18,8 @@ use tauri::{AppHandle, Manager, State};
 mod job;
 #[path = "transfer_plan.rs"]
 mod plan;
+#[path = "transfer_roots.rs"]
+mod roots;
 #[derive(Clone)]
 pub(crate) enum Target {
     Mounted(Mounted),
@@ -52,9 +54,22 @@ pub(crate) struct Item {
 pub(crate) struct Preview {
     id: String,
     target: Target,
+    protection: Option<roots::Protection>,
     items: Vec<Item>,
     options: Value,
     bytes: u64,
+}
+impl Preview {
+    fn confirm_destination(&self) -> Result<(), String> {
+        match &self.target {
+            Target::Mounted(_) => self
+                .protection
+                .as_ref()
+                .ok_or("Protection du transfert absente. Recréez l’aperçu.")?
+                .confirm(),
+            Target::Mtp(_) => Ok(()),
+        }
+    }
 }
 #[derive(Default)]
 pub(crate) struct Transfers {
@@ -173,6 +188,7 @@ pub(crate) async fn transfer_prepare(
         owner.confirm()?;
         selected.push((source, raw, owner));
     }
+    let engine = state.engine.clone();
     let transfer = transfer.inner().clone();
     blocking(move || {
         let _destinations = transfer.idle_destinations()?;
@@ -182,6 +198,8 @@ pub(crate) async fn transfer_prepare(
         }
         if matches!(&target,Target::Mtp(_)) && options["replace"] == true { return Err("Le remplacement de fichiers MTP existants n’est pas disponible.".into()); }
         if matches!(&target,Target::Mounted(m) if m.apple_ipod()) && (options["format"] != "original" || options["verify"] != false || options["replace"] != false) { return Err("Utilisez le profil automatique iPod sans remplacement ni vérification octet par octet.".into()); }
+        let mut local_roots = std::collections::BTreeSet::new();
+        let mut remote_roots = std::collections::BTreeSet::new();
         let mut items = Vec::new(); let mut bytes = 0u64; let mut paths = std::collections::BTreeSet::new();
         let mut output_paths = std::collections::BTreeSet::new(); let mut display_paths = Vec::new();
         let converted = options["format"] != "original";
@@ -214,8 +232,14 @@ pub(crate) async fn transfer_prepare(
                 let stamp = value["scanned_at"].as_u64().ok_or("Plan de copie invalide ; mettez à jour Aède.")?;
                 if scanned_at.is_some_and(|previous| previous != stamp) { return Err("Le catalogue a changé ; recommencez l’aperçu.".into()); }
                 scanned_at = Some(stamp);
-                let roots: Vec<String> = value["roots"].as_array().ok_or("Racines de copie invalides.")?.iter().map(|v| v.as_str().map(str::to_owned).ok_or("Racine de copie invalide.")).collect::<Result<_,_>>()?;
-                if let Target::Mounted(mount) = &target { mount.outside(&roots)?; }
+                let roots: Vec<String> = value["roots"].as_array().filter(|v| v.len() <= 4096).ok_or("Racines de copie invalides.")?.iter().map(|v| v.as_str().filter(|s| s.len() <= 4096 && !s.contains('\0')).map(str::to_owned).ok_or("Racine de copie invalide.")).collect::<Result<_,_>>()?;
+                match source {
+                    Source::Local => local_roots.extend(roots),
+                    Source::Server => remote_roots.extend(roots),
+                }
+                if local_roots.len() > 4096 || remote_roots.len() > 4096 {
+                    return Err("Trop de racines de transfert.".into());
+                }
                 let returned = value["items"].as_array().filter(|r| r.len() == batch.len()).ok_or("Plan de copie incomplet.")?;
                 for (row, expected) in returned.iter().zip(batch) {
                     if row["reference"] != expected.1 { return Err("Identité de copie invalide.".into()); }
@@ -236,9 +260,15 @@ pub(crate) async fn transfer_prepare(
                 }
             }
         }
+        let protection = match &target {
+            Target::Mounted(mount) => Some(roots::Protection::capture(mount, engine,
+                &local_roots.into_iter().collect::<Vec<_>>(),
+                &remote_roots.into_iter().collect::<Vec<_>>())?),
+            Target::Mtp(_) => None,
+        };
         let id = transfer.serial.fetch_add(1, Ordering::Relaxed).to_string();
         let result = json!({"id":id,"tracks":items.len(),"bytes":bytes,"destination":destination,"ipod":matches!(&target, Target::Mounted(m) if m.apple_ipod()),"files":display_paths.iter().take(30).map(|path| path.to_string_lossy()).collect::<Vec<_>>()});
-        *transfer.preview.lock().map_err(|_| "Aperçu occupé.")? = Some(Preview { id, target, items, options, bytes });
+        *transfer.preview.lock().map_err(|_| "Aperçu occupé.")? = Some(Preview { id, target, protection, items, options, bytes });
         Ok(result)
     }).await
 }
@@ -259,6 +289,7 @@ pub(crate) async fn transfer_start(
         .take()
         .filter(|p| p.id == id)
         .ok_or("Recréez l’aperçu avant le transfert.")?;
+    preview.confirm_destination()?;
     for item in &preview.items {
         item.owner.confirm()?;
     }

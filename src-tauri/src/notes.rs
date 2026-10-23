@@ -29,7 +29,7 @@ pub(crate) async fn note_export(
                 "/api/me/v1/annotation",
                 &[("ref", &reference)],
                 None,
-                &current,
+                current,
             )?;
             let endpoint = if reference.starts_with("artist:") {
                 "/api/v1/artist"
@@ -39,7 +39,7 @@ pub(crate) async fn note_export(
                 "/api/v1/track"
             };
             let detail =
-                client.request_admitted("GET", endpoint, &[("ref", &reference)], None, &current)?;
+                client.request_admitted("GET", endpoint, &[("ref", &reference)], None, current)?;
             crate::sessions::with_current(&held, &generation, &ticket, &client, || {
                 let saved =
                     phemios_core::download::publish_note(&folder, &reference, &response, &detail)?;

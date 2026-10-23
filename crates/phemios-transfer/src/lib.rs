@@ -1,9 +1,11 @@
 //! Explicit additive portable-player transfers. Catalog selection and credentials stay in the host.
 #![warn(missing_docs)]
+mod guard;
 mod ipod;
 mod mounted;
 mod mtp;
 mod process;
+pub use guard::DestinationGuard;
 pub use ipod::{podkit_available, sync_ipod};
 pub use mounted::Mounted;
 pub use mtp::{MtpTarget, discover_mtp};

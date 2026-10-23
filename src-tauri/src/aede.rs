@@ -286,7 +286,7 @@ pub(crate) async fn aede_request(
                         .map_err(|_| "Moteur local occupé.")?
                         .fetch_keys()?;
                     let status = if keys.as_object().is_some_and(|rows| !rows.is_empty()) {
-                        client.request_admitted("GET", "/api/v1/status", &[], None, &current)?
+                        client.request_admitted("GET", "/api/v1/status", &[], None, current)?
                     } else {
                         serde_json::json!({})
                     };
@@ -312,7 +312,7 @@ pub(crate) async fn aede_request(
                                 &path,
                                 &query,
                                 body.as_ref(),
-                                &current,
+                                current,
                             )?,
                             origin,
                         )
@@ -353,7 +353,7 @@ pub(crate) async fn aede_artwork(
             let current =
                 || crate::sessions::with_generation(&sessions, &generation, ticket, || Ok(()));
             if let Some(client) = &session {
-                crate::snapshots::admit_artwork(client, &snapshot, &reference, &current)?;
+                crate::snapshots::admit_artwork(client, &snapshot, &reference, current)?;
             }
             if let Some(bytes) =
                 crate::sessions::with_generation(&sessions, &generation, ticket, || {
@@ -370,7 +370,7 @@ pub(crate) async fn aede_artwork(
             {
                 return Err("Synchronisez le compte connecté avant ses images.".into());
             }
-            let bytes = client.artwork_admitted(&reference, &kind, &current)?;
+            let bytes = client.artwork_admitted(&reference, &kind, current)?;
             crate::sessions::with_generation(&sessions, &generation, ticket, || {
                 cache.save_image(&snapshot, &reference, &kind, &bytes)
             })?;
@@ -414,7 +414,7 @@ pub(crate) async fn aede_missing_cover(
             let current =
                 || crate::sessions::with_generation(&sessions, &generation, ticket, || Ok(()));
             if let Some(client) = &session {
-                crate::snapshots::admit_artwork(client, &snapshot, &artist, &current)?;
+                crate::snapshots::admit_artwork(client, &snapshot, &artist, current)?;
             }
             if group.len() != 36
                 || !group.bytes().enumerate().all(|(i, b)| {

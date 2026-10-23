@@ -38,6 +38,29 @@ impl Engine {
     pub fn copy_executable(&self) -> PathBuf {
         self.executable.clone()
     }
+    /// All configured local library roots, including offline folders and while stopped.
+    /// Never substitute an empty list for unreadable configuration or return credentials.
+    pub fn library_roots(&self) -> Result<Vec<PathBuf>, String> {
+        let value = self.config()?;
+        let rows = value["roots"]
+            .as_array()
+            .ok_or("Dossiers locaux invalides.")?;
+        if rows.len() > 64 {
+            return Err("Trop de dossiers locaux.".into());
+        }
+        rows.iter()
+            .map(|row| {
+                let path = row["path"]
+                    .as_str()
+                    .filter(|s| s.len() <= 4096 && !s.contains('\0'))
+                    .map(PathBuf::from)
+                    .filter(|p| p.is_absolute())
+                    .ok_or("Dossier local invalide.")?;
+                Ok(path)
+            })
+            .collect::<Result<std::collections::BTreeSet<_>, String>>()
+            .map(|roots| roots.into_iter().collect())
+    }
     fn file(&self) -> PathBuf {
         self.root.join("desktop.json")
     }

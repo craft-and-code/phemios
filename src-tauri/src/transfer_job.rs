@@ -82,6 +82,7 @@ fn execute(
     executable: &Path,
     root: &Path,
 ) -> Result<(), String> {
+    preview.confirm_destination()?;
     let work = workspace(root)?;
     // One staged file bounds disk use; a failed or canceled job removes its private work tree.
     for (index, item) in preview.items.iter().enumerate() {
@@ -95,10 +96,8 @@ fn execute(
         valid()?;
         item.owner
             .client
-            .require_unrestricted_download_admitted(&valid)?;
-        if let Target::Mounted(mount) = &preview.target {
-            mount.confirm()?;
-        }
+            .require_unrestricted_download_admitted(valid)?;
+        preview.confirm_destination()?;
         let source = work.0.join("music");
         let data = work.0.join("catalog");
         let output = work.0.join("converted");
@@ -127,11 +126,13 @@ fn execute(
             },
         )?;
         valid()?;
+        preview.confirm_destination()?;
         if let Target::Mounted(mount) = &preview.target {
             if mount.apple_ipod() {
                 update("ipod", item.bytes);
                 // An in-flight iPod database commit is allowed to finish before canceling.
                 phemios_transfer::sync_ipod(mount, &source, &work.0, "max", &|| {
+                    preview.confirm_destination()?;
                     item.owner.confirm()
                 })?;
                 valid()?;
@@ -143,7 +144,7 @@ fn execute(
                     mount.path(),
                     &preview.options,
                     &|| {
-                        mount.confirm()?;
+                        preview.confirm_destination()?;
                         valid()
                     },
                     &update,

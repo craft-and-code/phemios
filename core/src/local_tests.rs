@@ -335,3 +335,16 @@ fn unreadable_config_cannot_keep_an_owned_engine_lease_alive_after_stop() {
         "the owned engine retained its lease after sign-out"
     );
 }
+
+#[test]
+fn protected_roots_include_offline_configuration_and_refuse_corruption() {
+    let data = Sandbox::new("transfer-protection");
+    let engine = Engine::new(data.0.join("app"), PathBuf::from("missing-engine"));
+    let offline = data.0.join("offline");
+    engine.add_roots(std::slice::from_ref(&offline)).unwrap();
+    assert_eq!(engine.library_roots().unwrap(), vec![offline]);
+    assert!(!data.0.join("offline").exists());
+    fs::write(engine.file(), b"damaged").unwrap();
+    assert!(engine.library_roots().is_err());
+    assert_eq!(fs::read(engine.file()).unwrap(), b"damaged");
+}

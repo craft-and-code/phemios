@@ -53,7 +53,14 @@ fn real_engine_converts_streamed_audio_to_mp3_without_modifying_the_source() {
     }
     streamed_copy("mp3", "mp3");
 }
+#[test]
+fn a_watched_root_returning_during_download_cannot_be_overwritten() {
+    streamed_copy_case("original", "wav", true);
+}
 fn streamed_copy(format: &str, extension: &str) {
+    streamed_copy_case(format, extension, false);
+}
+fn streamed_copy_case(format: &str, extension: &str, returning: bool) {
     use std::io::{Read, Write};
     let executable = std::env::var_os("PHEMIOS_TRANSFER_ENGINE")
         .expect("run tools/check.sh or set PHEMIOS_TRANSFER_ENGINE to the tested Aède binary");
@@ -67,6 +74,32 @@ fn streamed_copy(format: &str, extension: &str) {
         .join("ramp.wav");
     let bytes = fs::read(&fixture).unwrap();
     let original = bytes.clone();
+    let mut random = [0; 16];
+    getrandom_bytes(&mut random).unwrap();
+    let root = std::env::temp_dir().join(format!(
+        "phemios-transfer-e2e-{}",
+        random
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    ));
+    fs::create_dir(&root).unwrap();
+    let _root = Workspace(root.clone());
+    let destination = root.join("destination");
+    fs::create_dir(&destination).unwrap();
+    fs::write(destination.join("existing.txt"), b"retain").unwrap();
+    let watched = destination.join("Example Artist");
+    let victim = watched.join("Example Album/01.wav");
+    let mut retained = original.clone();
+    *retained.last_mut().unwrap() ^= 0x55;
+    let restore = returning.then(|| (victim.clone(), retained.clone()));
+    let mount = Mounted::capture_folder(destination.clone()).unwrap();
+    let roots = if returning {
+        vec![watched.to_string_lossy().into_owned()]
+    } else {
+        vec![]
+    };
+    mount.outside(&roots).unwrap();
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let address = format!("http://{}", listener.local_addr().unwrap());
     let worker = std::thread::spawn(move || {
@@ -105,6 +138,10 @@ fn streamed_copy(format: &str, extension: &str) {
                 .unwrap();
             } else {
                 assert!(headers.starts_with("GET /api/me/v1/exports/original?"));
+                if let Some((path, bytes)) = &restore {
+                    fs::create_dir_all(path.parent().unwrap()).unwrap();
+                    fs::write(path, bytes).unwrap();
+                }
                 write!(
                     stream,
                     "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -122,26 +159,24 @@ fn streamed_copy(format: &str, extension: &str) {
         generation: Arc::new(AtomicU64::new(1)),
         ticket: "1".into(),
     };
-    let mut random = [0; 16];
-    getrandom_bytes(&mut random).unwrap();
-    let root = std::env::temp_dir().join(format!(
-        "phemios-transfer-e2e-{}",
-        random
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect::<String>()
-    ));
-    fs::create_dir(&root).unwrap();
-    let _root = Workspace(root.clone());
-    let destination = root.join("destination");
-    fs::create_dir(&destination).unwrap();
-    fs::write(destination.join("existing.txt"), b"retain").unwrap();
     let relative = Path::new("Example Artist")
         .join("Example Album")
         .join("01.wav");
     let preview = Preview {
         id: "test".into(),
-        target: Target::Mounted(Mounted::capture_folder(destination.clone()).unwrap()),
+        protection: Some(
+            roots::Protection::capture(
+                &mount,
+                Arc::new(Mutex::new(phemios_core::local::Engine::new(
+                    root.join("profile"),
+                    PathBuf::from(&executable),
+                ))),
+                &[],
+                &roots,
+            )
+            .unwrap(),
+        ),
+        target: Target::Mounted(mount),
         items: vec![Item {
             owner,
             reference: "track:fixture".into(),
@@ -149,18 +184,31 @@ fn streamed_copy(format: &str, extension: &str) {
             relative: relative.clone(),
             bytes: original.len() as u64,
         }],
-        options: json!({"format":format,"verify":true,"replace":false}),
+        options: json!({"format":format,"verify":true,"replace":returning}),
         bytes: original.len() as u64,
     };
     let state = Transfers::default();
-    execute(
+    let result = execute(
         &state,
         &preview,
         Path::new(&executable),
         &root.join("staging"),
-    )
-    .unwrap();
+    );
     worker.join().unwrap();
+    if returning {
+        assert!(
+            fs::read(&victim).unwrap() == retained,
+            "copy overwrote audio in the returning watched root"
+        );
+        assert!(
+            result.is_err(),
+            "a returning overlapping root must retire the preview"
+        );
+        assert_eq!(fs::read(&fixture).unwrap(), original);
+        assert_eq!(fs::read_dir(root.join("staging")).unwrap().count(), 0);
+        return;
+    }
+    result.unwrap();
     let final_path = destination.join(relative.with_extension(extension));
     let written = fs::read(&final_path).unwrap();
     if format == "original" {
@@ -192,4 +240,66 @@ fn streamed_copy(format: &str, extension: &str) {
     assert_eq!(fs::read(&fixture).unwrap(), original);
     assert_eq!(state.status().unwrap()["done"], 1);
     assert_eq!(fs::read_dir(root.join("staging")).unwrap().count(), 0);
+}
+
+#[test]
+fn a_local_root_added_after_preview_refuses_start_before_staging_or_export() {
+    let mut random = [0; 16];
+    getrandom_bytes(&mut random).unwrap();
+    let path = std::env::temp_dir().join(format!(
+        "phemios-start-{}",
+        random
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    ));
+    fs::create_dir(&path).unwrap();
+    let _cleanup = Workspace(path.clone());
+    let dest = path.join("destination");
+    fs::create_dir(&dest).unwrap();
+    let mount = Mounted::capture_folder(dest.clone()).unwrap();
+    let engine = Arc::new(Mutex::new(phemios_core::local::Engine::new(
+        path.join("profile"),
+        PathBuf::from("not-an-engine"),
+    )));
+    let protection = roots::Protection::capture(&mount, engine.clone(), &[], &[]).unwrap();
+    let (client, _) = crate::account_test_support::sessions();
+    let owner = Owner {
+        client: client.clone(),
+        session: Arc::new(Mutex::new(Some(client))),
+        generation: Arc::new(AtomicU64::new(1)),
+        ticket: "1".into(),
+    };
+    let preview = Preview {
+        id: "prepared".into(),
+        target: Target::Mounted(mount),
+        protection: Some(protection),
+        items: vec![Item {
+            owner,
+            reference: "track:not-dispatched".into(),
+            stamp: "stamp".into(),
+            relative: PathBuf::from("01.wav"),
+            bytes: 1,
+        }],
+        options: json!({"format":"original","verify":true,"replace":true}),
+        bytes: 1,
+    };
+    engine
+        .lock()
+        .unwrap()
+        .add_roots(&[dest.join("new-local-library")])
+        .unwrap();
+    assert!(preview.confirm_destination().is_err());
+    let staging = path.join("staging");
+    assert!(
+        execute(
+            &Transfers::default(),
+            &preview,
+            Path::new("not-an-engine"),
+            &staging
+        )
+        .is_err()
+    );
+    assert!(!staging.exists());
+    assert!(fs::read_dir(dest).unwrap().next().is_none());
 }
