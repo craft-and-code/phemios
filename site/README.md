@@ -14,6 +14,24 @@ Open `http://127.0.0.1:1439/`. English is under `en/`; the manual starts at `doc
 
 `site:build` generates the existing TypeScript declarations, Storybook and warning-denied workspace Rustdoc, then assembles and checks the site. It does not compile or bundle the native application executable. It uses locked/offline Cargo resolution and requires the already installed repository development dependencies. For content-only iteration after these outputs exist, use `node scripts/build-site.mjs --reuse-technical`; the checker still refuses missing technical entry points. Never use that shortcut to claim fresh technical documentation.
 
+## GitHub Pages deployment
+
+The production URL is <https://craft-and-code.github.io/phemios/>. It becomes available after the first successful deployment; adding the workflow alone does not publish the local preview.
+
+The separate [GitHub Pages workflow](../.github/workflows/pages.yml) runs on pushes to `main` and can be dispatched manually on `main`. Other branches and release tags do not deploy the website. Its build job has read-only repository/Pages permissions; only the dependent deployment job receives `pages: write` and `id-token: write`, through the `github-pages` environment. Deployments are serialized without interrupting an active publication.
+
+The Ubuntu 22.04 builder installs the native prerequisites, uses Node.js 24 and stable Rust, installs locked npm dependencies, and prepares the latest published stable Aède engine through the existing build policy. This preparation supplies the genuine sidecar and version metadata required by workspace Rustdoc; it does not launch the App or an engine server, compile an App installer, publish an application release or change repository pins on GitHub. The selected release/SHA is retained in the run log. The workflow runs the website/manual tests and `npm run build` to supply the frontend assets required by the native Rustdoc context on a clean checkout. It then generates fresh Storybook, Rustdoc and frontend documentation with `npm run site:build`, and checks the assembled output before uploading only `dist-site/`. The application frontend built for Rustdoc is not the uploaded website.
+
+One-time repository setup: in **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. An administrator can instead create the Pages configuration with `gh api --method POST repos/craft-and-code/phemios/pages -f build_type=workflow`; for an existing site, inspect its configuration before changing it. This setting prepares Pages without dispatching the workflow or uploading site content.
+
+After reviewing the site and committing/pushing this workflow to `main`, the push starts publication. To redeploy the committed `main` explicitly, use **Actions → GitHub Pages → Run workflow**, or:
+
+```sh
+gh workflow run pages.yml --repo craft-and-code/phemios --ref main
+```
+
+Check the `build` and `deploy` jobs and their deployment URL. A failed build/check must not be treated as a publication. Workflow syntax and local Mac generation checks are separate from an actual Ubuntu/GitHub-hosted execution. No personal access token or custom domain is needed for this project URL; do not deploy the repository root or the raw `site/` directory.
+
 ## Edit the content
 
 - `site/index.html` and `site/en/index.html`: matching homepage editions; update them together.
