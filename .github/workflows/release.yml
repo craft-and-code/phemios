@@ -37,7 +37,7 @@ jobs:
           - os: macos-latest
             label: macOS-AppleSilicon
             target: aarch64-apple-darwin
-            bundles: dmg
+            bundles: app,dmg
           - os: ubuntu-22.04
             label: Linux-x86_64
             target: x86_64-unknown-linux-gnu
@@ -93,6 +93,9 @@ jobs:
           cargo clippy -p phemios-core --all-targets --locked -- -D warnings
       - name: Build native installers with the pinned engine
         run: npx --no-install tauri build --ci --bundles ${{ matrix.bundles }} -- --locked
+      - name: Verify the complete macOS App and read-only DMG copy
+        if: runner.os == 'macOS'
+        run: node scripts/check-macos-bundle.mjs --dmg
       - name: Name installers and generate SHA-256 sidecars
         run: node scripts/release.mjs package ${{ matrix.label }}
       - uses: actions/upload-artifact@v4

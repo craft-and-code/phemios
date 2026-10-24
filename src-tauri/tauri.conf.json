@@ -32,6 +32,9 @@
         "type": "downloadBootstrapper"
       }
     },
-    "externalBin": ["binaries/phemios-aede"]
+    "externalBin": ["binaries/phemios-aede"],
+    "macOS": {
+      "signingIdentity": "-"
+    }
   }
 }

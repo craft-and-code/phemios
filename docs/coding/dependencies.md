@@ -28,9 +28,11 @@ The current lockfiles also include the explicitly approved `d3-geo` for bounded 
 
 The security boundaries are recorded in [client hardening](hardening.md). A clean advisory check is a statement about the checked lockfile and database at that time, not a proof that the application has no vulnerabilities.
 
-## Vendored icon artwork
+## Shared Lucide icon vocabulary
 
-The Genres glyph uses the Lucide `piano` SVG (Lucide Icons and Contributors, ISC). Its original source is retained at `public/icons/lucide-piano.svg`, its complete license at `public/licenses/lucide.txt`, and Settings → About credits links to the official icon page. Icon embeds only its path data in the existing local SVG renderer, using the shared stroke/size/color. No icon runtime package, font or network loading is added. The remaining icon vocabulary stays local. Source: https://github.com/lucide-icons/lucide/blob/main/icons/piano.svg .
+The maintainer-approved `lucide-solid` 1.61.0 (ISC) supplies all 98 semantic UI icon names through 96 statically imported components. Its Solid peer range accepts the existing SolidJS 1.9.17. `src/components/icon-symbols.ts` preserves navigation, saved-menu and device names; `Icon.tsx` applies 18 px, 1.6 stroke width and inherited color consistently. Unknown/older dynamic names retain the neutral List fallback. Imports are explicit so the production build excludes the rest of Lucide; no font, CDN or runtime icon download is involved. Model names remain text rather than claiming a model-specific Lucide silhouette.
+
+The former isolated `public/icons/lucide-piano.svg` copy is retired. The complete upstream license remains at `public/licenses/lucide.txt`; Settings → About credits Lucide and the generated dependency list reports its exact locked version. Graphs, waveforms, geographic data and product wordmarks remain purpose-specific visuals. The component explorer retains its existing Icon examples and adds the complete vocabulary plus interactive transport-state checks. Source and usage: [official Solid integration](https://lucide.dev/guide/solid), [upstream repository](https://github.com/lucide-icons/lucide).
 
 ## Local audio CD source
 

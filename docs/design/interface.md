@@ -6,6 +6,10 @@ Reuse Aède's dark surfaces, typography and accent palette. The dot in `phémios
 
 Start from artists, albums, compilations when present, countries when known, and genres. Keep favourites, smart collections, listening history, static M3U lists, relationship discovery and external-player export reachable. Artist pages distinguish owned discography, source-known missing releases, guest/compilation appearances, writing/production contributions, biography with attribution, dated membership and already-fetched images. Album details open as a full page with rating, favourites, tags, personal notes, tracks, credits, source disagreements and attributed analyses.
 
+## Icon presentation
+
+All interface control/navigation glyphs use the official Lucide Solid components through the shared semantic `Icon` adapter: 18 px, 1.6 stroke width and inherited color. Labels, roles and pressed/disabled state remain on the surrounding controls; glyphs are decorative. Existing semantic names remain stable for saved menus and dynamically described devices, with List as the neutral fallback for unknown names. Synchronized lyrics and opposite transport states retain distinct glyphs. Only the selected components ship locally; no network request loads icons. Data-driven diagrams, waveforms, maps and product wordmarks retain their own rendering.
+
 ## Sliding filters
 
 The user may show years, alphabet or both. Each rail has two bounds. Drag a bound to resize the interval; drag the selected band to move it while preserving its span. Keyboard arrows move the band; Home/End move it to domain edges. Display the chosen bounds throughout. Include separate treatment for unknown years and nonletter initials.
