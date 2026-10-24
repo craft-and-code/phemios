@@ -4,19 +4,19 @@
 
 This directory defines Phémios's stabilization process. It supports evidence-based decisions; an audit does not prove that software is free of bugs.
 
-| Document                                                    | Responsibility                                                                            |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| This README                                                 | Canonical severity, evidence, review and closure rules                                    |
-| [Audit scope](audit-scope.md)                               | Campaign identity, authorized phase, included paths, validation commands and limits       |
-| [Findings](findings.md)                                     | Stable finding records, dispositions and independent review records                       |
-| [Release and stabilization checklist](release-checklist.md) | Actual validation results, final campaign report and separate release decision            |
-| [PH-C09 native validation kit](ph-c09-validation.md)        | Frozen-product handoff, native Linux/Windows procedures and unexecuted acceptance records |
-| [Auditor](prompts/auditor.md)                               | Read-only investigation of execution paths and defects                                    |
-| [Test engineer](prompts/test-engineer.md)                   | Behavioral coverage review and regression work within current permissions                 |
-| [Adversarial reviewer](prompts/adversarial-reviewer.md)     | Independent examination of findings, fixes and missed failure modes                       |
-| [Release validator](prompts/release-validator.md)           | Evidence consolidation and campaign recommendation                                        |
+| Document                                                    | Responsibility                                                                      |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| This README                                                 | Canonical severity, evidence, review and closure rules                              |
+| [Audit scope](audit-scope.md)                               | Campaign identity, authorized phase, included paths, validation commands and limits |
+| [Findings](findings.md)                                     | Stable finding records, dispositions and independent review records                 |
+| [Release and stabilization checklist](release-checklist.md) | Actual validation results, final campaign report and separate release decision      |
+| [PH-C09 native validation kit](ph-c09-validation.md)        | Frozen-product handoff, native procedures and attributed acceptance results         |
+| [Auditor](prompts/auditor.md)                               | Read-only investigation of execution paths and defects                              |
+| [Test engineer](prompts/test-engineer.md)                   | Behavioral coverage review and regression work within current permissions           |
+| [Adversarial reviewer](prompts/adversarial-reviewer.md)     | Independent examination of findings, fixes and missed failure modes                 |
+| [Release validator](prompts/release-validator.md)           | Evidence consolidation and campaign recommendation                                  |
 
-Current follow-up: [latest-published-stable candidate and validation ledger](release-checklist.md), with stable findings and review identities in the [register](findings.md). The [D-PH-18 PH-C09 kit](ph-c09-validation.md) prepares the approved Linux/Windows matrix without claiming execution; PH-C09 remains BLOCKED and the campaign CONTINUE. Earlier dependency remediation plans retain their historical evidence.
+Current follow-up: [latest-published-stable candidate and validation ledger](release-checklist.md), with stable findings and review identities in the [register](findings.md). The [PH-C09 kit](ph-c09-validation.md) prepares the Linux/Windows matrix; [D-PH-19](ph-c09-validation.md#d-ph-19--mac-installed-app-acceptance) now records the automated Mac isolation failure and the later bounded manual functional PASS reported by the maintainer in `phemiosqa`. PH-C09 remains BLOCKED and the campaign CONTINUE. Earlier preparation, C2 current-state/media-validation checkpoints and frozen reviews retain their historical attribution; D-PH-19 supplies the later Mac disposition.
 
 Follow the root [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md), [current state](../coding/current-state.md), relevant design documents, [account isolation](../coding/account-isolation.md), [native integration](../design/native-integration.md) and [verification procedures](../coding/frontend-documentation.md). Repository-facing records and all four prompts use English.
 
