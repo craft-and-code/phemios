@@ -20,7 +20,7 @@
 
 ## 2. Automated controls
 
-These current controls incorporate D-PH-12; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
+These recorded campaign controls incorporate D-PH-13; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
 
 | Control                             | Result  | Evidence / limit                                                                                                                                                                        |
 | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -417,3 +417,15 @@ Actual commands from the repository root, macOS arm64/Rust 1.99.0/Node 26.10.0. 
 Stress command: the built phemios_core unit binary with filter `local::tests::` repeated 200 times, then `concerts::budget::tests::` repeated 100 times, without a test-threads override. JSON SHA-256 `f7d259d8989cf17bf104d2a5d470172156ee92893bef4cc9177c188c1449f203`. Source/dependency fingerprints JSON SHA-256 `c1ea3c26100365a330d5628809396b21f62ab3920d8038d4b6cee070b1ac008a`.
 
 All frontend stages pass (1,334 Vitest/241 files, 60 Node). Full gate exits 1 at the unchanged published stable Aède v0.6.1 missing-shared-crates prerequisite before Rust stages; separate locked Rust checks/native build pass. This does not make PH-C01/C09/independent review green. Actual Linux/Windows, Rust 1.90, installer/provider/physical acceptance remain unexecuted. Fresh raw registry audit has no vulnerabilities/notices; supplemental GLib RUSTSEC-2024-0429 remains explicit, with its local backport/Linux-pending disposition. Existing bundler/deprecation warnings remain visible in the gate log. No suppression or dependency changes. PH-008 becomes **FIXED — TO VERIFY**; verdict remains **FIX AND REVALIDATE**, not campaign or release closure.
+
+## 17. D-PH-13 — Published stable engine gate diagnosis
+
+[Recovery proposal](engine-gate-plan.md), no implementation/dependency/policy/commit/tag/publication. Phémios base 64e5858 and Aède base 19aec35a are clean before documentation. Live releases/latest and read-only engines:check select v0.6.1 / 9f1d9a066a0d90600174130e19637e7f84f3514a; the source lacks aede-audio. Remote annotated v0.7.0 resolves to current Aède main and contains both crates, but run 39992380120 fails both Windows jobs (five Rust failures, one desktop warnings-denied lint), so publish is skipped and no 0.7.0 release/draft is available. Four Mac/Linux jobs succeed. This does not authorize publishing partial artifacts.
+
+All fifteen existing source-selection/embedded-engine Node cases pass, with none skipped. No engine preparation or dependency updater is executed. Failed CI log sanitized SHA-256 `1ccb1b724f7fdf8e1e4c3fe1e14ab95ff626afba68df323ce5d1d5dd0a682ab3`; both-repository source/manifest/lock fingerprint JSON SHA-256 `f2f8908f8c420d0acb11d5b8c024cbe314d5974f2e396668f784b7642e3bb918`. Local evidence: target/quality/PH-STAB-001/engine-gate-review/. Fingerprints are verified unchanged after planning. Existing GLib and Aède separate-workspace alerts remain explicit; this phase is not a new full advisory scan. PH-C01 remains BLOCKED and verdict **FIX AND REVALIDATE**; no independent or release approval.
+
+## 18. Subsequent Phémios maintenance commits (2026-10-24)
+
+The maintainer authorizes committing all pending local Phémios work, without rebuilding the App or pushing. Current checks pass: `npm test` (1,392 Vitest cases/250 files and 60 Node cases), repository Prettier/Oxlint, App/component TypeScript with `--noEmit`, Tauri-version validation, vendor provenance/locked resolution, offline Cargo metadata, and `cargo test -p phemios-core --lib --locked --offline` (291 passed, none ignored). The checked-in shared crates resolve to the same Aède v0.7.1 SHA; read-only latest-stable lookup now returns v0.7.2. See the [later status](engine-gate-plan.md#later-status-2026-10-24) for exact revisions.
+
+`tools/check.sh` is not rerun because it builds the App/engine and generated assets; no new full-gate, installer, platform, advisory or independent-review PASS is inferred. Prior execution ledgers and remaining alerts are retained.

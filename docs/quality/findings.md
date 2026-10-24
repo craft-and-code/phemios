@@ -216,3 +216,7 @@ The maintainer authorizes diagnosis and a plan before modifying code. [PH-008 in
 ### D-PH-12 — JamBase successful-owner lease correction
 
 The maintainer authorizes implementation, tests, verification and commit. Two deterministic regressions first fail on close-only ownership; the private explicit-unlock guard then covers normal return, journal-construction errors and unwinding. Four new tests preserve real contention, refused admission, charged usage and successor ownership while a retired duplicate exists. The [validation record](jambase-lock-validation.md) records execution results; dependencies/advisory policy remain unchanged. PH-008 is fixed pending remaining platform and independent verification, not whole-campaign closure.
+
+### D-PH-13 — Upstream stable-release gate recovery plan
+
+Read-only investigation on clean Phémios 64e5858 / Aède 19aec35a confirms the latest published release is v0.6.1, missing aede-audio. Existing v0.7.0 contains both crates but its release run fails five Windows Rust cases and a desktop Clippy error; publish is skipped, so no draft exists to publish. [Evidence and proposed sequence](engine-gate-plan.md). PH-C01 remains BLOCKED; no new Phémios runtime finding or dependency change. All prior advisories, pending platforms and independent review requirements remain visible.

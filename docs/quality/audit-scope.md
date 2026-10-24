@@ -9,7 +9,7 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Current phase: D-PH-12 authorizes implementing the reviewed JamBase lease correction, adding tests, running verification and committing, while keeping all other alerts visible. Base 14f382a plus D-PH-11 documentation. No dependency/pin/policy change, push or release is authorized.
+- Historical campaign phase D-PH-13 authorized the published-Aède prerequisite investigation at Phémios 64e5858 / Aède 19aec35a, with documentation/read-only diagnostics only; its original boundaries remain recorded below. The subsequent 2026-10-24 maintainer request authorizes committing all pending Phémios work on main, including the already present v0.7.1 source pin. No App rebuild, push, tag/workflow dispatch or publication is performed; this does not authorize advisory suppression or campaign closure.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
 
@@ -126,3 +126,7 @@ The maintainer requests the cause and a correction plan, retaining other alerts.
 ## D-PH-12 — Authorized JamBase lease correction
 
 The maintainer authorizes the [reviewed plan](jambase-lock-plan.md), sibling regression tests, available verification and a final commit. A private std-only lease explicitly unlocks successful ownership before handle close, including journal-construction errors and unwinding. No dependency, journal schema, quota, API, provider policy or advisory exception changes. [Validation and limits](jambase-lock-validation.md) retain before/after results and pending platform/independent acceptance.
+
+## D-PH-13 — Published Aède gate prerequisite investigation
+
+The [recovery plan](engine-gate-plan.md) follows the actual published-stable resolver through the missing shared crate to the failed Aède v0.7.0 Windows release jobs and skipped publication. The tag exists, but no 0.7.0 release/draft is present. Fifteen existing preparation-policy tests pass; the next correction is upstream Windows validation and an approved stable publication, then a reviewed client source update. No dependency changes or alert suppression are performed.
