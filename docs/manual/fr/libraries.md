@@ -37,6 +37,12 @@ Les mots de passe et clés de services ne sont pas inclus dans une sauvegarde de
 
 Après un ajout de fichiers, scannez la bonne source et attendez la fin de la tâche. Phémios vérifie toutes les cinq secondes les catalogues des sessions connectées et les recharge lorsqu’ils changent. Le rechargement manuel reste disponible en cas de besoin. La navigation hors ligne utilise le cache disponible ; elle ne rend pas un fichier distant accessible sans son serveur.
 
+## Masquer ou vider le catalogue serveur
+
+Après déconnexion, le catalogue serveur reste disponible hors ligne. Dans **Paramètres → Bibliothèques → Serveur Aède**, **Masquer le catalogue serveur** le retire des vues sans supprimer son cache ; **Réafficher le catalogue serveur** annule ce masquage. Le choix est conservé sur cet appareil. Une connexion active affiche toujours son catalogue.
+
+**Vider le cache serveur…** demande une confirmation puis retire uniquement le catalogue et les images serveur en cache sur cet appareil. La bibliothèque locale, les fichiers musicaux, les comptes, les favoris et les autres données personnelles sont conservés. Reconnectez-vous et rechargez le catalogue pour le récupérer. Déconnectez le serveur avant ces actions. Une ancienne App doit être mise à jour pour disposer de la commande d’effacement.
+
 ## Gérer les exclusions locales
 
 Dans **Bibliothèque locale → Dossiers exclus du scan**, la liste est en lecture seule. Le bouton **+** sélectionne des dossiers à exclure. Sélectionnez une ligne puis utilisez **−** pour retirer son exclusion. Le bouton **−** de la liste principale retire au contraire un dossier surveillé de la bibliothèque. Ces actions ne suppriment jamais les fichiers audio.

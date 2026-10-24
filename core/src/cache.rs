@@ -14,6 +14,7 @@ pub struct Cache {
     root: PathBuf,
     // Catalog migration is a read/write transaction; image IO never takes this lock.
     catalog_io: Arc<Mutex<()>>,
+    revision: Arc<AtomicU64>,
 }
 impl Cache {
     /// Construct an isolated cache location without modifying existing files.
@@ -21,7 +22,54 @@ impl Cache {
         Self {
             root,
             catalog_io: Arc::default(),
+            revision: Arc::default(),
         }
+    }
+    /// Retire disk reads captured before an explicit cache removal.
+    pub fn revision(&self) -> u64 {
+        self.revision.load(Ordering::Acquire)
+    }
+    /// Remove only this source's disposable catalogue and artwork, never personal stores.
+    pub fn clear(&self) -> Result<(), String> {
+        let _transaction = self
+            .catalog_io
+            .lock()
+            .map_err(|_| "Cache du catalogue indisponible.")?;
+        self.revision.fetch_add(1, Ordering::AcqRel);
+        for (path, directory) in [
+            (self.root.clone(), true),
+            (self.root.join("artwork"), true),
+            (self.root.join("catalog.json"), false),
+        ] {
+            match fs::symlink_metadata(&path) {
+                Ok(meta)
+                    if meta.file_type().is_symlink()
+                        || (directory && !meta.is_dir())
+                        || (!directory && !meta.is_file()) =>
+                {
+                    return Err("Emplacement du cache invalide.".into());
+                }
+                Ok(_) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(_) => return Err("Cache inaccessible.".into()),
+            }
+        }
+        for (path, directory) in [
+            (self.root.join("artwork"), true),
+            (self.root.join("catalog.json"), false),
+        ] {
+            let result = if directory {
+                fs::remove_dir_all(path)
+            } else {
+                fs::remove_file(path)
+            };
+            match result {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(_) => return Err("Suppression du cache impossible.".into()),
+            }
+        }
+        Ok(())
     }
     /// A missing cache is distinct from an unreadable or incompatible cache.
     /// Old public caches lose private policy metadata atomically; supervised projections remain process-only.

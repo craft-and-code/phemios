@@ -21,18 +21,20 @@ pub(crate) fn synchronize(
 /// Read disk outside the mutex; an intervening native publication wins over this captured read.
 /// The caller receives the retained current value if its disk result is already superseded.
 pub(crate) fn load(cache: Cache, retained: Snapshot) -> Result<Option<Value>, String> {
+    let revision = cache.revision();
     let captured = retained
         .lock()
         .map_err(|_| "Cache natif indisponible.".to_string())?
         .clone();
     let next = cache.load()?;
-    publish_cached(&retained, &captured, next)
+    publish_cached(&retained, &captured, next, || cache.revision() == revision)
 }
 
 fn publish_cached(
     retained: &Mutex<Option<Arc<Value>>>,
     captured: &Option<Arc<Value>>,
     next: Option<Value>,
+    current: impl Fn() -> bool,
 ) -> Result<Option<Value>, String> {
     let current = {
         let mut retained = retained
@@ -43,7 +45,7 @@ fn publish_cached(
             (None, None) => true,
             _ => false,
         };
-        if unchanged {
+        if unchanged && current() {
             *retained = next.map(Arc::new);
         }
         retained.clone()
@@ -80,6 +82,26 @@ fn publish(
     };
     *retained = Some(Arc::new(next.clone()));
     Ok(next)
+}
+
+/// Clear only a disconnected source; session publication and cached-read publication remain serialized.
+pub(crate) fn clear(
+    session: &Mutex<Option<Client>>,
+    retained: &Mutex<Option<Arc<Value>>>,
+    cache: &Cache,
+    current: impl Fn() -> bool,
+) -> Result<(), String> {
+    let session = session.lock().map_err(|_| "Session native indisponible.")?;
+    if session.is_some() {
+        return Err("Déconnectez le serveur avant de vider son cache.".into());
+    }
+    if !current() {
+        return Err("Effacement annulé : la connexion au serveur a changé.".into());
+    }
+    let mut retained = retained.lock().map_err(|_| "Cache natif indisponible.")?;
+    cache.clear()?;
+    *retained = None;
+    Ok(())
 }
 
 /// Previously cached images are not an authority to expose a now-hidden reference.

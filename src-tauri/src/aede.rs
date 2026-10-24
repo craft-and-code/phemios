@@ -185,6 +185,25 @@ pub(crate) async fn aede_sync(
         blocking(move || crate::snapshots::synchronize(session, retained, cache, client)).await?;
     public(snapshot, origin)
 }
+/// The webview chooses no path or source: this action only removes the disconnected remote cache.
+#[tauri::command]
+pub(crate) async fn aede_clear_server_cache(
+    version: u32,
+    state: State<'_, Aede>,
+) -> Result<(), String> {
+    bridge(version)?;
+    let session = state.server.session.clone();
+    let retained = state.server.snapshot.clone();
+    let cache = state.server.cache.clone();
+    let generation = state.server.generation.clone();
+    let captured = generation.load(std::sync::atomic::Ordering::SeqCst);
+    blocking(move || {
+        crate::snapshots::clear(&session, &retained, &cache, || {
+            generation.load(std::sync::atomic::Ordering::SeqCst) == captured
+        })
+    })
+    .await
+}
 #[tauri::command]
 pub(crate) async fn aede_cache(
     version: u32,

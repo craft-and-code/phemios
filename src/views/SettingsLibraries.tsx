@@ -1,6 +1,7 @@
 import { ExcludedFolders } from "../components/ExcludedFolders";
 import { Icon } from "../components/Icon";
 import { ActionButton } from "../components/ActionButton";
+import { ServerCacheSettings } from "../components/ServerCacheSettings";
 import { CoverSize } from "../components/CoverSize";
 import { ServerRoots } from "../components/ServerRoots";
 import { Feedback } from "../components/Feedback";
@@ -248,6 +249,7 @@ export function SettingsLibraries() {
       <div class="settings-card">
         <h2>{t("Serveur Aède")}</h2>
         <ConnectionPanel embedded onClose={() => {}} />
+        <ServerCacheSettings />
         <Show when={administrative()}>
           <ServerRoots
             busy={

@@ -133,7 +133,7 @@ fn disk_read_captured_before_sync_cannot_replace_its_newer_publication() {
     // Deterministically place the real Sync disk/Arc commit between disk read and read admission.
     let synced = publish(&session, &retained, &cache, &client, catalog(&client, 2)).unwrap();
     let synced_arc = retained.lock().unwrap().clone().unwrap();
-    let response = publish_cached(&retained, &captured, old_disk_read)
+    let response = publish_cached(&retained, &captured, old_disk_read, || true)
         .unwrap()
         .unwrap();
     assert_eq!(response, synced);
@@ -159,7 +159,7 @@ fn overlapping_reads_preserve_the_first_published_arc_even_for_identical_json() 
     assert!(!Arc::ptr_eq(&before, &current_arc));
 
     assert_eq!(
-        publish_cached(&retained, &captured, old_disk_read)
+        publish_cached(&retained, &captured, old_disk_read, || true)
             .unwrap()
             .unwrap(),
         current
@@ -341,4 +341,69 @@ fn current_sync_retries_busy_response_and_publishes_the_complete_catalogue() {
     assert_eq!(result["labels"].as_array().unwrap().len(), 2);
     assert_eq!(cache.load().unwrap().as_ref(), Some(&result));
     assert_eq!(retained.lock().unwrap().as_deref(), Some(&result));
+}
+
+#[test]
+fn retired_disk_reads_cannot_repopulate_an_explicitly_cleared_empty_projection() {
+    let root = Sandbox::new();
+    let cache = Cache::new(root.0.join("server"));
+    let sessions = Mutex::new(None);
+    let retained = Mutex::new(None);
+    let captured = None;
+    let revision = cache.revision();
+    let disk_read = Some(
+        json!({"artists":[], "albums":[], "server":"https://fixture.example", "accountId":"fixture"}),
+    );
+    clear(&sessions, &retained, &cache, || true).unwrap();
+    assert!(
+        publish_cached(&retained, &captured, disk_read, || cache.revision()
+            == revision)
+        .unwrap()
+        .is_none()
+    );
+    assert!(retained.lock().unwrap().is_none());
+}
+
+#[test]
+fn connected_server_refuses_cache_removal_without_changing_disk_or_retained_data() {
+    let (client, _) = sessions();
+    let root = Sandbox::new();
+    let cache = Cache::new(root.0.clone());
+    let before = Arc::new(cache.save(catalog(&client, 1)).unwrap());
+    let retained = Mutex::new(Some(before.clone()));
+    let connected = Mutex::new(Some(client));
+    assert!(clear(&connected, &retained, &cache, || true).is_err());
+    assert!(cache.load().unwrap().is_some());
+    assert!(Arc::ptr_eq(
+        retained.lock().unwrap().as_ref().unwrap(),
+        &before
+    ));
+    clear(&Mutex::new(None), &retained, &cache, || true).unwrap();
+    assert!(cache.load().unwrap().is_none());
+    assert!(retained.lock().unwrap().is_none());
+}
+
+#[test]
+fn a_clear_queued_before_reconnect_and_logout_cannot_delete_the_successor_cache() {
+    let root = Sandbox::new();
+    let cache = Cache::new(root.0.clone());
+    let data = json!({"artists":[], "albums":[], "server":"https://fixture.example", "accountId":"fixture"});
+    let before = Arc::new(cache.save(data).unwrap());
+    let retained = Mutex::new(Some(before.clone()));
+    let session = Mutex::new(None);
+    let generation = AtomicU64::new(1);
+    let requested = generation.load(Ordering::SeqCst);
+    // A different login can connect, synchronize and log out before this worker executes.
+    generation.store(3, Ordering::SeqCst);
+    assert!(
+        clear(&session, &retained, &cache, || generation
+            .load(Ordering::SeqCst)
+            == requested)
+        .is_err()
+    );
+    assert!(cache.load().unwrap().is_some());
+    assert!(Arc::ptr_eq(
+        retained.lock().unwrap().as_ref().unwrap(),
+        &before
+    ));
 }

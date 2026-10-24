@@ -249,3 +249,39 @@ fn legacy_artwork_is_promoted_to_the_shared_cache_without_another_account_read()
     );
     fs::remove_dir_all(cache.root).unwrap();
 }
+
+#[test]
+fn explicit_removal_deletes_only_public_catalogue_and_artwork_and_retires_old_reads() {
+    let cache = fixture();
+    let snapshot = cache.save(json!({"artists":[], "albums":[], "server":"https://fixture.example", "accountId":"fixture"})).unwrap();
+    cache
+        .save_image(&snapshot, "release:fixture", "cover", b"art")
+        .unwrap();
+    fs::write(cache.root.join("unrelated-personal-document"), b"keep").unwrap();
+    let revision = cache.revision();
+    cache.clear().unwrap();
+    assert_ne!(cache.revision(), revision);
+    assert_eq!(cache.clone().revision(), cache.revision());
+    assert!(cache.load().unwrap().is_none());
+    assert!(!cache.root.join("artwork").exists());
+    assert_eq!(
+        fs::read(cache.root.join("unrelated-personal-document")).unwrap(),
+        b"keep"
+    );
+    cache.clear().unwrap();
+    fs::remove_dir_all(cache.root).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn cache_removal_refuses_redirected_artwork_without_touching_its_target() {
+    let cache = fixture();
+    fs::create_dir_all(&cache.root).unwrap();
+    let target = cache.root.join("retained");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("keep"), b"keep").unwrap();
+    std::os::unix::fs::symlink(&target, cache.root.join("artwork")).unwrap();
+    assert!(cache.clear().is_err());
+    assert_eq!(fs::read(target.join("keep")).unwrap(), b"keep");
+    fs::remove_dir_all(cache.root).unwrap();
+}

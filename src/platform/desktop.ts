@@ -144,6 +144,14 @@ async function reachableCall<T>(
     throw failure;
   }
 }
+/** Clear only disposable remote data; older running hosts must be updated explicitly. */
+export async function clearServerCache(current: () => boolean = () => true) {
+  if (!current()) throw new Error(t("Effacement annulé : la connexion au serveur a changé."));
+  if (!(await getRuntimeInfo()).capabilities?.includes("server_cache_clear"))
+    throw new Error(t("Mettez à jour puis redémarrez Phémios pour vider le cache serveur."));
+  if (!current()) throw new Error(t("Effacement annulé : la connexion au serveur a changé."));
+  return nativeCall<void>("aede_clear_server_cache");
+}
 export const cachedAede = (source: SourceId = "server") =>
   nativeCall<unknown | null>("aede_cache", { source });
 export const artworkAede = (reference: string, kind: string) =>

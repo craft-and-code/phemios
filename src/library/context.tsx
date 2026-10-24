@@ -48,6 +48,7 @@ import { demoAlbums, demoArtists } from "../demo/catalog";
 import {
   artworkAede,
   cachedAede,
+  clearServerCache as clearServerCacheNative,
   isNative,
   loginAede,
   restoreAedeSession,
@@ -98,6 +99,10 @@ interface Library {
   snapshot: Accessor<Snapshot | undefined>;
   /** Public projection remains readable after logout, without private annotations. */
   publicSnapshot: (source: SourceId) => Snapshot | undefined;
+  serverCache: Accessor<Snapshot | undefined>;
+  serverCacheHidden: Accessor<boolean>;
+  setServerCacheHidden: (hidden: boolean) => void;
+  clearServerCache: () => Promise<void>;
   connect: (
     server: string,
     username: string,
@@ -127,6 +132,39 @@ export function LibraryProvider(props: ParentProps) {
     [busy, setBusy] = createSignal(false),
     [connected, setConnected] = createSignal(false),
     [error, setError] = createSignal("");
+  const [serverCacheHidden, setCacheHidden] = createSignal(false);
+  const visibilityKey = "phemios.server-cache-hidden.v1";
+  try {
+    const saved = localStorage.getItem(visibilityKey);
+    if (saved !== null && saved !== "true" && saved !== "false") throw new Error();
+    setCacheHidden(saved === "true");
+  } catch {
+    setError(t("Réglage du cache serveur inaccessible."));
+  }
+  function setServerCacheHidden(hidden: boolean) {
+    if (serverSession() || busy())
+      throw new Error(t("Déconnectez le serveur avant de modifier son cache."));
+    localStorage.setItem(visibilityKey, String(hidden));
+    setCacheHidden(hidden);
+    advancedSearch.reset();
+  }
+  async function clearServerCache() {
+    if (serverSession() || busy() || disconnectingServer)
+      throw new Error(t("Déconnectez le serveur avant de vider son cache."));
+    const current = bootstrap.capture("server");
+    setBusy(true);
+    try {
+      await clearServerCacheNative(current);
+      if (current()) {
+        setServerSnapshot(undefined);
+        advancedSearch.reset();
+        clearMedia("server");
+        if (admittedSnapshot("local")) void warmCovers();
+      }
+    } finally {
+      if (bootstrap.active()) setBusy(false);
+    }
+  }
   const sessionAt = (owner: SourceId) => (owner === "local" ? localSession() : serverSession());
   const rawSnapshot = (owner: SourceId) => (owner === "local" ? localSnapshot() : serverSnapshot());
   const parentalSync = new Set<SourceId>();
@@ -153,7 +191,8 @@ export function LibraryProvider(props: ParentProps) {
       const value = rawSnapshot("server"),
         account = serverSession();
       // Public data can survive logout, but never represent another connected authority.
-      return (!account || value?.server === account.server) &&
+      return (account || !serverCacheHidden()) &&
+        (!account || value?.server === account.server) &&
         parental.catalogVisible("server", value)
         ? value
         : undefined;
@@ -422,16 +461,21 @@ export function LibraryProvider(props: ParentProps) {
     ),
   );
   const key = (ref: string, kind: string) => `${kind}:${ref}`;
+  const mediaEpochs: Record<SourceId, number> = { local: 0, server: 0 };
+  let warming = 0;
   async function warmImage(reference: string, kind: string) {
     const id = key(reference, kind);
     if (images[id]) return;
     const held = pending.get(id);
     if (held) return held;
+    const source = referenceSource(reference);
+    const sourceEpoch = mediaEpochs[source];
     const epoch = generation;
+    const current = () => epoch === generation && sourceEpoch === mediaEpochs[source];
     const work = (async () => {
       try {
         const bytes = await artworkAede(reference, kind);
-        if (epoch !== generation) return;
+        if (!current()) return;
         const data = new Uint8Array(bytes);
         const url = URL.createObjectURL(
           new Blob([data.buffer], { type: data[0] === 0x89 ? "image/png" : "image/jpeg" }),
@@ -442,16 +486,31 @@ export function LibraryProvider(props: ParentProps) {
         setImages(id, url);
         setImageErrors(id, "");
       } catch (failure) {
-        if (epoch === generation)
+        if (current())
           setImageErrors(id, failure instanceof Error ? failure.message : t("Image indisponible."));
       } finally {
-        if (epoch === generation) pending.delete(id);
+        if (current()) pending.delete(id);
       }
     })();
     pending.set(id, work);
     await work;
   }
-  function clearMedia() {
+  function clearMedia(source?: SourceId) {
+    warming++;
+    setMediaProgress([0, 0]);
+    if (source) {
+      mediaEpochs[source]++;
+      const belongs = (id: string) => referenceSource(id.slice(id.indexOf(":") + 1)) === source;
+      for (const [id, url] of Object.entries(images)) {
+        if (!belongs(id)) continue;
+        if (url) URL.revokeObjectURL(url);
+        setImages(id, undefined);
+      }
+      for (const id of Object.keys(imageErrors)) if (belongs(id)) setImageErrors(id, undefined);
+      for (const id of resident.keys()) if (belongs(id)) resident.delete(id);
+      for (const id of pending.keys()) if (belongs(id)) pending.delete(id);
+      return;
+    }
     generation++;
     for (const url of Object.values(images)) {
       if (url) URL.revokeObjectURL(url);
@@ -460,9 +519,9 @@ export function LibraryProvider(props: ParentProps) {
     for (const id of Object.keys(imageErrors)) setImageErrors(id, undefined);
     resident.clear();
     pending.clear();
-    setMediaProgress([0, 0]);
   }
   async function warmCovers() {
+    const wave = ++warming;
     const queue = [
       ...artists()
         .filter((a) => a.media?.logo)
@@ -484,14 +543,15 @@ export function LibraryProvider(props: ParentProps) {
       cursor = 0;
     const total = queue.length,
       epoch = generation;
+    const current = () => epoch === generation && wave === warming;
     setMediaProgress([0, total]);
     await Promise.all(
       Array.from({ length: 1 }, async () => {
-        while (cursor < queue.length && epoch === generation) {
+        while (cursor < queue.length && current()) {
           const row = queue[cursor++];
           if (!row) return;
           await warmImage(row.ref, row.kind);
-          if (epoch === generation) setMediaProgress([++done, total]);
+          if (current()) setMediaProgress([++done, total]);
         }
       }),
     );
@@ -817,6 +877,10 @@ export function LibraryProvider(props: ParentProps) {
     error,
     snapshot,
     publicSnapshot: admittedSnapshot,
+    serverCache: serverSnapshot,
+    serverCacheHidden,
+    setServerCacheHidden,
+    clearServerCache,
     connect,
     sync,
     disconnect,

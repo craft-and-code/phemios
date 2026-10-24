@@ -37,6 +37,12 @@ Preference backups exclude passwords and service keys. Account permissions deter
 
 After adding files, scan the correct source and wait for the task result. Phémios checks the catalogues of connected sessions every five seconds and reloads them when they change. Manual reload remains available when needed. Offline browsing uses available cached information; it does not make remote audio accessible without its server.
 
+## Hide or clear the server catalogue
+
+After disconnection, the server catalogue remains available offline. Under **Settings → Libraries → Aède server**, **Hide server catalogue** removes it from browsing without deleting its cache; **Show server catalogue** reverses this choice. Visibility is retained on this device. An active connection always displays its catalogue.
+
+**Clear server cache…** asks for confirmation, then removes only the cached server catalogue and images on this device. The local library, music files, accounts, favourites and other personal data are preserved. Reconnect and reload the catalogue to retrieve it again. Disconnect the server before either action. Older Apps require an update to provide the clearing command.
+
 ## Manage local exclusions
 
 Under **Local library → Folders excluded from scanning**, the list is read-only. **+** selects folders to exclude. Select a row and use **−** to remove that exclusion. The **−** control in the main folders list instead removes a watched library root. Neither operation deletes audio files.

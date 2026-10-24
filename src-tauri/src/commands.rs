@@ -20,6 +20,7 @@ pub(crate) fn runtime_info() -> Result<RuntimeInfo, String> {
         native: true,
         capabilities: &[
             "native_session_read",
+            "server_cache_clear",
             "local_exclusion_picker",
         ],
         embedded: serde_json::from_str(include_str!("../binaries/versions.json"))
