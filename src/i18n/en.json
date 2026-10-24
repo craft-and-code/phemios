@@ -2269,5 +2269,9 @@
   "Effacement annulé : la connexion au serveur a changé.": "Clearing cancelled: the server connection changed.",
   "Mettez à jour puis redémarrez Phémios pour sélectionner les dossiers exclus.": "Update and restart Phémios to select excluded folders.",
   "Scanner les dossiers recherche les fichiers ajoutés, déplacés ou retirés.": "Scanning folders finds added, moved or removed files.",
-  "Recharger le catalogue actualise uniquement les informations déjà connues par Aède, sans parcourir vos fichiers.": "Reloading the catalogue refreshes only information already known to Aède, without scanning your files."
+  "Recharger le catalogue actualise uniquement les informations déjà connues par Aède, sans parcourir vos fichiers.": "Reloading the catalogue refreshes only information already known to Aède, without scanning your files.",
+  "Recherche indisponible dans cette vue": "Search unavailable in this view",
+  "Rechercher un artiste dans les relations": "Search artists in relations",
+  "Rechercher un article": "Search articles",
+  "Rechercher dans les analyses": "Search analyses"
 }

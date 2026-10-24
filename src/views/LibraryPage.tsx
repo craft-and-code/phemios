@@ -21,7 +21,12 @@ import { browseArtists, selectCountries } from "../library/selection";
 import { catalogIndex, artistCardSelection } from "../library/index";
 import { filterAlbums, filterArtists, normalizeName, selectedGenres } from "../library/filtering";
 import type { Album, Filters } from "../library/types";
-import { sectionIcon, artistCatalog, type Section } from "../navigation/routes";
+import {
+  sectionIcon,
+  artistCatalog,
+  albumListeningCatalog,
+  type Section,
+} from "../navigation/routes";
 
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
 export function LibraryPage(props: {
@@ -38,7 +43,7 @@ export function LibraryPage(props: {
 }) {
   const library = useLibrary();
   const listening = createAlbumListening({
-    enabled: () => !library.demo && props.section === "albums",
+    enabled: () => !library.demo && albumListeningCatalog(props.section),
     session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
     checkpoint: () => {
       const state = library.player.state();
@@ -52,7 +57,7 @@ export function LibraryPage(props: {
     },
   });
   const unplayed = (album: Album) =>
-    props.section === "albums" && listening.completed(album.reference) === false;
+    albumListeningCatalog(props.section) && listening.completed(album.reference) === false;
   const index = createMemo(() => catalogIndex(library.artists(), library.albums()));
   const principals = createMemo(() => browseArtists(library.artists(), library.albums()));
   const countries = () => props.filters.countries ?? [];

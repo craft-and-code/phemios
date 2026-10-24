@@ -2,6 +2,7 @@ import { createRoot, createSignal } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createAlbumListening, parseAlbumListening } from "./album-listening";
 import { requestAede } from "../platform/desktop";
+import { albumListeningCatalog, type Section } from "../navigation/routes";
 import type { AccountSession } from "./server";
 vi.mock("../platform/desktop", () => ({ requestAede: vi.fn() }));
 const request = vi.mocked(requestAede);
@@ -34,7 +35,7 @@ it("rejects mixed sources, wrong pages, duplicate or oversized answers", () => {
   ])
     expect(() => parseAlbumListening(page, "server", 0)).toThrow();
 });
-it("does no personal work outside Albums or without a connected owner", async () => {
+it("does no personal work while completion markers are disabled", async () => {
   createRoot((cleanup) => {
     dispose = cleanup;
     createAlbumListening({
@@ -169,4 +170,40 @@ it("does not fetch another completion page after logout during a full first wind
   expect(request).toHaveBeenCalledTimes(2);
   expect(data.completed("release:@phemios/server/edition-0")).toBeUndefined();
   expect(data.error()).toBe("");
+});
+
+it("loads composer album markers through the shared account state and removes them outside eligible views", async () => {
+  request.mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["album_listening"] }
+      : { offset: 0, total: 1, items: [{ reference: ref, completed: false }] },
+  );
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    const [section, setSection] = createSignal<Section>("composers");
+    const data = createAlbumListening({
+      enabled: () => albumListeningCatalog(section()),
+      session: (source) => (source === "server" ? owner : undefined),
+      checkpoint: () => "initial",
+    });
+    return { data, setSection };
+  });
+  await tick();
+  expect(view.data.completed(ref)).toBe(false);
+  expect(request).toHaveBeenCalledWith(
+    "/api/me/v1/album-listening",
+    { offset: "0", limit: "200" },
+    "GET",
+    null,
+    "server",
+    owner,
+  );
+  view.setSection("albums");
+  await tick();
+  expect(view.data.completed(ref)).toBe(false);
+  request.mockClear();
+  view.setSection("artists");
+  expect(view.data.completed(ref)).toBeUndefined();
+  await tick();
+  expect(request).not.toHaveBeenCalled();
 });

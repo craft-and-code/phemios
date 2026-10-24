@@ -22,9 +22,10 @@ export function CatalogSearch(props: {
       </a>
       <input
         type="search"
+        disabled={context().disabled}
         aria-label={context().label}
         placeholder={context().placeholder}
-        value={props.value}
+        value={context().disabled ? "" : props.value}
         onInput={(event) => props.onInput(event.currentTarget.value)}
       />
     </div>

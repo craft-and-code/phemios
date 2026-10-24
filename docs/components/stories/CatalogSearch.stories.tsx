@@ -18,7 +18,23 @@ const meta = {
           onInput={(value) => setValues({ ...values(), [scope()]: value })}
         />
         <div class="component-controls">
-          <For each={["albums", "tags", "favourites", "moods", "playlists"] as const}>
+          <For
+            each={
+              [
+                "albums",
+                "tags",
+                "favourites",
+                "moods",
+                "playlists",
+                "relations",
+                "encyclopedia",
+                "analysis",
+                "playback",
+                "radio",
+                "players",
+              ] as const
+            }
+          >
             {(name) => <button onClick={() => setScope(name)}>{name}</button>}
           </For>
         </div>
@@ -50,6 +66,9 @@ export const ContextAndRetainedQueries: Story = {
     ).toHaveValue("Morning");
     await userEvent.click(canvas.getByRole("button", { name: "tags" }));
     expect(canvas.getByRole("searchbox", { name: "Rechercher un tag" })).toHaveValue("music");
+    await userEvent.click(canvas.getByRole("button", { name: "radio" }));
+    expect(canvas.getByRole("searchbox")).toBeDisabled();
+    expect(canvas.getByRole("searchbox")).toHaveValue("");
     expect(canvas.getByRole("link", { name: "Recherche avancée" })).toHaveAttribute(
       "href",
       "#/advanced-search",

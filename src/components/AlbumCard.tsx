@@ -19,7 +19,10 @@ export function AlbumCard(props: {
         <Artwork album={props.album} unplayed={props.unplayed} />
       </a>
       <a class="album-title-link" href={href()}>
-        <strong>{props.album.title}</strong>
+        <span class="album-title-line">
+          <strong>{props.album.title}</strong>
+          <SourceBadge reference={props.album.reference} />
+        </span>
         <Show when={props.rating !== undefined}>
           <small class="card-rating">
             <Show when={props.ratingFromArtist}>{t("Artiste")} · </Show>
@@ -27,9 +30,7 @@ export function AlbumCard(props: {
           </small>
         </Show>
       </a>
-      <small class="album-year">
-        {props.album.year ?? t("Année inconnue")} <SourceBadge reference={props.album.reference} />
-      </small>
+      <small class="album-year">{props.album.year ?? t("Année inconnue")}</small>
       <CoverPlay
         reference={props.album.reference}
         title={props.album.title}

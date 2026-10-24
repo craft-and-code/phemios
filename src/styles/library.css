@@ -1932,3 +1932,24 @@ button.biography-more .biography-more-icon .spinner,
 .album-hero .detail-cover-actions > :is(a, .cover-open) {
   display: block;
 }
+
+/* Origin remains next to the album title in both cards and compact rows. */
+.album-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 12px 0 5px;
+}
+.album-card .album-title-line strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.album-title-line > .source-badge {
+  flex: 0 0 auto;
+}
+.density-compact .album-title-line {
+  margin: 0;
+}

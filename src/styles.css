@@ -912,6 +912,16 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   min-width: 0;
   max-width: 65%;
 }
+.cover-flow-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cover-flow-title > .source-badge {
+  flex: 0 0 auto;
+}
 .cover-flow-caption a {
   text-decoration: none;
   font-size: 20px;
@@ -923,9 +933,20 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   color: var(--muted);
 }
 .cover-flow-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cover-flow-detail-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.cover-flow-detail .source-badge {
+  flex: 0 0 auto;
 }
 
 .cover-flow > input {

@@ -99,6 +99,11 @@ export function artistCatalog(section: Section): boolean {
   return section === "artists" || section === "countries";
 }
 
+/** Catalogue views that display the account-private album completion marker. */
+export function albumListeningCatalog(section: Section): boolean {
+  return section === "albums" || section === "composers";
+}
+
 /** Name an actual origin page; utilities have no sidebar item, and entity names stay untranslated. */
 export function navigationLabel(
   route: Route,

@@ -3,10 +3,13 @@ import { createCoverMotion, coverWindow } from "../visualizer/cover-motion";
 import { coverLetterStops, type CoverPosition } from "../visualizer/cover-position";
 import { createCoverScrub } from "../visualizer/cover-scrub";
 import { createCoverCatalog } from "../visualizer/cover-catalog";
+import { focusCoverOnMount } from "../visualizer/cover-focus";
+import { createCoverKeyboard } from "../visualizer/cover-keyboard";
 import { createMemo, createSignal, createEffect, on, onCleanup, For, Show } from "solid-js";
 import { t } from "../i18n";
 import type { Album } from "../library/types";
 import { Artwork } from "./Artwork";
+import { SourceBadge } from "./SourceBadge";
 import { CoverPlay } from "./CoverPlay";
 import { coverOpacity, coverDragTarget } from "../visualizer/cover-flow-policy";
 import { EmptyState } from "./EmptyState";
@@ -58,6 +61,12 @@ export function CoverFlow(props: {
     }
   };
   const scrub = createCoverScrub(choose);
+  const keyboard = createCoverKeyboard({
+    index,
+    total: () => props.albums.length,
+    cancel: scrub.cancel,
+    choose,
+  });
   const finishScrub = () => {
     scrub.finish();
   };
@@ -72,26 +81,12 @@ export function CoverFlow(props: {
       fallback={<EmptyState icon="disc">{t("Aucun album dans cette sélection.")}</EmptyState>}
     >
       <div
+        ref={focusCoverOnMount}
         class="cover-flow"
         role="region"
         aria-label={t("Cover Flow")}
         tabindex="0"
-        onKeyDown={(event) => {
-          const next =
-            event.key === "ArrowLeft"
-              ? index() - 1
-              : event.key === "ArrowRight"
-                ? index() + 1
-                : event.key === "Home"
-                  ? 0
-                  : event.key === "End"
-                    ? props.albums.length - 1
-                    : undefined;
-          if (next !== undefined) {
-            event.preventDefault();
-            choose(next);
-          }
-        }}
+        onKeyDown={keyboard}
         onWheel={(event) => {
           event.preventDefault();
           movement += Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
@@ -183,11 +178,17 @@ export function CoverFlow(props: {
         </div>
         <div class="cover-flow-controls">
           <div class="cover-flow-caption" aria-live="polite">
-            <a href={`#/album/${encodeURIComponent(album()!.reference)}`}>{album()!.title}</a>
+            <div class="cover-flow-title">
+              <a href={`#/album/${encodeURIComponent(album()!.reference)}`}>{album()!.title}</a>
+              <Show when={!props.caption}>
+                <SourceBadge reference={album()!.reference} />
+              </Show>
+            </div>
             <Show when={props.caption?.(album()!)}>
               {(text) => (
                 <small class="cover-flow-detail" title={text()}>
-                  {text()}
+                  <span class="cover-flow-detail-text">{text()}</span>
+                  <SourceBadge reference={album()!.reference} />
                 </small>
               )}
             </Show>

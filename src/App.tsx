@@ -2,6 +2,7 @@ import { controlAudioShortcut, toggleAudioShortcut } from "./navigation/audio-sh
 import { ConnectionNotice } from "./components/ConnectionNotice";
 import type { BiographyReturn } from "./library/biography-navigation";
 import { CatalogSearch } from "./components/CatalogSearch";
+import { searchContext } from "./navigation/search-context";
 import { AlbumCount } from "./components/AlbumCount";
 import { BrandWordmark } from "./components/BrandWordmark";
 import { parentalRouteAllowed } from "./library/parental-route";
@@ -634,7 +635,7 @@ export function App() {
                                   <WorkspacePage
                                     compact={compact()}
                                     section={section()}
-                                    query={filters().query}
+                                    query={searchContext(section()).disabled ? "" : filters().query}
                                     onStatisticsBrowse={(selection) =>
                                       scopedFilters.select(selection.section, selection.filters)
                                     }

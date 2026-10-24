@@ -1,9 +1,34 @@
 import { t } from "../i18n";
 import type { Section } from "./routes";
-/** Only Your music advertises view-local search; catalogue/detail wording stays general. */
+/** Header search advertises only the filters consumed by the current view. */
 export function searchContext(section?: Section) {
+  if (
+    [
+      "playback",
+      "radio",
+      "podcasts",
+      "cd",
+      "concerts",
+      "players",
+      "doctor",
+      "statistics",
+      "achievements",
+    ].includes(section ?? "")
+  ) {
+    const message = t("Recherche indisponible dans cette vue");
+    return { disabled: true, contextual: false, label: message, placeholder: message };
+  }
   let message: string | undefined;
   switch (section) {
+    case "relations":
+      message = t("Rechercher un artiste dans les relations");
+      break;
+    case "encyclopedia":
+      message = t("Rechercher un article");
+      break;
+    case "analysis":
+      message = t("Rechercher dans les analyses");
+      break;
     case "moods":
       message = t("Rechercher une ambiance");
       break;
@@ -27,8 +52,9 @@ export function searchContext(section?: Section) {
       break;
   }
   return message
-    ? { contextual: true, label: message, placeholder: message }
+    ? { disabled: false, contextual: true, label: message, placeholder: message }
     : {
+        disabled: false,
         contextual: false,
         label: t("Rechercher dans tous les champs du catalogue"),
         placeholder: t("Artiste, titre, pays, genre, tag…"),
