@@ -141,6 +141,7 @@ pub fn run() -> Result<(), tauri::Error> {
             local::local_start,
             local::local_stop,
             local::local_pick_roots,
+            local::local_pick_exclusions,
             local::local_scan,
             local::local_root_action,
             local::local_keys,

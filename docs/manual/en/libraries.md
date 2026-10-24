@@ -7,10 +7,10 @@ One catalogue brings local and server sources together. When both are present, o
 “Importing” music adds it to the catalogue: Phémios neither moves nor duplicates your tracks.
 
 1. Open the gear, then **Libraries**.
-2. Under **Local library**, click **Enable local Aède**.
+2. Under **Local library**, click **Start local Aède**.
 3. Click **Add folders…** and select the folder containing your artists and albums. You can add several folders.
 4. Click **Scan folders**: adding a path alone does not start a scan. This discovers files; it is not a FlacCompagnon audio analysis.
-5. Wait for the task result, then use **Sync local catalog** to reread the catalogue if needed.
+5. Wait for the task result, then use **Reload local catalogue** to reread the catalogue if needed.
 6. Open **Albums** or **Artists** to browse your music.
 
 After adding tracks on disk, scan again. Synchronization alone does not walk the folders. Removing a configured root never deletes its files. Root and exclusion rules are explained in the [Aède manual](https://craft-and-code.github.io/aede/docs/en/index.html).
@@ -36,3 +36,9 @@ Preference backups exclude passwords and service keys. Account permissions deter
 - **Refresh folders** reads their configuration; it is not a scan.
 
 After adding files, scan the correct source and wait for the task result. Phémios checks the catalogues of connected sessions every five seconds and reloads them when they change. Manual reload remains available when needed. Offline browsing uses available cached information; it does not make remote audio accessible without its server.
+
+## Manage local exclusions
+
+Under **Local library → Folders excluded from scanning**, the list is read-only. **+** selects folders to exclude. Select a row and use **−** to remove that exclusion. The **−** control in the main folders list instead removes a watched library root. Neither operation deletes audio files.
+
+Aède does not traverse excluded folders or their subfolders during subsequent scans requested by Phémios. Run **Scan folders** after changing rules: previously catalogued excluded tracks disappear only after that scan. Removing an exclusion allows them to return during the next scan.

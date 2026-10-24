@@ -769,3 +769,40 @@
   flex-wrap: wrap;
   gap: var(--control-gap, 12px);
 }
+
+.excluded-folder-list {
+  --excluded-row-height: 32px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: calc(4 * var(--excluded-row-height) + 2px);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+.excluded-folder-list li {
+  display: flex;
+  align-items: center;
+  height: var(--excluded-row-height);
+  padding: 0;
+}
+.excluded-folder-path {
+  flex: 1;
+  min-width: 0;
+  height: var(--excluded-row-height);
+  padding: 0 8px;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font: inherit;
+  border-radius: 0;
+  border-color: transparent;
+}
+.excluded-folder-path.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.excluded-folders .section-heading .settings-actions {
+  margin: 0;
+}

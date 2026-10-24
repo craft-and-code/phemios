@@ -111,6 +111,38 @@ pub(crate) async fn local_pick_roots(
     })
     .await
 }
+/// Select exclusion candidates without adding roots or mutating the catalogue.
+#[tauri::command]
+pub(crate) async fn local_pick_exclusions(
+    version: u32,
+    app: AppHandle,
+) -> Result<Vec<String>, String> {
+    bridge(version)?;
+    blocking(move || {
+        let Some(files) = app.dialog().file().blocking_pick_folders() else {
+            return Ok(Vec::new());
+        };
+        if files.len() > 64 {
+            return Err("Trop de dossiers sélectionnés.".into());
+        }
+        files
+            .into_iter()
+            .map(|file| {
+                let path = file
+                    .into_path()
+                    .map_err(|_| "Dossier natif invalide.".to_owned())?;
+                let value = path
+                    .to_str()
+                    .ok_or("Le chemin du dossier doit être UTF-8.")?;
+                if !path.is_absolute() || value.len() > 4096 || value.contains('\0') {
+                    return Err("Dossier invalide.".into());
+                }
+                Ok(value.to_owned())
+            })
+            .collect()
+    })
+    .await
+}
 #[tauri::command]
 pub(crate) async fn local_scan(
     version: u32,

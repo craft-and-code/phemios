@@ -1,3 +1,6 @@
+import { ExcludedFolders } from "../components/ExcludedFolders";
+import { Icon } from "../components/Icon";
+import { ActionButton } from "../components/ActionButton";
 import { CoverSize } from "../components/CoverSize";
 import { ServerRoots } from "../components/ServerRoots";
 import { Feedback } from "../components/Feedback";
@@ -24,7 +27,8 @@ export function SettingsLibraries() {
   const library = useLibrary(),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false),
-    [excluded, setExcluded] = createSignal("");
+    [action, setAction] = createSignal(""),
+    [message, setMessage] = createSignal("");
   const scan = createLibraryScan({
     session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
     tasks: library.tasks,
@@ -32,30 +36,23 @@ export function SettingsLibraries() {
   const task = scan.task,
     taskSource = scan.source;
   const [local, { refetch }] = createResource(() => !library.demo, localStatus);
-  const [roots, { refetch: refreshRoots }] = createResource(
-    () => library.localSession(),
-    () =>
-      requestAede<{ items: { path: string | null; status: string }[] }>(
-        "/api/v1/roots",
-        { limit: "200" },
-        "GET",
-        null,
-        "local",
-      ),
-  );
   const administrative = () => library.serverSession()?.account.role === "admin";
-  async function perform(work: () => Promise<unknown>) {
+  async function perform(work: () => Promise<unknown>, name = "", success = "") {
     if (busy()) return;
     setError("");
+    setMessage("");
+    setAction(name);
     setBusy(true);
     try {
       await work();
       await refetch();
-      await refreshRoots();
+      if (["start", "stop", "sync"].includes(name) && library.error()) setError(library.error());
+      else if (success) setMessage(success);
     } catch (e) {
       setError(String(e));
     } finally {
       setBusy(false);
+      setAction("");
     }
   }
   async function refreshTask() {
@@ -99,16 +96,36 @@ export function SettingsLibraries() {
           <p role="alert">{String(local.error)}</p>
         </Show>
         <div class="settings-actions">
-          <button
+          <ActionButton
             class="primary"
-            disabled={busy() || library.demo}
-            onClick={() => void perform(() => library.enableLocal())}
+            busy={action() === "start"}
+            disabled={
+              busy() ||
+              library.busy() ||
+              library.demo ||
+              (!!library.localSession() && !!local()?.running)
+            }
+            onClick={() =>
+              void perform(
+                () => library.enableLocal(),
+                "start",
+                t("Aède local est démarré et son catalogue a été chargé."),
+              )
+            }
           >
-            {library.localSession() ? t("Reconnecter le moteur local") : t("Activer Aède local")}
-          </button>
+            {library.localSession() && local()?.running
+              ? t("Aède local actif")
+              : t("Démarrer Aède local")}
+          </ActionButton>
           <button
             disabled={busy() || !library.localSession()}
-            onClick={() => void perform(() => library.disableLocal())}
+            onClick={() =>
+              void perform(
+                () => library.disableLocal(),
+                "stop",
+                t("Aède local est arrêté. Son catalogue reste consultable hors ligne."),
+              )
+            }
           >
             {t("Désactiver le moteur local")}{" "}
           </button>
@@ -116,6 +133,11 @@ export function SettingsLibraries() {
             {t("Ajouter des dossiers…")}{" "}
           </button>
         </div>
+        <p role="status">
+          {library.localSession() && local()?.running
+            ? t("Le moteur local est actif et connecté à Phémios.")
+            : t("Le moteur local n’est pas connecté à Phémios.")}
+        </p>
         <Show when={local()?.enabled && !local()?.running}>
           <p class="notice">
             {t(
@@ -123,6 +145,11 @@ export function SettingsLibraries() {
             )}{" "}
           </p>
         </Show>
+        <p class="muted">
+          {t(
+            "Ajouter un dossier ne lance aucun scan. Retirer ou exclure un dossier sera appliqué au catalogue lors de l’analyse suivante ; les fichiers audio et les annotations sont conservés.",
+          )}{" "}
+        </p>
         <ul class="root-list">
           <For each={local()?.roots}>
             {(root) => (
@@ -135,42 +162,67 @@ export function SettingsLibraries() {
                   </small>
                 </div>
                 <button
-                  disabled={busy()}
+                  class="icon-button quiet"
+                  title={t("Retirer le dossier")}
+                  aria-label={t("Retirer le dossier")}
+                  disabled={busy() || library.demo}
                   onClick={() => void perform(() => localRootAction(root.path, "remove"))}
                 >
-                  {t("Retirer")}{" "}
-                </button>
-                <button
-                  disabled={busy() || !library.localSession()}
-                  onClick={() => void perform(() => localRootAction(root.path, "exclude"))}
-                >
-                  {t("Exclure")}{" "}
+                  <Icon name="minus" />
                 </button>
               </li>
             )}
           </For>
         </ul>
-        <p class="muted">
-          {t(
-            "Ajouter un dossier ne lance aucun scan. Retirer ou exclure un dossier sera appliqué au catalogue lors de l’analyse suivante ; les fichiers audio et les annotations sont conservés.",
-          )}{" "}
-        </p>
+
+        <ExcludedFolders
+          disabled={
+            busy() ||
+            (taskSource() === "local" && ["queued", "running"].includes(task()?.status ?? ""))
+          }
+        />
         <div class="settings-actions">
-          <button
-            disabled={busy() || !library.localSession() || !local()?.roots.length}
+          <ActionButton
+            busy={action() === "scan"}
+            disabled={
+              busy() ||
+              library.busy() ||
+              !library.localSession() ||
+              !local()?.roots.length ||
+              ["queued", "running"].includes(task()?.status ?? "")
+            }
             onClick={() =>
-              void perform(() => scan.start("local", () => scanLocal(full(), threads())))
+              void perform(
+                () => scan.start("local", () => scanLocal(full(), threads())),
+                "scan",
+                t("Scan lancé. Le catalogue sera actualisé à la fin de la tâche."),
+              )
             }
           >
-            {t("Analyser les dossiers")}{" "}
-          </button>
-          <button
-            disabled={busy() || !library.localSession()}
-            onClick={() => void perform(() => library.sync("local"))}
+            {t("Scanner les dossiers")}
+          </ActionButton>
+          <ActionButton
+            busy={action() === "sync"}
+            disabled={busy() || library.busy() || !library.localSession()}
+            onClick={() =>
+              void perform(
+                () => library.sync("local"),
+                "sync",
+                t("Le catalogue local connu par Aède a été rechargé dans Phémios."),
+              )
+            }
           >
-            {t("Synchroniser le catalogue local")}{" "}
-          </button>
+            {t("Recharger le catalogue local")}
+          </ActionButton>
         </div>
+        <p class="muted">
+          {t("Scanner les dossiers recherche les fichiers ajoutés, déplacés ou retirés.")}
+          <br />
+          {t(
+            "Recharger le catalogue actualise uniquement les informations déjà connues par Aède, sans parcourir vos fichiers.",
+          )}
+        </p>
+        <Feedback message={message()} onClose={() => setMessage("")} />
         <small class="settings-persistence">
           {t("Les options sont enregistrées automatiquement.")}
         </small>
@@ -192,55 +244,6 @@ export function SettingsLibraries() {
             onInput={(e) => setThreads(e.currentTarget.valueAsNumber)}
           />
         </label>
-        <details>
-          <summary>{t("Exclusions")}</summary>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void perform(() => localRootAction(excluded(), "exclude"));
-            }}
-          >
-            <label>
-              {t("Dossier à exclure")}{" "}
-              <input
-                required
-                value={excluded()}
-                onInput={(e) => setExcluded(e.currentTarget.value)}
-              />
-            </label>
-            <div class="settings-actions">
-              <button disabled={busy() || !library.localSession()}>{t("Exclure")}</button>
-              <button
-                type="button"
-                disabled={busy() || !library.localSession()}
-                onClick={() => void perform(() => localRootAction(excluded(), "include"))}
-              >
-                {t("Retirer l’exclusion")}{" "}
-              </button>
-            </div>
-          </form>
-          <p class="muted">
-            {t(
-              "Les exclusions utilisent les règles roots d’Aède. Vous pouvez retirer une exclusion en indiquant son chemin.",
-            )}{" "}
-          </p>
-          <For each={roots()?.items.filter((row) => row.status === "excluded")}>
-            {(row) => (
-              <div class="account-row">
-                <span>{row.path}</span>
-                <button
-                  disabled={busy() || !row.path}
-                  onClick={() => void perform(() => localRootAction(row.path!, "include"))}
-                >
-                  {t("Retirer l’exclusion")}{" "}
-                </button>
-              </div>
-            )}
-          </For>
-          <Show when={roots.error}>
-            <Feedback error persistent message={String(roots.error)} />
-          </Show>
-        </details>
       </div>
       <div class="settings-card">
         <h2>{t("Serveur Aède")}</h2>

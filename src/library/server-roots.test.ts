@@ -86,3 +86,22 @@ it("does not dispatch a folder read whose admission has already expired", async 
   expect(await readServerRoots(request, () => false)).toEqual([]);
   expect(request).not.toHaveBeenCalled();
 });
+
+it("reads exclusions on every page without mistaking watched roots for excluded folders", async () => {
+  const paths = await readServerRoots(
+    async (offset) => ({
+      items: offset
+        ? [{ path: "/excluded-second", status: "excluded" }]
+        : [
+            { path: "/music", status: "watched" },
+            { path: "/excluded-first", status: "excluded" },
+          ],
+      total: 3,
+      offset,
+      scanned_at: 1,
+    }),
+    () => true,
+    "excluded",
+  );
+  expect(paths).toEqual(["/excluded-first", "/excluded-second"]);
+});

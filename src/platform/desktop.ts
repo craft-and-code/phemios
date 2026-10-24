@@ -254,6 +254,16 @@ export function stopLocal() {
   return nativeCall<void>("local_stop");
 }
 export const pickLocalRoots = () => nativeCall<void>("local_pick_roots");
+/** Pick candidates only; exclusions are then applied explicitly to the captured local session. */
+export async function pickLocalExclusions(current: () => boolean = () => true) {
+  if (!current()) return [];
+  if (!(await getRuntimeInfo()).capabilities?.includes("local_exclusion_picker"))
+    throw new Error(
+      t("Mettez à jour puis redémarrez Phémios pour sélectionner les dossiers exclus."),
+    );
+  if (!current()) return [];
+  return nativeCall<string[]>("local_pick_exclusions");
+}
 export const scanLocal = (full: boolean, threads: number) =>
   nativeCall<{ task_id: number; status: "queued" }>("local_scan", { full, threads });
 export const localRootAction = (path: string, action: "remove" | "exclude" | "include") =>

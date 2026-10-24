@@ -7,13 +7,13 @@ Un catalogue commun rassemble vos sources locales et serveur. Quand les deux son
 « Importer » votre musique signifie l’ajouter au catalogue : Phémios ne déplace ni ne recopie les morceaux.
 
 1. Ouvrez la roue crantée, puis **Bibliothèques**.
-2. Dans **Bibliothèque locale**, cliquez sur **Activer Aède local**.
+2. Dans **Bibliothèque locale**, cliquez sur **Démarrer Aède local**.
 3. Cliquez sur **Ajouter des dossiers…**, puis sélectionnez le dossier qui contient vos artistes et albums. Vous pouvez en ajouter plusieurs.
-4. Cliquez sur **Analyser les dossiers** : ajouter le chemin seul ne lance pas le scan. Cette analyse découvre les fichiers ; ce n’est pas une analyse audio FlacCompagnon.
-5. Attendez le résultat de la tâche, puis utilisez **Synchroniser le catalogue local** pour relire le catalogue si nécessaire.
+4. Cliquez sur **Scanner les dossiers** : ajouter le chemin seul ne lance pas le scan. Cette analyse découvre les fichiers ; ce n’est pas une analyse audio FlacCompagnon.
+5. Attendez le résultat de la tâche, puis utilisez **Recharger le catalogue local** pour relire le catalogue si nécessaire.
 6. Revenez dans **Albums** ou **Artistes** pour retrouver votre musique.
 
-Après l’ajout de nouveaux morceaux sur disque, relancez Analyser les dossiers. Une simple synchronisation ne parcourt pas vos dossiers. Retirer une racine de la configuration ne supprime jamais ses fichiers. La gestion détaillée des racines et des exclusions est décrite dans le [manuel Aède](https://craft-and-code.github.io/aede/docs/fr/index.html).
+Après l’ajout de nouveaux morceaux sur disque, relancez **Scanner les dossiers**. Une simple synchronisation ne parcourt pas vos dossiers. Retirer une racine de la configuration ne supprime jamais ses fichiers. La gestion détaillée des racines et des exclusions est décrite dans le [manuel Aède](https://craft-and-code.github.io/aede/docs/fr/index.html).
 
 Les images et paroles ne sont pas toutes fournies par le scan : poursuivez avec [la récupération des images et biographies](artists.md#recuperer-les-images-et-les-biographies) et [celle des paroles](playback.md#recuperer-les-paroles).
 
@@ -36,3 +36,9 @@ Les mots de passe et clés de services ne sont pas inclus dans une sauvegarde de
 - **Actualiser les dossiers** relit leur configuration ; ce n’est pas un scan.
 
 Après un ajout de fichiers, scannez la bonne source et attendez la fin de la tâche. Phémios vérifie toutes les cinq secondes les catalogues des sessions connectées et les recharge lorsqu’ils changent. Le rechargement manuel reste disponible en cas de besoin. La navigation hors ligne utilise le cache disponible ; elle ne rend pas un fichier distant accessible sans son serveur.
+
+## Gérer les exclusions locales
+
+Dans **Bibliothèque locale → Dossiers exclus du scan**, la liste est en lecture seule. Le bouton **+** sélectionne des dossiers à exclure. Sélectionnez une ligne puis utilisez **−** pour retirer son exclusion. Le bouton **−** de la liste principale retire au contraire un dossier surveillé de la bibliothèque. Ces actions ne suppriment jamais les fichiers audio.
+
+Les dossiers exclus et leurs sous-dossiers ne sont pas parcourus par Aède lors des prochains scans demandés par Phémios. Lancez **Scanner les dossiers** après modification : les anciens titres exclus ne disparaissent du catalogue qu’après ce scan. Retirer une exclusion autorise leur réintégration au scan suivant.

@@ -5,6 +5,7 @@ import { t } from "../i18n";
 export async function readServerRoots(
   request: (offset: number) => Promise<unknown>,
   current: () => boolean = () => true,
+  status: "watched" | "excluded" = "watched",
 ): Promise<string[]> {
   const roots: string[] = [];
   let offset = 0,
@@ -41,7 +42,7 @@ export async function readServerRoots(
         !(row.path === null || typeof row.path === "string")
       )
         throw Error(t("Liste des dossiers serveur invalide ou modifiée."));
-      if (row.status === "watched") {
+      if (row.status === status) {
         if (!row.path) throw Error(t("Liste des dossiers serveur invalide ou modifiée."));
         roots.push(row.path);
       }
