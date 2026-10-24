@@ -116,12 +116,22 @@ fn guest_disc_permission_needs_no_server_and_rejects_a_later_login() {
 }
 #[test]
 fn replacing_credentials_for_the_same_account_does_not_reuse_disc_permission() {
-    let (first, second) = crate::account_test_support::sessions();
+    // Named legacy admission now checks the live authority before the first allowed play.
+    let (first, second, server) = replacement_support::sessions();
     let owner = source(Some(first));
     let check = permission(&[&owner]).unwrap();
     check().unwrap();
     *owner.session.lock().unwrap() = Some(second);
     assert!(check().is_err());
+    assert_eq!(
+        server.finish(),
+        [
+            "POST /api/auth/v1/session",
+            "POST /api/auth/v1/session",
+            "GET /api/auth/v1/session",
+        ],
+        "replacement must retire the original permission before another live request"
+    );
 }
 #[test]
 fn a_native_session_generation_change_retires_anonymous_admission() {
@@ -165,3 +175,9 @@ fn live_supervision_overrides_an_old_unrestricted_login_without_guest_fallback()
         server.join().unwrap();
     }
 }
+
+#[path = "cd_admin_admission_tests.rs"]
+mod admin_admission;
+
+#[path = "cd_account_replacement_test_support.rs"]
+mod replacement_support;

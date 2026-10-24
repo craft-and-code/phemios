@@ -100,8 +100,13 @@ it.each(["local", "server"] as const)(
   "continues the other artwork queue when %s logs out during annotation loading",
   async (source) => {
     const page = { items: [], total: 0, offset: 0, limit: 200, scanned_at: 1 };
-    vi.mocked(requestAede).mockImplementation(async (path) =>
-      path === "/api/v1/status" ? { capabilities: [] } : page,
+    vi.mocked(requestAede).mockImplementation(
+      async (path, _query, _method, _body, _source, captured) =>
+        path === "/api/auth/v1/session"
+          ? { ...captured?.account, enabled: true }
+          : path === "/api/v1/status"
+            ? { capabilities: [] }
+            : page,
     );
     const retained = source === "local" ? "server" : "local";
     const first = `release:@phemios/${retained}/fixture`;
@@ -135,12 +140,15 @@ it.each(["local", "server"] as const)(
     await settle();
     expect(art.mock.calls.map(([ref]) => ref)).toEqual([first]);
     let finishAnnotations!: (value: typeof page) => void;
-    vi.mocked(requestAede).mockImplementation(async (path, _query, _method, _body, owner) =>
-      path === "/api/me/v1/annotations" && owner === source
-        ? new Promise((resolve) => {
-            finishAnnotations = resolve;
-          })
-        : page,
+    vi.mocked(requestAede).mockImplementation(
+      async (path, _query, _method, _body, owner, captured) =>
+        path === "/api/auth/v1/session"
+          ? { ...captured?.account, enabled: true }
+          : path === "/api/me/v1/annotations" && owner === source
+            ? new Promise((resolve) => {
+                finishAnnotations = resolve;
+              })
+            : page,
     );
     const pending = library.sync(source);
     try {

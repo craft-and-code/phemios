@@ -1,10 +1,13 @@
 use super::*;
 use std::io::{Read, Write};
+#[path = "network_export_test_support.rs"]
+mod support;
 #[test]
 fn original_export_streams_exact_bytes_and_cancellation_never_contacts_another_authority() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let server = format!("http://{}", listener.local_addr().unwrap());
     let worker = std::thread::spawn(move || {
+        support::confirm_session(&listener);
         let (mut stream, _) = listener.accept().unwrap();
         stream
             .set_read_timeout(Some(Duration::from_secs(3)))
@@ -31,7 +34,7 @@ fn original_export_streams_exact_bytes_and_cancellation_never_contacts_another_a
         agent: agent(),
         server,
         token: "fictional".into(),
-        account: json!({"role":"admin"}),
+        account: json!({"id":"fixture","role":"admin"}),
         artwork_parental: Arc::default(),
         playback_tls: None,
     };
@@ -66,6 +69,7 @@ fn a_progressing_original_can_take_longer_than_fifteen_seconds_to_download() {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let server = format!("http://{}", listener.local_addr().unwrap());
     let worker = std::thread::spawn(move || {
+        support::confirm_session(&listener);
         let (mut stream, _) = listener.accept().unwrap();
         stream
             .set_read_timeout(Some(Duration::from_secs(5)))
@@ -93,7 +97,7 @@ fn a_progressing_original_can_take_longer_than_fifteen_seconds_to_download() {
         agent: agent(),
         server,
         token: "fictional".into(),
-        account: json!({"role":"admin"}),
+        account: json!({"id":"fixture","role":"admin"}),
         artwork_parental: Arc::default(),
         playback_tls: None,
     };

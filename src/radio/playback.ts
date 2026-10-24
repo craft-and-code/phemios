@@ -15,13 +15,17 @@ export interface RadioMedia {
   release: () => void;
   callbacks: (playing: () => void, waiting: () => void, failure: () => void) => void;
 }
-/** Latest explicit selection owns the media. Disposal closes it permanently; uninterrupted stalls share one deadline. */
+/** Latest explicit selection owns the media; captured authorization binds its owner before preparation.
+ * Admission remains immediately before play. Disposal closes media permanently; uninterrupted stalls share one deadline.
+ */
 export function createRadioPlayback(
   resolve: (uuid: string) => Promise<unknown>,
   beforePlay: () => Promise<void>,
   createMedia = browserRadioMedia,
   initialVolume?: () => number | Promise<number>,
-  authorize?: (media: ExternalParentalMedia) => Promise<void>,
+  authorize?:
+    | ((media: ExternalParentalMedia) => Promise<void>)
+    | { capture: () => (media: ExternalParentalMedia) => Promise<void> },
   rememberVolume?: (value: number) => void,
   unmutedVolume?: () => number,
 ) {
@@ -71,6 +75,7 @@ export function createRadioPlayback(
     setStatus("connecting");
     setError("");
     try {
+      const admit = typeof authorize === "function" ? authorize : authorize?.capture();
       const audio = createMedia();
       media = audio;
       audio.prepare?.();
@@ -123,7 +128,7 @@ export function createRadioPlayback(
       );
       audio.volume(volume());
       audio.source(url);
-      if (authorize) await authorize({ kind: "radio" });
+      if (admit) await admit({ kind: "radio" });
       if (held !== epoch || !alive) return;
       await audio.play();
     } catch (failure) {

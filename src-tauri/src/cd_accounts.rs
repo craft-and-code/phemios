@@ -64,7 +64,7 @@ pub(crate) fn permission(owners: Vec<Stamp>) -> Box<dyn Fn() -> Result<(), Strin
                     return Err("Votre compte ne permet pas la lecture.".into());
                 }
                 if client
-                    .parental_status_admitted(current)?
+                    .external_parental_status_admitted(current)?
                     .is_some_and(|s| s["policy"]["enabled"] == true)
                 {
                     return Err("La lecture CD est indisponible pour un compte supervisé.".into());

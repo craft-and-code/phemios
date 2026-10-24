@@ -8,6 +8,7 @@ import {
   type ParentalReason,
 } from "./parental-controls";
 import type { AccountSession, Snapshot } from "./server";
+import { liveParentalCapability } from "./parental-account";
 import type { SourceId } from "./sources";
 export type ExternalParentalMedia = { kind: "radio" } | { kind: "podcast"; feed: string };
 export function parentalMessage(reason: ParentalReason | null): string {
@@ -63,7 +64,7 @@ export function createParentalAccess(input: {
     source: SourceId,
     owner = input.session(source),
   ): Promise<ParentalStatus | undefined> {
-    if (!owner || !supported(owner)) return Promise.resolve(undefined);
+    if (!owner) return Promise.resolve(undefined);
     const held = pending.get(source);
     if (held?.owner === owner) return held.promise;
     const promise = read(source, owner).finally(() => {
@@ -73,26 +74,38 @@ export function createParentalAccess(input: {
     return promise;
   }
   async function read(source: SourceId, owner: AccountSession) {
-    if (!owner || !supported(owner)) return undefined;
-    try {
-      const value = parseParentalStatus(
-        await request("/api/me/v1/parental", {}, "GET", null, source, owner),
-      );
+    const current = () => {
       if (!alive || input.session(source) !== owner)
         throw Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
-      if (value.owner !== owner.account.id) throw Error(t("Contrôle parental Aède invalide."));
+    };
+    try {
+      current();
+      const needsPolicy =
+        supported(owner) ||
+        liveParentalCapability(
+          await request("/api/auth/v1/session", {}, "GET", null, source, owner),
+          owner,
+        );
+      current();
+      const value = needsPolicy
+        ? parseParentalStatus(await request("/api/me/v1/parental", {}, "GET", null, source, owner))
+        : undefined;
+      current();
+      if (value && value.owner !== owner.account.id)
+        throw Error(t("Contrôle parental Aède invalide."));
       const priorRecord = untrack(() => record(source)),
         prior = priorRecord?.value;
-      setRecords((previous) => ({ ...previous, [source]: { owner, value } }));
+      setRecords((previous) => ({ ...previous, [source]: { owner, ...(value ? { value } : {}) } }));
       if (
-        priorRecord?.error ||
-        (value.policy.enabled &&
-          (!prior ||
-            prior.revision !== value.revision ||
-            parentalPolicyStamp(prior.policy) !== parentalPolicyStamp(value.policy))) ||
-        (prior?.policy.enabled &&
-          (prior.revision !== value.revision ||
-            parentalPolicyStamp(prior.policy) !== parentalPolicyStamp(value.policy)))
+        value &&
+        (priorRecord?.error ||
+          (value.policy.enabled &&
+            (!prior ||
+              prior.revision !== value.revision ||
+              parentalPolicyStamp(prior.policy) !== parentalPolicyStamp(value.policy))) ||
+          (prior?.policy.enabled &&
+            (prior.revision !== value.revision ||
+              parentalPolicyStamp(prior.policy) !== parentalPolicyStamp(value.policy))))
       )
         untrack(() => input.changed(source, value));
       return value;
@@ -126,7 +139,7 @@ export function createParentalAccess(input: {
         }
         if (current && alive) timer = setTimeout(() => void poll(), 5000);
       };
-      if (supported(owner)) void poll();
+      if (owner) void poll();
       onCleanup(() => {
         current = false;
         clearTimeout(timer);
@@ -137,8 +150,7 @@ export function createParentalAccess(input: {
   });
   const status = (source = input.source()) => record(source)?.value;
   const available = (source = input.source()) =>
-    !supported(input.session(source)) ||
-    (!!policyRecord[source]()?.value && !policyRecord[source]()?.error);
+    !input.session(source) || (!!policyRecord[source]() && !policyRecord[source]()?.error);
   const radioAllowed = () =>
     available() &&
     !(
@@ -196,12 +208,12 @@ export function createParentalAccess(input: {
     radioAllowed,
     podcastAllowed,
     podcastsAllowed,
-    supported: (source = input.source()) => supported(input.session(source)),
+    supported: (source = input.source()) => supported(input.session(source)) || !!status(source),
     error: () => record(input.source())?.error ?? "",
     catalogVisible(source: SourceId, snapshot: Snapshot | undefined) {
       const owner = input.session(source),
         row = policyRecord[source]();
-      if (!supported(owner)) return true;
+      if (!supported(owner) && !row?.value) return true;
       if (!row?.value || row.error) return false;
       return (
         !row.value.policy.enabled ||
@@ -217,9 +229,9 @@ export function createParentalAccess(input: {
       source = input.source(),
       owner = input.session(source),
     ) {
-      if (!owner || !supported(owner)) return undefined;
+      if (!owner) return undefined;
       const value = await refresh(source, owner);
-      if (!value) throw Error(parentalMessage("policy_unavailable"));
+      if (!value) return undefined;
       if (!value.policy.enabled) return undefined;
       if (!value.allowed) throw Error(parentalMessage(value.reason));
       if (media.kind === "radio" && !value.policy.radio_allowed)

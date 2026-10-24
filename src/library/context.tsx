@@ -173,8 +173,7 @@ export function LibraryProvider(props: ParentProps) {
   const parental = createParentalAccess({
     session: sessionAt,
     source: () => source(),
-    changed: (owner, status) => {
-      if (status.policy.enabled && source() === owner && !radioGuard.owner()) radio.stop();
+    changed: (owner) => {
       stopControlledSource(owner);
       parentalSync.add(owner);
       clearMedia(owner);
@@ -202,7 +201,6 @@ export function LibraryProvider(props: ParentProps) {
   const admittedSnapshot = (owner: SourceId) => admitted[owner]();
   function stopControlledSource(owner: SourceId) {
     policyEpochs[owner]++;
-    if (source() === owner && !radioGuard.owner()) radio.stop();
     annotationsLoader.reset(owner);
     advancedSearch.reset();
     if (radioGuard?.applies(owner)) {
@@ -374,7 +372,7 @@ export function LibraryProvider(props: ParentProps) {
     },
     browserRadioMedia,
     player.settledVolume,
-    radioGuard.authorize,
+    radioGuard,
     player.rememberVolume,
     player.unmutedVolume,
   );
@@ -589,12 +587,6 @@ export function LibraryProvider(props: ParentProps) {
     for (const owner of ["local", "server"] as const)
       if (annotationOwners[owner] !== next[owner]) {
         annotationOwners[owner] = next[owner];
-        if (
-          next[owner]?.account.parental_enabled === true &&
-          source() === owner &&
-          !radioGuard.owner()
-        )
-          radio.stop();
         untrack(() => {
           if (player.ownsSource(owner)) player.reset();
         });

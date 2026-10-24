@@ -103,7 +103,8 @@ fn streamed_copy_case(format: &str, extension: &str, returning: bool) {
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let address = format!("http://{}", listener.local_addr().unwrap());
     let worker = std::thread::spawn(move || {
-        for index in 0..2 {
+        // Transfer admission and original export each recheck the captured named account.
+        for index in 0..4 {
             let (mut stream, _) = listener.accept().unwrap();
             stream
                 .set_read_timeout(Some(std::time::Duration::from_secs(5)))
@@ -116,7 +117,20 @@ fn streamed_copy_case(format: &str, extension: &str, returning: bool) {
                 assert!(request.len() < 8192);
             }
             let headers = String::from_utf8(request).unwrap();
+            if index != 0 {
+                let authorization = headers.lines().find_map(|line| {
+                    let (name, value) = line.split_once(':')?;
+                    name.eq_ignore_ascii_case("authorization")
+                        .then(|| value.trim())
+                });
+                let expected = format!("Bearer {}", "a".repeat(64));
+                assert_eq!(authorization, Some(expected.as_str()));
+            }
             if index == 0 {
+                assert_eq!(
+                    headers.lines().next(),
+                    Some("POST /api/auth/v1/session HTTP/1.1")
+                );
                 let length: usize = headers
                     .lines()
                     .find_map(|line| {
@@ -130,6 +144,18 @@ fn streamed_copy_case(format: &str, extension: &str, returning: bool) {
                 let response =
                     json!({"token":"a".repeat(64),"account":{"id":"example","role":"admin"}})
                         .to_string();
+                write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response}",
+                    response.len()
+                )
+                .unwrap();
+            } else if matches!(index, 1 | 2) {
+                assert_eq!(
+                    headers.lines().next(),
+                    Some("GET /api/auth/v1/session HTTP/1.1")
+                );
+                let response = json!({"id":"example","role":"admin","enabled":true}).to_string();
                 write!(
                     stream,
                     "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response}",

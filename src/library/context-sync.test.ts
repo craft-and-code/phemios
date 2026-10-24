@@ -180,12 +180,20 @@ it("still restores process ownership and stops polling when an active recovery c
   expect(restoreAedeSession).toHaveBeenCalledExactlyOnceWith("server");
   expect(library.serverSession()).toBe(owner);
   expect(library.connected()).toBe(true);
+  const initialSessionReads = vi
+    .mocked(requestAede)
+    .mock.calls.filter(([path]) => path === "/api/auth/v1/session");
+  expect(initialSessionReads.length).toBeGreaterThan(0);
+  for (const [, , , , source, captured] of initialSessionReads) {
+    expect(source).toBe("server");
+    expect(captured).toBe(owner);
+  }
   disposeLibrary();
   await vi.advanceTimersByTimeAsync(45000);
   expect(vi.getTimerCount()).toBe(0);
-  expect(vi.mocked(requestAede).mock.calls.some(([path]) => path === "/api/auth/v1/session")).toBe(
-    false,
-  );
+  expect(
+    vi.mocked(requestAede).mock.calls.filter(([path]) => path === "/api/auth/v1/session"),
+  ).toEqual(initialSessionReads);
 });
 
 it.each([false, true])(

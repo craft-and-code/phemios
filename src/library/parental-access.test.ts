@@ -99,7 +99,11 @@ it("does not read policies for guests, administrators or older unsupported serve
       account: { id: "legacy", username: "legacy", role: "user" },
     },
   ]) {
-    const request = vi.fn();
+    const request = vi
+      .fn()
+      .mockImplementation(async () =>
+        session ? { ...session.account, enabled: true } : undefined,
+      );
     let dispose!: () => void;
     const access = createRoot((end) => {
       dispose = end;
@@ -114,7 +118,15 @@ it("does not read policies for guests, administrators or older unsupported serve
     try {
       expect(await access.check({ kind: "radio" })).toBeUndefined();
       await vi.advanceTimersByTimeAsync(20000);
-      expect(request).not.toHaveBeenCalled();
+      if (!session) expect(request).not.toHaveBeenCalled();
+      else {
+        expect(request).toHaveBeenCalled();
+        for (const [path, , , , , captured] of request.mock.calls) {
+          expect(path).toBe("/api/auth/v1/session");
+          expect(captured).toBe(session);
+        }
+        expect(access.status()).toBeUndefined();
+      }
       expect(access.radioAllowed()).toBe(true);
     } finally {
       dispose();
@@ -336,7 +348,13 @@ it("refuses all podcasts without RSS entries and restores guest/admin access ind
     await expect(
       access.check({ kind: "podcast", feed: "https://example.invalid/any-feed" }),
     ).rejects.toThrow("podcast");
-    setSession({ ...owner(), account: { id: "parent", username: "parent", role: "admin" } });
+    const administrator = {
+      ...owner(),
+      account: { id: "parent", username: "parent", role: "admin" },
+    };
+    request.mockResolvedValue({ ...administrator.account, enabled: true });
+    setSession(administrator);
+    await settleParental();
     expect(access.podcastsAllowed()).toBe(true);
     expect(access.podcastAllowed("https://example.invalid/any-feed")).toBe(true);
     setSession(undefined);

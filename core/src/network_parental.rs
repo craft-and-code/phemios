@@ -19,6 +19,43 @@ impl Client {
         validate(&value, self.account["id"].as_str().unwrap_or_default())?;
         Ok(Some(value))
     }
+    /// External media require fresh named authority before reusing an administrator or legacy exemption.
+    /// Capable non-administrators already authenticate through their live owner-bound policy read.
+    pub fn external_parental_status_admitted(
+        &self,
+        current: impl Fn() -> Result<(), String>,
+    ) -> Result<Option<Value>, String> {
+        current()?;
+        if self.account["role"] != "admin" && self.account["parental_enabled"].is_boolean() {
+            return self.parental_status_admitted(current);
+        }
+        let owner = self.account["id"]
+            .as_str()
+            .filter(|owner| !owner.is_empty())
+            .ok_or("Session Aède invalide. Reconnectez-vous.")?;
+        let role = self.account["role"]
+            .as_str()
+            .filter(|role| matches!(*role, "admin" | "user" | "auditor"))
+            .ok_or("Session Aède invalide. Reconnectez-vous.")?;
+        let live = self.request_admitted("GET", "/api/auth/v1/session", &[], None, &current)?;
+        if live["id"] != owner || live["enabled"] != true || live["role"] != role {
+            return Err("Session Aède remplacée, désactivée ou invalide. Reconnectez-vous.".into());
+        }
+        if live
+            .get("parental_enabled")
+            .is_some_and(|marker| !marker.is_boolean())
+            || (self.account["parental_enabled"].is_boolean()
+                && !live["parental_enabled"].is_boolean())
+        {
+            return Err("État du contrôle parental invalide.".into());
+        }
+        if role == "admin" || !live["parental_enabled"].is_boolean() {
+            return Ok(None);
+        }
+        let value = self.request_admitted("GET", "/api/me/v1/parental", &[], None, current)?;
+        validate(&value, owner)?;
+        Ok(Some(value))
+    }
     /// Recheck the live policy before serving a retained projection to a supervised account.
     pub fn admit_snapshot(&self, snapshot: &Value) -> Result<(), String> {
         self.admit_snapshot_admitted(snapshot, || Ok(()))
@@ -92,7 +129,7 @@ impl Client {
         current: impl Fn() -> Result<(), String>,
     ) -> Result<(), String> {
         if self
-            .parental_status_admitted(current)?
+            .external_parental_status_admitted(current)?
             .is_some_and(|v| v["policy"]["enabled"] == true)
         {
             return Err(
@@ -111,7 +148,7 @@ impl Client {
         current: impl Fn() -> Result<(), String>,
     ) -> Result<(), String> {
         if self
-            .parental_status_admitted(current)?
+            .external_parental_status_admitted(current)?
             .is_some_and(|v| v["policy"]["enabled"] == true)
         {
             return Err("HQPlayer est indisponible pour un compte supervisé.".into());

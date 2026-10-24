@@ -176,20 +176,19 @@ export function createParentalMedia(input: {
       else release(retained.scope, retained.grant.lease_id, retained.consumption.read());
     }
   }
-  async function authorize(media: ExternalParentalMedia) {
+  /** Bind the initiating source and optional login before delayed preparation without reserving listening time. */
+  function capture() {
     stop();
-    const held = {
-      source: input.source(),
-      owner: input.session(input.source()),
-      ticket: generation,
-    };
+    const source = input.source(),
+      held = { source, owner: input.session(source), ticket: generation };
     captured = held;
+    return (media: ExternalParentalMedia) => authorize(media, held);
+  }
+  async function authorize(media: ExternalParentalMedia, held: NonNullable<typeof captured>) {
+    if (!current(held)) throw Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
     const scope = await input.access.check(media, held.source, held.owner);
     if (!current(held)) throw Error(t("Session remplacée ou déconnectée. Reconnectez-vous."));
-    if (!scope) {
-      if (!held.owner || held.owner.account.role === "admin") captured = undefined;
-      return;
-    }
+    if (!scope) return;
     if (scope.owner !== held.owner || scope.source !== held.source)
       throw Error(t("Contrôle parental Aède invalide."));
     const requestedAt = performance.now();
@@ -226,7 +225,8 @@ export function createParentalMedia(input: {
     stop();
   });
   return {
-    authorize,
+    capture,
+    authorize: (media: ExternalParentalMedia) => capture()(media),
     stop,
     source: () => captured?.source,
     owner: () => captured?.owner,

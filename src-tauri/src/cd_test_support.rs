@@ -14,6 +14,12 @@ pub(super) fn session(role: &str, policy: Option<Value>) -> (Client, std::thread
         "POST /api/auth/v1/session ",
         json!({"token":"a".repeat(64),"account":{"id":"fixture-cd","role":role,"parental_enabled":false}}),
     )];
+    if role == "admin" {
+        replies.push((
+            "GET /api/auth/v1/session ",
+            json!({"id":"fixture-cd","role":"admin","enabled":true,"parental_enabled":false}),
+        ));
+    }
     if let Some(policy) = policy {
         replies.push(("GET /api/me/v1/parental ", policy));
     }

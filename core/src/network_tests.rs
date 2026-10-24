@@ -848,3 +848,6 @@ fn source_review_allows_only_its_bounded_read_and_decision_routes() {
     assert!(!allowed("DELETE", "/api/admin/v1/source-review"));
     assert!(!allowed("GET", "/api/admin/v1/source-review/../accounts"));
 }
+
+#[path = "network_media_admission_tests.rs"]
+mod media_admission;

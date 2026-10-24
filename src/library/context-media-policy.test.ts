@@ -23,10 +23,13 @@ it.each(["resident", "pending"] as const)(
         parental_enabled: false,
       },
     });
-    vi.mocked(requestAede).mockImplementation(async (path) => {
-      if (path === "/api/me/v1/parental") return policy;
-      return { items: [], total: 0, offset: 0, limit: 200, scanned_at: 1 };
-    });
+    vi.mocked(requestAede).mockImplementation(
+      async (path, _query, _method, _body, _source, captured) => {
+        if (path === "/api/auth/v1/session") return { ...captured?.account, enabled: true };
+        if (path === "/api/me/v1/parental") return policy;
+        return { items: [], total: 0, offset: 0, limit: 200, scanned_at: 1 };
+      },
+    );
     vi.mocked(syncAede).mockImplementation(async (source = "server") => ({
       server: "https://fixture.example",
       accountId: source === "local" ? "fixture-admin" : "fixture-child",
