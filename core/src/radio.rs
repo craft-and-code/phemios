@@ -47,7 +47,14 @@ impl Directory {
             .config()
             .timeout_global(Some(request_timeout(started.elapsed())?))
             .build()
-            .header("User-Agent", "Phemios/0.1.0 (Radio Browser desktop client)")
+            .header(
+                "User-Agent",
+                concat!(
+                    "Phemios/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (Radio Browser desktop client)"
+                ),
+            )
             .header("Accept", "application/json");
         for (key, value) in query {
             request = request.query(key, value);

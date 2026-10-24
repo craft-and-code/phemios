@@ -51,7 +51,10 @@ fn download_with_authorized(
     }
     let mut response = agent
         .get(uri.to_string())
-        .header("User-Agent", "Phemios/0.1.0 (Podcast download)")
+        .header(
+            "User-Agent",
+            concat!("Phemios/", env!("CARGO_PKG_VERSION"), " (Podcast download)"),
+        )
         .header("Accept-Encoding", "identity")
         .call()
         .map_err(|_| "Épisode indisponible ou adresse non publique.")?;

@@ -95,7 +95,14 @@ impl FeedClient {
         let mut response = self
             .agent
             .get(uri.to_string())
-            .header("User-Agent", "Phemios/0.1.0 (Podcast RSS client)")
+            .header(
+                "User-Agent",
+                concat!(
+                    "Phemios/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (Podcast RSS client)"
+                ),
+            )
             .header(
                 "Accept",
                 "application/rss+xml, application/atom+xml, application/xml, text/xml",

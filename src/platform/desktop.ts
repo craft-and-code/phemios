@@ -5,6 +5,7 @@ import { wikipediaDocument } from "../encyclopedia/document";
 import { t } from "../i18n";
 import { referenceSource, type SourceId } from "../library/sources";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { version as appVersion } from "../../package.json";
 
 /** Versioned bridge metadata; no music folders or credentials are exposed. */
 export interface RuntimeInfo {
@@ -19,7 +20,7 @@ export interface RuntimeInfo {
 /** Browser previews stay offline and report their lack of native capabilities. */
 export async function getRuntimeInfo(): Promise<RuntimeInfo> {
   if (!isTauri()) {
-    return { bridgeVersion: 1, name: "Phémios", version: "0.1.0", native: false };
+    return { bridgeVersion: 1, name: "Phémios", version: appVersion, native: false };
   }
   const info = await invoke<RuntimeInfo>("runtime_info");
   if (info.bridgeVersion !== 1) {

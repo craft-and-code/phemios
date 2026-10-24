@@ -72,7 +72,11 @@ impl Directory {
             .header("Accept", "application/json")
             .header(
                 "User-Agent",
-                "Phemios/0.1.0 (https://github.com/craft-and-code/phemios)",
+                concat!(
+                    "Phemios/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (https://github.com/craft-and-code/phemios)"
+                ),
             );
         request
             .headers_mut()

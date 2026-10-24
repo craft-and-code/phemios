@@ -129,7 +129,11 @@ impl Client {
             .get(format!("https://{host}.wikipedia.org/w/api.php"))
             .header(
                 "User-Agent",
-                "Phemios/0.1.0 (https://craft-and-code.github.io/aede/; music encyclopedia)",
+                concat!(
+                    "Phemios/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (https://craft-and-code.github.io/aede/; music encyclopedia)"
+                ),
             )
             .header("Accept", "application/json")
             .query("action", action)

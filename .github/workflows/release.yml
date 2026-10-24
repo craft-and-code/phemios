@@ -27,6 +27,7 @@ jobs:
 
   desktop:
     needs: audio-source
+    name: App (${{ matrix.label }})
     env:
       AEDE_AUDIO_RELEASE: ${{ needs.audio-source.outputs.release }}
     strategy:
@@ -120,4 +121,4 @@ jobs:
           draft: true
           files: dist-release/*
           fail_on_unmatched_files: true
-          body_path: docs/releases/downloads.md
+          body_path: docs/releases/${{ github.ref_name }}.md

@@ -27,7 +27,7 @@ npm ci
 npm run tauri dev
 ```
 
-La préparation nécessite le dépôt Aède voisin, ou un moteur compatible explicitement configuré. Les instructions de compilation du moteur appartiennent à [Aède](https://craft-and-code.github.io/aede/). Les dépendances Cargo doivent avoir été récupérées avant la préparation hors ligne.
+La préparation sélectionne automatiquement la dernière version stable publiée d’[Aède](https://craft-and-code.github.io/aede/), récupère ses dépendances verrouillées et compile le moteur intégré depuis cette source exacte. Elle nécessite le réseau pendant la préparation ; la compilation utilise ensuite les dépendances verrouillées hors ligne. Aucun dépôt voisin ni installation séparée d’Aède n’est nécessaire.
 
 ## Votre première bibliothèque
 

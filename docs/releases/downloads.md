@@ -1,4 +1,4 @@
-Phémios includes its local Aède engine; a separate server is optional.
+Phémios includes its local Aède engine; a separate server is optional. The [0.2.0 release notes](v0.2.0.md) and [GitHub release](https://github.com/craft-and-code/phemios/releases/tag/v0.2.0) provide exact download/checksum links. This generic matrix documents naming; tagged workflows use their own `docs/releases/vVERSION.md` notes.
 
 | System                             | Installer                                                                  |
 | ---------------------------------- | -------------------------------------------------------------------------- |

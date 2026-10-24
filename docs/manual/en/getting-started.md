@@ -27,7 +27,7 @@ npm ci
 npm run tauri dev
 ```
 
-Preparation needs the sibling Aède repository or an explicitly configured compatible engine. Engine build instructions belong to [Aède](https://craft-and-code.github.io/aede/). Fetch Cargo dependencies before the offline preparation step.
+Preparation automatically selects the latest published stable [Aède](https://craft-and-code.github.io/aede/) release, fetches its locked dependencies and builds the bundled engine from that exact source. It requires network access during preparation; compilation then runs locked/offline. No sibling checkout or separate Aède installation is required.
 
 ## Your first library
 
