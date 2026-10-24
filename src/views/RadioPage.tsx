@@ -1,3 +1,4 @@
+import { createRadioDialTransport } from "../radio/dial-transport";
 import { RadioWave } from "../components/RadioWave";
 import { radioBrowseSession } from "../radio/browse-session";
 import { createRadioTuner, radioTuningKey } from "../radio/tuner";
@@ -75,6 +76,7 @@ export function RadioPage(props: { query: string }) {
   );
   const { stations, more, offset, selected, busy, error, loaded, search, setSelected } = directory;
   const chosen = () => stations()[selected()];
+  const dialTransport = createRadioDialTransport(chosen, radio, busy);
   const tuner = createRadioTuner({
     stations,
     selected,
@@ -282,14 +284,15 @@ export function RadioPage(props: { query: string }) {
               </Show>
               <button
                 class="play-button"
-                aria-label={t("Écouter la station sélectionnée")}
-                disabled={busy() || radio.status() === "connecting"}
-                onClick={() => {
-                  const station = chosen();
-                  if (station) void radio.start(station);
-                }}
+                aria-label={
+                  dialTransport.stopping()
+                    ? t("Arrêter la radio")
+                    : t("Écouter la station sélectionnée")
+                }
+                disabled={dialTransport.disabled()}
+                onClick={dialTransport.activate}
               >
-                <Icon name="play" />
+                <Icon name={dialTransport.stopping() ? "stop" : "play"} />
               </button>
             </div>
             <div class="radio-dial">

@@ -4,7 +4,7 @@ The dial indexes the current Radio Browser result page; its marks do not represe
 
 ## Preview and commit
 
-A pointer gesture or held range key previews the selected station immediately and commits exactly the final station on release, including when no radio was playing. Clicking a station row starts it immediately; selecting an already playing station does not restart it. Search completion, page mounting and retained favourites never initiate playback.
+A pointer gesture or held range key previews the selected station immediately and commits exactly the final station on release, including when no radio was playing. Clicking a station row starts it immediately; selecting an already playing station does not restart it. Search completion, page mounting and retained favourites never initiate playback. The dial button shows Stop while its selected station is playing or connecting, and uses the same immediate transport cancellation as the footer. Stop remains available during a directory read; paused, stopped or failed stations show Play, as does a different selected station.
 
 A primary horizontal drag pauses an engaged stream once after four pixels so only the tuning feedback remains. The final release starts the selected stream; no intermediate station is resolved. Cancellation, focus loss, hidden documents, replaced results and disposal leave the interrupted radio paused without an unsolicited restart. Later explicit Stop, Pause or Play actions replace the pending gesture through a transport revision. Continued input/change events from a canceled gesture cannot revive it. A new pointer/key gesture or row selection is required; a standalone accessibility input/change pair still commits its final choice.
 
