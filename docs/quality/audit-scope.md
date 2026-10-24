@@ -1,5 +1,7 @@
 # PH-STAB-001 — Audit Scope
 
+Current validation candidate: published Aède **v0.7.3**, exact source `85a557681d1a86a851e4e1cb4f806b41adbfcd87`, selected after its actual publication at 2026-10-24T09:53:46Z. Earlier v0.7.2 discovery/review/before-fix evidence below remains historical and exactly attributed. Source preparation changes only the two shared crate versions/revisions; embedded-engine compilation and applicable gates are recorded separately. The stable selection is frozen per validation cycle; an in-progress local release is never substituted.
+
 ## Campaign information and authorization
 
 - Project: Phémios, version 0.1.0.
@@ -9,9 +11,21 @@
 - Initial working tree: clean.
 - Date: 2026-10-23 (Europe/Paris).
 - Authority: the maintainer explicitly requested adapting Aède's English quality framework and then starting the campaign.
-- Historical campaign phase D-PH-13 authorized the published-Aède prerequisite investigation at Phémios 64e5858 / Aède 19aec35a, with documentation/read-only diagnostics only; its original boundaries remain recorded below. The subsequent 2026-10-24 maintainer request authorizes committing all pending Phémios work on main, including the already present v0.7.1 source pin. No App rebuild, push, tag/workflow dispatch or publication is performed; this does not authorize advisory suppression or campaign closure.
+- Historical campaign phase D-PH-13 authorized the published-Aède prerequisite investigation at Phémios 64e5858 / Aède 19aec35a, with documentation/read-only diagnostics only; its original boundaries remain recorded below. An earlier 2026-10-24 request, already fulfilled before entry commit 2709c13, authorized committing then-pending Phémios work including its 0.7.1 pin, without an App rebuild or publication. That completed approval is historical; current resumption permissions below require final maintainer validation before new commits and authorize the separately recorded App/gate work. No suppression or campaign closure is inferred.
 
 The initial audit is already authorized. Do not reproduce Aède's historical preparation-only restriction as a request for another approval. Confirm findings before proposing corrections; later correction and release decisions remain separate. No general campaign closure or independent clean-review pair is claimed by this first pass.
+
+## Resumption authority and initial 0.7.2 plan (historical, 2026-10-24)
+
+The maintainer authorizes the proposed ordered PH-STAB-001 resumption: refresh the candidate from the latest actually published stable Aède, independently review retained corrections in fresh contexts, complete the remaining general discovery, execute applicable gates and obtain qualifying general reviews when the candidate is ready. Present new confirmed defects before correction; retain maintainer validation before commits. No push, tag, workflow dispatch, publication or advisory suppression is authorized. Necessary upstream corrections may be proposed, preserving the separate active Aède checkout and its in-progress release work.
+
+The following entry plan records the initial 0.7.2 selection. Published 0.7.3 C2 and executed host controls now supersede its then-pending checks; [current validation](media-admission-validation.md) is authoritative for actual results.
+
+Entry candidate is clean `main`, `2709c1319a972c4b1b5722c94adab04137a30e55`, with 1,463 tracked/unignored regular files inventoried. GitHub releases/latest and the existing Phémios selector independently identify published non-draft/non-prerelease `v0.7.2`, exact commit `168bd4a4a432aed42957c4ff230ea91d77c6c09f`. The official `scripts/audio-source.mjs` preparation succeeds and changes only the workspace revision and the two shared package lock entries from 0.7.1 to 0.7.2; unrelated resolutions and all local vendor policies remain unchanged. This clears the historical release-availability prerequisite, not PH-C01 itself. The engine/App still require actual compilation and tests on this candidate.
+
+Freeze this verified published selection for one validation/review cycle using the existing `AEDE_AUDIO_RELEASE` mechanism; do not silently adopt a newer release midway through reviewed checks. At the start of a later candidate cycle, resolve the latest published stable release again. A draft, prerelease, local branch or in-progress 0.7.3 is not eligible. If a necessary upstream fix is found, report it and validate its eventual published release as a new candidate; do not substitute the dirty sibling checkout.
+
+PH-001–PH-008 and all prior ledgers remain historical evidence, not fresh candidate passes. First independently examine PH-007 transfer-root admission and PH-008 JamBase lease lifetimes, then extend the risk-path audit across persistence, exact source/account ownership, IPC, asynchronous frontend publication, audio and transfers. PH-003/PH-006 Linux acceptance, Rust 1.90/native matrix, installers and two general clean reviews remain outstanding until evidence is recorded. The full App gate is now authorized, including its controlled engine preparation, without any exception expansion.
 
 ## Objectives and invariants
 
@@ -42,9 +56,9 @@ These are campaign partitions, not a statement that every file was reviewed. Eac
 - Physical sound quality/bit-perfect output, real receivers, HQPlayer/device interoperability, optical drives and MTP/iPod hardware require dedicated acceptance. Phémios's remote f32 route must not be advertised as strict bit-perfect.
 - macOS execution is not Linux/Windows/MSRV verification. Missing mandatory native/software evidence remains blocking; hardware limits cannot excuse it.
 
-## Recent changes and known limits
+## Baseline changes and limitations (historical discovery)
 
-The baseline includes shared audio, stable-source engine preparation, exact native session tickets, private document/backup isolation, restored process sessions, HQPlayer generation ownership, parental admission and retained search/draft cancellation. The current-state record describes historical frontend/core/harness checks but explicitly lacks full native App/packaging acceptance. Do not count those historical results as current campaign executions.
+The baseline includes shared audio, stable-source engine preparation, exact native session tickets, private document/backup isolation, restored process sessions, HQPlayer generation ownership, parental admission and retained search/draft cancellation. At discovery, current-state described historical frontend/core/harness checks without full native App/packaging evidence. Do not count those old results as new executions. Later C2 Mac gate/Rust 1.90/App/DMG evidence is recorded separately; native Linux/Windows and installed/physical acceptance still require their own controls.
 
 The full gate invokes `scripts/prepare-engine.mjs`, whose automatic stable-source selection can update manifests/locks and needs a published Aède release containing the shared crates. Do not run that mutating preparation during the read-only phase. Inspect its prerequisite and record the full gate/native build as NOT RUN or BLOCKED with evidence rather than changing the selected dependency or silently using a sibling checkout. An isolated locked/offline host check may run without engine preparation; its result does not validate the full gate.
 
@@ -67,7 +81,7 @@ Execute only within the current phase. All commands come from actual project scr
 
 PH-C01/C09 are required for general closure even if the initial discovery uses individual non-native profiles. In a selected targeted pass, do not conflate its green controls with the entire campaign. Browser/native/hardware/provider acceptance is recorded separately; no fixture or snapshot supplies acoustic or physical-device evidence.
 
-## Review and current outcome
+## Initial review and outcome (historical)
 
 - Discovery context: the coordinating assistant, not an independent adversarial reviewer.
 - Independent reviewers: not yet assigned; no independent review or clean pair completed.

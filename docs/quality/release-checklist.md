@@ -1,13 +1,44 @@
 # Phémios Release and Stabilization Checklist
 
+Current validation candidate: published Aède **v0.7.3**, exact source `85a557681d1a86a851e4e1cb4f806b41adbfcd87`, selected after its actual publication at 2026-10-24T09:53:46Z. Earlier v0.7.2 discovery/review/before-fix evidence below remains historical and exactly attributed. Source preparation changes only the two shared crate versions/revisions; embedded-engine compilation and applicable gates are recorded separately. The stable selection is frozen per validation cycle; an in-progress local release is never substituted.
+
 ## Candidate and authority
 
 - Campaign `PH-STAB-001`, initial pass on 2026-10-23, branch `main`.
-- Software candidate `397912b95f79d54a3eb23e64dfe589df7e3c03e7`, version 0.1.0; initially clean. The initial pass changed eight quality Markdown files; D-PH-02 also adds the remediation plan and diagnostic source under this directory. D-PH-03 additionally implements the authorized Lot 0 source/tests/docs correction; dependency files remain unchanged.
-- Current authority: Lots 0–2 committed through c36149e; Lot 3a committed as 4f18270; Lot 3b implementation/checks/final commit explicitly authorized. No suppression, tag, push or release. Earlier ledgers retain their historical authority/results.
-- Host: macOS/Darwin 27.0.0 arm64; Node 26.10.0, npm 11.19.1, Rust/Cargo 1.99.0 Homebrew, cargo-audit 0.22.2. Rust 1.90 and other platforms are not tested.
-- FFmpeg and FFprobe 9.0.2 installed. Rust checks set `PHEMIOS_REQUIRE_FFMPEG=1`, `CARGO_INCREMENTAL=0`, `RUSTDOCFLAGS="-D warnings"`. Rust commands use existing locked/offline dependencies.
-- Shared audio remains pinned to Aède revision `d8c0f1a8c134b7366da0983367a9f063527085b7`. Existing sidecar metadata says Aède 0.6.1 / FlacCompagnon 0.9.6 and has no audio revision. No rebuilt/coherent current sidecar is claimed.
+- Initial software candidate `397912b95f79d54a3eb23e64dfe589df7e3c03e7`, version 0.1.0; initially clean. The initial pass changed eight quality Markdown files; D-PH-02 also adds the remediation plan and diagnostic source under this directory. D-PH-03 additionally implements the authorized Lot 0 source/tests/docs correction; dependency files remain unchanged.
+- Current authority: the 2026-10-24 maintainer request authorizes ordered campaign resumption, latest published stable Aède refresh, fresh-context independent reviews, remaining discovery and applicable gates. Present new confirmed defects before correction and retain maintainer validation before commits. No push, tag, workflow dispatch, publication or alert suppression. Earlier lot authorities/results remain historical.
+- Current host: macOS 27.0.1 arm64, Xcode 26.6; Node 26.10.0, npm 11.19.1, default Rust/Cargo 1.99.0 Homebrew, cargo-audit 0.22.2. Genuine isolated Rust 1.90.0 workspace tests PASS 550 on this host; Linux/Windows remain unexecuted.
+- FFmpeg and FFprobe 9.0.2 installed. Rust checks set `PHEMIOS_REQUIRE_FFMPEG=1`, `CARGO_INCREMENTAL=0`, `RUSTDOCFLAGS="-D warnings"`. The full gate uses locked workspace resolution; engine compilation and separate Rust 1.90 commands explicitly use locked/offline dependencies. Exact historical command profiles are retained in their ledgers.
+- Current source: official preparation selects published Aède v0.7.3 / `85a557681d1a86a851e4e1cb4f806b41adbfcd87`; both shared crates and rebuilt bundled engine use that exact source. Initial v0.7.2 and old bootstrap/v0.6.1 metadata below are historical. The full C2 Mac gate, Rust 1.90 host tests, App/DMG builds and read-only packaged-engine inspection actually PASS; platform/installed-runtime acceptance is separate.
+
+## Resumption authority and initial 0.7.2 plan (historical, 2026-10-24)
+
+The maintainer authorizes the proposed ordered PH-STAB-001 resumption: refresh the candidate from the latest actually published stable Aède, independently review retained corrections in fresh contexts, complete the remaining general discovery, execute applicable gates and obtain qualifying general reviews when the candidate is ready. Present new confirmed defects before correction; retain maintainer validation before commits. No push, tag, workflow dispatch, publication or advisory suppression is authorized. Necessary upstream corrections may be proposed, preserving the separate active Aède checkout and its in-progress release work.
+
+The following entry plan records the initial 0.7.2 cycle. Published 0.7.3 C2 results in the current summary and D-PH-16 supersede its then-pending checks.
+
+Entry candidate is clean `main`, `2709c1319a972c4b1b5722c94adab04137a30e55`, with 1,463 tracked/unignored regular files inventoried. GitHub releases/latest and the existing Phémios selector independently identify published non-draft/non-prerelease `v0.7.2`, exact commit `168bd4a4a432aed42957c4ff230ea91d77c6c09f`. The official `scripts/audio-source.mjs` preparation succeeds and changes only the workspace revision and the two shared package lock entries from 0.7.1 to 0.7.2; unrelated resolutions and all local vendor policies remain unchanged. This clears the historical release-availability prerequisite, not PH-C01 itself. The engine/App still require actual compilation and tests on this candidate.
+
+Freeze this verified published selection for one validation/review cycle using the existing `AEDE_AUDIO_RELEASE` mechanism; do not silently adopt a newer release midway through reviewed checks. At the start of a later candidate cycle, resolve the latest published stable release again. A draft, prerelease, local branch or in-progress 0.7.3 is not eligible. If a necessary upstream fix is found, report it and validate its eventual published release as a new candidate; do not substitute the dirty sibling checkout.
+
+PH-001–PH-008 and all prior ledgers remain historical evidence, not fresh candidate passes. First independently examine PH-007 transfer-root admission and PH-008 JamBase lease lifetimes, then extend the risk-path audit across persistence, exact source/account ownership, IPC, asynchronous frontend publication, audio and transfers. PH-003/PH-006 Linux acceptance, Rust 1.90/native matrix, installers and two general clean reviews remain outstanding until evidence is recorded. The full App gate is now authorized, including its controlled engine preparation, without any exception expansion.
+
+## Current C2 control summary (supersedes historical table below)
+
+| Control | Result  | Current evidence / limits                                                                                                                                                             |
+| ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PH-C01  | PASS    | Complete `bash tools/check.sh`, C2 published 0.7.3, exit 0; source/engine coherent                                                                                                    |
+| PH-C02  | PASS    | Full gate formatting/lint PASS; final parent documentation format/link/whitespace checks PASS, recorded in D-PH-17                                                                    |
+| PH-C03  | PASS    | 60 Node +1,439 Vitest in 253 files, no skipped/failing                                                                                                                                |
+| PH-C04  | PASS    | Strict App/component types, frontend/analysis/component builds                                                                                                                        |
+| PH-C05  | PASS    | 550 Rust host executions with required FFmpeg and coherent new sidecar, none ignored                                                                                                  |
+| PH-C06  | PASS    | Workspace Rustfmt, all-target Clippy and Rustdoc with warnings denied                                                                                                                 |
+| PH-C07  | PASS    | Bridge, generated TS/Rust/component docs,26-page site/local links                                                                                                                     |
+| PH-C08  | PASS    | Fresh raw npm/Cargo 0; provenance verified, supplemental GLib/Linux advisory still explicit                                                                                           |
+| PH-C09  | BLOCKED | Mac Rust 1.90 PASS 550, App/DMG builds and read-only image inspection PASS; Linux/Windows native/installer execution and installed-App acceptance remain absent, not hardware waivers |
+| PH-C10  | PASS    | Genuine PH009/010/011 red/green evidence; GEN02 + GEN03 consecutive independent GENERAL reviews on identical C2; R-PH-VAL-01 verifies applicability                                   |
+
+See [current validation](media-admission-validation.md) for exact candidates, commands, log hashes, earlier failed attempts, independent attribution and residual limits. This is not campaign closure or release approval.
 
 ## 1. Source and findings
 
@@ -20,7 +51,7 @@
 
 ## 2. Automated controls
 
-These recorded campaign controls incorporate D-PH-13; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
+The summary table below is historical through D-PH-13/D-PH-12, except where a later ledger explicitly updates it; it is not a fresh PASS on the then-selected 0.7.2 candidate or the later C2 software. These recorded campaign controls incorporate D-PH-13; the first execution ledger below remains historical. Results are for the base commit plus its recorded uncommitted correction and individual profiles. Exact authoritative applicability is in the [scope](audit-scope.md#validation-controls-and-evidence). The partial native compile does not turn full App/installer acceptance green.
 
 | Control                             | Result  | Evidence / limit                                                                                                                                                                        |
 | ----------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -75,7 +106,7 @@ Site validation checks generated local pages/links. It is not a live website, in
 - [ ] Actual UI/logout/HQPlayer/CD/network-output interactions, physical audio, optical/MTP/iPod devices and live providers.
 - [ ] Match embedded engine/shared-audio source, exercise native transfer fixtures with the newly prepared engine, and build/install platform artifacts.
 
-## 4. Initial report and independent review
+## 4. Initial report and independent review (historical)
 
 The campaign is launched and its first coordinator discovery is recorded as D-PH-01. Application behavior suites and individual software checks pass; the advisory assessment fails. Seven records remain open: six dependency/maintenance records and the PH-007 transfer defect confirmed in D-PH-02. No record is fixed, waived or deferred. Initial pass reproduced no application exploit/data loss; D-PH-02 subsequently reproduces PH-007 on temporary files. No real-library loss or clean exhaustive audit is claimed.
 
@@ -85,7 +116,7 @@ The campaign is launched and its first coordinator discovery is recorded as D-PH
 - [ ] All mandatory software controls PASS; no environment exception substitutes for missing controls.
 - [ ] Maintainer accepts residual risks and the closure recommendation.
 
-Current campaign verdict: **`FIX AND REVALIDATE`**. This is the initial coordinator recommendation, not an independent closure validation. Next: investigate/prepare bounded corrections for PH-001–007, complete full native evidence, then obtain fresh independent reviews. Maintainer closure decision: **not issued**.
+Initial campaign verdict: **`FIX AND REVALIDATE`**. This is the historical initial coordinator recommendation, not an independent closure validation. Next: investigate/prepare bounded corrections for PH-001–007, complete full native evidence, then obtain fresh independent reviews. Maintainer closure decision: **not issued**.
 
 ## 5. Source preservation and release authority
 
@@ -429,3 +460,56 @@ All fifteen existing source-selection/embedded-engine Node cases pass, with none
 The maintainer authorizes committing all pending local Phémios work, without rebuilding the App or pushing. Current checks pass: `npm test` (1,392 Vitest cases/250 files and 60 Node cases), repository Prettier/Oxlint, App/component TypeScript with `--noEmit`, Tauri-version validation, vendor provenance/locked resolution, offline Cargo metadata, and `cargo test -p phemios-core --lib --locked --offline` (291 passed, none ignored). The checked-in shared crates resolve to the same Aède v0.7.1 SHA; read-only latest-stable lookup now returns v0.7.2. See the [later status](engine-gate-plan.md#later-status-2026-10-24) for exact revisions.
 
 `tools/check.sh` is not rerun because it builds the App/engine and generated assets; no new full-gate, installer, platform, advisory or independent-review PASS is inferred. Prior execution ledgers and remaining alerts are retained.
+
+## 19. D-PH-14 — Published stable source and campaign resumption
+
+The current maintainer authorizes ordered resumption, fresh-context independent reviews, remaining discovery and applicable full verification, with new findings presented before correction and commits after maintainer validation. Entry Phémios `2709c1319a972c4b1b5722c94adab04137a30e55`, clean; published Aède v0.7.2 / `168bd4a4a432aed42957c4ff230ea91d77c6c09f` selected through GitHub releases/latest and `node scripts/update-engines.mjs --check`. `node scripts/audio-source.mjs` PASS, exit0; it updates only `Cargo.toml` and the two shared Aède lock entries, then fetches locked dependencies. Ephemeral `phemios-stab-resume-ngstwxh3/source-preparation.log`, SHA-256 `d56b2570c2839a5e190fe5ac2d9a475ce04b481faf711129f38103ae48ae0a9d`. This is preparation, not a test/build or full-gate PASS. Prior v0.6.1 failure logs are historical; the release-availability prerequisite is cleared. Native engine/App compilation, fresh audits, focused/general review records and remaining platform acceptance are recorded only after execution. No commit/push/publication.
+
+### R-PH-FIX-01 and current targeted verification
+
+Independent fresh-context review supports PH-007 and PH-008 with no new confirmed defect; twelve reviewer module tests and separate exact-lease/alias probes PASS. It is focused, not a general clean review. All software contents stayed frozen. The register retains reviewed paths, source identity, refuted hypothesis, report/manifest hashes and platform/resource limits.
+
+| Parent check    | Actual command (repository root)                                       | Result                           | Local log SHA-256                                                  |
+| --------------- | ---------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------ |
+| concerts        | `cargo test -p phemios-core --lib concerts:: --locked --offline`       | PASS25, exit0, no failed/ignored | `960b1eed33baf5a2b3ec4d3f98c668ef36bf731f43e685194cb73d6450eab6d7` |
+| native-sessions | `cargo test -p phemios-core --test native_sessions --locked --offline` | PASS83, exit0, no failed/ignored | `984c4543f2846d344037f1aa9b2cfbd7d0951d64849254055d6804c2ff019ffb` |
+| native-transfer | `cargo test -p phemios --lib transfer --locked --offline`              | PASS20, exit0, no failed/ignored | `52c098a2180eb32f4ac8b92cb953d2ace756a140ac7402403ba2af8585f95046` |
+
+All three parent commands set `CARGO_INCREMENTAL=0` and `PHEMIOS_REQUIRE_FFMPEG=1`; native transfer sets `PHEMIOS_TRANSFER_ENGINE` to the newly built v0.7.2 sidecar. The parent independently verifies reported artifact hashes; no reviewer Cargo execution is inferred. Official `node scripts/prepare-engine.mjs` PASS, exit0; `engine-preparation.log` SHA-256 `cc457cd50bcec68bc63a2c09cbd07c519f0aec80e81c3b3ff5aa9612f984e81e`. Engine metadata has Aède0.7.2, FlacCompagnon0.9.6 and the selected full audio SHA. This is compilation/preparation plus targeted tests, not a full App or platform-matrix PASS.
+
+## D-PH-15 — Fresh discovery and genuine negative media-admission regressions
+
+Current code base remains `2709c1319a972c4b1b5722c94adab04137a30e55`, published shared/embedded Aède v0.7.2 at `168bd4a4a432aed42957c4ff230ea91d77c6c09f`. R-PH-GEN-01 is nonclean: one new Medium PH-009; independent native discovery additionally confirms Medium PH-010. They were presented before production edits. Corrections are authorized by the ordered resumption; commits still require maintainer validation. The old retained-fix review remains focused evidence, not either member of a general pair.
+
+A separate fresh Test Engineer added regression suites and test-only helpers before either production corrector was released. The parent executed the following commands against unchanged production with only test additions/declarations. Frozen test hashes and original-prefix comparisons are retained in `/tmp/phemios-stab-resume-ngstwxh3/frozen-regressions.json`; passing controls and genuine failing assertions are distinguished. The first named-media attempt overlapped completion of fixture setup and is excluded from the frozen before/after evidence; the final repeat below used stable setup and unchanged production. No assertion was weakened.
+
+| Check                    | Command                                                                                                                                         | Before-fix observed result        | Log SHA256                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| PH009 radio owner        | `node node_modules/vitest/vitest.mjs run src/library/radio-start-owner.test.ts`                                                                 | exit 1; FAIL 9, PASS 13, 22 total | `00824c448e7c0febb7e38efd5fb793444874e75ac32e5f638a06e478b3a4d308` |
+| PH010 native core        | `CARGO_INCREMENTAL=0 cargo test -p phemios-core --lib network::tests::media_admission:: --locked --offline -- --nocapture`                      | exit 101; FAIL 4, PASS 2, 6 total | `dab1453bce642893c4c9d606cfd399847d6113bdbcef7a2b1d13677a432beffb` |
+| PH010 CD permission      | `CARGO_INCREMENTAL=0 cargo test -p phemios-core --test native_sessions cd_accounts::tests::admin_admission:: --locked --offline -- --nocapture` | exit 101; FAIL 4, PASS 2, 6 total | `c185f21eb5cd2631ba5a5c4aed598a9adceedc072f4a20fa5650e40f40f10ca8` |
+| PH010 frontend admission | `node node_modules/vitest/vitest.mjs run src/library/named-media-admission.test.ts`                                                             | exit 1; FAIL 16, PASS 1, 17 total | `d484ce37845b0f294711cf58db9a72067f19f22b82d9def1ec4795af456e44ff` |
+
+Host: macOS arm64, Rust 1.99, Node 26.10, installed locked dependencies, temporary loopback/mock ports. All four suites compile/run: failures are intended behavior assertions, not setup/compile failures. Total 51 new cases, 33 FAIL and 18 PASS controls. No timing-dependent sleeps, real devices, provider calls, personal data or live hearing claims. Later correction/gate results must be recorded separately; these failures are the before-fix evidence rather than current gate failures.
+
+Rust 1.90 was installed from the checksum-verified official installer into an isolated temporary toolchain without changing shell profiles or the ordinary installation. Installation PASS is preparation only, not minimum-version compilation/test evidence. Installer log SHA256 `dd4947280a8fb6a8efa3f5095df78253fc7e1c8f483af6bb556d907b24d6c487`.
+
+## D-PH-16 — Published 0.7.3 C2 revalidation
+
+[Current media-admission validation](media-admission-validation.md) consolidates exact candidates, source/engine coherence, genuine negative/positive regressions, preserved assertions, legitimate old-protocol/type-only fixture adaptations, failed attempts, current full Mac gate, genuine Rust 1.90 host execution and fresh dependency/source assessments. These later results supersede the earlier release-availability blockage for the recorded host/candidate only; Linux/Windows/installer acceptance is not waived.
+
+C2 software fingerprint `bf2faf957cc4dddf8a49d50e58c94a29769201b079473afbae62b5941b444c5d`, 1,304 paths. `bash tools/check.sh` PASS exit 0 (90.23s), 60 Node /1,439 Vitest /550 Rust, none ignored; format/lint/strict builds/components/bridge/engine/Rustfmt/Clippy/Rustdoc/site/native workspace build pass. Actual isolated Rust 1.90 tests PASS 550 and all 441 native build inputs remain identical after frontend-only C2. Fresh npm/Cargo audits0, explicit supplemental GLib/Linux warning retained. PH-009/010/011 are VERIFIED within the recorded C2 software scope after affected-path review and evidence validation; installed/native-platform acceptance is separate. Mac App and workflow-equivalent DMG builds PASS, with read-only image verification and exact packaged main/engine hash match. R-PH-GEN-02 and R-PH-GEN-03 now form the consecutive clean GENERAL pair on identical C2; R-PH-VAL-01 verifies evidence/applicability. PH-C10 PASS, PH-C09 BLOCKED, campaign CONTINUE. No maintainer closure, commit, push or release decision.
+
+## D-PH-17 — Final general pair and evidence disposition
+
+R-PH-GEN-02 and R-PH-GEN-03 are independent fresh GENERAL contexts with distinct primary focuses and selected direct paths in all six agreed partitions. Both freeze on the same 1,304-file C2 software map and report no new confirmed significant or Low defect. Their own module diagnostics and parent-attributed gates are distinguished in the [register](findings.md). R-PH-VAL-01 independently validates the pair and the actual evidence; it supplies no general-review credit. Recording-only document changes do not alter the software candidate. A later substantive software change requires affected-path review/revalidation before relying on this pair.
+
+PH-009/010/011 are VERIFIED within documented C2 software scope. PH-003/006/007/008 remain FIXED — TO VERIFY with finding-specific platform acceptance, not a claim of uncorrected software failures on this Mac. The explicit GLib advisory remains visible; no requirement or exception changes. GEN1-C2 remains an unconfirmed robustness hypothesis, with source-ordering evidence, current UI/reachability counterevidence and maintainer/coordinator follow-up.
+
+Current verdict **CONTINUE**, because PH-C09 is BLOCKED. Obtain actual Linux/Windows native/minimum/App/installer and applicable installed-runtime evidence; then finalize finding/coverage/residual dispositions before a closure decision. Physical/provider/deployment checks remain separately qualified. No campaign closure, commit, push, tag, workflow dispatch or release authorization is inferred. Final parent recording-only checks follow after the frozen validator report and are attributed separately.
+
+### Parent recording-only checks after R-PH-VAL-01
+
+`npm run format:check` PASS, exit 0, 7.62s; log SHA256 `ab3a86b907877582cb8bb401d3de5510871e6457202bf85e2f90aeb594536681`. All ten changed documents are covered. Parent local Markdown validation checks 90 relative link targets and 3 Markdown fragments: no missing target or invalid fragment. This is local authored-link validation, not external URL or installed UI acceptance. `git diff --check` PASS; all thirteen new files also have no whitespace diagnostic. The no-index comparison's ordinary “different file” exit 1 is distinguished from an actual whitespace diagnostic; the initial scratch checker was corrected to make that distinction, with no repository change required.
+
+All 1,304 C2 software hashes remain exact, including root instructions, manifests, source/tests and vendor policies. Eleven frozen regression/declaration paths retain their hashes except the three documented old-protocol/type-only adaptations; all new assertion files and PH-011 fixture bytes remain frozen. HEAD stays `2709c1319a972c4b1b5722c94adab04137a30e55`, branch main, index empty: 27 tracked modifications and 13 new files, ten documents included. No source change follows the full gate/general pair. The final recording of these results is itself checked for format, links and whitespace before handoff. No commit or push.

@@ -15,7 +15,7 @@ This directory defines Phémios's stabilization process. It supports evidence-ba
 | [Adversarial reviewer](prompts/adversarial-reviewer.md)     | Independent examination of findings, fixes and missed failure modes                 |
 | [Release validator](prompts/release-validator.md)           | Evidence consolidation and campaign recommendation                                  |
 
-Current follow-up: [dependency remediation plan and PH-007 reproduction](remediation-plan.md).
+Current follow-up: [latest-published-stable candidate and validation ledger](release-checklist.md), with stable findings and review identities in the [register](findings.md). Earlier dependency remediation plans retain their historical evidence.
 
 Follow the root [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md), [current state](../coding/current-state.md), relevant design documents, [account isolation](../coding/account-isolation.md), [native integration](../design/native-integration.md) and [verification procedures](../coding/frontend-documentation.md). Repository-facing records and all four prompts use English.
 
