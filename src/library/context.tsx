@@ -177,7 +177,8 @@ export function LibraryProvider(props: ParentProps) {
       if (status.policy.enabled && source() === owner && !radioGuard.owner()) radio.stop();
       stopControlledSource(owner);
       parentalSync.add(owner);
-      clearMedia();
+      clearMedia(owner);
+      if (snapshot()) void warmCovers();
       setParentalEpoch((value) => value + 1);
     },
     unavailable: stopControlledSource,
@@ -635,14 +636,13 @@ export function LibraryProvider(props: ParentProps) {
       const value = parseSnapshot(raw);
       if (!parental.catalogVisible(owner, value))
         throw Error(t("Catalogue supervisé à actualiser. Synchronisez la bibliothèque."));
-      clearMedia();
+      clearMedia(owner);
       if (owner === "local") setLocalSnapshot(value);
       else setServerSnapshot(value);
+      // Public artwork must not wait for private annotations or strand the other source on logout.
+      void warmCovers();
       await annotationsLoader.load(owner);
-      const admitted =
-        current() && policyEpochs[owner] === policyEpoch && parental.available(owner);
-      if (admitted) void warmCovers();
-      return admitted;
+      return current() && policyEpochs[owner] === policyEpoch && parental.available(owner);
     } catch (failure) {
       if (current())
         setError(failure instanceof Error ? failure.message : t("Synchronisation impossible."));
@@ -811,7 +811,7 @@ export function LibraryProvider(props: ParentProps) {
     connection.stop();
     clearMedia();
   });
-  const missing = createMissingCatalog(localSession, serverSession, snapshot);
+  const missing = createMissingCatalog(localSession, serverSession, admittedSnapshot);
   const [missingImageVersion, bumpMissingImages] = createSignal(0);
   const missingArtwork = createMissingCoverLoader(
     sessionFor,

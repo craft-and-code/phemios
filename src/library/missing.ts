@@ -1,7 +1,7 @@
 import { createMemo, createResource, type Accessor, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
-import { referenceSource } from "./sources";
+import { referenceSource, type SourceId } from "./sources";
 import type { AccountSession } from "./server";
 import type { Album } from "./types";
 export interface MissingAlbum {
@@ -46,21 +46,22 @@ export function missingAlbum(row: MissingAlbum): Album {
 export function createMissingCatalog(
   local: Accessor<AccountSession | undefined>,
   server: Accessor<AccountSession | undefined>,
-  epoch: Accessor<unknown>,
+  epoch: (source: SourceId) => unknown,
 ) {
   let alive = true;
   onCleanup(() => {
     alive = false;
   });
-  const localScope = createMemo(() => ({ session: local(), epoch: epoch() }));
-  const serverScope = createMemo(() => ({ session: server(), epoch: epoch() }));
-  const scope = createMemo(() => ({ local: localScope(), server: serverScope() }));
-  const [value, { refetch }] = createResource(scope, async (key) => {
-    const results = await Promise.all(
-      (["local", "server"] as const).map(async (source) => {
-        const held = key[source],
-          session = held.session;
-        const current = () => alive && scope()[source] === held;
+  const scopes = {
+    local: createMemo(() => ({ session: local(), epoch: epoch("local") })),
+    server: createMemo(() => ({ session: server(), epoch: epoch("server") })),
+  };
+  function sourceRead(source: SourceId) {
+    const [value, { refetch }] = createResource(
+      scopes[source],
+      async (held) => {
+        const session = held.session;
+        const current = () => alive && scopes[source]() === held;
         const empty = {
           source,
           session,
@@ -138,12 +139,18 @@ export function createMissingCatalog(
             error: failure instanceof Error ? failure.message : String(failure),
           };
         }
-      }),
+      },
+      { initialValue: undefined },
     );
-    return results;
-  });
+    return { value, refetch };
+  }
+  const reads = { local: sourceRead("local"), server: sourceRead("server") };
   const current = () =>
-    value()?.filter((row) => alive && row.session && row.scope === scope()[row.source]) ?? [];
+    (["local", "server"] as const).flatMap((source) => {
+      // Optional source reads must not suspend the entire workspace.
+      const row = reads[source].value.latest;
+      return alive && row?.session && row.scope === scopes[source]() ? [row] : [];
+    });
   return {
     supportsCover: (artist: string) =>
       current().some(
@@ -151,14 +158,14 @@ export function createMissingCatalog(
       ),
     rows: () => current().flatMap((row) => row.rows),
     errors: () => current().flatMap((row) => (row.error ? [row.error] : [])),
-    loading: () => value.loading,
+    loading: () => reads.local.value.loading || reads.server.value.loading,
     refetch: () => {
-      if (alive) return refetch();
+      if (alive) return Promise.all([reads.local.refetch(), reads.server.refetch()]);
     },
     decide: async (row: MissingAlbum, setAside: boolean) => {
       const source = referenceSource(row.artist),
         session = source === "local" ? local() : server();
-      const held = scope()[source];
+      const held = scopes[source]();
       if (!alive || !session) throw new Error(t("Session invalide."));
       await requestAede(
         "/api/me/v1/missing",
@@ -168,8 +175,8 @@ export function createMissingCatalog(
         source,
         session,
       );
-      if (!alive || scope()[source] !== held) throw new Error(t("Session invalide."));
-      await refetch();
+      if (!alive || scopes[source]() !== held) throw new Error(t("Session invalide."));
+      await reads[source].refetch();
     },
   };
 }
