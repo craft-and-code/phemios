@@ -4,24 +4,25 @@
 
 This directory defines Phémios's stabilization process. It supports evidence-based decisions; an audit does not prove that software is free of bugs.
 
-| Document                                                    | Responsibility                                                                      |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| This README                                                 | Canonical severity, evidence, review and closure rules                              |
-| [Audit scope](audit-scope.md)                               | Campaign identity, authorized phase, included paths, validation commands and limits |
-| [Findings](findings.md)                                     | Stable finding records, dispositions and independent review records                 |
-| [Release and stabilization checklist](release-checklist.md) | Actual validation results, final campaign report and separate release decision      |
-| [Auditor](prompts/auditor.md)                               | Read-only investigation of execution paths and defects                              |
-| [Test engineer](prompts/test-engineer.md)                   | Behavioral coverage review and regression work within current permissions           |
-| [Adversarial reviewer](prompts/adversarial-reviewer.md)     | Independent examination of findings, fixes and missed failure modes                 |
-| [Release validator](prompts/release-validator.md)           | Evidence consolidation and campaign recommendation                                  |
+| Document                                                    | Responsibility                                                                            |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| This README                                                 | Canonical severity, evidence, review and closure rules                                    |
+| [Audit scope](audit-scope.md)                               | Campaign identity, authorized phase, included paths, validation commands and limits       |
+| [Findings](findings.md)                                     | Stable finding records, dispositions and independent review records                       |
+| [Release and stabilization checklist](release-checklist.md) | Actual validation results, final campaign report and separate release decision            |
+| [PH-C09 native validation kit](ph-c09-validation.md)        | Frozen-product handoff, native Linux/Windows procedures and unexecuted acceptance records |
+| [Auditor](prompts/auditor.md)                               | Read-only investigation of execution paths and defects                                    |
+| [Test engineer](prompts/test-engineer.md)                   | Behavioral coverage review and regression work within current permissions                 |
+| [Adversarial reviewer](prompts/adversarial-reviewer.md)     | Independent examination of findings, fixes and missed failure modes                       |
+| [Release validator](prompts/release-validator.md)           | Evidence consolidation and campaign recommendation                                        |
 
-Current follow-up: [latest-published-stable candidate and validation ledger](release-checklist.md), with stable findings and review identities in the [register](findings.md). Earlier dependency remediation plans retain their historical evidence.
+Current follow-up: [latest-published-stable candidate and validation ledger](release-checklist.md), with stable findings and review identities in the [register](findings.md). The [D-PH-18 PH-C09 kit](ph-c09-validation.md) prepares the approved Linux/Windows matrix without claiming execution; PH-C09 remains BLOCKED and the campaign CONTINUE. Earlier dependency remediation plans retain their historical evidence.
 
 Follow the root [AGENTS.md](../../AGENTS.md), [CLAUDE.md](../../CLAUDE.md), [current state](../coding/current-state.md), relevant design documents, [account isolation](../coding/account-isolation.md), [native integration](../design/native-integration.md) and [verification procedures](../coding/frontend-documentation.md). Repository-facing records and all four prompts use English.
 
 ## Authorization and workflow
 
-A scope or command listed here is not authorization to execute it. The current maintainer instruction and the authorized phase in the scope govern every role. On 2026-10-23 the maintainer explicitly requested adapting these documents and starting PH-STAB-001; initial read-only discovery and existing-check execution are authorized without another documentation-approval stop. A documentation-preparation pass is not a code audit or an independent review.
+A scope or command listed here is not authorization to execute it. The current maintainer instruction and the authorized phase in the scope govern every role. On 2026-10-23 the maintainer explicitly requested adapting these documents and starting PH-STAB-001; initial read-only discovery and existing-check execution are authorized without another documentation-approval stop. A documentation-preparation pass is not a code audit or an independent review. D-PH-18 authorizes the requested validation scripts, tests and quality records without commit/push; it does not authorize automatic system/app installation, service restart, runtime acceptance or release.
 
 1. Record the branch, starting commit and working-tree state; preserve unrelated changes.
 2. Agree the scope, required controls, acceptance limits and current permissions.
@@ -76,7 +77,7 @@ Do not present successive role passes by the same context as independent reviews
 
 The two consecutive qualifying reviews must cover the agreed scope on the final candidate without any new confirmed significant defect. Newly confirming a previously recorded Critical, High or Medium hypothesis also breaks that sequence. A substantive candidate change requires affected paths to be reviewed and revalidated before earlier review evidence can be relied on; record how both reviews remain applicable to the final candidate.
 
-Documentation preparation, test runs and historical milestone reviews do not count as these campaign reviews. Low findings must still be triaged even when they do not reset the significant-defect sequence.
+Documentation preparation, test runs and historical milestone reviews do not count as these campaign reviews. Validation-kit scripts/tests have a separate identity and focused tooling review: the existing C2 general pair does not review new tooling. Preserving the reviewed product does not automatically require a third general review solely to complete native evidence; substantive product changes still require the applicability assessment above. Low findings must still be triaged even when they do not reset the significant-defect sequence.
 
 ## Campaign closure policy
 
