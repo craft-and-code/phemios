@@ -2273,5 +2273,20 @@
   "Recherche indisponible dans cette vue": "Search unavailable in this view",
   "Rechercher un artiste dans les relations": "Search artists in relations",
   "Rechercher un article": "Search articles",
-  "Rechercher dans les analyses": "Search analyses"
+  "Rechercher dans les analyses": "Search analyses",
+  "Erreur interne du serveur Aède.": "Internal Aède server error.",
+  "Les données personnelles ne peuvent pas être lues par Aède. Vérifiez la compatibilité de sa version.": "Aède cannot read personal data. Check engine version compatibility.",
+  "Voir le diagnostic": "View diagnostics",
+  "Diagnostic Aède": "Aède diagnostics",
+  "Fermer le diagnostic": "Close diagnostics",
+  "Ce journal conserve les 64 dernières erreurs des connexions en cours, jusqu’à leur déconnexion.": "This log keeps the latest 64 errors for current connections until they disconnect.",
+  "Vérifiez que la version du moteur Aède est compatible avec vos données personnelles. Une mise à jour peut être nécessaire.": "Check that the Aède engine version supports your personal data. An update may be required.",
+  "Les prochaines erreurs de cette session apparaîtront ici.": "Subsequent errors in this session will appear here.",
+  "Données personnelles illisibles": "Unreadable personal data",
+  "Erreur interne d’Aède": "Internal Aède error",
+  "Connexion indisponible": "Connection unavailable",
+  "Requête refusée": "Request refused",
+  "Heure": "Time",
+  "Bibliothèque": "Library",
+  "Opération": "Operation"
 }

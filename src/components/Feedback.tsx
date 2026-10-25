@@ -1,4 +1,5 @@
 import { aedeAvailability, inlineAedeError } from "../library/aede-availability";
+import { aedeDiagnostics, isAedeDiagnosticError } from "../library/aede-diagnostics";
 import { createEffect, Show } from "solid-js";
 import { t } from "../i18n";
 import { createFeedback } from "../library/feedback";
@@ -53,7 +54,20 @@ export function Feedback(props: {
           pause();
         }}
       >
-        <span>{message()}</span>
+        <span>
+          {message()}
+          <Show when={props.error && isAedeDiagnosticError(message())}>
+            {" "}
+            <button
+              type="button"
+              class="feedback-diagnostic-link"
+              aria-haspopup="dialog"
+              onClick={aedeDiagnostics.open}
+            >
+              {t("Voir le diagnostic")}
+            </button>
+          </Show>
+        </span>
         <button
           type="button"
           class="icon-button quiet icon-close feedback-close"

@@ -1,4 +1,5 @@
 import { aedeAvailability } from "../library/aede-availability";
+import { aedeDiagnostics } from "../library/aede-diagnostics";
 import { afterEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -16,11 +17,42 @@ afterEach(() => {
   vi.resetAllMocks();
   aedeAvailability.owner("server");
   aedeAvailability.owner("local");
+  aedeDiagnostics.owner("server");
+  aedeDiagnostics.owner("local");
 });
 const owner = (id: string, nativeSession: string) => ({
   server: "https://fixture.example",
   nativeSession,
   account: { id, username: id, role: "user" },
+});
+it("records a failed private operation without its arguments and clears it on logout", async () => {
+  vi.mocked(invoke).mockResolvedValueOnce(owner("alice", "91"));
+  await loginAede("https://fixture.example", "alice", "fictional-password");
+  vi.mocked(invoke).mockRejectedValueOnce(
+    "Les données personnelles ne peuvent pas être lues par Aède. Vérifiez la compatibilité de sa version.",
+  );
+  await expect(
+    requestAede(
+      "/api/me/v1/annotation",
+      { ref: "release:PRIVATE" },
+      "PUT",
+      { note: "SECRET" },
+      "server",
+    ),
+  ).rejects.toThrow("données personnelles");
+  expect(aedeDiagnostics.rows()).toEqual([
+    expect.objectContaining({
+      source: "server",
+      method: "PUT",
+      route: "/api/me/v1/annotation",
+      kind: "personal-data",
+    }),
+  ]);
+  expect(JSON.stringify(aedeDiagnostics.rows())).not.toMatch(/PRIVATE|SECRET|alice/);
+  expect(aedeDiagnostics.rows()[0]).not.toHaveProperty("ticket");
+  vi.mocked(invoke).mockResolvedValueOnce(undefined);
+  await logoutAede();
+  expect(aedeDiagnostics.rows()).toEqual([]);
 });
 it("captures native account tickets before a private invocation can be dispatched after replacement", async () => {
   vi.mocked(invoke).mockResolvedValueOnce(owner("alice", "1"));

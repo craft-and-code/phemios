@@ -318,6 +318,23 @@ fn spectrum_exports_request_original_dimensions_and_preserve_response_bytes() {
 }
 
 #[test]
+fn unreadable_personal_data_has_actionable_guidance_without_server_text_or_reset_advice() {
+    let detail = json!({"error":{"code":"user_unavailable","message":"SECRET /private/user.json"}});
+    let message =
+        errors::request_failure(500, "GET", "/api/me/v1/preferences", false, Some(&detail));
+    assert!(message.contains("données personnelles"));
+    assert!(message.contains("version"));
+    assert!(!message.contains("SECRET"));
+    assert!(!message.contains("user.json"));
+    assert!(!message.contains("scan"));
+    assert!(!message.contains("réinitial"));
+    assert!(
+        !errors::request_failure(403, "GET", "/api/me/v1/preferences", false, Some(&detail))
+            .contains("version")
+    );
+}
+
+#[test]
 fn settings_routes_do_not_expand_to_arbitrary_admin_paths() {
     assert!(allowed("GET", "/api/v1/roots"));
     assert!(allowed("POST", "/api/admin/v1/scan"));

@@ -20,6 +20,8 @@ import {
   isQueueWorkspace,
 } from "./navigation/contextual-play";
 import { Feedback } from "./components/Feedback";
+import { AedeDiagnosticDialog } from "./components/AedeDiagnosticDialog";
+import { aedeDiagnostics } from "./library/aede-diagnostics";
 import { activateExternalLink } from "./navigation/external-links";
 import { isNative, openExternalLink } from "./platform/desktop";
 import { needsCatalogPrompt } from "./navigation/catalog-prompt";
@@ -552,6 +554,9 @@ export function App() {
           </Show>
         </StickyHeader>
         <ConnectionNotice />
+        <Show when={aedeDiagnostics.opened()}>
+          <AedeDiagnosticDialog rows={aedeDiagnostics.rows()} onClose={aedeDiagnostics.close} />
+        </Show>
         <Feedback error persistent message={library.error()} />
         <Show
           when={

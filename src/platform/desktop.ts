@@ -1,4 +1,5 @@
 import { aedeAvailability } from "../library/aede-availability";
+import { aedeDiagnostics } from "../library/aede-diagnostics";
 import { concertConfig } from "../concerts/config";
 import { engineVersions } from "../library/product-versions";
 import { wikipediaDocument } from "../encyclopedia/document";
@@ -49,6 +50,7 @@ function rememberNativeSession(
   if (typeof account.nativeSession === "string") nativeSessions[source] = account.nativeSession;
   else delete nativeSessions[source];
   aedeAvailability.owner(source, nativeSessions[source]);
+  aedeDiagnostics.owner(source, nativeSessions[source]);
 }
 /** Recover only a process-owned login; a newer login/logout always retires this read. */
 export async function restoreAedeSession(
@@ -69,6 +71,7 @@ export async function restoreAedeSession(
   if (value === null) {
     delete nativeSessions[source];
     aedeAvailability.owner(source);
+    aedeDiagnostics.owner(source);
     return;
   }
   if (
@@ -125,6 +128,7 @@ export function logoutAede() {
   sessionOperations.server++;
   delete nativeSessions.server;
   aedeAvailability.owner("server");
+  aedeDiagnostics.owner("server");
   return nativeCall<void>("aede_logout");
 }
 export const syncAede = (source: SourceId = requestSource) =>
@@ -142,6 +146,12 @@ async function reachableCall<T>(
     return result;
   } catch (failure) {
     aedeAvailability.failure(source, ticket, failure);
+    if (
+      command === "aede_request" &&
+      typeof args.method === "string" &&
+      typeof args.path === "string"
+    )
+      aedeDiagnostics.failure(source, ticket, args.method, args.path, failure);
     throw failure;
   }
 }
@@ -260,6 +270,7 @@ export function stopLocal() {
   sessionOperations.local++;
   delete nativeSessions.local;
   aedeAvailability.owner("local");
+  aedeDiagnostics.owner("local");
   return nativeCall<void>("local_stop");
 }
 export const pickLocalRoots = () => nativeCall<void>("local_pick_roots");

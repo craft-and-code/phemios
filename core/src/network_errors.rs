@@ -35,6 +35,9 @@ pub(super) fn request_failure(
     if let Some(message) = parental {
         return message.into();
     }
+    if status == 500 && code == Some("user_unavailable") {
+        return "Les données personnelles ne peuvent pas être lues par Aède. Vérifiez la compatibilité de sa version.".into();
+    }
     if method == "GET" && (path == "/api/me/v1/m3u-files" || super::library_playlist_path(path)) {
         let message = match (status, code) {
             (404, Some("m3u_file_not_found")) => {
@@ -80,9 +83,7 @@ pub(super) fn request_failure(
     }
     match status {
         400 | 422 => "Aède a refusé les paramètres de cette requête.".into(),
-        500..=599 if !matches!(status, 503) => {
-            "Erreur interne du serveur Aède. Consultez son journal.".into()
-        }
+        500..=599 if !matches!(status, 503) => "Erreur interne du serveur Aède.".into(),
         _ => failure(status),
     }
 }
