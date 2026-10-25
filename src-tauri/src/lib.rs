@@ -18,6 +18,8 @@ mod hqplayer;
 mod hqplayer_state;
 mod local;
 mod local_lifecycle;
+#[cfg(target_os = "macos")]
+mod menu;
 mod notes;
 mod personal_backup;
 mod playback;
@@ -38,6 +40,8 @@ pub fn run() -> Result<(), tauri::Error> {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            menu::install(app)?;
             let root = app.path().app_data_dir()?.join("cache");
             let source = |path| aede::SourceState {
                 session: std::sync::Arc::new(std::sync::Mutex::new(None)),

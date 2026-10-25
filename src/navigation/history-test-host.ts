@@ -1,8 +1,9 @@
 import type { NavigationHost } from "./history";
 
 /** Isolated history and viewport for navigation policy regressions. */
-export function navigationTestHost(hash = "#/artists", deferred = false) {
+export function navigationTestHost(hash = "#/artists", deferred = false, deferredBack = false) {
   const entries = [{ hash, state: {} as unknown }];
+  const traversals: (() => void)[] = [];
   const pending: (() => void)[] = [],
     restored: number[] = [];
   let index = 0,
@@ -18,8 +19,13 @@ export function navigationTestHost(hash = "#/artists", deferred = false) {
       entries[index]!.state = state;
     },
     back: () => {
-      index--;
-      listener();
+      const destination = index - 1;
+      const complete = () => {
+        index = destination;
+        listener();
+      };
+      if (deferredBack) traversals.push(complete);
+      else complete();
     },
     top: () => top,
     restore: (value) => {
@@ -44,6 +50,9 @@ export function navigationTestHost(hash = "#/artists", deferred = false) {
       top = value;
     },
     top: () => top,
+    flushBack: () => {
+      for (const run of traversals.splice(0)) run();
+    },
     flush: () => {
       for (const run of pending.splice(0)) run();
     },

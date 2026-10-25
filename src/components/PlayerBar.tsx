@@ -18,7 +18,7 @@ const time = (ms: number | null) =>
     ? "—"
     : `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")}`;
 /** The transport follows native consumed frames, independent of the open catalog page. */
-export function PlayerBar() {
+export function PlayerBar(props: { playbackView?: boolean } = {}) {
   let audioSettings: HTMLDetailsElement | undefined;
   const player = useLibrary().player,
     state = player.state;
@@ -213,7 +213,7 @@ export function PlayerBar() {
       />
       <div class="player-options">
         <Show
-          when={active()}
+          when={active() || props.playbackView}
           fallback={
             <button
               class="icon-button quiet playback-view-action"
@@ -228,6 +228,8 @@ export function PlayerBar() {
           <a
             class="icon-button quiet playback-view-action"
             href="#/playback"
+            data-view-toggle="playback"
+            aria-current={props.playbackView ? "page" : undefined}
             aria-label={t("Ouvrir la vue Lecture")}
             title={t("Ouvrir la vue Lecture")}
           >

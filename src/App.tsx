@@ -202,6 +202,8 @@ function AppContent() {
   const setCompact = (value: boolean) => presentation.select(value ? "list" : "grid");
   const current = navigation.route,
     section = navigation.section;
+  const activePage = (page: "settings" | "playback") =>
+    current().kind === "section" && section() === page;
   const catalogSection = () => (navigation.collectionMenu() ? "albums" : section());
   const collectionTarget = createMemo(() => {
     const route = current();
@@ -393,7 +395,13 @@ function AppContent() {
         if (anchor.hasAttribute("data-navigation-back")) {
           event.preventDefault();
           navigation.goBack();
-        } else if (href && navigation.navigate(href)) event.preventDefault();
+        } else if (href) {
+          const toggle = anchor.getAttribute("data-view-toggle");
+          if ((toggle === "settings" || toggle === "playback") && href === `#/${toggle}`) {
+            event.preventDefault();
+            navigation.toggleSection(toggle);
+          } else if (navigation.navigate(href)) event.preventDefault();
+        }
       }}
     >
       <header class="topbar">
@@ -428,6 +436,8 @@ function AppContent() {
         <a
           class="server-button settings-button"
           href="#/settings"
+          data-view-toggle="settings"
+          aria-current={activePage("settings") ? "page" : undefined}
           aria-label={t("Paramètres")}
           title={t("Paramètres")}
         >
@@ -980,7 +990,10 @@ function AppContent() {
       <Show
         when={footer() === "podcast"}
         fallback={
-          <Show when={footer() === "radio"} fallback={<PlayerBar />}>
+          <Show
+            when={footer() === "radio"}
+            fallback={<PlayerBar playbackView={activePage("playback")} />}
+          >
             <RadioPlayerBar />
           </Show>
         }

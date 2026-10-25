@@ -1,6 +1,14 @@
 import { isCollectionMenuId, type CollectionMenuId } from "./collection-menu";
 import { t } from "../i18n";
-import { createEffect, createMemo, createSignal, on, onCleanup, type Accessor } from "solid-js";
+import {
+  batch,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+  type Accessor,
+} from "solid-js";
 import { navigationViewport, restoreElementPosition } from "./scroll-position";
 import { parseRoute, sections, type Section } from "./routes";
 interface Entry {
@@ -52,14 +60,17 @@ function read(hash: string, state: unknown): Entry {
     };
   return { hash, top: 0 };
 }
-/** Sections retain their session viewport; detail Back still restores its exact history entry. */
+/** Sections retain their viewport and detail Back restores its exact history entry.
+ * Traversal, owner epochs and viewport retirement deliberately share one state machine.
+ */
 export function createNavigation(
   host: NavigationHost,
   labelFor: (hash: string) => string,
   identity?: Accessor<unknown>,
 ) {
   const initial = host.current();
-  const [entry, setEntry] = createSignal(read(initial.hash || "#/artists", initial.state));
+  // A previous frontend lifetime cannot establish ownership of retained private display names.
+  const [entry, setEntry] = createSignal<Entry>({ hash: initial.hash || "#/artists", top: 0 });
   const route = createMemo(() => parseRoute(entry().hash));
   const activeSection = createMemo(() => {
     const current = route();
@@ -70,15 +81,17 @@ export function createNavigation(
     return current.kind === "section" ? current.collectionMenu : entry().collectionMenu;
   });
   const positions = new Map<string, number>();
+  let pendingDestination: { hash: string; options: { resetScroll?: boolean } } | undefined;
   let alive = true,
     backPending = false,
     restoration = 0,
-    positionEpoch = 0,
+    positionEpoch = crypto.randomUUID(),
     epochResetPending = false;
   const wrapped = (value: Entry) => ({
     ...record(host.current().state),
     phemiosNavigation: { version: 1, ...value, positionEpoch },
   });
+  host.replace(wrapped(entry()));
   function restore(next: Entry) {
     host.cancelRestore?.();
     const ticket = ++restoration;
@@ -107,10 +120,13 @@ export function createNavigation(
       on(
         identity,
         () => {
-          positionEpoch++;
+          positionEpoch = crypto.randomUUID();
           epochResetPending = true;
           positions.clear();
-          const next = { ...entry(), top: 0 };
+          pendingDestination = backPending
+            ? { hash: entry().hash, options: { resetScroll: true } }
+            : undefined;
+          const next: Entry = { hash: entry().hash, top: 0 };
           host.replace(wrapped(next));
           setEntry(next);
           restore(next);
@@ -123,22 +139,33 @@ export function createNavigation(
       hash = current.hash || "#/artists";
     if (hash === entry().hash) return;
     remember();
-    const next = read(hash, current.state);
-    if ((record(record(current.state).phemiosNavigation).positionEpoch ?? 0) !== positionEpoch)
-      next.top = 0;
-    setEntry(next);
+    const sameOwner =
+      record(record(current.state).phemiosNavigation).positionEpoch === positionEpoch;
+    // Historical display names and collection context are private to the initiating owner too.
+    const next = sameOwner ? read(hash, current.state) : { hash, top: 0 };
+    const queued = pendingDestination;
+    pendingDestination = undefined;
     backPending = false;
-    restore(next);
+    batch(() => {
+      setEntry(next);
+      restore(next);
+      if (queued) navigate(queued.hash, queued.options);
+    });
   });
   onCleanup(() => {
     alive = false;
     restoration++;
     positions.clear();
+    pendingDestination = undefined;
     host.cancelRestore?.();
     unlisten();
   });
   function navigate(hash: string, options: { resetScroll?: boolean } = {}) {
     if (!safeHash(hash)) return false;
+    if (backPending) {
+      pendingDestination = { hash, options: { ...options } };
+      return true;
+    }
     if (hash === entry().hash) {
       if (options.resetScroll) {
         positions.delete(hash);
@@ -186,7 +213,27 @@ export function createNavigation(
       if (fallback) navigate(fallback.href);
     }
   }
-  return { route, section: activeSection, collectionMenu, backLink, navigate, goBack };
+  /** Re-clicking either view icon returns through its actual history entry and viewport. */
+  function toggleSection(section: "settings" | "playback") {
+    const current = route();
+    if (backPending) {
+      if (current.kind !== "section" || current.section !== section) navigate(`#/${section}`);
+      return;
+    }
+    if (current.kind === "section" && current.section === section) {
+      if (entry().origin) goBack();
+      else navigate("#/artists");
+    } else navigate(`#/${section}`);
+  }
+  return {
+    route,
+    section: activeSection,
+    collectionMenu,
+    backLink,
+    navigate,
+    goBack,
+    toggleSection,
+  };
 }
 
 /** Native and browser hash histories share the same origin/scroll contract. */

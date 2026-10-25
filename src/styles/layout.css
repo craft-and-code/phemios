@@ -594,6 +594,7 @@ legend {
   align-items: center;
 }
 .audio-settings > summary.icon-button {
+  color: var(--text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -603,6 +604,7 @@ legend {
   color: var(--accent);
 }
 .player-options .speaker-button {
+  color: var(--text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -782,4 +784,12 @@ legend {
 }
 .network-audio-manual summary {
   cursor: pointer;
+}
+
+.player-options .speaker-button:hover:not(:disabled) {
+  color: var(--accent);
+}
+.settings-button[aria-current="page"],
+.player-options .playback-view-action[aria-current="page"] {
+  color: var(--accent);
 }
