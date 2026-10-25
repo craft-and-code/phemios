@@ -2,7 +2,7 @@
 
 ## Find a radio station
 
-Radio queries Radio Browser independently of an Aède connection. Choose a country with the globe and explore its stations. The globe’s circular arrow recentres the suggested home country; results depend on station-published information.
+Radio queries Radio Browser independently of an Aède connection. Choose a country with the globe and explore its stations. A quick drag gives the globe momentum that gradually slows to a stop; grab it again to stop the motion. The globe’s circular arrow recentres the suggested home country; results depend on station-published information.
 
 Click a station to listen. Dragging the dial pauses the station for the tuning sound; releasing starts the selected station. Favourites sit below the globe and belong to your account. Search and listening remain available without an account, without personal favourites. A listed stream can still be unavailable or incompatible.
 

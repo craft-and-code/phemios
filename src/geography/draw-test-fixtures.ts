@@ -8,7 +8,7 @@ export function recordingCanvas() {
     createRadialGradient: () => ({ addColorStop() {} }),
     clearRect() {},
     fillRect() {},
-    scale() {},
+    setTransform() {},
     save() {},
     restore() {},
     clip() {},

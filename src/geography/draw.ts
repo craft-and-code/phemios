@@ -17,9 +17,11 @@ export function drawGlobe(
     h = canvas.clientHeight,
     ratio = Math.min(window.devicePixelRatio, 2);
   if (!w || !h) return;
-  canvas.width = w * ratio;
-  canvas.height = h * ratio;
-  ctx.scale(ratio, ratio);
+  const width = Math.round(w * ratio),
+    height = Math.round(h * ratio);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   const radius = Math.min(w, h) * 0.42 * zoom,
     cx = w / 2,
     cy = h / 2;

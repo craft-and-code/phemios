@@ -2,7 +2,7 @@
 
 ## Trouver une radio
 
-Radio consulte Radio Browser indépendamment d’une connexion à Aède. Choisissez un pays avec le globe et explorez ses stations. La flèche circulaire du globe recentre votre pays proposé ; les résultats dépendent des informations publiées par les stations.
+Radio consulte Radio Browser indépendamment d’une connexion à Aède. Choisissez un pays avec le globe et explorez ses stations. Un glissement rapide continue de faire tourner le globe, qui ralentit jusqu’à s’arrêter ; reprenez-le pour interrompre le mouvement. La flèche circulaire du globe recentre votre pays proposé ; les résultats dépendent des informations publiées par les stations.
 
 Cliquez sur une station pour écouter. Glisser le cadran coupe la station et fait entendre le son d’accordage ; relâcher lance la station choisie. Les favoris se trouvent sous le globe et appartiennent au compte. Sans compte, la recherche et l’écoute restent utilisables, sans vos favoris personnels. Un flux peut être indisponible ou incompatible même si sa fiche existe.
 

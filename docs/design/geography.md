@@ -1,6 +1,6 @@
 # Offline country exploration
 
-The globe uses d3-geo orthographic canvas projection and explicit pointer/keyboard rotation and zoom. It redraws on interaction and resize, rather than maintaining an idle animation. Countries can also be selected through ordinary accessible buttons; unknown artist origins remain separate.
+The globe uses d3-geo orthographic canvas projection and explicit pointer/keyboard rotation and zoom. It redraws on interaction, finite inertia and resize, rather than maintaining an idle animation. A released drag uses recent pointer speed for bounded angular momentum with exponential friction independent of display refresh rate. Holding before release removes momentum. New gestures, zoom, keyboard navigation, explicit country focus, Reset, page hiding and unmount retire the fling; reduced-motion preferences suppress it. Longitude wraps and latitude remains bounded. The canvas drawing buffer is reused until its dimensions change. The browser scheduling adapter preserves the Window receiver when starting or cancelling a frame, including interruption by another gesture in WebKit. Countries can also be selected through ordinary accessible buttons; unknown artist origins remain separate.
 
 Borders: Natural Earth, Admin 0 Countries 1:110m, version 5.1.2, public domain. The bundled derivative retains French names, ISO identifiers and polygon rings rounded to three decimal places. It is a visualization aid; small countries may require the text selector. Natural Earth describes de facto boundaries.
 

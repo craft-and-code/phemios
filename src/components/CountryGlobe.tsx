@@ -20,12 +20,13 @@ import {
   type Point,
 } from "../geography/projection";
 import { additiveCountrySelection, isMac } from "../library/selection";
+import { createBrowserGlobeInertia, flingVelocity, type DragSample } from "../geography/inertia";
 import { drawGlobe } from "../geography/draw";
 import type { Artist } from "../library/types";
 import { Icon } from "./Icon";
 const names = new Intl.DisplayNames(["fr"], { type: "region" });
 const countryName = (code: string) => (/^[A-Z]{2}$/.test(code) ? names.of(code) : undefined);
-/** Locally bundled borders and a manual, keyboard-accessible globe. */
+/** Locally bundled borders and a keyboard-accessible globe with finite drag inertia. */
 export function CountryGlobe(props: {
   directory?: boolean;
   focus?: string;
@@ -48,7 +49,17 @@ export function CountryGlobe(props: {
   let canvas: HTMLCanvasElement | undefined;
   let frame = 0;
   let keyboardFocus = false;
-  let drag: { x: number; y: number; center: Point; moved: boolean } | undefined;
+  let drag:
+    | { id: number; x: number; y: number; center: Point; moved: boolean; samples: DragSample[] }
+    | undefined;
+  const motion = createBrowserGlobeInertia(center, setCenter);
+  const cancelDrag = (event: PointerEvent) => {
+    if (drag?.id === event.pointerId) {
+      drag = undefined;
+      motion.stop();
+    }
+  };
+  onCleanup(motion.stop);
   const codeFor = (artist: Artist) =>
     artist.countryCode ??
     countries()?.find((c) => c.name === artist.country || countryName(c.code) === artist.country)
@@ -75,6 +86,7 @@ export function CountryGlobe(props: {
     );
   });
   const focusCountry = (value: string | undefined) => {
+    motion.stop();
     const country = countries()?.find(
       (country) => value === country.code || value === country.name,
     );
@@ -121,13 +133,25 @@ export function CountryGlobe(props: {
   });
   onMount(() => {
     const observer = new ResizeObserver(redraw);
+    const visibility = () => {
+      if (document.hidden) {
+        motion.stop();
+        drag = undefined;
+      }
+    };
+    document.addEventListener("visibilitychange", visibility);
     if (canvas) observer.observe(canvas);
     onCleanup(() => {
       observer.disconnect();
+      document.removeEventListener("visibilitychange", visibility);
       cancelAnimationFrame(frame);
     });
   });
-  const zoomBy = (delta: number) => setZoom((value) => Math.min(2.4, Math.max(0.8, value + delta)));
+  const zoomBy = (delta: number) => {
+    motion.stop();
+    drag = undefined;
+    setZoom((value) => Math.min(2.4, Math.max(0.8, value + delta)));
+  };
   const pointAt = (event: MouseEvent) => {
     if (!canvas) return null;
     const box = canvas.getBoundingClientRect();
@@ -146,6 +170,12 @@ export function CountryGlobe(props: {
   function move(event: PointerEvent) {
     if (canvas) canvas.style.cursor = drag ? "grabbing" : pointAt(event) ? "grab" : "default";
     if (drag) {
+      if (drag.id !== event.pointerId) return;
+      const time = performance.now();
+      drag.samples = [
+        ...drag.samples.filter((sample) => time - sample.time <= 80),
+        { x: event.clientX, y: event.clientY, time },
+      ].slice(-32);
       if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 4) drag.moved = true;
       if (drag.moved)
         setCenter([
@@ -155,7 +185,9 @@ export function CountryGlobe(props: {
     } else setHover(pick(event));
   }
   function finish(event: PointerEvent) {
-    if (drag && !drag.moved) {
+    if (!drag || drag.id !== event.pointerId) return;
+    const held = drag;
+    if (!drag.moved) {
       const country = pick(event);
       if (country) {
         const match = props.artists.find((a) => codeFor(a) === country.code);
@@ -169,6 +201,11 @@ export function CountryGlobe(props: {
       }
     }
     drag = undefined;
+    if (canvas) canvas.style.cursor = pointAt(event) ? "grab" : "default";
+    if (held.moved) {
+      setHover(undefined);
+      motion.start(flingVelocity(held.samples, performance.now(), zoom()));
+    }
   }
   return (
     <div class="globe-panel">
@@ -206,11 +243,19 @@ export function CountryGlobe(props: {
           )}
           onPointerDown={(event) => {
             event.preventDefault();
-            if (event.button !== 0 || !pointAt(event)) return;
+            if (event.button !== 0 || drag || !pointAt(event)) return;
+            motion.stop();
             keyboardFocus = false;
             redraw();
             event.currentTarget.setPointerCapture(event.pointerId);
-            drag = { x: event.clientX, y: event.clientY, center: center(), moved: false };
+            drag = {
+              id: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              center: center(),
+              moved: false,
+              samples: [{ x: event.clientX, y: event.clientY, time: performance.now() }],
+            };
           }}
           onFocus={(event) => {
             keyboardFocus = event.currentTarget.matches(":focus-visible");
@@ -222,12 +267,8 @@ export function CountryGlobe(props: {
           }}
           onPointerMove={move}
           onPointerUp={finish}
-          onPointerCancel={() => {
-            drag = undefined;
-          }}
-          onLostPointerCapture={() => {
-            drag = undefined;
-          }}
+          onPointerCancel={cancelDrag}
+          onLostPointerCapture={cancelDrag}
           onWheel={(event) => {
             if (!pointAt(event)) return;
             event.preventDefault();
@@ -244,6 +285,8 @@ export function CountryGlobe(props: {
             };
             const value = values[event.key];
             if (value) {
+              motion.stop();
+              drag = undefined;
               event.preventDefault();
               setCenter([wrapLongitude(value[0]), value[1]]);
             } else if (["+", "=", "-"].includes(event.key)) {
@@ -271,6 +314,8 @@ export function CountryGlobe(props: {
             class="icon-button"
             aria-label={t("Réinitialiser le globe")}
             onClick={() => {
+              motion.stop();
+              drag = undefined;
               setCenter([8, 22]);
               setZoom(1);
               setHover(undefined);
