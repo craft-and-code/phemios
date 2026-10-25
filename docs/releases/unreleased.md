@@ -4,6 +4,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Added
 
+- Show a progressive CD waveform from audio already read for playback, retaining it on pause and leaving unread regions empty. On macOS, Linux and Windows, read optional on-disc CD-Text titles/performers (ASCII/Latin-1) without network lookup or new dependencies; unsupported/missing metadata keeps generic names and audio playback. Linux uses a fixed read-only SG_IO query and Windows read-only READ_TOC_EX. Native Linux/Windows and real-disc CD-Text acceptance remain pending.
+
 - Make biography links visible and link known catalogue genres and retained track titles in artist/label summaries and full readers. Open a unique track directly; offer the retained album editions when a title has several placements. Link biography years to all owned albums of that year, only when such albums exist, clearing stale browse filters. No background enrichment or text changes.
 
 - Show cached label logos beside names in Labels and in label headers, preserving their proportions. Use an accessible fallback icon when unavailable, including older engines. Logos reuse Aède’s explicit Fanart.tv enrichment and the existing offline image cache.
@@ -15,6 +17,10 @@ This reviewed change list is the preparation source for the next version-specifi
 - **Shared settings lists:** excluded folders and available collections use a bounded scrollable list with keyboard selection. Exclusion removal with Delete/Backspace or minus selects the preceding row, falling back to the following row when needed, for repeated removals. Drag/drop or Alt+arrow keys rearranges exclusions locally without changing scan behavior.
 
 ## Fixed
+
+- Remove the final CD track divider. Detect connected Mac optical writers without inserted media, enable Eject for empty/unreadable discovered drives, and allow Refresh to retry discovery without a disc. Active-disc ejection remains guarded natively.
+
+- Move CD Eject into the header between Open CUE image and Refresh, keeping it visible and disabled without a detected drive/image. CD and current-track Play now toggle Pause/Resume without replacing the active disc queue or its position.
 
 - Remember the main scroll position of each view and collection shortcut during the session, including the artist-card panel and returns through the sidebar. Wait for delayed list content where needed; new metadata filters start at the top and account/source changes discard old positions.
 
