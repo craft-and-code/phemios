@@ -213,6 +213,7 @@ impl Image {
             layout: Vec::new(),
             leadout: total,
             gate: Arc::default(),
+            text: super::cdtext::Text::default(),
             image: Some(Arc::new(Self {
                 path: canonical.clone(),
                 files,

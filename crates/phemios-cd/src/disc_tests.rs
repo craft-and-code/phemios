@@ -96,3 +96,38 @@ fn unknown_disc_tokens_never_open_caller_supplied_paths() {
     let library = Library::default();
     assert!(library.disc("/dev/disk0").is_err());
 }
+
+#[test]
+fn physical_cdtext_names_follow_toc_numbers_without_changing_audio_or_references() {
+    let mut disc = inspect(&toc()).unwrap();
+    let reference = disc.reference(3);
+    let mut rows = vec![(None, None); 8];
+    rows[0] = (Some("Live".into()), Some("Ensemble".into()));
+    rows[3] = (Some("First movement".into()), None);
+    rows[7] = (Some("Finale".into()), Some("Guest".into()));
+    disc.text = cdtext::Text::rows(rows, &disc.tracks);
+    assert_eq!(disc.title(), Some("Live"));
+    assert_eq!(disc.performer(), Some("Ensemble"));
+    assert_eq!(
+        disc.track_names(3),
+        (Some("First movement"), Some("Ensemble"))
+    );
+    assert_eq!(disc.track_names(7), (Some("Finale"), Some("Guest")));
+    assert_eq!(disc.track_names(1), (None, None));
+    assert_eq!(disc.reference(3), reference);
+    assert_eq!(disc.tracks[0].duration_ms(), 2000);
+    assert!(disc.matches(&toc()));
+}
+
+#[test]
+fn unavailable_optional_text_never_changes_the_admitted_audio_layout_or_references() {
+    let mut disc = inspect(&toc()).unwrap();
+    let tracks = disc.tracks.clone();
+    let reference = disc.reference(7);
+    disc.text = cdtext::Text::read("not-an-optical-device", &disc.tracks);
+    assert_eq!(disc.title(), None);
+    assert_eq!(disc.track_names(7), (None, None));
+    assert_eq!(disc.tracks, tracks);
+    assert_eq!(disc.reference(7), reference);
+    assert!(disc.matches(&toc()));
+}

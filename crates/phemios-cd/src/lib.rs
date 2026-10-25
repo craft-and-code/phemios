@@ -2,13 +2,31 @@
 #![warn(missing_docs)]
 mod access;
 mod ape;
+mod cdtext;
+#[cfg(test)]
+mod cdtext_fixtures;
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows", test))]
+mod cdtext_io;
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows", test))]
+mod cdtext_packs;
 mod cue;
 mod decoded;
 mod discovery;
 mod eject;
 mod image;
+#[cfg(any(target_os = "linux", test))]
+mod linux_cdtext;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "macos")]
+mod macos_cdtext;
+#[cfg(target_os = "macos")]
+mod macos_cf;
+mod physical;
 mod process;
 mod stream;
+#[cfg(any(target_os = "windows", test))]
+mod windows_cdtext;
 use cd_da_reader::{AudioSectorReader, CdReader, Toc};
 pub use discovery::{Drive, Library};
 use std::sync::{Arc, Mutex};
@@ -45,6 +63,7 @@ pub struct Disc {
     leadout: u32,
     gate: Arc<Mutex<()>>,
     image: Option<Arc<image::Image>>,
+    text: cdtext::Text,
 }
 impl Disc {
     fn inspect(
@@ -103,6 +122,7 @@ impl Disc {
             leadout: toc.leadout_lba,
             gate,
             image: None,
+            text: cdtext::Text::default(),
         })
     }
     fn matches(&self, toc: &Toc) -> bool {
@@ -120,20 +140,27 @@ impl Disc {
                 .zip(other.image.as_ref())
                 .is_some_and(|(a, b)| a.same(b))
     }
-    /// Selected image title; physical-disc metadata remains unidentified.
+    /// On-disc CD-Text or explicit CUE title; no network identification.
     pub fn title(&self) -> Option<&str> {
-        self.image.as_ref()?.title.as_deref()
+        self.image
+            .as_ref()
+            .and_then(|image| image.title.as_deref())
+            .or(self.text.title.as_deref())
     }
-    /// Explicit CUE performer, never a resolved catalogue/account identity.
+    /// On-disc or CUE performer, never a resolved catalogue/account identity.
     pub fn performer(&self) -> Option<&str> {
-        self.image.as_ref()?.performer.as_deref()
+        self.image
+            .as_ref()
+            .and_then(|image| image.performer.as_deref())
+            .or(self.text.performer.as_deref())
     }
-    /// CUE track title and performer when supplied.
+    /// CD-Text or CUE track names, keyed by physical track number.
     pub fn track_names(&self, number: u8) -> (Option<&str>, Option<&str>) {
         self.image
             .as_ref()
             .and_then(|image| image.names.get(&number))
-            .map(|(title, performer)| (title.as_deref(), performer.as_deref()))
+            .or_else(|| self.text.names.get(&number))
+            .map(|(title, performer)| (title.as_deref(), performer.as_deref().or(self.performer())))
             .unwrap_or_default()
     }
     /// Stable physical position within this process-only disc selection.

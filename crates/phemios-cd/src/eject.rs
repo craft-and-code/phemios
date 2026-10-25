@@ -4,6 +4,10 @@ use std::{
     time::{Duration, Instant},
 };
 pub(super) fn run(path: &str) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    if path.starts_with("dr:") {
+        return super::macos::eject(path);
+    }
     let mut command = command(path)?;
     let mut child = command
         .stdin(Stdio::null())

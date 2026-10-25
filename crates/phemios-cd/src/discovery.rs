@@ -42,8 +42,7 @@ impl Library {
     pub fn scan(&mut self) -> Result<&[Drive], String> {
         let gate = self.gate.clone();
         let _guard = gate.try_lock().map_err(|_| "Le lecteur CD est occupé.")?;
-        let drives =
-            CdReader::list_drives().map_err(|_| "Détection des lecteurs CD impossible.")?;
+        let drives = super::physical::sources()?;
         if drives.len() > 16 {
             return Err("Trop de lecteurs CD détectés.".into());
         }
@@ -59,22 +58,38 @@ impl Library {
                 Some(d) => d.id.clone(),
                 None => self.token()?,
             };
-            let probe = CdReader::open(&drive).and_then(|r| r.read_toc().map(|toc| (r, toc)));
+            let probe = drive
+                .media
+                .as_deref()
+                .ok_or_else(|| "Insérez un CD audio dans le lecteur.".to_string())
+                .and_then(|path| CdReader::open_path(path).map_err(|e| e.to_string()))
+                .and_then(|r| r.read_toc().map(|toc| (r, toc)).map_err(|e| e.to_string()));
             let mut error = None;
             let disc = match probe {
                 Ok((reader, toc)) => match Disc::inspect(
                     &reader,
                     &toc,
-                    drive.path.clone(),
+                    drive.media.clone().ok_or("CD absent ou inaccessible.")?,
                     self.token()?,
                     gate.clone(),
                 ) {
-                    Ok(disc) => Some(
-                        old.and_then(|d| d.disc.as_ref())
+                    Ok(mut disc) => {
+                        let text = super::cdtext::Text::read(&disc.path, &disc.tracks);
+                        if reader
+                            .read_toc()
+                            .is_ok_and(|current| disc.matches(&current))
+                        {
+                            disc.text = text;
+                        }
+                        // Reading optional names again must not invalidate queued references for an unchanged TOC.
+                        if let Some(old) = old
+                            .and_then(|d| d.disc.as_ref())
                             .filter(|d| d.matches(&toc))
-                            .cloned()
-                            .unwrap_or(disc),
-                    ),
+                        {
+                            disc.token = old.token.clone();
+                        }
+                        Some(disc)
+                    }
                     Err(reason) => {
                         error = Some(reason);
                         None
@@ -87,7 +102,7 @@ impl Library {
             };
             next.push(Drive {
                 id,
-                name: format!("Lecteur CD {}", next.len() + 1),
+                name: drive.name,
                 path: drive.path,
                 disc,
                 error,
