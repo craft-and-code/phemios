@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { createLabelSelection } from "../library/label-selection";
 import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
@@ -19,11 +20,9 @@ import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
 import { parseLabelDetail, type LabelDetail } from "../library/labels";
 import { sourceLink, type AccountSession, type Snapshot } from "../library/server";
-import { FilterBar } from "../components/FilterBar";
 import { SelectionCollection } from "../components/SelectionCollection";
 import { Icon } from "../components/Icon";
-import { filterAlbums } from "../library/filtering";
-import { labelExpression, labelHistogram, labelYearDomain } from "../library/label-browsing";
+import { labelExpression } from "../library/label-browsing";
 import { referenceSource } from "../library/sources";
 import { AlbumGrid } from "../components/AlbumGrid";
 import { SourceBadge } from "../components/SourceBadge";
@@ -39,9 +38,7 @@ interface LabelResult {
 export function LabelPage(props: {
   reference: string;
   onTitle: (name: string) => void;
-  compact: boolean;
   onBiographyNavigation: BiographyNavigation;
-  onCompact: () => void;
 }) {
   const library = useLibrary();
   let alive = true;
@@ -128,12 +125,12 @@ export function LabelPage(props: {
   onCleanup(() => props.onBiographyNavigation(undefined));
   const albums = () =>
     library.albums().filter((album) => detail()?.releases.includes(album.reference));
-  const { filters, setFilters, reverse, setReverse } = createLabelSelection(
+  const [reverse, setReverse] = useViewSession().control("labelAlbumsReverse");
+  const { filters } = createLabelSelection(
     () => ({ reference: props.reference, session: library.sessionFor(props.reference) }),
     albums,
     () => !!detail() && (!!albums().length || !detail()?.releases.length),
   );
-  const selected = () => filterAlbums(albums(), library.artists(), filters());
   return (
     <Show
       when={biography.reading()}
@@ -198,16 +195,6 @@ export function LabelPage(props: {
                   </section>
                   <h2>{t("Albums")}</h2>
                   <StickyHeader>
-                    <FilterBar
-                      yearDomain={labelYearDomain(albums())}
-                      value={filters()}
-                      setValue={setFilters}
-                      context={t("Initiale du titre · année de l’album")}
-                      histogram={labelHistogram(albums(), library.artists(), filters())}
-                      countLabel={t("albums")}
-                      resultCount={selected().length}
-                      hasUnknownYear={albums().some((album) => album.year === null)}
-                    />
                     <div class="label-toolbar">
                       <button
                         class="icon-button"
@@ -218,25 +205,18 @@ export function LabelPage(props: {
                       >
                         <Icon name="sort" />
                       </button>
-                      <button
-                        class="icon-button"
-                        aria-label={t("Vue compacte")}
-                        title={t("Vue compacte")}
-                        aria-pressed={props.compact}
-                        onClick={props.onCompact}
-                      >
-                        <Icon name="layers" />
-                      </button>
                       <SelectionCollection
-                        expression={labelExpression(props.reference, filters())}
+                        expression={labelExpression(props.reference, {
+                          ...filters(),
+                          mode: "none",
+                        })}
                         source={referenceSource(props.reference)}
-                        disabled={!selected().length}
+                        disabled={!albums().length}
                       />
                     </div>
                   </StickyHeader>
                   <AlbumGrid
-                    compact={props.compact}
-                    albums={selected()}
+                    albums={albums()}
                     reverse={reverse()}
                     chronological
                     emptyIcon="label"

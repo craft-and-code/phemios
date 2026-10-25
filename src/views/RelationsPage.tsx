@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { EmptyState } from "../components/EmptyState";
 import { locale } from "../i18n";
 import { t } from "../i18n";
@@ -12,7 +13,7 @@ export function RelationsPage(props: { query: string; compact: boolean }) {
   const library = useLibrary(),
     [reference, setReference] = createSignal(""),
     [search, setSearch] = createSignal(""),
-    [mode, setMode] = createSignal<"artist" | "album">("artist");
+    [mode, setMode] = useViewSession().control("relationsMode");
   const choices = createMemo(() =>
     library
       .artists()

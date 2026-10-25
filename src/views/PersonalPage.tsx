@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { QueueAppend } from "../components/QueueAppend";
 import { CatalogActions } from "../components/CatalogActions";
 import { CoverFlow } from "../components/CoverFlow";
@@ -55,10 +56,10 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
   const library = useLibrary(),
     [editingCollection, setEditingCollection] = createSignal(false),
     [name, setName] = createSignal(""),
-    [reverse, setReverse] = createSignal(false),
-    [collectionsReverse, setCollectionsReverse] = createSignal(false),
-    [compact, setCompact] = createSignal(false),
-    [flow, setFlow] = createSignal(false),
+    [reverse, setReverse] = useViewSession().control("favouritesReverse"),
+    [collectionsReverse, setCollectionsReverse] = useViewSession().control("collectionsReverse"),
+    [compact, setCompact] = useViewSession().control("favouritesCompact"),
+    [flow, setFlow] = useViewSession().control("favouritesFlow"),
     [expression, setExpression] = createSignal(""),
     [selected, setSelected] = createSignal(""),
     [message, setMessage] = createSignal(""),

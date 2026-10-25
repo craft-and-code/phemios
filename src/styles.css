@@ -2325,6 +2325,10 @@ main:has(> .result-page) > * {
 .collection-row {
   gap: var(--compact-control-gap) !important;
 }
+/* Match the duration margin plus name-group gap without widening the action group. */
+.collection-row > .collection-name {
+  margin-inline-start: calc(2 * var(--control-gap) - var(--compact-control-gap));
+}
 .collection-duration {
   white-space: nowrap;
   color: var(--muted);

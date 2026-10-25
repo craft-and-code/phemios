@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { createToolPreferences } from "../library/tool-preferences";
 import { AnalysisImport } from "../components/AnalysisImport";
 import { AnalysisDocument } from "../analysis-report/AnalysisDocument";
@@ -10,11 +11,7 @@ import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { IntegrityStatus } from "../components/IntegrityStatus";
 import { Feedback } from "../components/Feedback";
-import {
-  initialCoverageSort,
-  nextCoverageSort,
-  type CoverageColumn,
-} from "../library/coverage-sort";
+import { nextCoverageSort, type CoverageColumn } from "../library/coverage-sort";
 import { activeReleaseJob } from "../library/jobs";
 import { createEffect, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
@@ -32,7 +29,7 @@ export function AnalysisPage(props: { query: string }) {
   const settings = createToolPreferences();
   const library = useLibrary(),
     [imported, setImported] = createSignal<unknown[]>(),
-    [sort, setSort] = createSignal(initialCoverageSort),
+    [sort, setSort] = useViewSession().control("analysisSort"),
     [offset, setOffset] = createSignal(0),
     [selected, setSelected] = createSignal(""),
     [notice, setNotice] = createSignal({ message: "", failure: false });

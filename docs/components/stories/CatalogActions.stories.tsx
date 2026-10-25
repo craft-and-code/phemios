@@ -2,6 +2,7 @@ import { createSignal } from "solid-js";
 import { expect, userEvent, within } from "storybook/test";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { CatalogActions } from "../../../src/components/CatalogActions";
+import { t } from "../../../src/i18n";
 import { Icon } from "../../../src/components/Icon";
 import { createCatalogPresentation } from "../../../src/navigation/catalog-presentation";
 const meta = {
@@ -42,7 +43,7 @@ export const Interactive: Story = {
       buttons = canvas.getAllByRole("button");
     expect(buttons.map((b) => b.getAttribute("aria-label"))).toEqual([
       "Inverser l’ordre alphabétique",
-      "Vue compacte",
+      "Liste compacte",
       "Vue en grille",
       "Cover Flow",
       "Collection",
@@ -63,5 +64,16 @@ export const Interactive: Story = {
     await expect(buttons[2]!).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(buttons[0]!);
     await expect(buttons[0]!).toHaveAttribute("aria-pressed", "true");
+  },
+};
+
+/** Genres has no separate grid action but retains the shared compact-list glyph. */
+export const Genres: Story = {
+  args: { compact: true },
+  render: (args) => <CatalogActions {...args} />,
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole("button", { name: t("Liste compacte") });
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button.querySelector("svg")).toHaveClass("lucide-list");
   },
 };

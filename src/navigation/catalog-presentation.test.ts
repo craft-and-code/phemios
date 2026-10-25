@@ -64,8 +64,25 @@ it("refuses unsupported Cover Flow without changing a two-mode list or its size 
     view.select("list");
     expect(view.select("cover-flow")).toBe(false);
     expect(view.value()).toBe("list");
-    expect(view.resizable()).toBe(false);
+    expect(view.resizable()).toBe(true);
     view.select("grid");
+    expect(view.resizable()).toBe(true);
+    dispose();
+  });
+});
+
+it("keeps Genres cover sizing active when switching between compact lists and grids", () => {
+  createRoot((dispose) => {
+    const [scope, setScope] = createSignal<FilterScope>("genres");
+    const view = createCatalogPresentation(scope);
+    for (const mode of ["list", "grid", "list"] as const) {
+      view.select(mode);
+      expect(view.resizable()).toBe(true);
+    }
+    setScope("albums");
+    expect(view.resizable()).toBe(false);
+    setScope("genres");
+    expect(view.value()).toBe("list");
     expect(view.resizable()).toBe(true);
     dispose();
   });

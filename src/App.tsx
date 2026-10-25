@@ -1,3 +1,4 @@
+import { ViewSessionProvider, useViewSession } from "./navigation/ViewSession";
 import { createCollectionMenuChoices } from "./library/collection-menu-choices";
 import { createCollectionAlbums } from "./library/collection-albums";
 import { AlbumCatalog, type AlbumCatalogControls } from "./views/AlbumCatalog";
@@ -85,6 +86,15 @@ import { WorkspacePage } from "./views/WorkspacePage";
 
 /** Offline shell: demonstration data is never represented as server state. */
 export function App() {
+  return (
+    <ViewSessionProvider>
+      <AppContent />
+    </ViewSessionProvider>
+  );
+}
+
+/** Navigation may remount pages without recreating their presentation memory. */
+function AppContent() {
   const library = useLibrary();
   const browsing = createToolPreferences();
   const menu = createMenuPreferences();
@@ -170,7 +180,11 @@ export function App() {
     setSelectedTag([]);
     setTagOffset(0);
   });
-  const [reverse, setReverse] = createSignal(false);
+  const [catalogReverse, setCatalogReverse] = useViewSession().control("catalogReverse");
+  const catalogScope = () => navigation.collectionMenu() ?? navigation.section();
+  const reverse = () => catalogReverse()[catalogScope()] ?? false;
+  const setReverse = (value: boolean) =>
+    setCatalogReverse({ ...catalogReverse(), [catalogScope()]: value });
   const presentation = createCatalogPresentation(
     () => navigation.collectionMenu() ?? navigation.section(),
   );
@@ -347,7 +361,9 @@ export function App() {
       classList={{
         "sidebar-hidden": !sidebar(),
         "density-compact":
-          compact() && !["favourites", "rated", "tags", "artists"].includes(section()),
+          current().kind !== "label" &&
+          compact() &&
+          !["favourites", "rated", "tags", "artists"].includes(section()),
       }}
       onContextMenu={(event) => event.preventDefault()}
       onAuxClick={externalClick}
@@ -912,8 +928,6 @@ export function App() {
                     onBiographyNavigation={(value) => setBiographyReturn(value)}
                     reference={(route as { reference: string }).reference}
                     onTitle={setLabelTitle}
-                    compact={compact()}
-                    onCompact={() => setCompact(!compact())}
                   />
                 </Show>
                 <Show when={route.kind === "track"}>

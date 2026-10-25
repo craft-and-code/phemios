@@ -12,6 +12,10 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Fixed
 
+- Rotate shared refresh arrows clockwise, including Audio CD and network players. Align the Collections visibility/name spacing with the duration/rename spacing, enable cover sizing in Genres compact lists, and remove the duplicate divider above MusicBrainz review.
+
+- Retain selected sort and display controls while navigating during the session, including Labels sorted by album count in reverse order, personal album layouts and Collections order. Keep reverse catalog sorting independent per view; new App sessions start with defaults.
+
 - Center enlarged covers and missing-cover placeholders even when a long title widens the dialog; preserve the Close button size.
 - Restore the incomplete-listening corner marker in Compilations across Grid, List and Cover Flow, using confirmed private completion state only.
 - Keep Pause available while an accepted catalogue stream is buffering, instead of disabling the footer or attempting another start. Refresh local buffering transitions at the active cadence while retaining serialized commands and HQPlayer polling limits.
@@ -30,6 +34,10 @@ This reviewed change list is the preparation source for the next version-specifi
 - Empty exclusion-list messages are centered horizontally and vertically.
 
 ## Changed
+
+- Simplify label details: remove alphabet/year filters and compact-view switching, retain reverse sorting and collection creation, and always show all owned albums in a grid. New label collections have no hidden date/alphabet restriction.
+
+- Rename the compact album presentation to **Compact list** and unify its icon in Albums, Compilations, Genres and Composers. Place years below titles and center each metadata group beside its cover. Cover hover or keyboard focus reveals proportionally sized Add/Play controls, left/right, replacing trailing row actions; touch controls remain visible.
 
 - Editorial artist rows omit artist-level Play and queue-append buttons and use the recovered space for two or three album previews when the list is wide enough. Hovering or focusing an album cover reveals its own centered Play button. Narrow layouts retain readable artist details and independent album links.
 - Place the Collections expansion eye before each collection name, keeping rename and removal controls on the right without evaluating collapsed collections.

@@ -14,7 +14,9 @@ export function createCatalogPresentation(scope: Accessor<FilterScope>) {
     (supportsCoverFlow(scope()) && scope() !== "compilations" ? "cover-flow" : "grid");
   return {
     value,
-    resizable: () => value() === "grid" || (value() === "list" && supportsCoverFlow(scope())),
+    resizable: () =>
+      value() === "grid" ||
+      (value() === "list" && (scope() === "genres" || supportsCoverFlow(scope()))),
     select(next: CatalogPresentation): boolean {
       if (next === "cover-flow" && !supportsCoverFlow(scope())) return false;
       setSaved((held) => ({ ...held, [scope()]: next }));

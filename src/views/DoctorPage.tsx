@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { Feedback } from "../components/Feedback";
 import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
@@ -9,12 +10,12 @@ import { createSignal, For, Show } from "solid-js";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { useLibrary } from "../library/context";
 import { requestAede } from "../platform/desktop";
-import { issueLabels, parseDoctor, severityLabels, type Severity } from "../library/doctor";
+import { issueLabels, parseDoctor, severityLabels } from "../library/doctor";
 import { numberLabel } from "../library/statistics";
 /** Read the existing Aède Doctor contract with severity filters and bounded pagination. */
 export function DoctorPage() {
   const library = useLibrary(),
-    [severity, setSeverity] = createSignal<Severity | "">(""),
+    [severity, setSeverity] = useViewSession().control("doctorSeverity"),
     [offset, setOffset] = createSignal(0);
   const report = createDiagnosticRead(
     () =>

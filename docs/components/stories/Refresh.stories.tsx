@@ -59,7 +59,7 @@ export const ImmediateRotation: Story = {
     await userEvent.click(button);
     expect(button.querySelector(".refresh-rotating")).not.toBeNull();
     expect(getComputedStyle(button.querySelector(".refresh-glyph")!).animationDirection).toBe(
-      "reverse",
+      "normal",
     );
     expect(button.querySelector(".spinner")).toBeNull();
     expect(button).toBeDisabled();

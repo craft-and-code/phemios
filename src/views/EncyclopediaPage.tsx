@@ -1,18 +1,18 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { StickyHeader } from "../components/StickyHeader";
 import { Icon } from "../components/Icon";
 import { ReferenceCategories } from "../encyclopedia/ReferenceCategories";
-import { createMemo, createSignal, createEffect, on, For, Show } from "solid-js";
-import { t, locale, type Language } from "../i18n";
+import { createMemo, createSignal, For, Show } from "solid-js";
+import { t, locale } from "../i18n";
 import { encyclopediaRows } from "../encyclopedia/catalog";
 import { WikipediaPanel } from "../encyclopedia/WikipediaPanel";
 import { EmptyState } from "../components/EmptyState";
 /** Curated bilingual reference material stays available without an Aède account. */
 export function EncyclopediaPage(props: { query: string }) {
-  const [mode, setMode] = createSignal<"reference" | "search" | "saved">("reference");
+  const [mode, setMode] = useViewSession().control("encyclopediaMode");
   const [editionBusy, setEditionBusy] = createSignal(false);
-  const [language, setLanguage] = createSignal<Language>(locale());
-  createEffect(on(locale, setLanguage));
-  const [category, setCategory] = createSignal("");
+  const [language, setLanguage] = useViewSession().control("encyclopediaLanguage");
+  const [category, setCategory] = useViewSession().control("encyclopediaCategory");
   const rows = createMemo(() => encyclopediaRows(props.query, category(), locale()));
   return (
     <section class="page result-page encyclopedia-page">

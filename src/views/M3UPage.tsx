@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { Pagination } from "../components/Pagination";
 import { RefreshButton } from "../components/RefreshButton";
 import { StickyHeader } from "../components/StickyHeader";
@@ -27,7 +28,7 @@ import { t } from "../i18n";
 /** Existing folder files and owner-private exports stay distinct, with inert previews and exact downloads. */
 export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
   const library = useLibrary(),
-    [kind, setKind] = createSignal<M3UKind>("files"),
+    [kind, setKind] = useViewSession().control("m3uKind"),
     [offset, setOffset] = createSignal(0),
     [query, setQuery] = createSignal(props.query.trim()),
     [message, setMessage] = createSignal(""),

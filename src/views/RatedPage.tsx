@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { CatalogActions } from "../components/CatalogActions";
 import { AccountNotice } from "../components/AccountNotice";
 import { StickyHeader } from "../components/StickyHeader";
@@ -6,7 +7,7 @@ import { SelectionCollection } from "../components/SelectionCollection";
 import { personalCollectionExpression } from "../library/personal-collection";
 import { EmptyState } from "../components/EmptyState";
 import { StarRating } from "../components/StarRating";
-import { createSignal, Show } from "solid-js";
+import { Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { ratedAlbums, albumRating } from "../library/rated";
@@ -16,10 +17,10 @@ import { AlbumGrid } from "../components/AlbumGrid";
 /** Ratings remain distinct from favourites, scoped to the selected authenticated owner. */
 export function RatedPage(props: { query: string }) {
   const library = useLibrary(),
-    [minimum, setMinimum] = createSignal(1),
-    [reverse, setReverse] = createSignal(false),
-    [compact, setCompact] = createSignal(false),
-    [maximum, setMaximum] = createSignal(5);
+    [minimum, setMinimum] = useViewSession().control("ratedMinimum"),
+    [reverse, setReverse] = useViewSession().control("ratedReverse"),
+    [compact, setCompact] = useViewSession().control("ratedCompact"),
+    [maximum, setMaximum] = useViewSession().control("ratedMaximum");
   const albums = () =>
     ratedAlbums(
       library.albums().filter((row) => referenceSource(row.reference) === library.source()),

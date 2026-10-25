@@ -19,10 +19,6 @@
 .queue-append.icon-button > svg {
   transform: none;
 }
-.density-compact .album-card:has(> .media-actions) {
-  grid-template-columns: min(var(--album-cover-min, 56px), 35%) minmax(0, 1fr) auto max-content;
-}
-.density-compact .album-card > .media-actions > .icon-button,
 .density-compact .artist-card > .media-actions > .icon-button,
 .density-compact .tagged-playable > .media-actions > .icon-button {
   border-radius: 7px;
@@ -101,10 +97,47 @@
   height: 18px;
 }
 .refresh-glyph.refresh-rotating {
-  animation: activity-spin 0.65s linear infinite reverse;
+  animation: activity-spin 0.65s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .refresh-glyph.refresh-rotating {
     animation: none;
+  }
+}
+
+/* Cover-local sizing follows the actual, responsively capped list artwork. */
+.density-compact .album-cover {
+  container-type: inline-size;
+  z-index: 1;
+}
+.density-compact .album-cover > .media-actions {
+  top: 50%;
+  right: 50%;
+  transform: translate(50%, -50%);
+  gap: clamp(2px, 4cqw, 8px);
+  opacity: 0;
+  pointer-events: none;
+}
+.density-compact .album-cover:hover > .media-actions,
+.density-compact .album-cover:focus-within > .media-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.density-compact .album-card .album-cover > .media-actions > button.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: clamp(22px, 32cqw, 64px);
+  height: clamp(22px, 32cqw, 64px);
+  padding: 0;
+  border-radius: 50%;
+}
+.density-compact .album-card .album-cover > .media-actions > button.icon-button > svg {
+  width: 55%;
+  height: 55%;
+}
+@media (hover: none) {
+  .density-compact .album-cover > .media-actions {
+    opacity: 1;
+    pointer-events: auto;
   }
 }

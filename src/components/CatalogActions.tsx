@@ -32,12 +32,12 @@ export function CatalogActions(props: {
           <button
             type="button"
             class="icon-button"
-            aria-label={t("Vue compacte")}
-            title={t("Vue compacte")}
+            aria-label={t("Liste compacte")}
+            title={t("Liste compacte")}
             aria-pressed={props.compact}
             onClick={props.onCompact}
           >
-            <Icon name={props.onGrid ? "list" : "layers"} />
+            <Icon name="list" />
           </button>
         }
       >

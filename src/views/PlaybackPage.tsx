@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { Feedback } from "../components/Feedback";
 import { cdReference } from "../cd/model";
 import { UntimedLyricsControls } from "../components/UntimedLyricsControls";
@@ -24,10 +25,10 @@ import type { Scene } from "../visualizer/particles";
 export function PlaybackPage() {
   const library = useLibrary(),
     player = library.player,
-    [queue, setQueue] = createSignal(false),
+    [queue, setQueue] = useViewSession().control("playbackQueue"),
     [spectrum, setSpectrum] = createSignal(false),
-    [ordinaryLyrics, setOrdinaryLyrics] = createSignal(true),
-    [floatingLyrics, setFloatingLyrics] = createSignal(true),
+    [ordinaryLyrics, setOrdinaryLyrics] = useViewSession().control("ordinaryLyrics"),
+    [floatingLyrics, setFloatingLyrics] = useViewSession().control("floatingLyrics"),
     [barStyle, setBarStyle] = createSignal<"gradient" | "terminal">("gradient"),
     [scene, setScene] = createSignal<Scene>("sphere"),
     [error, setError] = createSignal("");
@@ -37,8 +38,6 @@ export function PlaybackPage() {
     onCleanup(() => window.removeEventListener("phemios-queue-toggle", toggleQueue));
     function restore() {
       setSpectrum(false);
-      setOrdinaryLyrics(true);
-      setFloatingLyrics(true);
       setBarStyle("gradient");
       setScene("sphere");
       setError("");

@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { Feedback } from "../components/Feedback";
 import { AlbumCount } from "../components/AlbumCount";
 import { StickyHeader } from "../components/StickyHeader";
@@ -17,8 +18,8 @@ import { Icon } from "../components/Icon";
 export function LabelsPage(props: { query: string }) {
   const library = useLibrary(),
     [offset, setOffset] = createSignal(0);
-  const [sort, setSort] = createSignal<"name" | "albums">("name"),
-    [descending, setDescending] = createSignal(false);
+  const [sort, setSort] = useViewSession().control("labelsSort"),
+    [descending, setDescending] = useViewSession().control("labelsDescending");
   const sources = createMemo(() =>
     publicCatalogSources(library.publicSnapshot, library.trackSources()),
   );

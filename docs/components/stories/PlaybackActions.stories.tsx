@@ -3,6 +3,7 @@ import { createSignal } from "solid-js";
 import { expect, userEvent, within, waitFor } from "storybook/test";
 import { PlaybackActionsView } from "../../../src/components/PlaybackActionsView";
 import { QueueAppendView } from "../../../src/components/QueueAppendView";
+import { AlbumCardView } from "../../../src/components/AlbumCardView";
 import { CoverPlayView } from "../../../src/components/CoverPlayView";
 const meta = {
   title: "Controls/PlaybackActions",
@@ -16,43 +17,45 @@ const meta = {
     return (
       <>
         <article
-          class="album-card"
           style={{ width: args.class ? "600px" : "180px" }}
           onClick={() => setNavigation(navigation() + 1)}
         >
-          <a class="album-art-link" href="#fictional">
-            <div
-              class="artwork"
-              style={{ background: "linear-gradient(135deg,#315458,#142224)" }}
-            />
-          </a>
-          <a class="album-title-link" href="#fictional">
-            <strong>First Album</strong>
-          </a>
-          <small class="album-year">2001</small>
-          <PlaybackActionsView
-            {...args}
-            append={
-              <QueueAppendView
-                reference="release:example"
-                title="First Album"
-                class={`cover-play ${args.class}`}
-                onAppend={() => {
-                  setAdditions(additions() + 1);
-                  return new Promise((resolve) => {
-                    complete = () => resolve(10);
-                  });
-                }}
+          <AlbumCardView
+            href="#fictional"
+            title="First Album"
+            year="2001"
+            artwork={
+              <div
+                class="artwork"
+                style={{ background: "linear-gradient(135deg,#315458,#142224)" }}
               />
             }
-            play={
-              <CoverPlayView
-                reference="release:example"
-                title="First Album"
-                class={args.class}
-                onPlay={async () => {
-                  setStarts(starts() + 1);
-                }}
+            actions={
+              <PlaybackActionsView
+                {...args}
+                append={
+                  <QueueAppendView
+                    reference="release:example"
+                    title="First Album"
+                    class={`cover-play ${args.class}`}
+                    onAppend={() => {
+                      setAdditions(additions() + 1);
+                      return new Promise((resolve) => {
+                        complete = () => resolve(10);
+                      });
+                    }}
+                  />
+                }
+                play={
+                  <CoverPlayView
+                    reference="release:example"
+                    title="First Album"
+                    class={args.class}
+                    onPlay={async () => {
+                      setStarts(starts() + 1);
+                    }}
+                  />
+                }
               />
             }
           />
@@ -71,7 +74,10 @@ const interaction: Story["play"] = async ({ canvasElement }) => {
   const canvas = within(canvasElement),
     add = canvas.getByRole("button", { name: "Ajouter First Album à la suite" }),
     play = canvas.getByRole("button", { name: "Lire First Album" });
-  await userEvent.hover(canvasElement.querySelector("article")!);
+  // Synthetic hover does not activate CSS :hover; real keyboard focus reveals the cover actions.
+  (canvasElement.querySelector(".album-art-link") as HTMLAnchorElement).focus();
+  await userEvent.tab();
+  expect(add).toHaveFocus();
   const a = add.getBoundingClientRect(),
     p = play.getBoundingClientRect();
   expect(a.width).toBe(p.width);

@@ -1,3 +1,4 @@
+import { useViewSession } from "../navigation/ViewSession";
 import { Feedback } from "../components/Feedback";
 import { createDiagnosticRead } from "../library/diagnostic-read";
 import { CatalogActions } from "../components/CatalogActions";
@@ -7,7 +8,7 @@ import { StickyHeader } from "../components/StickyHeader";
 import { ResultCount } from "../components/ResultCount";
 import { CoverPlay } from "../components/CoverPlay";
 import { EmptyState } from "../components/EmptyState";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { normalizeName } from "../library/filtering";
@@ -30,8 +31,8 @@ export function TagsPage(props: {
 }) {
   const library = useLibrary(),
     annotations = () => Object.values(library.annotations);
-  const [reverse, setReverse] = createSignal(false),
-    [compact, setCompact] = createSignal(false);
+  const [reverse, setReverse] = useViewSession().control("tagsReverse"),
+    [compact, setCompact] = useViewSession().control("tagsCompact");
   const vocabulary = createMemo(() => tagCatalog(annotations()));
   const entries = createMemo(() => {
     const rows = taggedEntries(annotations(), props.selected, props.query);
