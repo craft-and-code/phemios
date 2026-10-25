@@ -4,6 +4,7 @@ import { For, Show, createMemo } from "solid-js";
 import { shiftInterval } from "../library/filtering";
 import type { Interval } from "../library/types";
 import type { CountBin } from "../library/distribution";
+import { createRangeRailDrag } from "./range-rail-drag";
 
 interface Props {
   label: string;
@@ -20,7 +21,12 @@ interface Props {
 /** Two native bounds plus a draggable/keyboard-movable selected band. */
 export function RangeRail(props: Props) {
   let track: HTMLDivElement | undefined;
-  let drag: { x: number; range: Interval; width: number } | undefined;
+  const drag = createRangeRailDrag({
+    track: () => track,
+    value: () => props.value,
+    domain: () => props.domain,
+    change: (value) => props.onChange(value),
+  });
   const span = () => props.domain[1] - props.domain[0];
   const position = (value: number) =>
     span() === 0 ? 0 : ((value - props.domain[0]) / span()) * 100;
@@ -36,21 +42,6 @@ export function RangeRail(props: Props) {
       return { value, count, height: count === 0 ? 2 : 4 + (count / maximum) * 26 };
     });
   });
-
-  function start(event: PointerEvent & { currentTarget: HTMLButtonElement }) {
-    if (event.button !== 0 || !track) return;
-    drag = { x: event.clientX, range: props.value, width: track.clientWidth };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    event.currentTarget.focus();
-    event.preventDefault();
-  }
-
-  function move(event: PointerEvent) {
-    if (!drag || !drag.width) return;
-    props.onChange(
-      shiftInterval(drag.range, ((event.clientX - drag.x) / drag.width) * span(), props.domain),
-    );
-  }
 
   function keyboard(event: KeyboardEvent) {
     const deltas: Record<string, number> = {
@@ -77,6 +68,7 @@ export function RangeRail(props: Props) {
       </div>
       <div
         class="rail-track"
+        classList={{ "rail-dragging": drag.dragging() }}
         ref={(element) => {
           track = element;
         }}
@@ -107,17 +99,7 @@ export function RangeRail(props: Props) {
             left: `${position(props.value[0])}%`,
             width: `${position(props.value[1]) - position(props.value[0])}%`,
           }}
-          onPointerDown={start}
-          onPointerMove={move}
-          onPointerUp={() => {
-            drag = undefined;
-          }}
-          onPointerCancel={() => {
-            drag = undefined;
-          }}
-          onLostPointerCapture={() => {
-            drag = undefined;
-          }}
+          onPointerDown={drag.start}
           onKeyDown={keyboard}
         />
         <input

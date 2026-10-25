@@ -69,17 +69,19 @@
 }
 .rail-band {
   position: absolute;
-  top: 35px;
-  height: 17px;
-  min-width: 4px;
+  top: 27px;
+  height: 32px;
+  min-width: 14px;
   border: 0;
   border-radius: 5px;
   padding: 0;
-  background: linear-gradient(transparent 7px, var(--accent) 7px 10px, transparent 10px);
+  background: linear-gradient(transparent 15px, var(--accent) 15px 18px, transparent 18px);
   cursor: grab;
   touch-action: none;
 }
-.rail-band:active {
+.rail-band:active,
+.rail-dragging,
+.rail-dragging .rail-band {
   cursor: grabbing;
 }
 .rail-track input {

@@ -3,6 +3,7 @@ import { expect, userEvent, within } from "storybook/test";
 import { RangeRail } from "../../../src/components/RangeRail";
 import { controlledValue } from "../fixtures/controlled";
 import { t } from "../../../src/i18n";
+import { railPointer } from "../fixtures/rail-pointer";
 const meta = {
   title: "Controls/RangeRail",
   component: RangeRail,
@@ -55,5 +56,48 @@ export const KeyboardBand: Story = {
     await expect(canvas.getByRole("slider", { name: t("{0} : fin", "Années") })).toHaveValue(
       "2011",
     );
+  },
+};
+
+export const DiagonalYears: Story = {
+  args: { value: [2000, 2002] },
+  play: ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const gesture = railPointer(canvasElement.querySelector(".range-rail")!);
+    try {
+      gesture.start(gesture.x, gesture.y);
+      gesture.lose();
+      gesture.move(gesture.x + gesture.width / 3, gesture.y + 160);
+      expect(canvas.getByRole("slider", { name: "Années : début" })).toHaveValue("2010");
+      expect(canvas.getByRole("slider", { name: "Années : fin" })).toHaveValue("2012");
+      expect(gesture.band).toHaveFocus();
+      gesture.up(gesture.x + gesture.width / 2, gesture.y - 160);
+      expect(canvas.getByRole("slider", { name: "Années : début" })).toHaveValue("2015");
+      expect(canvas.getByRole("slider", { name: "Années : fin" })).toHaveValue("2017");
+      gesture.move(gesture.x, gesture.y);
+      expect(canvas.getByRole("slider", { name: "Années : début" })).toHaveValue("2015");
+    } finally {
+      gesture.restore();
+    }
+  },
+};
+
+export const DiagonalAlphabet: Story = {
+  args: { ...Alphabet.args, value: [2, 4] },
+  play: ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const gesture = railPointer(canvasElement.querySelector(".range-rail")!);
+    try {
+      gesture.start(gesture.x, gesture.y);
+      gesture.lose();
+      gesture.move(gesture.x + gesture.width / 2, gesture.y - 160);
+      expect(canvas.getByRole("slider", { name: "Alphabet : début" })).toHaveValue("15");
+      expect(canvas.getByRole("slider", { name: "Alphabet : fin" })).toHaveValue("17");
+      gesture.up(gesture.x + gesture.width, gesture.y + 160);
+      expect(canvas.getByRole("slider", { name: "Alphabet : début" })).toHaveValue("24");
+      expect(canvas.getByRole("slider", { name: "Alphabet : fin" })).toHaveValue("26");
+    } finally {
+      gesture.restore();
+    }
   },
 };
