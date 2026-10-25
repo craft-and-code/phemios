@@ -1,6 +1,7 @@
 import { isCollectionMenuId, type CollectionMenuId } from "./collection-menu";
 import { t } from "../i18n";
-import { createMemo, createSignal, onCleanup } from "solid-js";
+import { createEffect, createMemo, createSignal, on, onCleanup, type Accessor } from "solid-js";
+import { navigationViewport, restoreElementPosition } from "./scroll-position";
 import { parseRoute, sections, type Section } from "./routes";
 interface Entry {
   hash: string;
@@ -17,6 +18,7 @@ export interface NavigationHost {
   back: () => void;
   top: () => number;
   restore: (top: number) => void;
+  cancelRestore?: () => void;
   defer: (fn: () => void) => void;
   listen: (fn: () => void) => () => void;
 }
@@ -50,8 +52,12 @@ function read(hash: string, state: unknown): Entry {
     };
   return { hash, top: 0 };
 }
-/** Each detail remembers its actual preceding page; Back restores that history entry's scroll. */
-export function createNavigation(host: NavigationHost, labelFor: (hash: string) => string) {
+/** Sections retain their session viewport; detail Back still restores its exact history entry. */
+export function createNavigation(
+  host: NavigationHost,
+  labelFor: (hash: string) => string,
+  identity?: Accessor<unknown>,
+) {
   const initial = host.current();
   const [entry, setEntry] = createSignal(read(initial.hash || "#/artists", initial.state));
   const route = createMemo(() => parseRoute(entry().hash));
@@ -63,38 +69,91 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
     const current = route();
     return current.kind === "section" ? current.collectionMenu : entry().collectionMenu;
   });
+  const positions = new Map<string, number>();
   let alive = true,
-    backPending = false;
+    backPending = false,
+    restoration = 0,
+    positionEpoch = 0,
+    epochResetPending = false;
   const wrapped = (value: Entry) => ({
     ...record(host.current().state),
-    phemiosNavigation: { version: 1, ...value },
+    phemiosNavigation: { version: 1, ...value, positionEpoch },
   });
   function restore(next: Entry) {
+    host.cancelRestore?.();
+    const ticket = ++restoration;
     host.defer(() => {
-      if (alive && entry().hash === next.hash) host.restore(next.top);
+      if (alive && ticket === restoration && entry().hash === next.hash) {
+        host.restore(next.top);
+        epochResetPending = false;
+      }
     });
   }
+  function remember() {
+    const top = epochResetPending ? 0 : host.top();
+    const current = {
+      ...entry(),
+      top: Number.isFinite(top) ? Math.max(0, Math.min(2 ** 24, top)) : 0,
+    };
+    if (parseRoute(current.hash).kind === "section") {
+      positions.delete(current.hash);
+      positions.set(current.hash, current.top);
+      if (positions.size > 128) positions.delete(positions.keys().next().value!);
+    }
+    return current;
+  }
+  if (identity)
+    createEffect(
+      on(
+        identity,
+        () => {
+          positionEpoch++;
+          epochResetPending = true;
+          positions.clear();
+          const next = { ...entry(), top: 0 };
+          host.replace(wrapped(next));
+          setEntry(next);
+          restore(next);
+        },
+        { defer: true },
+      ),
+    );
   const unlisten = host.listen(() => {
     const current = host.current(),
       hash = current.hash || "#/artists";
     if (hash === entry().hash) return;
+    remember();
     const next = read(hash, current.state);
+    if ((record(record(current.state).phemiosNavigation).positionEpoch ?? 0) !== positionEpoch)
+      next.top = 0;
     setEntry(next);
     backPending = false;
     restore(next);
   });
   onCleanup(() => {
     alive = false;
+    restoration++;
+    positions.clear();
+    host.cancelRestore?.();
     unlisten();
   });
-  function navigate(hash: string) {
+  function navigate(hash: string, options: { resetScroll?: boolean } = {}) {
     if (!safeHash(hash)) return false;
-    if (hash === entry().hash) return true;
-    const current = { ...entry(), top: host.top() };
+    if (hash === entry().hash) {
+      if (options.resetScroll) {
+        positions.delete(hash);
+        const next = { ...entry(), top: 0 };
+        host.replace(wrapped(next));
+        setEntry(next);
+        restore(next);
+      }
+      return true;
+    }
+    const current = remember();
     host.replace(wrapped(current));
     const next: Entry = {
       hash,
-      top: 0,
+      top: options.resetScroll ? 0 : (positions.get(hash) ?? 0),
       section: activeSection(),
       ...(collectionMenu() ? { collectionMenu: collectionMenu()! } : {}),
       origin: { href: current.hash, label: labelFor(current.hash) },
@@ -132,13 +191,19 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
 
 /** Native and browser hash histories share the same origin/scroll contract. */
 export function browserNavigationHost(): NavigationHost {
+  let cancelRestore = () => {};
   return {
     current: () => ({ hash: window.location.hash, state: window.history.state }),
     push: (hash, state) => window.history.pushState(state, "", hash),
     replace: (state) => window.history.replaceState(state, ""),
     back: () => window.history.back(),
-    top: () => document.getElementById("content")?.scrollTop ?? 0,
-    restore: (top) => document.getElementById("content")?.scrollTo({ top }),
+    top: () => navigationViewport(document.getElementById("content"))?.scrollTop ?? 0,
+    restore: (top) => {
+      cancelRestore();
+      const element = navigationViewport(document.getElementById("content"));
+      cancelRestore = element ? restoreElementPosition(element, top) : () => {};
+    },
+    cancelRestore: () => cancelRestore(),
     defer: (fn) => {
       requestAnimationFrame(fn);
     },

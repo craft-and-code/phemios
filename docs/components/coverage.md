@@ -152,3 +152,5 @@ Storybook uses actual presentation implementations. This inventory includes ever
 `Media/ExternalTransfer` covers the source-before-destination recipe and preview/start gating. `Media/TransferWorkspace` exercises the permanent two-pane composer; `Media/TransferDestination` exercises the actual folder-action presentation without native IO.
 
 SourceReviewCard: Catalog/SourceReviewCard provides pending, accepted, rejected and busy states with fictional evidence and presentation-only decisions.
+
+`Shell/NavigationScroll` covers independent Artists/Albums viewport memory, the nested artist-card viewport and delayed list restoration using the actual navigation controller and DOM observers with fictional rows. It does not connect to a library or modify browser history.

@@ -16,6 +16,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Fixed
 
+- Remember the main scroll position of each view and collection shortcut during the session, including the artist-card panel and returns through the sidebar. Wait for delayed list content where needed; new metadata filters start at the top and account/source changes discard old positions.
+
 - Keep label logos inside their reserved frame and display cached transparent PNG logos reliably when opening a label on macOS.
 
 - Respect the App language during general biography enrichment. With the corrected Aède engine, previously cached biographies in another language are reconsidered without forcing unrelated passes; failed retrievals preserve the previous text. Clearly identify a differing biography language in artist and label details.

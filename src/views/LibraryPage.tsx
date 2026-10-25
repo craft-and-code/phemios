@@ -118,7 +118,12 @@ export function LibraryPage(props: LibraryPageProps) {
         <Show when={props.section === "countries"}>
           <CountryExplorer artists={principals()} selected={countries()} onSelect={setCountry} />
         </Show>
-        <div class="library-results">
+        <div
+          class="library-results"
+          data-navigation-scroll={
+            props.section === "artists" && props.artistView === "discography" ? "" : undefined
+          }
+        >
           <Feedback error persistent message={listening.error()} />
           <Show when={props.section === "composers"}>
             <Show when={library.albums().some((album) => album.composers === undefined)}>

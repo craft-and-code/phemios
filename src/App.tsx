@@ -141,26 +141,29 @@ function AppContent() {
       }
     return Number.isFinite(low) ? ([low, high] as const) : ([0, 0] as const);
   });
+  const filterOwner = createMemo(() => ({ session: library.session(), source: library.source() }));
   const [labelTitle, setLabelTitle] = createSignal("");
   const [runtime] = createResource(getRuntimeInfo);
-  const navigation = createNavigation(browserNavigationHost(), (hash) =>
-    navigationLabel(
-      parseRoute(hash),
-      (section, collectionMenu) => menuLabel(collectionMenu ?? section, menu.value()),
-      (source) => {
-        if (source.kind === "artist")
-          return library.artists().find((a) => a.reference === source.reference)?.name;
-        if (source.kind === "album")
-          return library.albums().find((a) => a.reference === source.reference)?.title;
-        if (source.kind === "label") return labelTitle() || undefined;
-        return library.player.current()?.reference === source.reference
-          ? library.player.current()?.title
-          : undefined;
-      },
-    ),
+  const navigation = createNavigation(
+    browserNavigationHost(),
+    (hash) =>
+      navigationLabel(
+        parseRoute(hash),
+        (section, collectionMenu) => menuLabel(collectionMenu ?? section, menu.value()),
+        (source) => {
+          if (source.kind === "artist")
+            return library.artists().find((a) => a.reference === source.reference)?.name;
+          if (source.kind === "album")
+            return library.albums().find((a) => a.reference === source.reference)?.title;
+          if (source.kind === "label") return labelTitle() || undefined;
+          return library.player.current()?.reference === source.reference
+            ? library.player.current()?.title
+            : undefined;
+        },
+      ),
+    filterOwner,
   );
   const [sidebar, setSidebar] = createSignal(true);
-  const filterOwner = createMemo(() => ({ session: library.session(), source: library.source() }));
   const scopedFilters = createScopedFilters(
     () => navigation.collectionMenu() ?? navigation.section(),
     yearDomain,
@@ -170,7 +173,7 @@ function AppContent() {
     setFilters = scopedFilters.set;
   function browseAlbumYear(year: number) {
     scopedFilters.select("albums", selectAlbumYear(filters(), year));
-    navigation.navigate("#/albums");
+    navigation.navigate("#/albums", { resetScroll: true });
   }
 
   const trackPaging = createTrackPaging(
@@ -877,7 +880,7 @@ function AppContent() {
                             genre: undefined,
                             genres,
                           });
-                          navigation.navigate("#/genres");
+                          navigation.navigate("#/genres", { resetScroll: true });
                         }}
                         onCountry={(country) => {
                           scopedFilters.select("countries", {
@@ -887,7 +890,7 @@ function AppContent() {
                             genres: [],
                             countries: [country],
                           });
-                          navigation.navigate("#/countries");
+                          navigation.navigate("#/countries", { resetScroll: true });
                         }}
                       />
                     )}
@@ -909,7 +912,7 @@ function AppContent() {
                             genre: undefined,
                             genres,
                           });
-                          navigation.navigate("#/genres");
+                          navigation.navigate("#/genres", { resetScroll: true });
                         }}
                         onCountry={(country) => {
                           scopedFilters.select("countries", {
@@ -919,7 +922,7 @@ function AppContent() {
                             genres: [],
                             countries: [country],
                           });
-                          navigation.navigate("#/countries");
+                          navigation.navigate("#/countries", { resetScroll: true });
                         }}
                         onYear={browseAlbumYear}
                       />
@@ -940,7 +943,7 @@ function AppContent() {
                         genre: undefined,
                         genres,
                       });
-                      navigation.navigate("#/genres");
+                      navigation.navigate("#/genres", { resetScroll: true });
                     }}
                   />
                 </Show>
@@ -959,7 +962,7 @@ function AppContent() {
                         genres: target.section === "genres" ? [target.query] : [],
                         includeUnknownYear: target.year === undefined,
                       });
-                      navigation.navigate(`#/${target.section}`);
+                      navigation.navigate(`#/${target.section}`, { resetScroll: true });
                     }}
                   />
                 </Show>
