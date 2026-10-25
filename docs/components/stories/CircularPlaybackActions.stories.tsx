@@ -69,6 +69,7 @@ export const PersistentBadge: Story = {
     expect(p.width).toBe(38);
     expect(p.height).toBe(38);
     expect(a.width).toBe(22);
+    expect(getComputedStyle(add).borderTopWidth).toBe("0px");
     expect(root.width).toBe(p.width);
     expect(root.height).toBe(p.height);
     expect(getComputedStyle(add).opacity).toBe("1");
@@ -106,6 +107,7 @@ export const Unavailable: Story = {
     const canvas = within(canvasElement),
       add = canvas.getByRole("button", { name: "Ajouter First Album à la suite" });
     expect(add).toBeVisible();
+    expect(getComputedStyle(add).borderTopWidth).toBe("0px");
     expect(add).toBeDisabled();
     expect(getComputedStyle(add).opacity).toBe("1");
     expect(getComputedStyle(add.querySelector("svg")!).opacity).toBe("0.5");

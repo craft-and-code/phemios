@@ -45,6 +45,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Changed
 
+- Remove the redundant inner border from circular Add-to-queue badges on artists, albums and tracks, keeping their outer circular shape.
+
 - Simplify label details: remove alphabet/year filters and compact-view switching, retain reverse sorting and collection creation, and always show all owned albums in a grid. New label collections have no hidden date/alphabet restriction.
 
 - Rename the compact album presentation to **Compact list** and unify its icon in Albums, Compilations, Genres and Composers. Place years below titles and center each metadata group beside its cover. Cover hover or keyboard focus reveals proportionally sized Add/Play controls, left/right, replacing trailing row actions; touch controls remain visible.

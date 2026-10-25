@@ -47,6 +47,7 @@
 }
 .circular-play-actions > .queue-append.icon-button {
   top: -5px;
+  border: 0;
 }
 .play-control > .transport-stop.icon-button {
   top: auto;
