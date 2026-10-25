@@ -1,12 +1,13 @@
 import { createSignal } from "solid-js";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
-/** Play admission is independent of cover/detail navigation and rejects overlapping starts. */
+/** Playback commands stay independent of detail navigation and reject overlapping activation. */
 export function CoverPlayView(props: {
   reference: string;
   title: string;
   class?: string | undefined;
   variant?: "cover" | "detail" | "row" | undefined;
+  action?: "play" | "pause" | "resume" | undefined;
   label?: string | undefined;
   disabled?: boolean | undefined;
   onPlay: () => Promise<void>;
@@ -23,17 +24,25 @@ export function CoverPlayView(props: {
       setPending(false);
     }
   }
+  const label = () =>
+    props.label ??
+    (props.action === "pause"
+      ? t("Mettre en pause")
+      : props.action === "resume"
+        ? t("Reprendre la lecture")
+        : t("Lire {0}", props.title));
   return (
     <button
       class={`icon-button play-action ${props.variant === "detail" ? "detail-play" : props.variant === "row" ? "row-play" : "cover-play"} ${props.class ?? ""}`}
-      aria-label={props.label ?? t("Lire {0}", props.title)}
-      title={props.label ?? t("Lire {0}", props.title)}
+      aria-label={label()}
+      title={label()}
       data-play-reference={props.reference}
+      data-play-action={props.action ?? "play"}
       aria-busy={pending()}
       disabled={props.disabled || pending()}
       onClick={(event) => void play(event)}
     >
-      <Icon name="play" />
+      <Icon name={props.action === "pause" ? "pause" : "play"} />
     </button>
   );
 }

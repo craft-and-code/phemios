@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { cdReference, cdSelection, cdPlaying, parseCd } from "./model";
+import { cdPlaybackAction, cdReference, cdSelection, cdPlaying, parseCd } from "./model";
 const disc = {
   token: "0000000000000002",
   tracks: [{ reference: "track:cd/0000000000000002/7", number: 7, duration_ms: 1234 }],
@@ -83,4 +83,18 @@ it("retains CUE names as local presentation without inventing album/account iden
   });
   image.disc.tracks[0]!.title = "x".repeat(1001);
   expect(() => parseCd({ drives: [image] })).toThrow();
+});
+
+it("selects Pause/Resume only for the selected active disc or its current row", () => {
+  const token = "0000000000000001",
+    reference = `track:cd/${token}/7`;
+  expect(cdPlaybackAction(token, reference, "playing")).toBe("pause");
+  expect(cdPlaybackAction(token, reference, "connecting")).toBe("pause");
+  expect(cdPlaybackAction(token, reference, "paused")).toBe("resume");
+  expect(cdPlaybackAction(token, reference, "paused", reference)).toBe("resume");
+  expect(cdPlaybackAction(token, reference, "playing", `track:cd/${token}/1`)).toBe("play");
+  expect(cdPlaybackAction("0000000000000002", reference, "playing")).toBe("play");
+  expect(cdPlaybackAction(token, "track:ordinary", "playing")).toBe("play");
+  for (const status of ["idle", "ended", "error"])
+    expect(cdPlaybackAction(token, reference, status)).toBe("play");
 });

@@ -107,3 +107,12 @@
   align-items: center;
   gap: var(--control-gap);
 }
+
+/* Centre the visible Lucide Play triangle, one viewBox unit right of the canvas centre. */
+.cd-page .play-action:not([data-play-action="pause"]) > svg {
+  transform: translateX(-4.1667%);
+}
+
+.cd-tracks > li:last-child {
+  border-bottom: none;
+}

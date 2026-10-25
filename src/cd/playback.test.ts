@@ -1,6 +1,7 @@
 import { createRoot } from "solid-js";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { createPlayback } from "../library/playback";
+import { activateCdPlayback } from "./transport";
 import { idlePlayback } from "../library/playback-state";
 import {
   startCd,
@@ -191,6 +192,60 @@ it("starts the visible CD from idle footer Play and contextual Space without que
       "",
       1,
     );
+    expect(requestAede).not.toHaveBeenCalled();
+    dispose();
+  });
+});
+
+it("toggles the selected CD and current row without restarting the queue or its paused position", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(
+      () => false,
+      undefined,
+      () => {},
+      undefined,
+      undefined,
+      { native: () => true, allowed: () => true },
+    );
+    vi.mocked(playbackState).mockResolvedValue(state(1));
+    await activateCdPlayback(player, disc, 1);
+    expect(startCd).toHaveBeenCalledTimes(1);
+    vi.mocked(playbackState).mockResolvedValue({ ...state(1, "paused"), position_ms: 1500 });
+    await activateCdPlayback(player, disc);
+    expect(playbackControl).toHaveBeenLastCalledWith("pause", null);
+    expect(player.state().position_ms).toBe(1500);
+    vi.mocked(playbackState).mockResolvedValue({ ...state(1), position_ms: 1500 });
+    await activateCdPlayback(player, disc, 1);
+    expect(playbackControl).toHaveBeenLastCalledWith("resume", null);
+    expect(player.state().position_ms).toBe(1500);
+    expect(startCd).toHaveBeenCalledTimes(1);
+    vi.mocked(playbackState).mockResolvedValue(state(0));
+    await activateCdPlayback(player, disc, 0);
+    expect(startCd).toHaveBeenCalledTimes(2);
+    expect(startCd).toHaveBeenLastCalledWith(
+      disc.token,
+      disc.tracks.map((track) => track.reference),
+      "",
+      0,
+    );
+    const other = {
+      ...disc,
+      token: "0000000000000009",
+      tracks: disc.tracks.map((track) => ({
+        ...track,
+        reference: track.reference.replace(disc.token, "0000000000000009"),
+      })),
+    };
+    vi.mocked(playbackState).mockResolvedValue({
+      ...state(),
+      reference: other.tracks[0]!.reference,
+    });
+    await activateCdPlayback(player, other);
+    expect(startCd).toHaveBeenCalledTimes(3);
+    await activateCdPlayback(player, undefined);
+    await activateCdPlayback(player, disc, -1);
+    await activateCdPlayback(player, disc, 99);
+    expect(startCd).toHaveBeenCalledTimes(3);
     expect(requestAede).not.toHaveBeenCalled();
     dispose();
   });

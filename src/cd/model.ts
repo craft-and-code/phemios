@@ -113,3 +113,16 @@ export function cdPlaying(token: string | undefined, reference: string, status: 
     !!token && cdReference(reference)?.token === token && ["playing", "connecting"].includes(status)
   );
 }
+
+/** The main control follows its disc; an individual row toggles only its current track. */
+export function cdPlaybackAction(
+  token: string | undefined,
+  reference: string,
+  status: string,
+  track?: string,
+): "play" | "pause" | "resume" {
+  if (!token || cdReference(reference)?.token !== token || (track && track !== reference))
+    return "play";
+  if (status === "playing" || status === "connecting") return "pause";
+  return status === "paused" ? "resume" : "play";
+}

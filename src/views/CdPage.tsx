@@ -4,9 +4,8 @@ import { createDiagnosticRead } from "../library/diagnostic-read";
 import { ejectCd, isNative, scanCd, openCdImage } from "../platform/desktop";
 import { cdReference, cdPlaying, parseCd } from "../cd/model";
 import { CdContent } from "../components/CdContent";
-import { StickyHeader } from "../components/StickyHeader";
-import { RefreshButton } from "../components/RefreshButton";
-import { ActionButton } from "../components/ActionButton";
+import { CdHeader } from "../components/CdHeader";
+import { activateCdPlayback } from "../cd/transport";
 import { t } from "../i18n";
 /** Native optical discovery never connects to Aède or imports audio into the catalogue. */
 export function CdPage() {
@@ -25,7 +24,7 @@ export function CdPage() {
   );
   createEffect(() => player.setDiscTarget(active()?.disc ?? undefined));
   onCleanup(() => player.setDiscTarget(undefined));
-  // With manual Refresh unavailable for an empty source, notice insertion without remounting.
+  // Also notice insertion without a manual Refresh or remount.
   // Keep the last empty view mounted; never probe during active/paused optical reading.
   const discovery = setInterval(() => {
     if (
@@ -60,7 +59,7 @@ export function CdPage() {
   }
   async function eject() {
     const drive = active();
-    if (!drive?.disc || ejecting() || discPlaying()) return;
+    if (!drive || ejecting() || discPlaying()) return;
     setEjecting(true);
     setFailure("");
     try {
@@ -82,41 +81,23 @@ export function CdPage() {
   }
   return (
     <section class="page result-page cd-page">
-      <StickyHeader>
-        <div class="page-heading">
-          <span>{t("Lecteurs CD audio")}</span>
-          <div class="cd-header-actions">
-            <ActionButton
-              icon="folder"
-              busy={opening()}
-              disabled={
-                !isNative() ||
-                read.pending() ||
-                ejecting() ||
-                (player.isCd() &&
-                  ["playing", "paused", "connecting"].includes(player.state().status))
-              }
-              onClick={() => void openImage()}
-            >
-              {t("Ouvrir une image CUE")}
-            </ActionButton>
-            <RefreshButton
-              busy={read.loading()}
-              rotate
-              disabled={
-                !isNative() ||
-                !active()?.disc ||
-                ejecting() ||
-                opening() ||
-                (player.isCd() &&
-                  ["playing", "paused", "connecting"].includes(player.state().status))
-              }
-              onCancel={read.cancel}
-              onRefresh={read.refetch}
-            />
-          </div>
-        </div>
-      </StickyHeader>
+      <CdHeader
+        drive={active()}
+        native={isNative()}
+        opening={opening()}
+        ejecting={ejecting()}
+        pending={read.pending()}
+        loading={read.loading()}
+        reading={
+          player.isCd() && ["playing", "paused", "connecting"].includes(player.state().status)
+        }
+        discPlaying={discPlaying()}
+        transportBusy={player.busy()}
+        onOpen={() => void openImage()}
+        onEject={() => void eject()}
+        onRefresh={read.refetch}
+        onCancel={read.cancel}
+      />
       <CdContent
         drives={drives()}
         selected={active()?.id ?? ""}
@@ -124,16 +105,15 @@ export function CdPage() {
         error={failure() || read.error() || ""}
         native={isNative()}
         playing={player.state().reference}
+        playbackStatus={player.state().status}
         canPlay={!!active()?.disc && player.canStart(active()?.disc?.tracks[0]?.reference)}
-        transportBusy={player.busy() || opening()}
-        discPlaying={discPlaying()}
+        transportBusy={player.busy() || opening() || read.pending()}
         ejecting={ejecting()}
         onSelect={setSelected}
         onPlay={(index) => {
-          const disc = active()?.disc;
-          if (disc) void player.startDisc(disc, index);
+          if (!opening() && !ejecting() && !read.pending())
+            return activateCdPlayback(player, active()?.disc ?? undefined, index);
         }}
-        onEject={() => void eject()}
       />
     </section>
   );

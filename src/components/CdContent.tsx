@@ -1,12 +1,11 @@
 import { For, Show } from "solid-js";
 import { t } from "../i18n";
-import { cdError, type CdDrive } from "../cd/model";
+import { cdError, cdPlaybackAction, type CdDrive } from "../cd/model";
 import { collectionDuration } from "../library/detail-format";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { EmptyState } from "./EmptyState";
 import { PageLoader } from "./PageLoader";
 import { Feedback } from "./Feedback";
-import { Icon } from "./Icon";
 import { CoverPlayView } from "./CoverPlayView";
 /** Props-only CD presentation is shared by the native page and component explorer. */
 export function CdContent(props: {
@@ -16,17 +15,35 @@ export function CdContent(props: {
   error: string;
   native: boolean;
   playing: string;
+  playbackStatus?: string;
   canPlay: boolean;
   transportBusy: boolean;
-  discPlaying?: boolean;
   ejecting: boolean;
   onSelect: (id: string) => void;
-  onPlay: (index: number) => void;
-  onEject: () => void;
+  onPlay: (index?: number) => void | Promise<void>;
 }) {
   const drive = () => props.drives.find((d) => d.id === props.selected),
     disc = () => drive()?.disc;
   const duration = () => disc()?.tracks.reduce((sum, track) => sum + track.duration_ms, 0) ?? 0;
+  const action = (track?: string) =>
+    cdPlaybackAction(disc()?.token, props.playing, props.playbackStatus ?? "idle", track);
+  const disabled = (track?: string) =>
+    props.transportBusy || props.ejecting || (!props.canPlay && action(track) !== "pause");
+  const label = (track?: number) => {
+    const value = action(track === undefined ? undefined : disc()?.tracks[track]?.reference);
+    if (track === undefined)
+      return value === "pause"
+        ? t("Mettre le CD en pause")
+        : value === "resume"
+          ? t("Reprendre le CD")
+          : t("Lire le CD");
+    const number = disc()?.tracks[track]?.number ?? track + 1;
+    return value === "pause"
+      ? t("Mettre la piste {0} en pause", number)
+      : value === "resume"
+        ? t("Reprendre la piste {0}", number)
+        : t("Lire la piste {0}", number);
+  };
   return (
     <>
       <Show when={props.error}>
@@ -75,25 +92,15 @@ export function CdContent(props: {
                   </Show>
                 </div>
                 <div class="cd-actions">
-                  <button
-                    class="icon-button"
-                    disabled={!disc() || props.discPlaying || props.ejecting || props.transportBusy}
-                    title={drive()?.image ? t("Fermer l’image CD") : t("Éjecter le CD")}
-                    aria-label={drive()?.image ? t("Fermer l’image CD") : t("Éjecter le CD")}
-                    aria-busy={props.ejecting}
-                    onClick={props.onEject}
-                  >
-                    <Show when={!props.ejecting} fallback={<span class="spinner" />}>
-                      <Icon name={drive()?.image ? "close" : "eject"} />
-                    </Show>
-                  </button>
                   <Show when={disc()}>
                     <CoverPlayView
                       reference={disc()!.tracks[0]!.reference}
                       title={t("le CD")}
                       variant="detail"
-                      disabled={!props.canPlay || props.transportBusy || props.ejecting}
-                      onPlay={async () => props.onPlay(0)}
+                      action={action()}
+                      label={label()}
+                      disabled={disabled()}
+                      onPlay={async () => props.onPlay()}
                     />
                   </Show>
                 </div>
@@ -126,8 +133,9 @@ export function CdContent(props: {
                           variant="row"
                           reference={track.reference}
                           title={t("Piste {0}", track.number)}
-                          label={t("Lire la piste {0}", track.number)}
-                          disabled={!props.canPlay || props.transportBusy || props.ejecting}
+                          action={action(track.reference)}
+                          label={label(index())}
+                          disabled={disabled(track.reference)}
                           onPlay={async () => props.onPlay(index())}
                         />
                       </li>

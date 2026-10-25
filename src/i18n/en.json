@@ -2327,5 +2327,11 @@
   "MusicBrainz identifie d’abord les éléments de la bibliothèque, puis les services sélectionnés complètent leurs données. Les logos des artistes et des labels, les bannières et les arrière-plans nécessitent l’option Fanart.tv et une clé API configurée. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.": "MusicBrainz first identifies library entities, then the selected services complete their data. Artist and label logos, banners and backgrounds require the Fanart.tv option and a configured API key. Review uncertain matches in the MusicBrainz section above.",
   "Biographie affichée en {0}.": "Biography displayed in {0}.",
   "Choisir une version de {0}": "Choose a version of {0}",
-  "Albums de {0}": "Albums from {0}"
+  "Albums de {0}": "Albums from {0}",
+  "Mettre le CD en pause": "Pause CD",
+  "Reprendre le CD": "Resume CD",
+  "Mettre la piste {0} en pause": "Pause track {0}",
+  "Reprendre la piste {0}": "Resume track {0}",
+  "Lire le CD": "Play CD",
+  "La forme d’onde du CD se construit pendant la lecture.": "The CD waveform builds as the audio is read."
 }
