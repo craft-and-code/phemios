@@ -1,3 +1,4 @@
+import { BiographyLanguageNotice } from "../components/BiographyLanguageNotice";
 import { createAccountSavedArticles } from "../encyclopedia/account-saved";
 import { articleRetained } from "../encyclopedia/saved";
 import { BiographyMore } from "../components/BiographyMore";
@@ -140,6 +141,7 @@ export function ArtistPage(props: {
             <div class="page artist-content">
               <section class="biography">
                 <h2>{t("Biographie")}</h2>
+                <BiographyLanguageNotice language={props.artist.biographyCredit?.lang} />
                 <p>
                   <BiographyText
                     reference={props.artist.reference}

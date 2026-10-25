@@ -1,3 +1,4 @@
+import { BiographyLanguageNotice } from "../components/BiographyLanguageNotice";
 import { useViewSession } from "../navigation/ViewSession";
 import { LabelLogo } from "../components/LabelLogo";
 import { createLabelSelection } from "../library/label-selection";
@@ -164,6 +165,7 @@ export function LabelPage(props: {
                 <div class="page">
                   <section class="biography">
                     <h2>{t("Biographie")}</h2>
+                    <BiographyLanguageNotice language={row().biography?.lang} />
                     <p class="label-biography">
                       <BiographyText
                         reference={props.reference}

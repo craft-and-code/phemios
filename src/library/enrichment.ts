@@ -1,3 +1,4 @@
+import { locale } from "../i18n";
 import type { ToolPreferences } from "./tool-preferences";
 import type { Job } from "./jobs";
 import { requestAede } from "../platform/desktop";
@@ -26,6 +27,7 @@ export function enrichmentOptions(
   return {
     musicbrainz: true,
     summaries: value.summaries,
+    ...(value.summaries ? { lang: locale() } : {}),
     covers: value.covers,
     images: value.covers,
     fanart: value.fanart,

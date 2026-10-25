@@ -2324,5 +2324,6 @@
   "Heure": "Time",
   "Bibliothèque": "Library",
   "Opération": "Operation",
-  "MusicBrainz identifie d’abord les éléments de la bibliothèque, puis les services sélectionnés complètent leurs données. Les logos des artistes et des labels, les bannières et les arrière-plans nécessitent l’option Fanart.tv et une clé API configurée. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.": "MusicBrainz first identifies library entities, then the selected services complete their data. Artist and label logos, banners and backgrounds require the Fanart.tv option and a configured API key. Review uncertain matches in the MusicBrainz section above."
+  "MusicBrainz identifie d’abord les éléments de la bibliothèque, puis les services sélectionnés complètent leurs données. Les logos des artistes et des labels, les bannières et les arrière-plans nécessitent l’option Fanart.tv et une clé API configurée. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.": "MusicBrainz first identifies library entities, then the selected services complete their data. Artist and label logos, banners and backgrounds require the Fanart.tv option and a configured API key. Review uncertain matches in the MusicBrainz section above.",
+  "Biographie affichée en {0}.": "Biography displayed in {0}."
 }

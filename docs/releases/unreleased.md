@@ -16,6 +16,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 - Keep label logos inside their reserved frame and display cached transparent PNG logos reliably when opening a label on macOS.
 
+- Respect the App language during general biography enrichment. With the corrected Aède engine, previously cached biographies in another language are reconsidered without forcing unrelated passes; failed retrievals preserve the previous text. Clearly identify a differing biography language in artist and label details.
+
 - Rotate shared refresh arrows clockwise, including Audio CD and network players. Align the Collections visibility/name spacing with the duration/rename spacing, enable cover sizing in Genres compact lists, and remove the duplicate divider above MusicBrainz review.
 
 - Retain selected sort and display controls while navigating during the session, including Labels sorted by album count in reverse order, personal album layouts and Collections order. Keep reverse catalog sorting independent per view; new App sessions start with defaults.
