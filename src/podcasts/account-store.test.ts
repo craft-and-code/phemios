@@ -1,6 +1,7 @@
 import { createRoot, createSignal } from "solid-js";
 import { expect, it, vi, afterEach } from "vitest";
 import { readPodcastState, updatePodcastState } from "../platform/desktop";
+import { acquirePodcastFeed } from "./acquisition";
 import { createAccountPodcasts } from "./account-store";
 import type { AccountSession } from "../library/server";
 import type { SourceId } from "../library/sources";
@@ -263,3 +264,42 @@ it("keeps same-login podcast mutations ordered through a backup reload", async (
     view.dispose();
   }
 });
+
+it.each(["lookup", "rss"] as const)(
+  "retires Apple %s acquisition at logout, re-login and source replacement",
+  async (stage) => {
+    for (const replacement of ["logout", "relogin", "source"] as const) {
+      vi.mocked(readPodcastState).mockResolvedValue(empty);
+      vi.mocked(updatePodcastState).mockClear();
+      const view = scope();
+      try {
+        await settle();
+        const actor = view.store.capture();
+        let finish!: (value: string) => void;
+        const delayed = new Promise<string>((resolve) => {
+          finish = resolve;
+        });
+        const resolve = vi.fn(() => (stage === "lookup" ? delayed : Promise.resolve(feed.url)));
+        const read = vi.fn(() => (stage === "rss" ? delayed : Promise.resolve("<rss/>")));
+        const request = acquirePodcastFeed("https://podcasts.apple.com/fr/podcast/fixture/id123", {
+          resolve,
+          read,
+          allowed: () => true,
+          current: actor.current,
+        });
+        await settle();
+        if (replacement === "source") view.setSource("local");
+        else view.setSession(replacement === "logout" ? undefined : account("one", "2"));
+        await settle();
+        finish(stage === "lookup" ? feed.url : "<rss/>");
+        expect(await request).toBeUndefined();
+        if (stage === "lookup") expect(read).not.toHaveBeenCalled();
+        expect(await actor.save(feed)).toBe(false);
+        expect(updatePodcastState).not.toHaveBeenCalled();
+        expect(view.store.feeds()).toEqual([]);
+      } finally {
+        view.dispose();
+      }
+    }
+  },
+);

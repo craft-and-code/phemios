@@ -8,7 +8,7 @@ Click a station to listen. Dragging the dial pauses the station for the tuning s
 
 ## Subscribe to a podcast
 
-Add its RSS feed address, then Subscribe. A website or sharing link is not always an RSS feed. Choose an episode to play; listened episodes are distinguished. Download can retain an episode on the machine.
+Paste its RSS feed address or an Apple Podcasts sharing link, then **Subscribe**. Phémios resolves the public feed; an episode link adds its podcast without starting playback. Other web pages are not necessarily RSS feeds. Choose an episode to play; listened episodes are distinguished. Download can retain an episode on the machine.
 
 Subscriptions and listened state are private per account on this device and included in the selected account’s Phémios backup. Unsubscribing asks for confirmation.
 

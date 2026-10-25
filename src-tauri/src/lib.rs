@@ -146,6 +146,7 @@ pub fn run() -> Result<(), tauri::Error> {
             local::local_root_action,
             local::local_keys,
             podcast::podcast_feed,
+            podcast::podcast_resolve,
             podcast::podcast_download,
             podcast::podcast_state,
             podcast::podcast_update,

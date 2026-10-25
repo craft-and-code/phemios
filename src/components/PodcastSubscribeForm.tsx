@@ -18,11 +18,11 @@ export function PodcastSubscribeForm(props: {
       }}
     >
       <label>
-        {t("Lien RSS du podcast")}
+        {t("Lien RSS ou Apple Podcasts")}
         <input
           type="url"
           required
-          placeholder="https://example.org/podcast.xml"
+          placeholder="https://podcasts.apple.com/…"
           value={props.url}
           disabled={props.disabled || props.busy}
           onInput={(event) => props.onInput(event.currentTarget.value)}

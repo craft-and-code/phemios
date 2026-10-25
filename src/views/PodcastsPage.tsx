@@ -8,9 +8,15 @@ import { createSignal, createMemo, createEffect, on, For, Show, onCleanup } from
 import { t, locale } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createEpisodeDownloads } from "../podcasts/downloads";
-import { readPodcastFeed, downloadPodcastEpisode, isNative } from "../platform/desktop";
-import { parsePodcastFeed, podcastUrl } from "../podcasts/feed";
+import {
+  readPodcastFeed,
+  resolvePodcastFeed,
+  downloadPodcastEpisode,
+  isNative,
+} from "../platform/desktop";
+import { parsePodcastFeed } from "../podcasts/feed";
 import { Icon } from "../components/Icon";
+import { acquirePodcastFeed } from "../podcasts/acquisition";
 import { EmptyState } from "../components/EmptyState";
 /** RSS subscriptions stay usable offline; adding/updating is explicit and never starts an episode. */
 export function PodcastsPage(props: { query: string }) {
@@ -70,14 +76,14 @@ export function PodcastsPage(props: { query: string }) {
     setBusy(action);
     setError("");
     try {
-      const source = podcastUrl(value.trim()),
-        xml = await (async () => {
-          if (!library.parental.podcastAllowed(source))
-            throw Error(t("Ce podcast est masqué pour ce compte."));
-          return readPodcastFeed(source);
-        })();
-      if (!alive || !actor.current()) return;
-      const data = parsePodcastFeed(xml, source);
+      const result = await acquirePodcastFeed(value, {
+        resolve: resolvePodcastFeed,
+        read: readPodcastFeed,
+        current: () => alive && actor.current(),
+        allowed: (source) => library.parental.podcastAllowed(source),
+      });
+      if (!result) return;
+      const data = parsePodcastFeed(result.xml, result.url);
       if ((await actor.save(data)) && alive && actor.current()) {
         setSelected(data.url);
         setUrl("");

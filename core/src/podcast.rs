@@ -1,4 +1,6 @@
 //! Explicit public RSS/Atom retrieval, isolated from Aède sessions and source-library files.
+#[path = "podcast_apple.rs"]
+mod apple;
 use std::net::IpAddr;
 use std::time::Duration;
 use ureq::http::Uri;

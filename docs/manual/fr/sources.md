@@ -8,7 +8,7 @@ Cliquez sur une station pour écouter. Glisser le cadran coupe la station et fai
 
 ## S’abonner à un podcast
 
-Ajoutez son adresse de flux RSS, puis S’abonner. Un lien de page web ou de partage n’est pas toujours un flux RSS. Choisissez un épisode pour écouter ; les épisodes écoutés sont distingués. Le téléchargement est disponible pour conserver un épisode sur la machine.
+Collez son adresse de flux RSS ou un lien partagé depuis Apple Podcasts, puis **S’abonner**. Phémios retrouve le flux public correspondant ; un lien d’épisode ajoute le podcast, sans démarrer la lecture. Les liens d’autres pages web ne sont pas forcément des flux RSS. Choisissez un épisode pour écouter ; les épisodes écoutés sont distingués. Le téléchargement est disponible pour conserver un épisode sur la machine.
 
 Les abonnements et l’état d’écoute sont privés par compte sur cet appareil et inclus dans la sauvegarde Phémios du compte sélectionné. Le désabonnement demande confirmation.
 

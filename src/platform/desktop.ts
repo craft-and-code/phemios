@@ -309,6 +309,9 @@ export const forgetTransferFolder = (id: string) =>
 /** Eject only an opaque native-discovered destination; never accepts an OS path. */
 export const ejectPlayer = (id: string) => nativeCall<void>("players_eject", { id });
 
+/** Resolve a public Apple Podcasts share to RSS without passing Aède credentials. */
+export const resolvePodcastFeed = (url: string) => nativeCall<string>("podcast_resolve", { url });
+
 /** Explicit, bounded public RSS retrieval has no access to Aède credentials. */
 export const readPodcastFeed = (url: string) => nativeCall<string>("podcast_feed", { url });
 

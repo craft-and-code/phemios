@@ -22,6 +22,24 @@ pub(crate) async fn podcast_feed(
     .await
 }
 
+/// Resolve only Apple sharing links; this public lookup never carries session credentials.
+#[tauri::command]
+pub(crate) async fn podcast_resolve(
+    version: u32,
+    url: String,
+    state: State<'_, Podcasts>,
+) -> Result<String, String> {
+    crate::aede::bridge(version)?;
+    let client = state.feeds.clone();
+    crate::aede::blocking(move || {
+        let client = client
+            .try_lock()
+            .map_err(|_| "Une demande podcast est déjà en cours. Réessayez.")?;
+        client.resolve_apple(&url)
+    })
+    .await
+}
+
 /// Save one explicit public media URL to a confined native-owned folder.
 #[tauri::command]
 pub(crate) async fn podcast_download(
