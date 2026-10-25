@@ -1,3 +1,4 @@
+import { enrichmentOptions } from "../library/enrichment";
 import { SettingsSourceReview } from "./SettingsSourceReview";
 import { errorMessage, isAedeConnectionError } from "../library/aede-availability";
 import { completeServiceKeySave } from "../library/service-key-save";
@@ -226,7 +227,7 @@ export function SettingsServices() {
             checked={fanartPass()}
             onChange={(e) => setFanartPass(e.currentTarget.checked)}
           />
-          {t("Fanart.tv · bannières et arrière-plans")}
+          {t("Fanart.tv · logos, bannières et arrière-plans")}
         </label>
         <label class="check">
           <input
@@ -260,17 +261,7 @@ export function SettingsServices() {
             if (busy() || launching() || enrichmentActive()) return;
             setMessage("");
             setFailure(false);
-            const options = {
-              musicbrainz: true,
-              summaries: summaries(),
-              covers: covers(),
-              images: covers(),
-              fanart: fanartPass(),
-              lyrics: lyrics(),
-              labels: discogs(),
-              discogs: discogs(),
-              yes: true,
-            };
+            const options = enrichmentOptions(prefs.value());
             const profile = interfaceProfileIdentity(),
               local = library.localSession(),
               server = library.serverSession();
@@ -317,7 +308,7 @@ export function SettingsServices() {
       </div>
       <p class="muted">
         {t(
-          "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.",
+          "MusicBrainz identifie d’abord les éléments de la bibliothèque, puis les services sélectionnés complètent leurs données. Les logos des artistes et des labels, les bannières et les arrière-plans nécessitent l’option Fanart.tv et une clé API configurée. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.",
         )}
       </p>
       <p class="muted">

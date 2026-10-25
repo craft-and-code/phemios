@@ -190,12 +190,15 @@ fn supervised_publication_is_process_only_and_does_not_replace_the_adult_disk_ca
     let mut restricted = catalog(&client, 2);
     restricted["parentalEnabled"] = json!(true);
     restricted["parentalRevision"] = json!(1);
+    restricted["labels"] = json!([{ "reference": "label:visible", "logo": true }]);
     let session = Mutex::new(Some(client.clone()));
     let retained = Mutex::new(None);
     publish(&session, &retained, &cache, &client, restricted.clone()).unwrap();
     assert_eq!(cache.load().unwrap(), Some(public));
     assert_eq!(retained.lock().unwrap().as_deref(), Some(&restricted));
     assert!(!projection_contains(&restricted, "artist:hidden"));
+    assert!(projection_contains(&restricted, "label:visible"));
+    assert!(!projection_contains(&restricted, "label:hidden"));
 }
 
 fn retired_sync(replacement: bool, pause_at: usize) {

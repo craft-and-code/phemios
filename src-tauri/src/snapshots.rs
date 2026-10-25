@@ -118,11 +118,13 @@ pub(crate) fn admit_artwork(
     Ok(())
 }
 fn projection_contains(snapshot: &Value, reference: &str) -> bool {
-    ["artists", "albums", "tracks"].iter().any(|kind| {
-        snapshot[*kind]
-            .as_array()
-            .is_some_and(|rows| rows.iter().any(|row| row["reference"] == reference))
-    })
+    ["artists", "albums", "tracks", "labels"]
+        .iter()
+        .any(|kind| {
+            snapshot[*kind]
+                .as_array()
+                .is_some_and(|rows| rows.iter().any(|row| row["reference"] == reference))
+        })
 }
 
 #[cfg(test)]

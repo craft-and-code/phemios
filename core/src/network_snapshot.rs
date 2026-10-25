@@ -144,6 +144,12 @@ impl Client {
             // Copy only this public contract, never arbitrary response extensions or owner data.
             let mut label = json!({"reference":detail["reference"], "name":detail["name"],
                 "release_count":summary["release_count"], "releases":detail["releases"]});
+            if let Some(logo) = detail.get("logo") {
+                if !logo.is_boolean() {
+                    return Err("Disponibilité du logo de label invalide.".into());
+                }
+                label["logo"] = logo.clone();
+            }
             if !detail["biography"].is_null() {
                 let prose = &detail["biography"];
                 if ["text", "url", "lang", "licence", "source"]

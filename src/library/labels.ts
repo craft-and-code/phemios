@@ -4,11 +4,13 @@ export interface LabelSummary {
   reference: string;
   name: string;
   releaseCount: number;
+  logo?: boolean;
 }
 export interface LabelDetail {
   reference: string;
   name: string;
   releases: string[];
+  logo?: boolean;
   biography?: { text: string; url: string; lang: string; licence: string; source: string };
 }
 /** Labels retain their exact source-qualified identity and their known album count. */
@@ -23,7 +25,18 @@ export function parseLabel(raw: unknown): LabelSummary {
     Number(row.release_count) < 0
   )
     throw new Error(t("Label Aède invalide."));
-  return { reference: row.reference, name: row.name, releaseCount: Number(row.release_count) };
+  return {
+    reference: row.reference,
+    name: row.name,
+    releaseCount: Number(row.release_count),
+    ...logoPresence(row),
+  };
+}
+/** Omission means an older engine; present malformed availability is never treated as absence. */
+function logoPresence(row: Record<string, unknown>): { logo?: boolean } {
+  if (row.logo === undefined) return {};
+  if (typeof row.logo !== "boolean") throw new Error(t("Label Aède invalide."));
+  return { logo: row.logo };
 }
 /** Licensed prose is inseparable from its attribution; HTML is never rendered from it. */
 export function parseLabelDetail(raw: unknown, reference: string): LabelDetail {
@@ -58,6 +71,7 @@ export function parseLabelDetail(raw: unknown, reference: string): LabelDetail {
     reference,
     name: row.name,
     releases: row.releases as string[],
+    ...logoPresence(row as Record<string, unknown>),
     ...(biography ? { biography } : {}),
   };
 }

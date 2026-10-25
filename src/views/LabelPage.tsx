@@ -1,4 +1,5 @@
 import { useViewSession } from "../navigation/ViewSession";
+import { LabelLogo } from "../components/LabelLogo";
 import { createLabelSelection } from "../library/label-selection";
 import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
@@ -146,6 +147,12 @@ export function LabelPage(props: {
             {(row) => (
               <>
                 <header class="artist-hero">
+                  <LabelLogo
+                    reference={props.reference}
+                    name={row().name}
+                    available={row().logo}
+                    large
+                  />
                   <div>
                     <p class="eyebrow">{t("LABEL")}</p>
                     <div class="detail-title">

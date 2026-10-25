@@ -522,6 +522,9 @@ export function LibraryProvider(props: ParentProps) {
   async function warmCovers() {
     const wave = ++warming;
     const queue = [
+      ...(snapshot()?.labels ?? [])
+        .filter((label) => label.logo === true)
+        .map((label) => ({ ref: label.reference, kind: "logo" })),
       ...artists()
         .filter((a) => a.media?.logo)
         .map((a) => ({ ref: a.reference, kind: "logo" })),

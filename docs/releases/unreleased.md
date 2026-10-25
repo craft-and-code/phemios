@@ -4,6 +4,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Added
 
+- Show cached label logos beside names in Labels and in label headers, preserving their proportions. Use an accessible fallback icon when unavailable, including older engines. Logos reuse Aède’s explicit Fanart.tv enrichment and the existing offline image cache.
+
 - Preview the first queued track's cover, title and artist in the idle footer after a **+** addition, including individual tracks, without starting playback. Existing playback details stay in place.
 
 - **Collections as custom menus:** choose a saved collection in **Settings → Navigation** and open its albums directly from the sidebar. The collection and every shortcut share the same name: rename from either view, move it anywhere in the menu, hide it, or remove the shortcut while retaining the collection. Stable Aède IDs keep renames linked and prevent deleted/recreated names taking over old shortcuts. Collection rules stay in Aède and shortcuts follow the active account/library profile. Search within the collection and return from album/artist detail without losing the originating menu.
@@ -11,6 +13,8 @@ This reviewed change list is the preparation source for the next version-specifi
 - **Shared settings lists:** excluded folders and available collections use a bounded scrollable list with keyboard selection. Exclusion removal with Delete/Backspace or minus selects the preceding row, falling back to the following row when needed, for repeated removals. Drag/drop or Alt+arrow keys rearranges exclusions locally without changing scan behavior.
 
 ## Fixed
+
+- Keep label logos inside their reserved frame and display cached transparent PNG logos reliably when opening a label on macOS.
 
 - Rotate shared refresh arrows clockwise, including Audio CD and network players. Align the Collections visibility/name spacing with the duration/rename spacing, enable cover sizing in Genres compact lists, and remove the duplicate divider above MusicBrainz review.
 

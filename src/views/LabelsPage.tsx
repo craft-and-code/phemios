@@ -1,4 +1,5 @@
 import { useViewSession } from "../navigation/ViewSession";
+import { LabelLogo } from "../components/LabelLogo";
 import { Feedback } from "../components/Feedback";
 import { AlbumCount } from "../components/AlbumCount";
 import { StickyHeader } from "../components/StickyHeader";
@@ -167,6 +168,11 @@ export function LabelsPage(props: { query: string }) {
                 {(label) => (
                   <div class="label-row">
                     <a class="label-link" href={`#/label/${encodeURIComponent(label.reference)}`}>
+                      <LabelLogo
+                        reference={label.reference}
+                        name={label.name}
+                        available={label.logo}
+                      />
                       <strong title={label.name}>{label.name}</strong>
                       <small>
                         <AlbumCount value={label.releaseCount} />

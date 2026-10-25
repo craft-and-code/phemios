@@ -1,3 +1,4 @@
+import type { ToolPreferences } from "./tool-preferences";
 import type { Job } from "./jobs";
 import { requestAede } from "../platform/desktop";
 import { t } from "../i18n";
@@ -18,6 +19,23 @@ export async function startEnrichment(
 
 /** Explicit job flags plus bounded engine-owned selectors; the server validates supported combinations. */
 export type EnrichmentOptions = Record<string, boolean | string | string[]>;
+/** Label marks need identified label IDs before the explicitly requested Fanart pass. */
+export function enrichmentOptions(
+  value: Pick<ToolPreferences, "summaries" | "covers" | "fanart" | "lyrics" | "discogs">,
+): EnrichmentOptions {
+  return {
+    musicbrainz: true,
+    summaries: value.summaries,
+    covers: value.covers,
+    images: value.covers,
+    fanart: value.fanart,
+    lyrics: value.lyrics,
+    labels: value.fanart || value.discogs,
+    discogs: value.discogs,
+    yes: true,
+  };
+}
+
 /** Confirm additive enrichment capabilities before submitting a non-replayed job on the captured login. */
 export async function startSourceEnrichment(
   source: SourceId,

@@ -38,3 +38,46 @@ it("rejects invalid empty label page metadata", () => {
       parseLabelPage({ items: [], total: 0, offset: 0, scanned_at: 3, ...patch }, 0, "server"),
     ).toThrow();
 });
+
+it("preserves explicit logo presence in public pages, details and legacy omissions", () => {
+  const reference = "label:@phemios/server/fixture";
+  for (const logo of [true, false, undefined]) {
+    const fields = logo === undefined ? {} : { logo };
+    const detail = { reference, name: "Fixture", releases: [], ...fields };
+    expect(parseLabelDetail(detail, reference)).toEqual(detail);
+    const page = parseLabelPage(
+      {
+        items: [{ reference, name: "Fixture", release_count: 0, ...fields }],
+        total: 1,
+        offset: 0,
+        scanned_at: 1,
+      },
+      0,
+      "server",
+      1,
+    );
+    expect(page.items[0]?.logo).toBe(logo);
+  }
+});
+
+it("rejects malformed logo hints instead of silently treating them as an older server", () => {
+  const reference = "label:fixture";
+  for (const logo of [null, 1, "true", {}, []]) {
+    expect(() =>
+      parseLabelDetail({ reference, name: "Fixture", releases: [], logo }, reference),
+    ).toThrow();
+    expect(() =>
+      parseLabelPage(
+        {
+          items: [{ reference, name: "Fixture", release_count: 0, logo }],
+          total: 1,
+          offset: 0,
+          scanned_at: 1,
+        },
+        0,
+        "server",
+        1,
+      ),
+    ).toThrow();
+  }
+});

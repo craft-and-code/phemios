@@ -285,3 +285,32 @@ fn cache_removal_refuses_redirected_artwork_without_touching_its_target() {
     assert_eq!(fs::read(target.join("keep")).unwrap(), b"keep");
     fs::remove_dir_all(cache.root).unwrap();
 }
+
+#[test]
+fn label_logo_bytes_and_presence_survive_an_offline_cache_reopen() {
+    let cache = fixture();
+    let snapshot = cache.save(json!({"server":"https://fictional.example","accountId":"fictional","scannedAt":7,"artists":[],"albums":[],"labels":[{"reference":"label:studio","name":"Studio","releases":[],"release_count":0,"logo":true}]})).unwrap();
+    cache
+        .save_image(&snapshot, "label:studio", "logo", b"fixture PNG")
+        .unwrap();
+    let reopened = Cache::new(cache.root.clone());
+    let saved = reopened.load().unwrap().unwrap();
+    assert_eq!(saved["labels"][0]["logo"], true);
+    assert_eq!(
+        reopened.image(&saved, "label:studio", "logo").unwrap(),
+        Some(b"fixture PNG".to_vec())
+    );
+    assert!(
+        reopened
+            .image(&saved, "artist:studio", "logo")
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        reopened
+            .image(&saved, "label:studio", "cover")
+            .unwrap()
+            .is_none()
+    );
+    fs::remove_dir_all(cache.root).unwrap();
+}

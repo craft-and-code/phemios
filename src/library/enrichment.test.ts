@@ -1,3 +1,4 @@
+import { enrichmentOptions } from "./enrichment";
 import { completeEnrichmentLaunch } from "./enrichment";
 import { expect, it, vi } from "vitest";
 import { requestAede } from "../platform/desktop";
@@ -150,3 +151,26 @@ it("keeps current launch outcomes while ignoring duplicate and already-retired s
   await completeEnrichmentLaunch(options);
   expect(launch).toHaveBeenCalledTimes(3);
 });
+
+it.each([
+  { fanart: true, discogs: false, labels: true },
+  { fanart: false, discogs: true, labels: true },
+  { fanart: false, discogs: false, labels: false },
+])(
+  "identifies labels only for requested Fanart/Discogs enrichment (%o)",
+  ({ fanart, discogs, labels }) => {
+    expect(
+      enrichmentOptions({ summaries: false, covers: true, lyrics: false, fanart, discogs }),
+    ).toEqual({
+      musicbrainz: true,
+      summaries: false,
+      covers: true,
+      images: true,
+      lyrics: false,
+      fanart,
+      discogs,
+      labels,
+      yes: true,
+    });
+  },
+);

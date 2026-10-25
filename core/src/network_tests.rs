@@ -651,7 +651,7 @@ fn snapshot_retains_exact_public_label_details_without_private_extensions() {
         ("/api/v1/labels", page(vec![label.clone()])),
         (
             "/api/v1/label",
-            json!({"reference":"label:fictional","name":"Fictional","releases":["release:first"],"biography":biography,"personal_note":"private extension must not enter public cache"}),
+            json!({"reference":"label:fictional","name":"Fictional","releases":["release:first"],"logo":true,"biography":biography,"personal_note":"private extension must not enter public cache"}),
         ),
         ("/api/v1/labels", page(vec![label])),
     ]);
@@ -659,7 +659,7 @@ fn snapshot_retains_exact_public_label_details_without_private_extensions() {
     worker.join().unwrap();
     assert_eq!(
         snapshot["labels"],
-        json!([{"reference":"label:fictional","name":"Fictional","release_count":1,"releases":["release:first"],"biography":biography}])
+        json!([{"reference":"label:fictional","name":"Fictional","release_count":1,"releases":["release:first"],"logo":true,"biography":biography}])
     );
     assert!(!snapshot.to_string().contains("private extension"));
 }
@@ -868,3 +868,24 @@ fn source_review_allows_only_its_bounded_read_and_decision_routes() {
 
 #[path = "network_media_admission_tests.rs"]
 mod media_admission;
+
+#[test]
+fn snapshot_refuses_malformed_present_label_logo_availability() {
+    for logo in [json!(null), json!("true"), json!(1)] {
+        let summary = json!({"reference":"label:studio","name":"Studio","release_count":0});
+        let page =
+            |rows: Vec<Value>| json!({"items":rows,"offset":0,"total":rows.len(),"scanned_at":42});
+        let (authority, worker) = test_support::replies(vec![
+            ("/api/v1/presentation/artists", page(vec![])),
+            ("/api/v1/presentation/albums", page(vec![])),
+            ("/api/v1/presentation/tracks", page(vec![])),
+            ("/api/v1/labels", page(vec![summary])),
+            (
+                "/api/v1/label",
+                json!({"reference":"label:studio","name":"Studio","releases":[],"logo":logo}),
+            ),
+        ]);
+        assert!(test_support::client(authority).snapshot().is_err());
+        worker.join().unwrap();
+    }
+}

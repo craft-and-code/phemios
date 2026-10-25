@@ -710,6 +710,8 @@
   "Titre sans album": "Track without album",
   "Vue compacte": "Compact view",
   "Liste compacte": "Compact list",
+  "Logo de {0}": "{0} logo",
+  "Logo indisponible pour {0}": "Logo unavailable for {0}",
   "Zoom avant": "Zoom in",
   "Arrêt audio interrompu.": "Audio stop interrupted.",
   "Arrêt du lecteur interrompu.": "Player stop interrupted.",
@@ -1316,6 +1318,7 @@
   "La liste de lecture a changé.": "The playback queue has changed.",
   "Avancée": "Advanced",
   "Glisser pour déplacer · flèches haut/bas au clavier": "Drag to move · up/down arrow keys on the keyboard",
+  "Fanart.tv · logos, bannières et arrière-plans": "Fanart.tv · logos, banners and backgrounds",
   "Fanart.tv · bannières et arrière-plans": "Fanart.tv · banners and backgrounds",
   "Mettez à jour puis redémarrez Aède pour identifier les nouveaux artistes avec MusicBrainz avant l’enrichissement.": "Update and restart Aède to identify new artists with MusicBrainz before enrichment.",
   "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Les correspondances incertaines doivent être validées dans Aède.": "MusicBrainz first identifies new artists and albums, then the selected services complete their data. Banners and backgrounds require Fanart.tv and its API key. Uncertain matches must be reviewed in Aède.",
@@ -1686,7 +1689,6 @@
   "Ligne éditoriale": "Editorial row",
   "Présentation des artistes": "Artist presentation",
   "Cartes d’artistes": "Artist cards",
-  "Logo de {0}": "{0} logo",
   "Résultat d’intégrité Aède invalide ou incomplet.": "Invalid or incomplete Aède integrity result.",
   "Empreinte vérifiée": "Hash verified",
   "Échec du contrôle d’intégrité": "Integrity check failed",
@@ -2233,7 +2235,6 @@
   "Précision": "Disambiguation",
   "Type": "Type",
   "Date": "Date",
-  "MusicBrainz identifie d’abord les nouveaux artistes et albums, puis les services sélectionnés complètent leurs données. Les bannières et arrière-plans nécessitent Fanart.tv et sa clé API. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.": "MusicBrainz first identifies new artists and albums, then the selected services complete their data. Banners and backgrounds require Fanart.tv and its API key. Review uncertain matches in the MusicBrainz section above.",
   "Une biographie nécessite une identité validée et un lien Wikidata fourni par MusicBrainz. Sans identifiant dans les fichiers, validez les correspondances proposées ci-dessus. Trouver un nom dans l’Encyclopédie ne suffit pas ; Picard est une possibilité, pas une obligation.": "A biography requires a validated identity and a Wikidata link provided by MusicBrainz. Without file identifiers, validate the suggested matches above. Finding a name in the Encyclopedia is not enough; Picard is an option, not a requirement.",
   "Valider": "Validate",
   "Après déconnexion, Phémios conserve le catalogue serveur pour le consulter hors ligne. Ces réglages concernent uniquement cet appareil.": "After disconnection, Phémios retains the server catalogue for offline browsing. These settings apply only to this device.",
@@ -2322,5 +2323,6 @@
   "Requête refusée": "Request refused",
   "Heure": "Time",
   "Bibliothèque": "Library",
-  "Opération": "Operation"
+  "Opération": "Operation",
+  "MusicBrainz identifie d’abord les éléments de la bibliothèque, puis les services sélectionnés complètent leurs données. Les logos des artistes et des labels, les bannières et les arrière-plans nécessitent l’option Fanart.tv et une clé API configurée. Validez les correspondances incertaines dans la section MusicBrainz ci-dessus.": "MusicBrainz first identifies library entities, then the selected services complete their data. Artist and label logos, banners and backgrounds require the Fanart.tv option and a configured API key. Review uncertain matches in the MusicBrainz section above."
 }
