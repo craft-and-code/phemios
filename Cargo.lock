@@ -2946,7 +2946,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "phemios"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "keepawake",
  "phemios-cd",
@@ -2961,7 +2961,7 @@ dependencies = [
 
 [[package]]
 name = "phemios-cd"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "cd-da-reader",
  "symphonia",
@@ -2969,7 +2969,7 @@ dependencies = [
 
 [[package]]
 name = "phemios-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aede-audio",
  "cpal",
@@ -2987,14 +2987,14 @@ dependencies = [
 
 [[package]]
 name = "phemios-glib-regression"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "glib",
 ]
 
 [[package]]
 name = "phemios-transfer"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bytes",
  "futures",

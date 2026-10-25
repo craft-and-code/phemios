@@ -3,7 +3,7 @@ members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer", 
 resolver = "2"
 exclude = ["vendor/glib", "vendor/glib-macros", "vendor/gtk3-macros", "vendor/keepawake"]
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.90"
 license = "MPL-2.0"
