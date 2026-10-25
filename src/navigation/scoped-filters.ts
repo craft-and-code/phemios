@@ -3,23 +3,28 @@ import { t, countryName } from "../i18n";
 import { selectedGenres } from "../library/filtering";
 import type { Filters, Interval } from "../library/types";
 import type { Section } from "./routes";
+import { isCollectionMenuId, type CollectionMenuId } from "./collection-menu";
+export type FilterScope = Section | CollectionMenuId;
 /** Filters belong to their view and exact account/source generation, never a successor login. */
 export function createScopedFilters(
-  section: Accessor<Section>,
+  section: Accessor<FilterScope>,
   domain: Accessor<Interval>,
   identity: Accessor<unknown> = () => undefined,
 ) {
   const [saved, setSaved] = createSignal<
-    Partial<Record<Section, { value: Filters; domain: Interval; identity: unknown }>>
+    Partial<Record<FilterScope, { value: Filters; domain: Interval; identity: unknown }>>
   >({});
-  const defaults = (scope: Section): Filters => ({
-    mode: ["countries", "artists", "albums", "composers"].includes(scope) ? "none" : "years",
+  const defaults = (scope: FilterScope): Filters => ({
+    mode:
+      isCollectionMenuId(scope) || ["countries", "artists", "albums", "composers"].includes(scope)
+        ? "none"
+        : "years",
     years: domain(),
     alphabet: [0, 26],
     includeUnknownYear: true,
     query: "",
   });
-  function read(scope: Section): Filters {
+  function read(scope: FilterScope): Filters {
     const held = saved()[scope];
     if (!held || held.identity !== identity()) return defaults(scope);
     const bounds = domain(),
@@ -40,7 +45,7 @@ export function createScopedFilters(
         ...held,
         [section()]: { value, domain: domain(), identity: identity() },
       })),
-    select: (scope: Section, patch: Partial<Filters>) =>
+    select: (scope: FilterScope, patch: Partial<Filters>) =>
       setSaved((held) => ({
         ...held,
         [scope]: {

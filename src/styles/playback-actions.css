@@ -20,7 +20,7 @@
   transform: none;
 }
 .density-compact .album-card:has(> .media-actions) {
-  grid-template-columns: 56px minmax(0, 1fr) auto max-content;
+  grid-template-columns: min(var(--album-cover-min, 56px), 35%) minmax(0, 1fr) auto max-content;
 }
 .density-compact .album-card > .media-actions > .icon-button,
 .density-compact .artist-card > .media-actions > .icon-button,

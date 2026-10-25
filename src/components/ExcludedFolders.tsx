@@ -1,5 +1,7 @@
-import { For, Show } from "solid-js";
+import { Show } from "solid-js";
 import { useLibrary } from "../library/context";
+import { ObjectList } from "./ObjectList";
+import { createExcludedFolderOrder } from "../library/excluded-folder-order";
 import { createExcludedFolders } from "../library/excluded-folders";
 import { localRootAction, pickLocalExclusions, requestAede } from "../platform/desktop";
 import { t } from "../i18n";
@@ -8,8 +10,10 @@ import { Feedback } from "./Feedback";
 /** A read-only path list permits selection/removal without typing or modifying folder names. */
 export function ExcludedFolders(props: { disabled: boolean }) {
   const library = useLibrary();
+  let list: HTMLUListElement;
   const folders = createExcludedFolders({
     session: library.localSession,
+    order: createExcludedFolderOrder(localStorage),
     page: (offset, owner) =>
       requestAede(
         "/api/v1/roots",
@@ -28,6 +32,11 @@ export function ExcludedFolders(props: { disabled: boolean }) {
     folders.busy() ||
     folders.read.pending() ||
     library.localSession()?.account.role !== "admin";
+  const remove = async () => {
+    const held = library.localSession();
+    await folders.remove();
+    if (library.localSession() === held && list?.isConnected) list.focus();
+  };
   return (
     <section class="excluded-folders">
       <div class="section-heading">
@@ -44,46 +53,51 @@ export function ExcludedFolders(props: { disabled: boolean }) {
           </button>
           <button
             class="icon-button quiet"
-            title={t("Retirer l’exclusion sélectionnée")}
-            aria-label={t("Retirer l’exclusion sélectionnée")}
+            title={
+              folders.selections().length > 1
+                ? t("Retirer les exclusions sélectionnées")
+                : t("Retirer l’exclusion sélectionnée")
+            }
+            aria-label={
+              folders.selections().length > 1
+                ? t("Retirer les exclusions sélectionnées")
+                : t("Retirer l’exclusion sélectionnée")
+            }
             disabled={disabled() || !folders.selection()}
-            onClick={() => void folders.remove()}
+            onClick={() => void remove()}
           >
             <Icon name="minus" />
           </button>
         </div>
       </div>
-      <ul
-        class="excluded-folder-list"
-        aria-label={t("Dossiers exclus du scan")}
-        aria-busy={folders.read.loading() || folders.busy()}
-      >
-        <Show when={folders.read.loading()}>
-          <li class="muted">
-            <span class="spinner" aria-hidden="true" /> {t("Lecture des exclusions…")}
-          </li>
-        </Show>
-        <For each={folders.read.current()}>
-          {(path) => (
-            <li>
-              <button
-                class="excluded-folder-path"
-                classList={{ selected: folders.selection() === path }}
-                aria-pressed={folders.selection() === path}
-                onClick={() => folders.select(path)}
-                title={path}
-              >
-                {path}
-              </button>
-            </li>
-          )}
-        </For>
-        <Show
-          when={!folders.read.loading() && !folders.read.current()?.length && !folders.read.error()}
-        >
-          <li class="muted">{t("Aucun dossier exclu.")}</li>
-        </Show>
-      </ul>
+      <ObjectList
+        label={t("Dossiers exclus du scan")}
+        items={folders.read.current() ?? []}
+        selected={folders.selection()}
+        selectedItems={folders.selections()}
+        onSelect={folders.select}
+        onSelectMany={folders.selectMany}
+        onDelete={disabled() ? undefined : remove}
+        onReorder={disabled() ? undefined : folders.move}
+        identity={library.localSession()}
+        listRef={(node) => {
+          list = node;
+        }}
+        disabled={folders.busy() || folders.read.pending()}
+        busy={folders.read.loading() || folders.busy()}
+        empty={
+          folders.read.error()
+            ? t("Liste indisponible.")
+            : folders.read.loading()
+              ? t("Lecture des exclusions…")
+              : t("Aucun dossier exclu.")
+        }
+      />
+      <p class="muted">
+        {t(
+          "Maj+clic ou Maj+flèches sélectionne une plage, Ctrl/⌘+clic des lignes séparées, Ctrl+A (⌘A sur Mac) tout. Suppr ou − retire la sélection. Glisser-déposer ou Alt+flèches déplace une ligne.",
+        )}
+      </p>
       <p class="muted">
         {t(
           "Ces dossiers et leurs sous-dossiers ne seront pas parcourus au prochain scan. Les fichiers déjà catalogués seront retirés du catalogue après ce scan, sans supprimer les fichiers audio.",

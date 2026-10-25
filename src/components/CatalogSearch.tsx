@@ -5,10 +5,18 @@ import { Icon } from "./Icon";
 /** One header search keeps the advanced link and explicit view-dependent search wording. */
 export function CatalogSearch(props: {
   section?: Section | undefined;
+  collection?: boolean;
   value: string;
   onInput: (value: string) => void;
 }) {
-  const context = () => searchContext(props.section);
+  const context = () =>
+    props.collection
+      ? {
+          disabled: false,
+          label: t("Rechercher dans cette collection"),
+          placeholder: t("Rechercher dans cette collection"),
+        }
+      : searchContext(props.section);
   return (
     <div class="search">
       <a

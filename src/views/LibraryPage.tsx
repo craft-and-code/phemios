@@ -1,4 +1,5 @@
 import { composerAlbumOrder, composerAlbumNames } from "../library/composers";
+import { supportsCoverFlow } from "../navigation/catalog-presentation";
 import { AlbumCount } from "../components/AlbumCount";
 import { ArtistGallery } from "../components/ArtistGallery";
 import type { ArtistView } from "../library/tool-preferences";
@@ -29,7 +30,7 @@ import {
 } from "../navigation/routes";
 
 /** Group only sourced origins; catalog indexes preserve credits and cover placement. */
-export function LibraryPage(props: {
+export interface LibraryPageProps {
   section: Section;
   compact: boolean;
   now: number;
@@ -40,8 +41,13 @@ export function LibraryPage(props: {
   coverFlow?: boolean;
   coverSize?: number;
   coverPosition: CoverPosition;
-}) {
+  baseAlbums?: readonly Album[] | undefined;
+  label?: string | undefined;
+}
+/** Shared rendering keeps an admitted collection inside the same album presentations. */
+export function LibraryPage(props: LibraryPageProps) {
   const library = useLibrary();
+  const baseAlbums = () => props.baseAlbums ?? library.albums();
   const listening = createAlbumListening({
     enabled: () => !library.demo && albumListeningCatalog(props.section),
     session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
@@ -90,7 +96,7 @@ export function LibraryPage(props: {
       : undefined,
   );
   const albums = createMemo(() => {
-    const matched = filterAlbums(library.albums(), library.artists(), props.filters, props.now)
+    const matched = filterAlbums(baseAlbums(), library.artists(), props.filters, props.now)
       .filter((item) => props.section !== "compilations" || item.compilation)
       .filter((item) => props.section !== "composers" || !!item.composers?.length);
     return props.section === "composers"
@@ -106,7 +112,7 @@ export function LibraryPage(props: {
         "artist-featured-library":
           props.section === "artists" && props.artistView === "discography",
       }}
-      aria-label={t("Catalogue")}
+      aria-label={props.label ?? t("Catalogue")}
     >
       <div classList={{ "country-layout": props.section === "countries" }}>
         <Show when={props.section === "countries"}>
@@ -137,7 +143,7 @@ export function LibraryPage(props: {
             when={artistView()}
             fallback={
               <Show
-                when={["albums", "composers"].includes(props.section) && props.coverFlow}
+                when={supportsCoverFlow(props.section) && props.coverFlow}
                 fallback={
                   <AlbumGrid
                     albums={albums()}

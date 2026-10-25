@@ -37,3 +37,41 @@ it("explains an unsupported server and preserves rename failures", async () => {
     "Collision",
   );
 });
+
+it("uses the captured owner and stable ID for a rename from either view", async () => {
+  const session = {
+    server: "https://catalog.example",
+    account: { id: "owner", username: "Owner", role: "user" as const },
+    nativeSession: "captured",
+  };
+  const id = `collection-${"a".repeat(64)}`;
+  vi.mocked(requestAede)
+    .mockReset()
+    .mockResolvedValueOnce({ capabilities: ["collection_identity"] })
+    .mockResolvedValueOnce({ id, name: "New", expression: "loved" });
+  expect(await renameSavedCollection("Old", " New ", "server", () => true, id, session)).toBe(true);
+  expect(requestAede).toHaveBeenNthCalledWith(
+    1,
+    "/api/v1/status",
+    {},
+    "GET",
+    null,
+    "server",
+    session,
+  );
+  expect(requestAede).toHaveBeenLastCalledWith(
+    "/api/me/v1/collection",
+    { id },
+    "PATCH",
+    { name: "New" },
+    "server",
+    session,
+  );
+  vi.mocked(requestAede)
+    .mockReset()
+    .mockResolvedValueOnce({ capabilities: ["collection_rename"] });
+  await expect(
+    renameSavedCollection("Old", "New", "server", () => true, id, session),
+  ).rejects.toThrow();
+  expect(requestAede).toHaveBeenCalledOnce();
+});

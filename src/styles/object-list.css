@@ -1,0 +1,113 @@
+.object-list,
+.object-list-frame {
+  --object-row-height: 34px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: calc(5 * var(--object-row-height) + 2px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-width: 0;
+  overscroll-behavior: contain;
+}
+.object-list:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.object-list > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--object-row-height);
+  padding: 4px 10px;
+  box-sizing: border-box;
+}
+.object-list > [role="option"] {
+  cursor: default;
+  user-select: none;
+}
+.object-list > [aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+/* Same inset accent line as the queue; insertion feedback never changes row geometry. */
+:is(.object-list, .menu-settings) > li.list-drop-before,
+.list-drop-empty {
+  box-shadow: inset 0 2px var(--accent);
+}
+:is(.object-list, .menu-settings) > li.list-drop-after {
+  box-shadow: inset 0 -2px var(--accent);
+}
+.object-list-grip {
+  flex: none;
+  opacity: 0.65;
+}
+.object-list-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.object-list > .object-list-empty {
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+  padding: 0;
+}
+.object-list[aria-disabled="true"] {
+  opacity: 0.7;
+}
+.collection-menu-picker .object-list {
+  height: 240px;
+}
+
+/* Match the queue: 35% source, 65% floating preview and the same shadow. */
+.list-drag-source {
+  opacity: 0.35;
+}
+.object-list-grip,
+.menu-drag {
+  touch-action: none;
+  user-select: none;
+}
+.object-list-grip[draggable="true"],
+.menu-drag {
+  cursor: grab;
+}
+.list-drag-preview.settings-card {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 100;
+  pointer-events: none;
+  user-select: none;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  display: block;
+  will-change: transform;
+  opacity: 0.65;
+  border: 0;
+  background: transparent;
+}
+.list-drag-preview .object-list,
+.list-drag-preview .menu-settings {
+  height: auto;
+  max-height: none;
+  width: 100%;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+}
+.list-drag-preview li {
+  background: var(--surface);
+  outline: 1px solid var(--border);
+  box-shadow:
+    0 14px 30px #0009,
+    0 2px 8px #0007;
+}
+.menu-icon-slot {
+  display: inline-flex;
+  width: 18px;
+  min-width: 18px;
+}

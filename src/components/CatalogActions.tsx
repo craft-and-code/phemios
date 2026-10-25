@@ -1,7 +1,7 @@
 import { Show, type JSX } from "solid-js";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
-/** Controlled catalog actions share order, spacing and exclusive list/Cover Flow selection. */
+/** Controlled actions share order and spacing; a third grid choice is explicit when available. */
 export function CatalogActions(props: {
   reverseLabel?: string;
   reverse: boolean;
@@ -9,6 +9,7 @@ export function CatalogActions(props: {
   coverFlow?: boolean;
   onReverse: () => void;
   onCompact: () => void;
+  onGrid?: (() => void) | undefined;
   onCoverFlow?: (() => void) | undefined;
   children?: JSX.Element;
   presentations?: JSX.Element;
@@ -36,11 +37,23 @@ export function CatalogActions(props: {
             aria-pressed={props.compact}
             onClick={props.onCompact}
           >
-            <Icon name="layers" />
+            <Icon name={props.onGrid ? "list" : "layers"} />
           </button>
         }
       >
         {props.presentations}
+      </Show>
+      <Show when={props.onGrid}>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label={t("Vue en grille")}
+          title={t("Vue en grille")}
+          aria-pressed={!props.compact && !props.coverFlow}
+          onClick={() => props.onGrid?.()}
+        >
+          <Icon name="grid" />
+        </button>
       </Show>
       <Show when={props.onCoverFlow}>
         <button

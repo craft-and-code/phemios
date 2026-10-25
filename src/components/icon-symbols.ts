@@ -39,6 +39,7 @@ import History from "lucide-solid/icons/rotate-ccw-clock";
 import Italic from "lucide-solid/icons/italic";
 import Keyboard from "lucide-solid/icons/keyboard";
 import Layers from "lucide-solid/icons/layers";
+import LayoutGrid from "lucide-solid/icons/layout-grid";
 import Library from "lucide-solid/icons/library";
 import List from "lucide-solid/icons/list";
 import ListOrdered from "lucide-solid/icons/list-ordered";
@@ -176,6 +177,7 @@ const symbols = new Map<string, LucideIcon>(
     eject: Eject,
     disc: Disc3,
     layers: Layers,
+    grid: LayoutGrid,
     globe: Globe,
     missing: TriangleAlert,
     eye: Eye,

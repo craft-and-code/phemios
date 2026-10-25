@@ -1,11 +1,17 @@
 import { Feedback } from "./Feedback";
 import { createSignal, Show } from "solid-js";
+import type { JSX } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { renameSavedCollection } from "../library/collection-rename";
 import { Icon } from "./Icon";
 /** Inline focused name editing keeps the existing rule and dates on the authenticated owner. */
-export function RenameCollection(props: { name: string; onRenamed: (name: string) => void }) {
+export function RenameCollection(props: {
+  id?: string | undefined;
+  name: string;
+  children?: JSX.Element;
+  onRenamed: (name: string) => void;
+}) {
   const library = useLibrary(),
     [editing, setEditing] = createSignal(false),
     [name, setName] = createSignal(props.name),
@@ -23,7 +29,7 @@ export function RenameCollection(props: { name: string; onRenamed: (name: string
     const current = () =>
       session === library.session() && source === library.source() && held === props.name;
     try {
-      if (await renameSavedCollection(held, name(), source, current)) {
+      if (await renameSavedCollection(held, name(), source, current, props.id, session)) {
         setEditing(false);
         props.onRenamed(name().trim());
       }
@@ -35,31 +41,7 @@ export function RenameCollection(props: { name: string; onRenamed: (name: string
   }
   return (
     <div class="collection-name">
-      <Show
-        when={editing()}
-        fallback={
-          <>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Renommer {0}", props.name)}
-              title={t("Renommer la collection")}
-              disabled={!writable()}
-              onClick={() => {
-                setName(props.name);
-                setError("");
-                setEditing(true);
-                queueMicrotask(() => {
-                  input?.focus();
-                  input?.select();
-                });
-              }}
-            >
-              <Icon name="edit" />
-            </button>
-            <strong>{props.name}</strong>
-          </>
-        }
-      >
+      <Show when={editing()} fallback={<strong>{props.name}</strong>}>
         <form
           class="collection-name-editor"
           onSubmit={(e) => {
@@ -99,6 +81,26 @@ export function RenameCollection(props: { name: string; onRenamed: (name: string
             <Icon name="close" />
           </button>
         </form>
+      </Show>
+      {props.children}
+      <Show when={!editing()}>
+        <button
+          class="icon-button quiet"
+          aria-label={t("Renommer {0}", props.name)}
+          title={t("Renommer la collection")}
+          disabled={!writable()}
+          onClick={() => {
+            setName(props.name);
+            setError("");
+            setEditing(true);
+            queueMicrotask(() => {
+              input?.focus();
+              input?.select();
+            });
+          }}
+        >
+          <Icon name="edit" />
+        </button>
       </Show>
       <Show when={error()}>
         <Feedback error message={error()} onClose={() => setError("")} />

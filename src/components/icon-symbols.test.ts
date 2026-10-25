@@ -9,6 +9,8 @@ it("resolves the complete saved/navigation vocabulary while retaining neutral un
 it("keeps opposite transport actions and confirmed synchronized lyrics visually distinct", () => {
   for (const [a, b] of [
     ["play", "pause"],
+    ["grid", "list"],
+    ["grid", "cover-flow"],
     ["previous", "next"],
     ["volume", "muted"],
     ["lyrics", "lyrics-timed"],

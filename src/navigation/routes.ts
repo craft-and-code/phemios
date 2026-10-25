@@ -1,3 +1,4 @@
+import { isCollectionMenuId, type CollectionMenuId } from "./collection-menu";
 import { t } from "../i18n";
 export type Section =
   | "cd"
@@ -30,7 +31,7 @@ export type Section =
   | "settings"
   | "advanced-search";
 export type Route =
-  | { kind: "section"; section: Section; tab?: "services" }
+  | { kind: "section"; section: Section; tab?: "services"; collectionMenu?: CollectionMenuId }
   | { kind: "artist" | "album" | "track" | "label"; reference: string }
   | { kind: "not-found" };
 
@@ -67,6 +68,12 @@ export const sections: readonly { id: Section; label: string; symbol: string }[]
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#\/?/, "");
   if (!path) return { kind: "section", section: "artists" };
+  if (path.startsWith("collection/")) {
+    const id = `collection:${path.slice("collection/".length)}`;
+    return isCollectionMenuId(id)
+      ? { kind: "section", section: "collections", collectionMenu: id }
+      : { kind: "not-found" };
+  }
   if (path === "recent") return { kind: "section", section: "albums" };
   if (path === "playback") return { kind: "section", section: "playback" };
   if (path === "advanced-search") return { kind: "section", section: "advanced-search" };
@@ -101,20 +108,20 @@ export function artistCatalog(section: Section): boolean {
 
 /** Catalogue views that display the account-private album completion marker. */
 export function albumListeningCatalog(section: Section): boolean {
-  return section === "albums" || section === "composers";
+  return section === "albums" || section === "compilations" || section === "composers";
 }
 
 /** Name an actual origin page; utilities have no sidebar item, and entity names stay untranslated. */
 export function navigationLabel(
   route: Route,
-  sectionName: (section: Section) => string,
+  sectionName: (section: Section, collectionMenu?: CollectionMenuId) => string,
   detailName: (detail: Extract<Route, { reference: string }>) => string | undefined,
 ): string {
   if (route.kind === "section") {
     if (route.section === "playback") return t("Lecture");
     if (route.section === "advanced-search") return t("Recherche avancée");
     if (route.section === "settings") return t("Paramètres");
-    return sectionName(route.section);
+    return sectionName(route.section, route.collectionMenu);
   }
   if (route.kind === "not-found") return t("Page introuvable");
   return (

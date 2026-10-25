@@ -39,6 +39,7 @@ import { createPersonalActions } from "../library/personal-actions";
 import { createSavedCollection } from "../library/collection-save";
 import { sectionIcon, type Section } from "../navigation/routes";
 interface Collection {
+  id?: string;
   name: string;
   expression: string;
   duration_ms?: number;
@@ -55,6 +56,7 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
     [editingCollection, setEditingCollection] = createSignal(false),
     [name, setName] = createSignal(""),
     [reverse, setReverse] = createSignal(false),
+    [collectionsReverse, setCollectionsReverse] = createSignal(false),
     [compact, setCompact] = createSignal(false),
     [flow, setFlow] = createSignal(false),
     [expression, setExpression] = createSignal(""),
@@ -101,6 +103,12 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
   const refetch = reads.refetch;
   const album = () => library.albums().find((item) => item.reference === selected());
   const matches = (value: string) => normalizeName(value).includes(normalizeName(props.query));
+  const collections = () => {
+    const rows = ((page()?.items as Collection[] | undefined) ?? []).filter((row) =>
+      matches(`${row.name} ${row.expression}`),
+    );
+    return collectionsReverse() ? rows.reverse() : rows;
+  };
   async function save() {
     const session = library.session(),
       source = library.source();
@@ -248,6 +256,16 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
         <StickyHeader visible={!!library.session()}>
           <div class="personal-selection-actions">
             <button
+              type="button"
+              class="icon-button"
+              title={t("Inverser l’ordre alphabétique")}
+              aria-label={t("Inverser l’ordre alphabétique")}
+              aria-pressed={collectionsReverse()}
+              onClick={() => setCollectionsReverse(!collectionsReverse())}
+            >
+              <Icon name="sort" />
+            </button>
+            <button
               class="icon-button collection-create"
               title={t("Créer une collection")}
               aria-label={t("Créer une collection")}
@@ -317,23 +335,9 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
           </form>
         </Show>
         <ul class="personal-list">
-          <For
-            each={(page()?.items as Collection[] | undefined)?.filter((row) =>
-              matches(`${row.name} ${row.expression}`),
-            )}
-          >
+          <For each={collections()}>
             {(row) => (
               <li class="collection-row">
-                <RenameCollection
-                  name={row.name}
-                  onRenamed={(name) => {
-                    if (openedCollection() === row.name) setOpenedCollection(name);
-                    void refetch();
-                  }}
-                />
-                <span class="collection-duration" title={t("Durée totale")}>
-                  {collectionDuration(row.duration_ms)}
-                </span>
                 <button
                   type="button"
                   class="icon-button quiet"
@@ -350,6 +354,18 @@ export function PersonalPage(props: { section: Section; query: string; catalogCo
                 >
                   <Icon name={openedCollection() === row.name ? "eye" : "eye-off"} />
                 </button>
+                <RenameCollection
+                  id={row.id}
+                  name={row.name}
+                  onRenamed={(name) => {
+                    if (openedCollection() === row.name) setOpenedCollection(name);
+                    void refetch();
+                  }}
+                >
+                  <span class="collection-duration" title={t("Durée totale")}>
+                    {collectionDuration(row.duration_ms)}
+                  </span>
+                </RenameCollection>
                 <DeleteCollection
                   name={row.name}
                   onDeleted={() => {

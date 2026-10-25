@@ -5,7 +5,10 @@ import {
   moveMenu,
   defaultMenuOrder,
   menuItem,
+  menuLabel,
   visibleMenu,
+  renameMenuItem,
+  removeMenuSpacer,
 } from "./menu-preferences";
 import { sections } from "./routes";
 const ids = sections.map((item) => item.id);
@@ -219,4 +222,83 @@ it("inserts local CD playback before Concerts in default and existing source men
   const next = readMenuPreferences(store);
   expect(next.order.indexOf("cd")).toBe(next.order.indexOf("concerts") - 1);
   expect(next.order.filter((id) => id === "cd")).toHaveLength(1);
+});
+
+it("persists a named spacer as a literal group heading and retains unnamed spacers", () => {
+  let raw: string | null = null;
+  const store = {
+    getItem: () => raw,
+    setItem: (_key: string, value: string) => {
+      raw = value;
+    },
+  };
+  const value = {
+    order: [...defaultMenuOrder(), "separator:named" as const, "separator:blank" as const],
+    hidden: [],
+    labels: { "separator:named": "  Mes favoris  " },
+  };
+  saveMenuPreferences(store, value);
+  const restored = readMenuPreferences(store);
+  expect(menuItem("separator:named", restored).kind).toBe("heading");
+  expect(menuLabel("separator:named", restored)).toBe("Mes favoris");
+  expect(menuItem("separator:blank", restored).kind).toBe("separator");
+  expect(restored.order).toEqual(value.order);
+  expect(visibleMenu(restored)).toContain("separator:named");
+});
+
+it("clears a spacer name back to blank and deletes its label without orphaning the store", () => {
+  let raw: string | null = null;
+  const store = {
+    getItem: () => raw,
+    setItem: (_key: string, value: string) => {
+      raw = value;
+    },
+  };
+  const initial = {
+    order: [...defaultMenuOrder(), "separator:custom" as const],
+    hidden: ["separator:custom" as const],
+  };
+  const named = saveMenuPreferences(store, renameMenuItem(initial, "separator:custom", "Jazz"));
+  const blank = saveMenuPreferences(store, renameMenuItem(named, "separator:custom", "   "));
+  expect(blank.labels?.["separator:custom"]).toBeUndefined();
+  expect(menuItem("separator:custom", blank).kind).toBe("separator");
+  const renamed = saveMenuPreferences(
+    store,
+    renameMenuItem(blank, "separator:custom", "Classique"),
+  );
+  saveMenuPreferences(store, removeMenuSpacer(renamed, "separator:custom"));
+  expect(readMenuPreferences(store).order).not.toContain("separator:custom");
+  expect(readMenuPreferences(store).hidden).not.toContain("separator:custom");
+  expect(readMenuPreferences(store).labels?.["separator:custom"]).toBeUndefined();
+});
+
+it("preserves old spacer positions and refuses invalid new heading labels without replacing bytes", () => {
+  let raw = JSON.stringify({
+    version: 8,
+    order: [...defaultMenuOrder(), "separator:custom"],
+    hidden: ["albums"],
+    labels: { artists: "Artistes préférés" },
+  });
+  const store = {
+    getItem: () => raw,
+    setItem: (_key: string, value: string) => {
+      raw = value;
+    },
+  };
+  const old = readMenuPreferences(store);
+  const migrated = saveMenuPreferences(
+    store,
+    renameMenuItem(old, "separator:custom", "Mes disques"),
+  );
+  expect(JSON.parse(raw).version).toBe(9);
+  expect(migrated.order).toEqual(old.order);
+  expect(migrated.hidden).toEqual(old.hidden);
+  expect(migrated.labels?.artists).toBe("Artistes préférés");
+  for (const bad of ["x".repeat(81), "Bad" + String.fromCharCode(0) + "name"]) {
+    const retained = raw;
+    expect(() =>
+      saveMenuPreferences(store, renameMenuItem(migrated, "separator:custom", bad)),
+    ).toThrow();
+    expect(raw).toBe(retained);
+  }
 });

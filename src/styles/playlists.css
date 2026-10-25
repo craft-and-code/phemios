@@ -85,6 +85,11 @@ main > .playlist-page {
   align-items: center;
   gap: var(--control-gap);
 }
+.collection-album-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .collection-album-content {
   position: relative;
   min-height: 220px;

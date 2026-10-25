@@ -219,6 +219,8 @@
 }
 .personal-selection-actions {
   display: flex;
+  align-items: center;
+  gap: var(--control-gap);
   justify-content: flex-end;
   margin-bottom: 16px;
 }

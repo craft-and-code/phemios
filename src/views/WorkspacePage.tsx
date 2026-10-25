@@ -1,3 +1,6 @@
+import { CollectionMenuPage } from "./CollectionMenuPage";
+import type { AlbumCatalogControls } from "./AlbumCatalog";
+import type { createCollectionAlbums } from "../library/collection-albums";
 import { useLibrary } from "../library/context";
 import { EmptyState } from "../components/EmptyState";
 import { PageLoader } from "../components/PageLoader";
@@ -28,6 +31,16 @@ import { PlayersPage } from "./PlayersPage";
 import { AnalysisPage } from "./AnalysisPage";
 /** Section services stay reactive while navigation keeps the same workspace owner. */
 export function WorkspacePage(props: {
+  collectionMenu?:
+    | {
+        error?: string | undefined;
+        id?: string | undefined;
+        name: string | undefined;
+        label: string;
+      }
+    | undefined;
+  collectionRead: ReturnType<typeof createCollectionAlbums>;
+  albumCatalog: AlbumCatalogControls;
   section: Section;
   query: string;
   compact: boolean;
@@ -45,6 +58,15 @@ export function WorkspacePage(props: {
       }
     >
       <Switch>
+        <Match when={props.collectionMenu}>
+          {(target) => (
+            <CollectionMenuPage
+              target={target()}
+              catalog={props.albumCatalog}
+              read={props.collectionRead}
+            />
+          )}
+        </Match>
         <Match when={props.section === "encyclopedia"}>
           <EncyclopediaPage query={props.query} />
         </Match>

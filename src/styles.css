@@ -1,3 +1,4 @@
+@import "./styles/object-list.css";
 @import "./styles/source-review.css";
 @import "./styles/transfers.css";
 @import "./styles/cd.css";
@@ -1840,11 +1841,17 @@ textarea,
   grid-template-columns: 32px 50px minmax(0, 1fr) 36px 36px;
   min-height: 54px;
 }
+.menu-settings li.menu-group-row {
+  grid-template-columns: 32px 24px minmax(0, 1fr) 36px 36px;
+}
 .menu-name-slot {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.menu-name-slot > .menu-remove {
+  margin-inline-start: auto;
 }
 .menu-name {
   flex: 1;
@@ -1855,7 +1862,7 @@ textarea,
 }
 .menu-settings .menu-visibility {
   flex: none;
-  width: 50px;
+  width: 100%;
 }
 .settings-card .menu-name-editor {
   display: grid;
@@ -2366,6 +2373,7 @@ main:has(> .result-page) > * {
   gap: var(--compact-control-gap);
 }
 .collection-row > .icon-button,
+.collection-row .collection-name > .icon-button,
 .collection-row .collection-delete .icon-button {
   width: 30px;
   height: 30px;

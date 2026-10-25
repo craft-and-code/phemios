@@ -47,6 +47,30 @@ it("does no personal work while completion markers are disabled", async () => {
   await tick();
   expect(request).not.toHaveBeenCalled();
 });
+
+it("loads confirmed incomplete compilation markers and clears them on logout", async () => {
+  request.mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: ["album_listening"] }
+      : { offset: 0, total: 1, items: [{ reference: ref, completed: false }] },
+  );
+  const view = createRoot((cleanup) => {
+    dispose = cleanup;
+    const [account, setAccount] = createSignal<AccountSession | undefined>(owner);
+    const data = createAlbumListening({
+      enabled: () => albumListeningCatalog("compilations"),
+      session: (source) => (source === "server" ? account() : undefined),
+      checkpoint: () => "initial",
+    });
+    return { data, setAccount };
+  });
+  await tick();
+  expect(view.data.completed(ref)).toBe(false);
+  expect(view.data.completed("release:unknown")).toBeUndefined();
+  expect(request).toHaveBeenCalledTimes(2);
+  view.setAccount(undefined);
+  expect(view.data.completed(ref)).toBeUndefined();
+});
 it("clears private results immediately on logout and ignores a late response", async () => {
   let done!: (value: unknown) => void;
   request

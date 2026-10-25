@@ -1,3 +1,13 @@
+import { createCollectionMenuChoices } from "./library/collection-menu-choices";
+import { createCollectionAlbums } from "./library/collection-albums";
+import { AlbumCatalog, type AlbumCatalogControls } from "./views/AlbumCatalog";
+import { createCatalogPresentation, supportsCoverFlow } from "./navigation/catalog-presentation";
+import {
+  isCollectionMenuId,
+  collectionMenuHref,
+  collectionMenuName,
+  reconcileCollectionMenus,
+} from "./navigation/collection-menu";
 import { controlAudioShortcut, toggleAudioShortcut } from "./navigation/audio-shortcut";
 import { ConnectionNotice } from "./components/ConnectionNotice";
 import type { BiographyReturn } from "./library/biography-navigation";
@@ -84,15 +94,32 @@ export function App() {
     visibleMenu(
       menu.value(),
       new Set([
+        ...(!library.session() ? menu.value().order.filter(isCollectionMenuId) : []),
         ...(library.parental.radioAllowed() ? [] : ["radio" as const]),
         ...(library.parental.podcastsAllowed() ? [] : ["podcasts" as const]),
       ]),
     ).map((id) => ({
-      ...menuItem(id),
+      ...menuItem(id, menu.value()),
       label: menuLabel(id, menu.value()),
     })),
   );
   const principalArtists = createMemo(() => browseArtists(library.artists(), library.albums()));
+  const collectionDirectory = createCollectionMenuChoices(() => {
+    const session = library.session();
+    return session ? { session, source: library.source() } : false;
+  });
+  createEffect(() => {
+    const rows = collectionDirectory.rows();
+    if (
+      !collectionDirectory.identity() ||
+      collectionDirectory.loading() ||
+      collectionDirectory.error()
+    )
+      return;
+    const current = menu.value(),
+      next = reconcileCollectionMenus(current, rows);
+    if (next !== current) menu.update(next);
+  });
   const yearDomain = createMemo(() => {
     const values = [...(library.snapshot()?.albums ?? (library.demo ? library.albums() : []))];
     let low = Infinity,
@@ -109,7 +136,7 @@ export function App() {
   const navigation = createNavigation(browserNavigationHost(), (hash) =>
     navigationLabel(
       parseRoute(hash),
-      (section) => menuLabel(section, menu.value()),
+      (section, collectionMenu) => menuLabel(collectionMenu ?? section, menu.value()),
       (source) => {
         if (source.kind === "artist")
           return library.artists().find((a) => a.reference === source.reference)?.name;
@@ -124,7 +151,11 @@ export function App() {
   );
   const [sidebar, setSidebar] = createSignal(true);
   const filterOwner = createMemo(() => ({ session: library.session(), source: library.source() }));
-  const scopedFilters = createScopedFilters(navigation.section, yearDomain, filterOwner);
+  const scopedFilters = createScopedFilters(
+    () => navigation.collectionMenu() ?? navigation.section(),
+    yearDomain,
+    filterOwner,
+  );
   const filters = scopedFilters.value,
     setFilters = scopedFilters.set;
   const trackPaging = createTrackPaging(
@@ -140,11 +171,68 @@ export function App() {
     setTagOffset(0);
   });
   const [reverse, setReverse] = createSignal(false);
-  const [coverFlow, setCoverFlow] = createSignal(true);
+  const presentation = createCatalogPresentation(
+    () => navigation.collectionMenu() ?? navigation.section(),
+  );
+  const coverFlow = () => presentation.value() === "cover-flow";
   const coverPosition = createCoverPosition();
-  const [compact, setCompact] = createSignal(false);
+  const compact = () => presentation.value() === "list";
+  const setCompact = (value: boolean) => presentation.select(value ? "list" : "grid");
   const current = navigation.route,
     section = navigation.section;
+  const catalogSection = () => (navigation.collectionMenu() ? "albums" : section());
+  const collectionTarget = createMemo(() => {
+    const route = current();
+    return route.kind === "section" && route.collectionMenu
+      ? {
+          error: collectionDirectory.error(),
+          id: menu.value().collectionIds?.[route.collectionMenu],
+          name: collectionMenuName(menu.value(), route.collectionMenu),
+          label: menuLabel(route.collectionMenu, menu.value()),
+        }
+      : undefined;
+  });
+  const collectionRead = createCollectionAlbums(() => {
+    const target = collectionTarget(),
+      session = library.session();
+    return target?.id &&
+      target.name &&
+      !target.error &&
+      session &&
+      parentalRouteAllowed(current(), library.parental.available)
+      ? {
+          id: target.id,
+          name: target.name,
+          session,
+          source: library.source(),
+          albums: library.albums(),
+        }
+      : false;
+  });
+  const catalogAlbums = () =>
+    collectionTarget() ? (collectionRead.current() ?? []) : library.albums();
+  const albumCatalog: AlbumCatalogControls = {
+    get filters() {
+      return filters();
+    },
+    setFilters,
+    get now() {
+      return filters().recentOnly ? recentNow() : 0;
+    },
+    get compact() {
+      return compact();
+    },
+    get reverse() {
+      return reverse();
+    },
+    get coverFlow() {
+      return coverFlow();
+    },
+    get coverSize() {
+      return browsing.value().coverSizes.albums ?? browsing.value().coverSize;
+    },
+    coverPosition,
+  };
   const footer = createMemo(() =>
     footerTransport({
       queueView: isQueueWorkspace(current()),
@@ -249,7 +337,7 @@ export function App() {
   const backLink = navigation.backLink;
   const [biographyReturn, setBiographyReturn] = createSignal<BiographyReturn>();
   const context = () =>
-    artistCatalog(section()) && current().kind === "section"
+    artistCatalog(catalogSection()) && current().kind === "section"
       ? t("Initiale de l’artiste · année de ses albums")
       : t("Initiale du titre · année de l’album");
   const hasFilters = () => catalogRails(current());
@@ -298,6 +386,12 @@ export function App() {
         </a>
         <CatalogSearch
           section={current().kind === "section" ? section() : undefined}
+          collection={
+            !!(
+              current().kind === "section" &&
+              (current() as { collectionMenu?: string }).collectionMenu
+            )
+          }
           value={filters().query}
           onInput={(value) => {
             setFilters({ ...filters(), query: value });
@@ -336,10 +430,14 @@ export function App() {
                   <Show when={item.kind === "separator"}>
                     <div class="nav-spacer" aria-hidden="true" />
                   </Show>
-                  <Show when={item.kind === "section"}>
+                  <Show when={item.kind === "section" || item.kind === "collection"}>
                     <a
-                      href={`#/${item.id}`}
-                      aria-current={section() === item.id ? "page" : undefined}
+                      href={
+                        isCollectionMenuId(item.id) ? collectionMenuHref(item.id) : `#/${item.id}`
+                      }
+                      aria-current={
+                        (navigation.collectionMenu() ?? section()) === item.id ? "page" : undefined
+                      }
                     >
                       <Icon name={item.symbol} />
                       <span>{item.label}</span>
@@ -403,45 +501,51 @@ export function App() {
           </div>
         </Show>
         <StickyHeader shell>
-          <Show when={hasFilters() && library.artists().length}>
+          <Show when={hasFilters() && (library.artists().length || !!collectionTarget())}>
             <FilterBar
               resultCount={
-                artistCatalog(section())
+                artistCatalog(catalogSection())
                   ? filterArtists(principalArtists(), library.albums(), filters()).length
                   : filterAlbums(
-                      section() === "composers"
+                      catalogSection() === "composers"
                         ? library.albums().filter((album) => album.composers?.length)
-                        : library.albums(),
+                        : catalogAlbums(),
                       library.artists(),
                       filters(),
                       filters().recentOnly ? recentNow() : 0,
-                    ).filter((album) => section() !== "compilations" || album.compilation).length
+                    ).filter((album) => catalogSection() !== "compilations" || album.compilation)
+                      .length
               }
               value={filters()}
               setValue={setFilters}
               context={context()}
               yearDomain={yearDomain()}
-              hasUnknownYear={library.albums().some((album) => album.year === null)}
+              hasUnknownYear={catalogAlbums().some((album) => album.year === null)}
               histogram={distributions(
-                current().kind === "section" && artistCatalog(section())
+                current().kind === "section" && artistCatalog(catalogSection())
                   ? principalArtists()
                   : library.artists(),
-                section() === "composers"
+                catalogSection() === "composers"
                   ? library.albums().filter((album) => album.composers?.length)
-                  : library
-                      .albums()
-                      .filter((album) => section() !== "compilations" || album.compilation),
+                  : catalogAlbums().filter(
+                      (album) => catalogSection() !== "compilations" || album.compilation,
+                    ),
                 filters(),
-                current().kind === "section" && artistCatalog(section()),
+                current().kind === "section" && artistCatalog(catalogSection()),
                 filters().recentOnly ? recentNow() : 0,
               )}
               countLabel={
-                current().kind === "section" && artistCatalog(section()) ? t("artistes") : "albums"
+                current().kind === "section" && artistCatalog(catalogSection())
+                  ? t("artistes")
+                  : "albums"
               }
             />
           </Show>
           <Show
-            when={(hasFilters() || backLink() || biographyReturn()) && library.artists().length}
+            when={
+              (hasFilters() || backLink() || biographyReturn()) &&
+              (library.artists().length || !!collectionTarget())
+            }
           >
             <div class="catalog-tools">
               <Show
@@ -481,7 +585,7 @@ export function App() {
                   </button>
                 )}
               </Show>
-              <Show when={hasFilters() && section() === "albums"}>
+              <Show when={hasFilters() && catalogSection() === "albums"}>
                 <RecentAlbumsFilter
                   active={!!filters().recentOnly}
                   onToggle={() => setFilters({ ...filters(), recentOnly: !filters().recentOnly })}
@@ -490,20 +594,20 @@ export function App() {
               <Show
                 when={
                   hasFilters() &&
-                  ["albums", "compilations", "genres", "composers"].includes(section())
+                  ["albums", "compilations", "genres", "composers"].includes(catalogSection())
                 }
               >
                 <CoverSize
                   value={
                     browsing.value().coverSizes[
-                      section() as "albums" | "compilations" | "genres" | "composers"
+                      catalogSection() as "albums" | "compilations" | "genres" | "composers"
                     ] ?? browsing.value().coverSize
                   }
                   resetValue={browsing.value().coverSize}
-                  disabled={["albums", "composers"].includes(section()) && coverFlow()}
+                  disabled={!presentation.resizable()}
                   onChange={(value) =>
                     browsing.update({
-                      coverSizes: { ...browsing.value().coverSizes, [section()]: value },
+                      coverSizes: { ...browsing.value().coverSizes, [catalogSection()]: value },
                     })
                   }
                 />
@@ -524,27 +628,34 @@ export function App() {
                   coverFlow={coverFlow()}
                   onReverse={() => setReverse(!reverse())}
                   onCompact={() => {
-                    setCoverFlow(false);
-                    setCompact(!compact());
+                    setCompact(supportsCoverFlow(catalogSection()) || !compact());
                   }}
-                  onCoverFlow={
-                    current().kind === "section" && ["albums", "composers"].includes(section())
+                  onGrid={
+                    supportsCoverFlow(catalogSection())
                       ? () => {
-                          setCompact(false);
-                          setCoverFlow(!coverFlow());
+                          presentation.select("grid");
+                        }
+                      : undefined
+                  }
+                  onCoverFlow={
+                    current().kind === "section" && supportsCoverFlow(catalogSection())
+                      ? () => {
+                          presentation.select("cover-flow");
                         }
                       : undefined
                   }
                 >
                   <SelectionCollection
-                    section={section() === "genres" ? "albums" : section()}
-                    disabled={!!filters().recentOnly}
+                    section={catalogSection() === "genres" ? "albums" : catalogSection()}
+                    disabled={!!filters().recentOnly || !!collectionTarget()}
                     reason={
-                      filters().recentOnly
-                        ? t(
-                            "La création d’une collection depuis les ajouts récents n’est pas encore prise en charge.",
-                          )
-                        : undefined
+                      collectionTarget()
+                        ? t("Gérez les critères de cette collection dans Collections.")
+                        : filters().recentOnly
+                          ? t(
+                              "La création d’une collection depuis les ajouts récents n’est pas encore prise en charge.",
+                            )
+                          : undefined
                     }
                     filters={filters()}
                   />
@@ -638,9 +749,18 @@ export function App() {
                                 when={section() === "tags"}
                                 fallback={
                                   <WorkspacePage
+                                    collectionMenu={collectionTarget()}
+                                    collectionRead={collectionRead}
+                                    albumCatalog={albumCatalog}
                                     compact={compact()}
                                     section={section()}
-                                    query={searchContext(section()).disabled ? "" : filters().query}
+                                    query={
+                                      route.kind === "section" && route.collectionMenu
+                                        ? filters().query
+                                        : searchContext(section()).disabled
+                                          ? ""
+                                          : filters().query
+                                    }
                                     onStatisticsBrowse={(selection) =>
                                       scopedFilters.select(selection.section, selection.filters)
                                     }
@@ -662,6 +782,7 @@ export function App() {
                           >
                             <SettingsPage
                               menu={menu}
+                              collectionChoices={collectionDirectory}
                               tab={
                                 route.kind === "section" ? (route.tab ?? "libraries") : "libraries"
                               }
@@ -691,22 +812,29 @@ export function App() {
                       </Show>
                     }
                   >
-                    <LibraryPage
-                      artistView={browsing.value().artistView}
-                      now={filters().recentOnly ? recentNow() : 0}
-                      compact={compact()}
-                      coverSize={
-                        browsing.value().coverSizes[
-                          section() as "albums" | "compilations" | "genres" | "composers"
-                        ] ?? browsing.value().coverSize
+                    <Show
+                      when={section() === "albums"}
+                      fallback={
+                        <LibraryPage
+                          artistView={browsing.value().artistView}
+                          now={filters().recentOnly ? recentNow() : 0}
+                          compact={compact()}
+                          coverSize={
+                            browsing.value().coverSizes[
+                              section() as "albums" | "compilations" | "genres" | "composers"
+                            ] ?? browsing.value().coverSize
+                          }
+                          section={section()}
+                          filters={filters()}
+                          setFilters={setFilters}
+                          reverse={reverse()}
+                          coverFlow={coverFlow()}
+                          coverPosition={coverPosition}
+                        />
                       }
-                      section={section()}
-                      filters={filters()}
-                      setFilters={setFilters}
-                      reverse={reverse()}
-                      coverFlow={coverFlow()}
-                      coverPosition={coverPosition}
-                    />
+                    >
+                      <AlbumCatalog {...albumCatalog} />
+                    </Show>
                   </Show>
                 </Show>
                 <Show when={route.kind === "artist"}>

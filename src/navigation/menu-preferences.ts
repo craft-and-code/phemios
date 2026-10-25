@@ -1,3 +1,10 @@
+import {
+  isCollectionMenuId,
+  validCollectionId,
+  collectionMenuEntries,
+  collectionMenuName,
+  type CollectionMenuId,
+} from "./collection-menu";
 import { interfacePreferences } from "../library/account-preferences";
 import { announceSetting } from "../library/saved-settings";
 import { getOwner, onCleanup } from "solid-js";
@@ -8,6 +15,7 @@ type LegacyMenuItem = MenuItem | "recent";
 type Store = Pick<Storage, "getItem" | "setItem">;
 export type MenuItem =
   | Section
+  | CollectionMenuId
   | "heading:library"
   | "heading:personal"
   | "heading:sources"
@@ -17,6 +25,8 @@ export interface MenuPreferences {
   order: MenuItem[];
   hidden: MenuItem[];
   labels?: Partial<Record<MenuItem, string>>;
+  collections?: Partial<Record<CollectionMenuId, string>>;
+  collectionIds?: Partial<Record<CollectionMenuId, string>>;
 }
 const key = "phemios.navigation.v1";
 const ids = () => sections.map((section) => section.id);
@@ -44,13 +54,25 @@ export function menuHeading(id: Section): MenuItem {
     return "heading:tools";
   return "heading:library";
 }
-export function menuItem(id: MenuItem) {
+export function menuItem(id: MenuItem, preferences?: MenuPreferences) {
+  if (isCollectionMenuId(id))
+    return {
+      id,
+      kind: "collection" as const,
+      label: preferences
+        ? (collectionMenuName(preferences, id) ?? t("Collection indisponible"))
+        : t("Collection"),
+      symbol: "library",
+    };
   const section = sections.find((row) => row.id === id);
   return section
     ? { ...section, kind: "section" as const }
     : {
         id,
-        kind: id.startsWith("separator:") ? ("separator" as const) : ("heading" as const),
+        kind:
+          id.startsWith("separator:") && !preferences?.labels?.[id]
+            ? ("separator" as const)
+            : ("heading" as const),
         label: id.startsWith("separator:")
           ? t("Espacement")
           : t(headings[id as keyof typeof headings]),
@@ -74,12 +96,20 @@ function addHeadings(order: readonly MenuItem[]): MenuItem[] {
 }
 export const defaultMenuOrder = () => addHeadings(ids());
 function validate(raw: unknown): MenuPreferences {
-  const value = raw as { version?: unknown; order?: unknown; hidden?: unknown; labels?: unknown };
+  const value = raw as {
+    version?: unknown;
+    order?: unknown;
+    hidden?: unknown;
+    labels?: unknown;
+    collections?: unknown;
+    collectionIds?: unknown;
+  };
   const validId = (id: unknown): id is LegacyMenuItem =>
     typeof id === "string" &&
     (id === "recent" ||
       ids().includes(id as Section) ||
       Object.hasOwn(headings, id) ||
+      isCollectionMenuId(id) ||
       /^separator:[a-zA-Z0-9-]{1,40}$/.test(id));
   const valid = (rows: unknown): rows is LegacyMenuItem[] =>
     Array.isArray(rows) &&
@@ -93,7 +123,10 @@ function validate(raw: unknown): MenuPreferences {
       value.version !== 3 &&
       value.version !== 4 &&
       value.version !== 5 &&
-      value.version !== 6) ||
+      value.version !== 6 &&
+      value.version !== 7 &&
+      value.version !== 8 &&
+      value.version !== 9) ||
     !valid(value.order) ||
     !valid(value.hidden)
   )
@@ -105,6 +138,13 @@ function validate(raw: unknown): MenuPreferences {
     )
   )
     throw new Error(t("Configuration du menu illisible."));
+  if (
+    value.version !== 7 &&
+    value.version !== 8 &&
+    value.version !== 9 &&
+    (value.collections !== undefined || [...value.order, ...value.hidden].some(isCollectionMenuId))
+  )
+    throw new Error(t("Configuration du menu illisible."));
   const saved: MenuItem[] = value.order.filter((id): id is MenuItem => id !== "recent");
   const hidden: MenuItem[] = value.hidden.filter((id): id is MenuItem => id !== "recent");
   const tools = saved.filter((id) =>
@@ -113,6 +153,9 @@ function validate(raw: unknown): MenuPreferences {
   if (
     value.version !== 5 &&
     value.version !== 6 &&
+    value.version !== 7 &&
+    value.version !== 8 &&
+    value.version !== 9 &&
     tools.join(",") === "doctor,analysis,relations,statistics,players"
   ) {
     saved.splice(saved.indexOf("relations"), 1);
@@ -135,6 +178,9 @@ function validate(raw: unknown): MenuPreferences {
     value.version !== 4 &&
     value.version !== 5 &&
     value.version !== 6 &&
+    value.version !== 7 &&
+    value.version !== 8 &&
+    value.version !== 9 &&
     saved.join(",") === legacyDefault.join(",")
   ) {
     for (const id of ["achievements", "encyclopedia"] as const) saved.splice(saved.indexOf(id), 1);
@@ -147,6 +193,9 @@ function validate(raw: unknown): MenuPreferences {
     value.version !== 4 &&
     value.version !== 5 &&
     value.version !== 6 &&
+    value.version !== 7 &&
+    value.version !== 8 &&
+    value.version !== 9 &&
     priorTools.join(",") ===
       "relations,doctor,analysis,statistics,achievements,encyclopedia,players"
   ) {
@@ -181,7 +230,7 @@ function validate(raw: unknown): MenuPreferences {
       if (id === "recent") continue;
       if (
         !order.includes(id as MenuItem) ||
-        id.startsWith("separator:") ||
+        (id.startsWith("separator:") && value.version !== 9) ||
         typeof name !== "string" ||
         !name.trim() ||
         name.trim().length > 80 ||
@@ -191,7 +240,29 @@ function validate(raw: unknown): MenuPreferences {
       labels[id as MenuItem] = name.trim();
     }
   }
-  return { order, hidden, ...(Object.keys(labels).length ? { labels } : {}) };
+  const collections = collectionMenuEntries(order, value.collections);
+  if (
+    value.collectionIds !== undefined &&
+    ((value.version !== 8 && value.version !== 9) ||
+      !value.collectionIds ||
+      typeof value.collectionIds !== "object" ||
+      Array.isArray(value.collectionIds))
+  )
+    throw new Error(t("Configuration du menu illisible."));
+  const collectionIds: Partial<Record<CollectionMenuId, string>> = {};
+  for (const [id, target] of Object.entries(value.collectionIds ?? {})) {
+    if (!isCollectionMenuId(id) || !order.includes(id) || !validCollectionId(target))
+      throw new Error(t("Configuration du menu illisible."));
+    collectionIds[id] = target;
+    delete labels[id];
+  }
+  return {
+    order,
+    hidden,
+    ...(Object.keys(labels).length ? { labels } : {}),
+    ...(Object.keys(collectionIds).length ? { collectionIds } : {}),
+    ...(Object.keys(collections).length ? { collections } : {}),
+  };
 }
 /** New sections remain visible by default; corrupt preferences are never replaced implicitly. */
 export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPreferences {
@@ -203,8 +274,8 @@ export function readMenuPreferences(storage: Pick<Storage, "getItem">): MenuPref
 /** Check the retained store before publishing a validated device-local menu configuration. */
 export function saveMenuPreferences(storage: Store, value: MenuPreferences): MenuPreferences {
   readMenuPreferences(storage);
-  const next = validate({ version: 6, ...value });
-  const raw = JSON.stringify({ version: 6, ...next });
+  const next = validate({ version: 9, ...value });
+  const raw = JSON.stringify({ version: 9, ...next });
   if (raw.length > 8192) throw new Error(t("Configuration du menu illisible."));
   storage.setItem(key, raw);
   announceSetting(key, raw);
@@ -244,12 +315,14 @@ export function createMenuPreferences(storage: Store = interfacePreferences) {
   return {
     value,
     error,
-    update(next: MenuPreferences) {
+    update(next: MenuPreferences | (() => MenuPreferences)) {
       try {
-        setValue(saveMenuPreferences(storage, next));
+        setValue(saveMenuPreferences(storage, typeof next === "function" ? next() : next));
         setError("");
+        return true;
       } catch (failure) {
         setError(String(failure));
+        return false;
       }
     },
     reset() {
@@ -265,14 +338,47 @@ export function visibleMenu(
   const order = value.order.filter((id) => !value.hidden.includes(id) && !unavailable.has(id));
   return order.filter((id, index) => {
     if (!id.startsWith("heading:")) return true;
-    const end = order.findIndex((next, i) => i > index && next.startsWith("heading:"));
+    const end = order.findIndex((next, i) => i > index && menuItem(next, value).kind === "heading");
     return order
       .slice(index + 1, end < 0 ? undefined : end)
-      .some((next) => menuItem(next).kind === "section");
+      .some((next) => ["section", "collection"].includes(menuItem(next, value).kind));
   });
 }
 
 /** Custom names are literal in both languages; absent overrides use the translated default. */
 export function menuLabel(id: MenuItem, preferences: MenuPreferences): string {
-  return preferences.labels?.[id] ?? t(menuItem(id).label);
+  return (
+    (isCollectionMenuId(id) && preferences.collectionIds?.[id]
+      ? undefined
+      : preferences.labels?.[id]) ??
+    (isCollectionMenuId(id)
+      ? (collectionMenuName(preferences, id) ?? t("Collection indisponible"))
+      : t(menuItem(id).label))
+  );
+}
+
+/** An empty spacer name restores blank space; a named spacer is a presentation heading. */
+export function renameMenuItem(
+  value: MenuPreferences,
+  id: MenuItem,
+  name: string,
+): MenuPreferences {
+  const labels = { ...value.labels };
+  if (id.startsWith("separator:") && !name.trim()) delete labels[id];
+  else labels[id] = name.trim();
+  return { ...value, labels };
+}
+/** Removing a custom spacer also retires its label and visibility preference. */
+export function removeMenuSpacer(
+  value: MenuPreferences,
+  id: `separator:${string}`,
+): MenuPreferences {
+  const labels = { ...value.labels };
+  delete labels[id];
+  return {
+    ...value,
+    labels,
+    order: value.order.filter((row) => row !== id),
+    hidden: value.hidden.filter((row) => row !== id),
+  };
 }

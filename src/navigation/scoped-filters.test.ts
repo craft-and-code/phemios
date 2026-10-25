@@ -135,3 +135,25 @@ it("retains current-owner criteria on catalogue refresh and retires navigation-p
     dispose();
   });
 });
+
+it("keeps each pinned collection independent from Albums and the collection manager", () => {
+  createRoot((dispose) => {
+    const first = "collection:11111111-1111-4111-8111-111111111111" as const;
+    const second = "collection:22222222-2222-4222-8222-222222222222" as const;
+    const [scope, setScope] = createSignal<Section | `collection:${string}`>(first);
+    const [owner, setOwner] = createSignal<object>({});
+    const filters = createScopedFilters(scope, () => [1980, 2026], owner);
+    expect(filters.value().mode).toBe("none");
+    filters.set({ ...filters.value(), query: "Jazz", recentOnly: true });
+    for (const next of [second, "collections", "albums"] as const) {
+      setScope(next);
+      expect(filters.value().query).toBe("");
+      expect(filters.value().recentOnly).toBeUndefined();
+    }
+    setScope(first);
+    expect(filters.value()).toMatchObject({ query: "Jazz", recentOnly: true });
+    setOwner({});
+    expect(filters.value()).toMatchObject({ query: "", mode: "none" });
+    dispose();
+  });
+});

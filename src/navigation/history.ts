@@ -1,3 +1,4 @@
+import { isCollectionMenuId, type CollectionMenuId } from "./collection-menu";
 import { t } from "../i18n";
 import { createMemo, createSignal, onCleanup } from "solid-js";
 import { parseRoute, sections, type Section } from "./routes";
@@ -5,6 +6,7 @@ interface Entry {
   hash: string;
   top: number;
   section?: Section;
+  collectionMenu?: CollectionMenuId;
   origin?: { href: string; label: string };
 }
 /** Host adapter keeps navigation policy testable without a DOM or a second router. */
@@ -39,6 +41,9 @@ function read(hash: string, state: unknown): Entry {
       ...(sections.some((s) => s.id === value.section)
         ? { section: value.section as Section }
         : {}),
+      ...(value.section === "collections" && isCollectionMenuId(value.collectionMenu)
+        ? { collectionMenu: value.collectionMenu }
+        : {}),
       ...(safeHash(origin.href) && typeof origin.label === "string"
         ? { origin: { href: origin.href, label: origin.label } }
         : {}),
@@ -53,6 +58,10 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
   const activeSection = createMemo(() => {
     const current = route();
     return current.kind === "section" ? current.section : (entry().section ?? "artists");
+  });
+  const collectionMenu = createMemo(() => {
+    const current = route();
+    return current.kind === "section" ? current.collectionMenu : entry().collectionMenu;
   });
   let alive = true,
     backPending = false;
@@ -87,6 +96,7 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
       hash,
       top: 0,
       section: activeSection(),
+      ...(collectionMenu() ? { collectionMenu: collectionMenu()! } : {}),
       origin: { href: current.hash, label: labelFor(current.hash) },
     };
     host.push(hash, wrapped(next));
@@ -117,7 +127,7 @@ export function createNavigation(host: NavigationHost, labelFor: (hash: string) 
       if (fallback) navigate(fallback.href);
     }
   }
-  return { route, section: activeSection, backLink, navigate, goBack };
+  return { route, section: activeSection, collectionMenu, backLink, navigate, goBack };
 }
 
 /** Native and browser hash histories share the same origin/scroll contract. */

@@ -1,3 +1,5 @@
+import { useLibrary } from "../library/context";
+import type { createCollectionMenuChoices } from "../library/collection-menu-choices";
 import { SettingsParental } from "./SettingsParental";
 import { SettingsAbout } from "./SettingsAbout";
 import { SettingsAede } from "./SettingsAede";
@@ -11,19 +13,22 @@ import { SettingsNavigation } from "./SettingsNavigation";
 import type { createMenuPreferences } from "../navigation/menu-preferences";
 import { SettingsTags } from "./SettingsTags";
 import { t } from "../i18n";
-import { createSignal, For, Show } from "solid-js";
+import { createEffect, untrack, createSignal, For, Show } from "solid-js";
 import { SettingsLibraries } from "./SettingsLibraries";
 import { SettingsAccounts } from "./SettingsAccounts";
 import { SettingsServices } from "./SettingsServices";
 import { SettingsAppearance } from "./SettingsAppearance";
-import { useLibrary } from "../library/context";
 import { Icon } from "../components/Icon";
 export function SettingsPage(props: {
   menu: ReturnType<typeof createMenuPreferences>;
   tab?: string;
+  collectionChoices?: ReturnType<typeof createCollectionMenuChoices> | undefined;
 }) {
-  const [tab, setTab] = createSignal(props.tab ?? "libraries"),
-    library = useLibrary();
+  const library = useLibrary();
+  const [tab, setTab] = createSignal(props.tab ?? "libraries");
+  createEffect(() => {
+    if (tab() === "navigation") untrack(() => void props.collectionChoices?.refresh());
+  });
   const tabs = [
     { icon: "library", id: "libraries", label: t("Bibliothèques") },
     { icon: "users", id: "accounts", label: t("Comptes") },
@@ -113,7 +118,7 @@ export function SettingsPage(props: {
           <SettingsShortcuts />
         </Show>
         <Show when={tab() === "navigation"}>
-          <SettingsNavigation menu={props.menu} />
+          <SettingsNavigation menu={props.menu} collectionChoices={props.collectionChoices} />
         </Show>
         <Show when={tab() === "language"}>
           <SettingsLanguage />
