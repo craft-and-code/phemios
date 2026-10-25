@@ -88,5 +88,5 @@
 .circular-play-actions > button.detail-play > svg {
   width: 19px;
   height: 19px;
-  transform: translateX(-1px);
+  transform: none;
 }

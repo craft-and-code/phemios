@@ -46,3 +46,32 @@ export const Starting: Story = {
     expect(play).toHaveAttribute("aria-busy", "false");
   },
 };
+
+export const CenteredGlyphs: Story = {
+  render: () => (
+    <div class="component-controls">
+      <CoverPlayView reference="release:fixture" title="Cover overlay" onPlay={async () => {}} />
+      <div class="artist-presentation-discography">
+        <div class="artist-presentation-play">
+          <CoverPlayView reference="artist:fixture" title="Artist circle" onPlay={async () => {}} />
+        </div>
+      </div>
+      <CoverPlayView
+        reference="track:fixture"
+        title="List action"
+        variant="row"
+        onPlay={async () => {}}
+      />
+    </div>
+  ),
+  play: ({ canvasElement }) => {
+    for (const button of within(canvasElement).getAllByRole("button")) {
+      const control = button.getBoundingClientRect();
+      const glyph = button.querySelector("svg")!.getBoundingClientRect();
+      expect(Math.abs(glyph.x + glyph.width / 2 - control.x - control.width / 2)).toBeLessThan(0.1);
+      expect(Math.abs(glyph.y + glyph.height / 2 - control.y - control.height / 2)).toBeLessThan(
+        0.1,
+      );
+    }
+  },
+};

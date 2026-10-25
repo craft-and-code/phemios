@@ -1,10 +1,11 @@
 import { CircularPlaybackActionsView } from "../../../src/components/CircularPlaybackActionsView";
-import { PlaybackActionsView } from "../../../src/components/PlaybackActionsView";
 import { QueueAppendView } from "../../../src/components/QueueAppendView";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { ArtistCard } from "../../../src/components/ArtistCard";
 import { Icon } from "../../../src/components/Icon";
+import { CoverPlayView } from "../../../src/components/CoverPlayView";
+import { createSignal } from "solid-js";
 const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="a" x2="1" y2="1"><stop stop-color="#264247"/><stop offset="1" stop-color="#151718"/></linearGradient></defs><rect width="400" height="400" fill="url(#a)"/><circle cx="200" cy="150" r="58" fill="#819586"/><path d="M80 400V300a120 100 0 0 1 240 0v100" fill="#516a65"/></svg>')}`;
 const meta = {
   title: "Catalog/ArtistCard",
@@ -39,34 +40,16 @@ const meta = {
     <ArtistCard
       {...args}
       play={
-        args.view === "editorial" ? (
-          <PlaybackActionsView
-            append={
-              <QueueAppendView
-                reference="artist:example"
-                title="The Northern Lights"
-                class="cover-play"
-                onAppend={async () => 12}
-              />
-            }
-            play={
-              <button class="icon-button cover-play" aria-label="Lire The Northern Lights">
-                <Icon name="play" />
-              </button>
-            }
-          />
-        ) : (
-          <CircularPlaybackActionsView
-            play={args.play}
-            append={
-              <QueueAppendView
-                reference="artist:example"
-                title="The Northern Lights"
-                onAppend={async () => 12}
-              />
-            }
-          />
-        )
+        <CircularPlaybackActionsView
+          play={args.play}
+          append={
+            <QueueAppendView
+              reference="artist:example"
+              title="The Northern Lights"
+              onAppend={async () => 12}
+            />
+          }
+        />
       }
     />
   ),
@@ -156,7 +139,7 @@ export const Editorial: Story = {
   args: { view: "editorial" },
   decorators: [
     (Story) => (
-      <ul class="artist-presentations artist-presentations-editorial" style={{ width: "1200px" }}>
+      <ul class="artist-presentations artist-presentations-editorial" style={{ width: "1000px" }}>
         <li>
           <Story />
         </li>
@@ -165,10 +148,11 @@ export const Editorial: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const play = canvas.getByRole("button", { name: "Lire The Northern Lights" });
-    expect(play).toBeEnabled();
+    expect(canvas.queryByRole("button", { name: "Lire The Northern Lights" })).toBeNull();
+    expect(
+      canvas.queryByRole("button", { name: "Ajouter The Northern Lights à la suite" }),
+    ).toBeNull();
     expect(canvas.getAllByRole("link")).toHaveLength(5);
-    expect(getComputedStyle(play).borderRadius).toBe("7px");
     const card = canvasElement.querySelector(".artist-presentation")!;
     const picture = card.querySelector(".artist-presentation-picture")!;
     const row = card.getBoundingClientRect(),
@@ -186,7 +170,7 @@ export const Editorial: Story = {
         Math.abs((rect.top + rect.bottom) / 2 - (row.top + row.bottom) / 2),
       ).toBeLessThanOrEqual(2);
     }
-    await userEvent.click(play);
+    (card.querySelector(".artist-presentation-name") as HTMLElement).focus();
     expect(getComputedStyle(card.querySelector("h2")!).color).toBe(
       getComputedStyle(card).borderTopColor,
     );
@@ -255,17 +239,41 @@ export const NarrowEditorial: Story = {
     const covers = [...card.querySelectorAll(".artist-album-preview .artwork")].filter(
       (cover) => cover.getClientRects().length,
     );
-    expect(covers).toHaveLength(1);
+    expect(covers).toHaveLength(2);
     const photo = card.querySelector(".artist-presentation-picture")!.getBoundingClientRect();
     expect(photo.width).toBeGreaterThan(row.width * 0.3);
-    const play = within(canvasElement)
-      .getByRole("button", { name: "Lire The Northern Lights" })
-      .getBoundingClientRect();
-    expect(play.right).toBeLessThanOrEqual(row.right);
-    expect(Math.abs((play.top + play.bottom) / 2 - (row.top + row.bottom) / 2)).toBeLessThanOrEqual(
-      2,
-    );
+    expect(within(canvasElement).queryAllByRole("button")).toHaveLength(0);
+    for (const cover of covers) {
+      const bounds = cover.getBoundingClientRect();
+      expect(bounds.right).toBeLessThanOrEqual(row.right);
+      expect(Math.abs(bounds.width - bounds.height)).toBeLessThanOrEqual(2);
+    }
     expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth);
+  },
+};
+
+export const CompactEditorial: Story = {
+  args: { view: "editorial" },
+  decorators: [
+    (Story) => (
+      <ul class="artist-presentations artist-presentations-editorial" style={{ width: "560px" }}>
+        <li>
+          <Story />
+        </li>
+      </ul>
+    ),
+  ],
+  play: ({ canvasElement }) => {
+    const card = canvasElement.querySelector(".artist-presentation")!;
+    const covers = [...card.querySelectorAll(".artist-album-preview .artwork")].filter(
+      (cover) => cover.getClientRects().length,
+    );
+    expect(covers).toHaveLength(1);
+    expect(within(canvasElement).queryAllByRole("button")).toHaveLength(0);
+    expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth);
+    expect(covers[0]!.getBoundingClientRect().right).toBeLessThanOrEqual(
+      card.getBoundingClientRect().right,
+    );
   },
 };
 
@@ -275,5 +283,66 @@ export const SingleAlbum: Story = {
     expect(canvasElement.querySelector(".artist-presentation-name small")).toHaveTextContent(
       /^1 album$/,
     );
+  },
+};
+
+export const EditorialAlbumPlayback: Story = {
+  args: { view: "editorial" },
+  decorators: Editorial.decorators ?? [],
+  render: (args) => {
+    const [starts, setStarts] = createSignal("");
+    return (
+      <>
+        <ArtistCard {...args}>
+          <div class="artist-presentation-thumbnails">
+            {["First", "Beyond", "Tomorrow"].map((title) => (
+              <div class="artist-album-preview">
+                <a href={`#/album/${title}`} title={title}>
+                  <img class="artwork" src={image} alt={title} />
+                </a>
+                <CoverPlayView
+                  reference={`release:${title}`}
+                  title={title}
+                  onPlay={async () => {
+                    setStarts(title);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </ArtistCard>
+        <output aria-label="Requested album">{starts()}</output>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.queryByRole("button", { name: "Lire The Northern Lights" })).toBeNull();
+    for (const title of ["First", "Beyond", "Tomorrow"]) {
+      const button = canvas.getByRole("button", { name: `Lire ${title}` });
+      const preview = button.closest(".artist-album-preview")!;
+      const cover = preview.getBoundingClientRect(),
+        bounds = button.getBoundingClientRect();
+      expect(Math.abs(bounds.left + bounds.width / 2 - cover.left - cover.width / 2)).toBeLessThan(
+        0.1,
+      );
+      expect(Math.abs(bounds.top + bounds.height / 2 - cover.top - cover.height / 2)).toBeLessThan(
+        0.1,
+      );
+      button.focus();
+      expect(getComputedStyle(button).opacity).toBe("1");
+      expect(
+        button.contains(
+          canvasElement.ownerDocument.elementFromPoint(
+            bounds.left + bounds.width / 2,
+            bounds.top + bounds.height / 2,
+          ),
+        ),
+      ).toBe(true);
+      await userEvent.click(button);
+      expect(canvas.getByLabelText("Requested album")).toHaveTextContent(title);
+      expect(button).toHaveAttribute("data-play-reference", `release:${title}`);
+      expect(preview.querySelector("a")).toHaveAttribute("href", `#/album/${title}`);
+    }
   },
 };

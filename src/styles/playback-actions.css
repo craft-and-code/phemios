@@ -74,7 +74,7 @@
   border-radius: 8px;
 }
 
-/* The shared Play control centres the triangle bounds, including standalone CD/detail buttons. */
+/* Centre Lucide's SVG canvas without a size-dependent legacy icon offset. */
 .play-action.icon-button {
   display: inline-grid;
   place-items: center;
@@ -83,7 +83,7 @@
 }
 .play-action > svg {
   display: block;
-  transform: translateX(-1px);
+  transform: none;
 }
 .row-play.icon-button {
   width: var(--row-action-size);

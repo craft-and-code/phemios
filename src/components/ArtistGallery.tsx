@@ -99,11 +99,7 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
                   logo={library.image(artist.reference, "logo")}
                   badge={<SourceBadge reference={artist.reference} />}
                   play={
-                    <CoverPlay
-                      reference={artist.reference}
-                      title={artist.name}
-                      append={props.view === "editorial" ? true : "badge"}
-                    />
+                    <CoverPlay reference={artist.reference} title={artist.name} append="badge" />
                   }
                   fallback={
                     <Show
@@ -128,9 +124,7 @@ export function ArtistGallery(props: { artists: readonly Artist[]; view: ArtistV
                           >
                             <Artwork album={album} thumbnail />
                           </a>
-                          <Show when={props.view === "discography"}>
-                            <CoverPlay reference={album.reference} title={album.title} />
-                          </Show>
+                          <CoverPlay reference={album.reference} title={album.title} />
                         </div>
                       )}
                     </For>

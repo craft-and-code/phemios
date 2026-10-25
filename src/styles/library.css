@@ -637,11 +637,13 @@ pre {
 }
 .cover-dialog .artwork {
   width: min(var(--cover-media-width), var(--cover-media-height));
+  margin-inline: auto;
   border: 0;
   background: none !important;
 }
 .cover-preview-image {
   display: block;
+  margin-inline: auto;
   width: auto;
   height: auto;
   max-width: var(--cover-media-width);
@@ -658,6 +660,11 @@ pre {
 .cover-dialog-heading h2 {
   margin: 0;
   font-size: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cover-dialog-heading > button {
+  flex-shrink: 0;
 }
 
 .artist-hero::before {
@@ -1554,12 +1561,12 @@ button.metadata-link:hover {
   }
 }
 
-/* Centre the triangle's bounds rather than the asymmetric source viewBox. */
+/* Keep Lucide's optical balance; the former icon's pixel offset no longer applies. */
 .cover-play > svg {
   width: 16px;
   height: 16px;
   display: block;
-  transform: translateX(-1px);
+  transform: none;
 }
 .artist-presentation-editorial .cover-play.icon-button,
 .density-compact .album-card > .cover-play.icon-button,
@@ -1969,5 +1976,24 @@ main:has(> .album-catalog-state) > :not(.album-catalog-state) {
   flex: 0 0 auto;
 }
 .density-compact .album-title-line {
+  margin: 0;
+}
+
+.track-analysis {
+  --track-result-gap: 16px;
+  display: grid;
+  gap: var(--track-result-gap);
+  margin: var(--track-result-gap) 0;
+}
+.track-analysis > .analysis-result-heading {
+  padding-top: 0;
+}
+.track-result-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  background: var(--background);
+}
+.track-result-panel .spectrum {
   margin: 0;
 }

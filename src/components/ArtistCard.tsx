@@ -51,9 +51,6 @@ export function ArtistCard(props: {
         </Show>
       </div>
       <div class="artist-presentation-albums">{props.children}</div>
-      <Show when={props.view !== "discography"}>
-        <div class="artist-presentation-play">{props.play}</div>
-      </Show>
     </article>
   );
 }

@@ -1,3 +1,4 @@
+import { TrackResultPanel } from "./TrackResultPanel";
 import { Feedback } from "./Feedback";
 import { createCatalogDetail } from "../library/catalog-detail";
 import { referenceSource } from "../library/sources";
@@ -173,10 +174,7 @@ export function TrackResults(props: {
         />
       </Show>
       <Show when={analysis()}>
-        <div id={`${id}-analysis`} class="track-analysis">
-          <div class="analysis-result-heading">
-            <strong>{t("Analyse FlacCompagnon")}</strong>
-          </div>
+        <TrackResultPanel id={`${id}-analysis`} label={t("Analyse FlacCompagnon")}>
           <Show when={detailRead.loading()}>
             <PageLoader inline label={t("Chargement de l’analyse…")} />
           </Show>
@@ -208,14 +206,15 @@ export function TrackResults(props: {
             error={downloadFailed()}
             onClose={() => setDownloadStatus("")}
           />
-        </div>
+        </TrackResultPanel>
       </Show>
       <Show when={spectrum()}>
-        <div id={`${id}-spectrum`} class="track-analysis">
-          <div class="analysis-result-heading">
-            <strong>{t("Spectre")}</strong>
-            <SpectrumDownload reference={props.track.reference} />
-          </div>
+        <TrackResultPanel
+          id={`${id}-spectrum`}
+          title={t("Spectre")}
+          framed
+          actions={<SpectrumDownload reference={props.track.reference} />}
+        >
           <Show
             when={library.image(props.track.reference, "spectrum")}
             fallback={
@@ -235,7 +234,7 @@ export function TrackResults(props: {
               message={library.imageError(props.track.reference, "spectrum") ?? ""}
             />
           </Show>
-        </div>
+        </TrackResultPanel>
       </Show>
       <Show when={words.visible()}>
         <section id={`${id}-lyrics`} class="track-analysis track-lyrics">

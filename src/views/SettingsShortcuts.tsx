@@ -30,10 +30,7 @@ export function SettingsShortcuts() {
     <section class="settings-card">
       <div class="section-heading">
         <h2>{t("Raccourcis clavier")}</h2>
-        <button onClick={settings.reset}>
-          <Icon name="refresh" />
-          {t("Réinitialiser")}
-        </button>
+        <button onClick={settings.reset}>{t("Réinitialiser")}</button>
       </div>
       <p class="muted">
         {t(
