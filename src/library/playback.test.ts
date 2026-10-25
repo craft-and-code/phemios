@@ -2,6 +2,7 @@ import { activateInterfaceProfile, interfacePreferences } from "./account-prefer
 import { createRoot } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPlayback } from "./playback";
+import { playbackDisplay } from "./playback-display";
 import { createQueueLyrics } from "./queue-lyrics-controller";
 import { referenceSource } from "./sources";
 import { idlePlayback } from "./playback-state";
@@ -1112,10 +1113,17 @@ describe("queue additions", () => {
       expect(await p.appendSelection(async () => ({ items: [row] }), "server")).toBe(1);
       expect(p.queue().length).toBe(1);
       expect(p.state().status).toBe("idle");
+      expect(p.current()).toBeUndefined();
+      expect(playbackDisplay(p.current(), p.state(), p.queue())?.album).toBe(album);
+      expect(playbackDisplay(p.current(), p.state(), p.queue())).toMatchObject({
+        title: "Third",
+        artist: "Artistes divers",
+      });
       expect(playbackStart).not.toHaveBeenCalled();
       expect(playbackAppend).not.toHaveBeenCalled();
       p.reset();
       expect(p.queue()).toEqual([]);
+      expect(playbackDisplay(p.current(), p.state(), p.queue())).toBeUndefined();
       dispose();
     });
   });

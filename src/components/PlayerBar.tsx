@@ -2,7 +2,8 @@ import { NetworkAudio } from "./NetworkAudio";
 import { cdReference } from "../cd/model";
 import { DurationToggle } from "./DurationToggle";
 import { PlayerTransport } from "./PlayerTransport";
-import { repeatDisabled } from "../navigation/contextual-play";
+import { playbackToggleAction, repeatDisabled } from "../navigation/contextual-play";
+import { playbackDisplay } from "../library/playback-display";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { WaveformSeek } from "./WaveformSeek";
 import { PlayingFavourite } from "./PlayingFavourite";
@@ -22,7 +23,10 @@ export function PlayerBar() {
   const player = useLibrary().player,
     state = player.state;
   const position = player.seekPosition;
+  const displayed = () => playbackDisplay(player.current(), state(), player.queue());
+  const cover = () => displayed()?.album;
   const active = () => ["playing", "paused"].includes(state().status);
+  const toggleAction = () => playbackToggleAction(state().status);
   const disabled = () => player.busy() || !active();
   const issue = () => t(player.error() || state().error || "");
   const status = () =>
@@ -38,7 +42,7 @@ export function PlayerBar() {
     <footer class="player-bar" aria-label={t("Lecture")}>
       <div class="now-playing">
         <Show
-          when={player.current()?.album}
+          when={cover()}
           fallback={
             <div class="idle-cover">
               <Icon name="disc" />
@@ -66,7 +70,7 @@ export function PlayerBar() {
                 )}
               </Show>
               <PlayingBars reference={player.current()?.reference ?? ""} />
-              <Show when={player.current()} fallback={t("Aucun morceau en lecture")}>
+              <Show when={displayed()} fallback={t("Aucun morceau en lecture")}>
                 {(row) => (
                   <a
                     class="playing-track-link"
@@ -86,15 +90,15 @@ export function PlayerBar() {
             </Show>
           </span>
           <small>
-            <Show when={player.current()?.album?.artist} fallback={player.current()?.artist}>
+            <Show when={displayed()?.album?.artist} fallback={displayed()?.artist}>
               {(artist) => (
                 <a class="playing-artist-link" href={`#/artist/${encodeURIComponent(artist())}`}>
-                  {player.current()?.artist}
+                  {displayed()?.artist}
                 </a>
               )}
             </Show>{" "}
             {player.current() ? "· " : ""}
-            {status()}
+            <Show when={player.current() || !displayed()}>{status()}</Show>
           </small>
           <Show when={issue()}>
             <small class="playback-error" role="alert" title={issue()}>
@@ -130,15 +134,15 @@ export function PlayerBar() {
                 class="play-button"
                 disabled={!player.canTogglePlayback()}
                 aria-label={
-                  state().status === "playing"
+                  toggleAction() === "pause"
                     ? t("Mettre en pause")
-                    : active()
+                    : toggleAction() === "resume"
                       ? t("Reprendre la lecture")
                       : t("Lancer la lecture")
                 }
                 onClick={() => void player.togglePlayback()}
               >
-                <Icon name={state().status === "playing" ? "pause" : "play"} />
+                <Icon name={toggleAction() === "pause" ? "pause" : "play"} />
               </button>
               <button
                 class="icon-button transport-stop"

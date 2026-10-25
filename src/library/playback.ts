@@ -1,4 +1,5 @@
 import { cdReference, cdSelection, type CdDisc } from "../cd/model";
+import { playbackToggleAction } from "../navigation/contextual-play";
 import { interfacePreferences, interfaceProfileIdentity } from "./account-preferences";
 import {
   audioPreferenceKey,
@@ -407,10 +408,10 @@ export function createPlayback(
       }
     }
   }
-  /** Footer admission follows the queued source before the visible page; connecting has no second start. */
+  /** Footer admission follows the queued source; accepted buffering permits Pause, never another start. */
   function canTogglePlayback() {
-    if (busy() || state().status === "connecting") return false;
-    if (state().status === "playing") return true;
+    if (busy()) return false;
+    if (playbackToggleAction(state().status) === "pause") return true;
     if (state().status === "paused") return canStart(state().reference);
     return canStart(
       orderedQueue()[0]?.reference ?? (target() || discTarget()?.tracks[0]?.reference),
@@ -419,7 +420,7 @@ export function createPlayback(
   /** Resume the prepared order before falling back to the page. Explicit contextual Play still replaces it. */
   async function togglePlayback() {
     if (!canTogglePlayback()) return;
-    if (state().status === "playing") return action("pause");
+    if (playbackToggleAction(state().status) === "pause") return action("pause");
     if (state().status === "paused") return action("resume");
     const first = orderedQueue()[0];
     if (first) return playQueueOccurrence(first.index);
@@ -488,7 +489,11 @@ export function createPlayback(
       if (!["idle", "ended", "error"].includes(value.status))
         timer = setTimeout(
           () => void refresh(epoch),
-          value.device === "@hqplayer" ? 250 : value.status === "playing" ? 60 : 250,
+          value.device === "@hqplayer"
+            ? 250
+            : ["playing", "connecting"].includes(value.status)
+              ? 60
+              : 250,
         );
     } catch (failure) {
       if (epoch === generation) setError(message(failure));

@@ -1,4 +1,12 @@
 import type { Route } from "./routes";
+/** Buffering belongs to an accepted stream: pause it rather than starting another queue. */
+export function playbackToggleAction(status: string): "pause" | "resume" | "start" {
+  return status === "playing" || status === "connecting"
+    ? "pause"
+    : status === "paused"
+      ? "resume"
+      : "start";
+}
 /** A detail selection wins; Cover Flow's front album precedes other visible Play controls. */
 export function contextualReference(
   detail: string,
