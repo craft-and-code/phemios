@@ -1633,10 +1633,71 @@ button.metadata-link:hover {
 
 .biography-link {
   color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+button.biography-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  vertical-align: baseline;
+  cursor: pointer;
+}
+.biography-link:hover,
+button.biography-link:hover:not(:disabled) {
+  color: inherit;
+  text-decoration-thickness: 2px;
+}
+.biography-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.biography-tracks-dialog {
+  width: min(640px, calc(100vw - 40px));
+  max-height: calc(100vh - 80px);
+  padding: 24px;
+  overflow: auto;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.biography-tracks-dialog::backdrop {
+  background: #0009;
+}
+.biography-tracks-dialog h2:focus {
+  outline: none;
+}
+.biography-tracks-dialog ul {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.biography-tracks-dialog li a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   text-decoration: none;
 }
-.biography-link:hover {
+.biography-tracks-dialog li a:hover {
   color: var(--accent);
+}
+.biography-tracks-dialog li a:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+.biography-tracks-dialog li span {
+  color: var(--muted);
 }
 .collection-name-row {
   display: flex;

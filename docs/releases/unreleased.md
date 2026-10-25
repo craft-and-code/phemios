@@ -4,6 +4,8 @@ This reviewed change list is the preparation source for the next version-specifi
 
 ## Added
 
+- Make biography links visible and link known catalogue genres and retained track titles in artist/label summaries and full readers. Open a unique track directly; offer the retained album editions when a title has several placements. Link biography years to all owned albums of that year, only when such albums exist, clearing stale browse filters. No background enrichment or text changes.
+
 - Show cached label logos beside names in Labels and in label headers, preserving their proportions. Use an accessible fallback icon when unavailable, including older engines. Logos reuse Aède’s explicit Fanart.tv enrichment and the existing offline image cache.
 
 - Preview the first queued track's cover, title and artist in the idle footer after a **+** addition, including individual tracks, without starting playback. Existing playback details stay in place.

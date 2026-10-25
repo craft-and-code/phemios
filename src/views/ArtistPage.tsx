@@ -3,7 +3,7 @@ import { createAccountSavedArticles } from "../encyclopedia/account-saved";
 import { articleRetained } from "../encyclopedia/saved";
 import { BiographyMore } from "../components/BiographyMore";
 import type { BiographyNavigation } from "../library/biography-navigation";
-import { biographyLinker } from "../library/biography-links";
+import { createBiographyLinker } from "../library/biography-catalog";
 import { ArtistBiography } from "../components/ArtistBiography";
 import { createBiographyReading } from "../library/biography-reading-state";
 import {
@@ -35,6 +35,7 @@ export function ArtistPage(props: {
   compact: boolean;
   onBiographyNavigation: BiographyNavigation;
   onGenres: (genres: readonly string[]) => void;
+  onYear: (year: number) => void;
   onCountry: (country: string) => void;
 }) {
   const library = useLibrary();
@@ -66,7 +67,7 @@ export function ArtistPage(props: {
         .filter((url): url is string => !!url),
     ),
   ]);
-  const linker = createMemo(() => biographyLinker(library.artists(), props.artist.reference));
+  const linker = createBiographyLinker(() => props.artist.reference);
   const preferences = createToolPreferences();
   const catalogue = createMemo(() => artistCatalogue(props.artist, library.albums()));
   const albums = () => catalogue().featured;
@@ -144,6 +145,9 @@ export function ArtistPage(props: {
                 <BiographyLanguageNotice language={props.artist.biographyCredit?.lang} />
                 <p>
                   <BiographyText
+                    onYear={props.onYear}
+                    linker={linker()}
+                    onGenre={(genre) => props.onGenres([genre])}
                     reference={props.artist.reference}
                     text={
                       props.artist.biography || t("Aucune biographie récupérée pour cet artiste.")
@@ -272,7 +276,13 @@ export function ArtistPage(props: {
             saveError={saved.error()}
             onDownload={isNative() ? downloadEncyclopedia : undefined}
             renderText={(text) => (
-              <BiographyText reference={props.artist.reference} text={text} linker={linker()} />
+              <BiographyText
+                onYear={props.onYear}
+                reference={props.artist.reference}
+                text={text}
+                linker={linker()}
+                onGenre={(genre) => props.onGenres([genre])}
+              />
             )}
             artist={props.artist.name}
             photos={photos()}

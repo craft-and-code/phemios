@@ -9,9 +9,11 @@ it("links complete longest known names in the same catalogue without changing pr
   const text = "Ozzy played in BLACK SABBATH. Sabbathical <b>remains text</b>.";
   const parts = biographyLinks(text, artists, "artist:@phemios/server/ozzy");
   expect(parts.map((part) => part.text).join("")).toBe(text);
-  expect(parts.filter((part) => part.reference).map((part) => part.reference)).toEqual([
-    "artist:@phemios/server/black sabbath",
-  ]);
+  expect(
+    parts
+      .filter((part) => part.target)
+      .map((part) => (part.target?.kind === "artist" ? part.target.reference : undefined)),
+  ).toEqual(["artist:@phemios/server/black sabbath"]);
 });
 it("does not guess ambiguous names or link the current artist", () => {
   expect(
@@ -22,7 +24,7 @@ it("does not guess ambiguous names or link the current artist", () => {
         { name: "Signal", reference: "artist:other" },
       ],
       "artist:signal",
-    ).some((part) => part.reference),
+    ).some((part) => part.target),
   ).toBe(false);
 });
 
@@ -31,7 +33,9 @@ it("retains one source-bound linker across multiple paragraphs without regex cur
     [{ name: "Other Ensemble", reference: "artist:other" }],
     "artist:current",
   );
-  const expected = [{ text: "Other Ensemble", reference: "artist:other" }];
+  const expected = [
+    { text: "Other Ensemble", target: { kind: "artist", reference: "artist:other" } },
+  ];
   expect(link("Other Ensemble")).toEqual(expected);
   expect(link("Unrelated paragraph")).toEqual([{ text: "Unrelated paragraph" }]);
   expect(link("Other Ensemble")).toEqual(expected);

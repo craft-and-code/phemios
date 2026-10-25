@@ -168,6 +168,11 @@ function AppContent() {
   );
   const filters = scopedFilters.value,
     setFilters = scopedFilters.set;
+  function browseAlbumYear(year: number) {
+    scopedFilters.select("albums", selectAlbumYear(filters(), year));
+    navigation.navigate("#/albums");
+  }
+
   const trackPaging = createTrackPaging(
     () => filters().query,
     () => library.trackSources(),
@@ -862,6 +867,7 @@ function AppContent() {
                       <ArtistPage
                         onBiographyNavigation={(value) => setBiographyReturn(value)}
                         artist={artist()}
+                        onYear={browseAlbumYear}
                         compact={compact() && section() !== "artists"}
                         onGenres={(genres) => {
                           scopedFilters.select("genres", {
@@ -915,10 +921,7 @@ function AppContent() {
                           });
                           navigation.navigate("#/countries");
                         }}
-                        onYear={(year) => {
-                          scopedFilters.select("albums", selectAlbumYear(filters(), year));
-                          navigation.navigate("#/albums");
-                        }}
+                        onYear={browseAlbumYear}
                       />
                     )}
                   </Show>
@@ -928,6 +931,17 @@ function AppContent() {
                     onBiographyNavigation={(value) => setBiographyReturn(value)}
                     reference={(route as { reference: string }).reference}
                     onTitle={setLabelTitle}
+                    onYear={browseAlbumYear}
+                    onGenres={(genres) => {
+                      scopedFilters.select("genres", {
+                        mode: "none",
+                        query: "",
+                        countries: [],
+                        genre: undefined,
+                        genres,
+                      });
+                      navigation.navigate("#/genres");
+                    }}
                   />
                 </Show>
                 <Show when={route.kind === "track"}>

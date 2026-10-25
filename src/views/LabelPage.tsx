@@ -1,3 +1,4 @@
+import { createBiographyLinker } from "../library/biography-catalog";
 import { BiographyLanguageNotice } from "../components/BiographyLanguageNotice";
 import { useViewSession } from "../navigation/ViewSession";
 import { LabelLogo } from "../components/LabelLogo";
@@ -40,9 +41,12 @@ interface LabelResult {
 export function LabelPage(props: {
   reference: string;
   onTitle: (name: string) => void;
+  onGenres: (genres: readonly string[]) => void;
+  onYear: (year: number) => void;
   onBiographyNavigation: BiographyNavigation;
 }) {
   const library = useLibrary();
+  const linker = createBiographyLinker(() => props.reference);
   let alive = true;
   onCleanup(() => {
     alive = false;
@@ -168,6 +172,9 @@ export function LabelPage(props: {
                     <BiographyLanguageNotice language={row().biography?.lang} />
                     <p class="label-biography">
                       <BiographyText
+                        onYear={props.onYear}
+                        linker={linker()}
+                        onGenre={(genre) => props.onGenres([genre])}
                         reference={props.reference}
                         text={
                           row().biography?.text || t("Aucune biographie récupérée pour ce label.")
@@ -249,6 +256,15 @@ export function LabelPage(props: {
           article={article()}
           onDownload={isNative() ? downloadEncyclopedia : undefined}
           artist={detail()?.name ?? ""}
+          renderText={(text) => (
+            <BiographyText
+              onYear={props.onYear}
+              reference={props.reference}
+              text={text}
+              linker={linker()}
+              onGenre={(genre) => props.onGenres([genre])}
+            />
+          )}
           photos={[]}
           error={biography.error()}
           onDismissError={biography.clearError}
