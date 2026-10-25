@@ -35,7 +35,15 @@ export function WaveformSeek() {
     const rect = event.currentTarget.getBoundingClientRect();
     return waveformPosition(event.clientX, rect.left, rect.width, duration());
   }
-  const display = createWaveformPresentation(player.state, () => result.latest);
+  const display = createWaveformPresentation(player.state, () => {
+    const state = player.state();
+    return cdReference(state.reference)
+      ? {
+          reference: state.reference,
+          ...(state.cd_waveform ? { waveform: state.cd_waveform } : {}),
+        }
+      : result.latest;
+  });
   const path = createMemo(() => display().path);
   const disabled = () =>
     !["playing", "paused"].includes(player.state().status) || player.busy() || !duration();
@@ -64,7 +72,10 @@ export function WaveformSeek() {
       class="waveform-seek"
       classList={{ "waveform-idle": player.state().status === "idle" }}
       aria-busy={result.loading}
-      title={display().error}
+      title={
+        display().error ||
+        (player.isCd() ? t("La forme d’onde du CD se construit pendant la lecture.") : undefined)
+      }
     >
       <svg viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
         <line x1="0" x2="1000" y1="20" y2="20" class="waveform-baseline" />

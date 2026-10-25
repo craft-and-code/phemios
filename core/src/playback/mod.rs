@@ -4,6 +4,7 @@ mod cd;
 mod cd_authority;
 mod cd_reader;
 mod cd_stream;
+mod cd_waveform;
 mod crossfade;
 mod crossfade_feedback;
 mod crossfade_mix;
@@ -68,6 +69,7 @@ struct Worker {
 struct State {
     local_cd: bool,
     cd_disc: Option<String>,
+    cd_waveform: Option<cd_waveform::Envelope>,
     status: &'static str,
     reference: String,
     index: usize,
@@ -153,7 +155,7 @@ impl Player {
             [0.; 24]
         };
         Ok(
-            json!({"source":if s.local_cd { "cd" } else { "aede" },"cd_disc":s.cd_disc,"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"protected_occurrences":s.protected,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
+            json!({"source":if s.local_cd { "cd" } else { "aede" },"cd_disc":s.cd_disc,"cd_waveform":if s.local_cd { s.cd_waveform.as_ref().filter(|wave| wave.reference == s.reference).map(|wave| wave.snapshot()) } else { None },"underrun_frames":self.signals.underrun_frames.load(Ordering::Relaxed),"spectrum":spectrum,"spectrum_hz":spectrum::frequencies(),"crossfade_ms":s.crossfade_ms,"repeat":if s.repeat.is_empty() { "off" } else { s.repeat },"queue_id":s.queue_id,"shuffled":s.shuffled,"queue":s.queue,"protected_occurrences":s.protected,"seek_id":s.seek_id,"level":level,"levels":levels,"status":s.status,"reference":s.reference,"index":s.index,"total":s.total,"position_ms":s.position,"duration_ms":s.duration,"sample_rate":s.rate,"error":s.error,"history_confirmed":s.confirmed,"device":s.device,"policy":s.policy.name(),"volume":f32::from_bits(self.signals.volume.load(Ordering::Relaxed))}),
         )
     }
     /// Replace an explicit ordered selection after stopping its previous stream and device.

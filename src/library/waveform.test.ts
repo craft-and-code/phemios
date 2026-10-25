@@ -22,3 +22,15 @@ it("maps pointer positions to the drawn timeline, independent of the range thumb
   expect(waveformPosition(900, 100, 600, 240000)).toBe(240000);
   expect(waveformPosition(0, 100, 0, 240000)).toBe(0);
 });
+
+it("leaves unread CD buckets empty rather than drawing invented silence", () => {
+  expect(
+    waveformPath({
+      reference: "track:cd/0000000000000001/1",
+      duration_ms: 3000,
+      sample_rate: 44100,
+      bucket_frames: 44100,
+      peaks: [0.4, null, 0.8],
+    }),
+  ).not.toContain("M333.33");
+});

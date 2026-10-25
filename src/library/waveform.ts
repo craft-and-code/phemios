@@ -4,7 +4,7 @@ export interface Waveform {
   duration_ms: number;
   sample_rate: number;
   bucket_frames: number;
-  peaks: number[];
+  peaks: (number | null)[];
 }
 /** Only complete, attributed bounded envelopes may represent a track's timeline. */
 export function parseWaveform(raw: unknown, reference: string): Waveform {
@@ -23,7 +23,9 @@ export function parseWaveform(raw: unknown, reference: string): Waveform {
     !Array.isArray(row.peaks) ||
     !row.peaks.length ||
     row.peaks.length > 2048 ||
-    row.peaks.some((peak) => !Number.isFinite(peak) || peak < 0 || peak > 1)
+    row.peaks.some(
+      (peak) => typeof peak !== "number" || !Number.isFinite(peak) || peak < 0 || peak > 1,
+    )
   )
     throw new Error(t("Forme d’onde invalide."));
   const span = (row.peaks.length * row.bucket_frames * 1000) / row.sample_rate;
@@ -38,6 +40,7 @@ export function parseWaveform(raw: unknown, reference: string): Waveform {
 export function waveformPath(waveform: Waveform): string {
   return waveform.peaks
     .map((peak, index) => {
+      if (peak === null) return "";
       const x = Math.min(
           999,
           ((index * waveform.bucket_frames * 1000) / waveform.sample_rate / waveform.duration_ms) *

@@ -30,6 +30,7 @@ pub(super) fn stream(
     let mut output = Output::open_cd(device, signals.clone())?;
     let reader = Reader::new(disc.clone(), track.number, offset);
     let mut epoch = 0;
+    let mut read_position = offset;
     let mut ended = false;
     let mut paused = false;
     let mut pending: Option<(u64, std::vec::IntoIter<[f32; 2]>)> = None;
@@ -40,6 +41,7 @@ pub(super) fn stream(
     update(state, |s| {
         s.duration = Some(track.duration_ms());
         s.rate = 44100;
+        s.cd_waveform = Some(super::cd_waveform::Envelope::new(reference, total));
     })?;
     loop {
         if let Some(error) = denied
@@ -76,6 +78,7 @@ pub(super) fn stream(
                 output.reset()?;
                 offset = (ms.saturating_mul(44100) / 1000).min(total);
                 epoch = reader.seek(offset)?;
+                read_position = offset;
                 pending = None;
                 ended = false;
                 sent = 0;
@@ -105,6 +108,12 @@ pub(super) fn stream(
         if pending.is_none() {
             match reader.received.try_recv() {
                 Ok(Event::Pcm(e, chunk)) if e == epoch => {
+                    update(state, |s| {
+                        if let Some(wave) = &mut s.cd_waveform {
+                            wave.record(read_position, chunk.frames());
+                        }
+                    })?;
+                    read_position += chunk.frames().len() as u64;
                     pending = Some((e, chunk.frames().collect::<Vec<_>>().into_iter()));
                     progress = Instant::now();
                     if !paused {

@@ -1,8 +1,11 @@
 import { t } from "../i18n";
+import { parseCdWaveform } from "../cd/waveform";
+import type { Waveform } from "./waveform";
 /** Public native playback state. Its clock counts source frames consumed by the callback. */
 export interface PlaybackState {
   /** Physical CD playback never inherits a remote account/reference namespace. */
   source?: "aede" | "cd";
+  cd_waveform?: Waveform | null;
   spectrum?: readonly number[];
   spectrum_hz?: readonly number[];
   shuffled: boolean;
@@ -125,6 +128,10 @@ export function parsePlayback(value: unknown): PlaybackState {
       v.protected_occurrences.some((index) => !count(index) || index >= Number(v.total)))
   )
     throw new Error(t("File de lecture invalide."));
+  if (v.cd_waveform !== undefined && v.cd_waveform !== null) {
+    if (v.source !== "cd") throw new Error(t("Forme d’onde invalide."));
+    parseCdWaveform(v.cd_waveform, String(v.reference), v.duration_ms as number | null);
+  }
   return {
     ...(v.spectrum === undefined
       ? {}
