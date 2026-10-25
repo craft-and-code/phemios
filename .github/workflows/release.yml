@@ -112,6 +112,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Compose reviewed changes and complete commit history
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/release-notes.mjs "$RELEASE_TAG" "$RUNNER_TEMP/release-notes.md"
       - uses: actions/download-artifact@v4
         with:
           pattern: phemios-App-*
@@ -124,4 +133,4 @@ jobs:
           draft: true
           files: dist-release/*
           fail_on_unmatched_files: true
-          body_path: docs/releases/${{ github.ref_name }}.md
+          body_path: ${{ runner.temp }}/release-notes.md
