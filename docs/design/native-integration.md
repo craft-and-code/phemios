@@ -159,7 +159,7 @@ The coverage page keeps its bounded resource, sort headers and expandable job ro
 
 ## Complete waveform and optional playback workspace
 
-The footer uses Aède's complete-track adaptive peak envelope, not realtime or synthetic peaks. Source-guarded decoding is cached by precise file identity; the existing seek preview/native ticket policy remains responsible for dragging, clicks and applied positions. Empty playback has a line; pause retains the envelope. Errors are visible and do not replace real data with a demonstration curve. Radio/podcast live timelines retain their own player contracts.
+The footer uses Aède's complete-track adaptive peak envelope, not realtime or synthetic peaks. Source-guarded decoding is cached by precise file identity; the existing seek preview/native ticket policy remains responsible for dragging, clicks and applied positions. Inactive playback hides the waveform and both time labels while retaining the complete timeline layout slot; pause retains the envelope and times. Errors are visible and do not replace real data with a demonstration curve. Radio/podcast live timelines retain their own player contracts.
 
 The footer monitor/wave icon alone opens Playback; starting a track never navigates automatically. The workspace offers perspective-projected 3D particle sphere, waves and relief scenes, driven by four native output-RMS response envelopes measured from consumed samples. Pause freezes the pose, hidden documents stop animation and reduced-motion users get a static view. This first renderer uses Canvas with 3D geometry, not an added WebGL framework. The optional right queue shows actual occurrence order, including shuffle, and can jump to an occurrence; duplicate tracks remain distinct.
 
@@ -357,7 +357,7 @@ The [radio tuner](radio-tuner.md) previews a gesture and retunes the currently e
 
 ### Retained queue and incremental lyric acquisition
 
-Stopping playback preserves the explicitly opened queue pane. Its empty scene remains centred in the available column, while closing the pane remains an explicit action. The idle waveform retains its baseline with the default cursor; active seek controls retain their existing pointer and keyboard semantics.
+Stopping playback preserves the explicitly opened queue pane. Its empty scene remains centred in the available column, while closing the pane remains an explicit action. Idle, ended and failed transports hide the complete timeline, including both time labels and the seek control, without moving the footer controls; active and paused seek controls retain their existing pointer and keyboard semantics.
 
 The queue probes every distinct track serially, within the existing 4096-occurrence budget. A retained document icon is read-only and reflects an actual lyrics response containing nonblank words. A missing-track action acquires only that reference; the bulk action remains sequential and updates each occurrence after an actual retained-word read. Successful progress no longer occupies a feedback paragraph; errors remain below the toolbar, and the shared bounded download status shows a temporary green check after confirmed completion. Explicit bulk cancellation and library-owned lifetime survive drawer closing. Exact source/owner checks hide replaced-account results, and a later per-track confirmation supersedes an older missing probe. Replacing the visible queue does not force an already captured batch to redownload retained words.
 

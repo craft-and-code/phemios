@@ -317,6 +317,10 @@ legend {
   align-items: center;
   gap: 8px;
 }
+/* Keep the reserved timeline row when there is no active audio source. */
+.playback-progress-inactive {
+  visibility: hidden;
+}
 .playback-progress input {
   min-width: 0;
   height: 4px;

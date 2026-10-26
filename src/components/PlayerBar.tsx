@@ -32,6 +32,7 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
   const displayed = () => playbackDisplay(player.current(), state(), player.queue());
   const cover = () => displayed()?.album;
   const active = () => ["playing", "paused"].includes(state().status);
+  const timelineVisible = () => ["playing", "paused", "connecting"].includes(state().status);
   const toggleAction = () => playbackToggleAction(state().status);
   const disabled = () => player.busy() || !active();
   const issue = () => t(player.error() || state().error || "");
@@ -205,7 +206,11 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
           </>
         }
         timeline={
-          <div class="playback-progress">
+          <div
+            class="playback-progress"
+            classList={{ "playback-progress-inactive": !timelineVisible() }}
+            aria-hidden={!timelineVisible()}
+          >
             <small>{time(position())}</small>
             <WaveformSeek />
             <DurationToggle
