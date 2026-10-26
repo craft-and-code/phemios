@@ -2334,5 +2334,8 @@
   "Mettre la piste {0} en pause": "Pause track {0}",
   "Reprendre la piste {0}": "Resume track {0}",
   "Lire le CD": "Play CD",
-  "La forme d’onde du CD se construit pendant la lecture.": "The CD waveform builds as the audio is read."
+  "La forme d’onde du CD se construit pendant la lecture.": "The CD waveform builds as the audio is read.",
+  "Copie hors ligne du serveur distant supprimée.": "The remote server’s offline copy was removed.",
+  "Ce réglage efface uniquement la copie hors ligne du serveur distant : catalogue et images en cache. Le catalogue Local, les articles enregistrés et les enrichissements conservés par Aède restent disponibles.": "This setting removes only the remote server’s offline copy: catalogue and cached images. The Local catalogue, saved articles and enrichment retained by Aède remain available.",
+  "Supprimer la copie du catalogue et les images du serveur distant sur cet appareil ? Le catalogue Local et les données d’Aède sont conservés. Une reconnexion et une synchronisation récupéreront les données du serveur.": "Remove the remote server catalogue copy and images on this device? The Local catalogue and Aède data are preserved. Reconnecting and syncing will retrieve the server’s data."
 }

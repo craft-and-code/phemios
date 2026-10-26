@@ -33,7 +33,7 @@ export function ServerCacheSettings() {
       await library.clearServerCache();
       if (current()) {
         setConfirm(false);
-        setMessage(t("Cache serveur vidé sur cet appareil."));
+        setMessage(t("Copie hors ligne du serveur distant supprimée."));
       }
     } catch (failure) {
       if (current()) setError(String(failure));
@@ -46,7 +46,7 @@ export function ServerCacheSettings() {
       <h3>{t("Catalogue serveur hors ligne")}</h3>
       <p>
         {t(
-          "Après déconnexion, Phémios conserve le catalogue serveur pour le consulter hors ligne. Ces réglages concernent uniquement cet appareil.",
+          "Ce réglage efface uniquement la copie hors ligne du serveur distant : catalogue et images en cache. Le catalogue Local, les articles enregistrés et les enrichissements conservés par Aède restent disponibles.",
         )}
       </p>
       <Show
@@ -87,7 +87,7 @@ export function ServerCacheSettings() {
       <Show when={confirm()}>
         <p>
           {t(
-            "Supprimer le catalogue et les images serveur en cache ? Les fichiers musicaux, les comptes et les données personnelles sont conservés. Une reconnexion et une synchronisation permettront de récupérer le catalogue.",
+            "Supprimer la copie du catalogue et les images du serveur distant sur cet appareil ? Le catalogue Local et les données d’Aède sont conservés. Une reconnexion et une synchronisation récupéreront les données du serveur.",
           )}
         </p>
         <div class="settings-actions">
