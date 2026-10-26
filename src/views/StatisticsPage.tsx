@@ -183,7 +183,7 @@ export function StatisticsPage(props: {
               onClick={downloadCsv}
             />
             <RefreshButton
-              busyIndicator="stop"
+              identity={library.session()}
               busy={loading()}
               disabled={
                 !library.session() ||

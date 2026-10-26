@@ -39,6 +39,7 @@ export function NetworkAudio() {
       <div class="section-heading">
         <h3>{t("Lecteurs réseau")}</h3>
         <RefreshButton
+          identity={library.session()}
           label={t("Rechercher des lecteurs réseau")}
           busy={audio.busy()}
           disabled={!audio.enabled() || !bind().trim() || audio.active()}

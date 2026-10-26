@@ -275,3 +275,30 @@ it("acknowledges asynchronous private saves only in the still-open article gener
   expect(state.notice()).not.toBe("");
   state.dispose();
 });
+
+it("cancels a refresh without dropping the displayed article or accepting a late replacement", async () => {
+  let finish!: (value: unknown) => void;
+  const read = vi
+    .fn()
+    .mockResolvedValueOnce(article)
+    .mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          finish = done;
+        }),
+    );
+  const state = createWikipediaExplorer(
+    { read, search: async () => ({ language: "fr", rows: [] }) },
+    () => "fr",
+    storageFixture(),
+  );
+  await state.open(article);
+  const refresh = state.open(article, true);
+  expect(state.busy()).toBe("article");
+  state.cancel();
+  expect(state.busy()).toBe("");
+  expect(state.article()).toEqual(article);
+  finish({ ...article, text: "Late changed text" });
+  await refresh;
+  expect(state.article()).toEqual(article);
+});

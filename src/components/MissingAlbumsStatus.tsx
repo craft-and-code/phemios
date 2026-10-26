@@ -1,12 +1,16 @@
-import { createSignal, For, Show } from "solid-js";
+import { RefreshButton } from "./RefreshButton";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { t } from "../i18n";
 import { useLibrary } from "../library/context";
-import { Icon } from "./Icon";
 /** Reversible suggestions retain MusicBrainz evidence and the originating account. */
 export function MissingAlbumsStatus(props: { artist?: string }) {
   const library = useLibrary(),
     [error, setError] = createSignal(""),
     [busy, setBusy] = createSignal(false);
+  const refreshIdentity = createMemo(() => ({
+    local: library.localSession(),
+    server: library.serverSession(),
+  }));
   const rows = () =>
     library.missing
       .rows()
@@ -33,27 +37,28 @@ export function MissingAlbumsStatus(props: { artist?: string }) {
           <Show when={counted("loading")}>
             <span>{t("Téléchargement en cours…")}</span>
           </Show>
-          <Show when={failed().length || counted("absent") || counted("loading")}>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Réessayer les pochettes")}
-              title={t("Réessayer les pochettes")}
-              disabled={counted("loading") > 0}
-              aria-busy={counted("loading") > 0}
-              onClick={() =>
-                void Promise.all(
+          <Show
+            when={
+              failed().length || counted("absent") || counted("loading") || counted("cancelled")
+            }
+          >
+            <RefreshButton
+              identity={refreshIdentity()}
+              label={t("Réessayer les pochettes")}
+              busy={counted("loading") > 0}
+              onCancel={() => library.missingArtwork.cancel(visible())}
+              onRefresh={() =>
+                Promise.all(
                   visible()
                     .filter((row) =>
-                      ["failed", "absent"].includes(library.missingArtwork.status(row)),
+                      ["failed", "absent", "cancelled"].includes(
+                        library.missingArtwork.status(row),
+                      ),
                     )
                     .map((row) => library.missingArtwork.load(row, true)),
                 )
               }
-            >
-              <Show when={counted("loading")} fallback={<Icon name="refresh" />}>
-                <span class="spinner" aria-hidden="true" />
-              </Show>
-            </button>
+            />
           </Show>
         </p>
         <Show when={counted("unsupported")}>

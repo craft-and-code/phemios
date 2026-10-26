@@ -31,7 +31,32 @@ export const Tags: Story = {
 export const Layout: Story = {
   render: () => (
     <div>
-      {["Tags", "Moods", "Favorites", "Rated", "Collections", "History", "Saved"].map((view) => (
+      {[
+        "Tags",
+        "Moods",
+        "Favorites",
+        "Rated",
+        "Collections",
+        "History",
+        "Saved",
+        "Artists",
+        "Albums",
+        "Tracks",
+        "Countries",
+        "Genres",
+        "Composers",
+        "Labels",
+        "Podcasts",
+        "Concerts",
+        "Trophies",
+        "Diagnostics",
+        "Analyses",
+        "Devices",
+        "Playback",
+        "Radio",
+        "Search",
+        "M3U",
+      ].map((view) => (
         <main style={{ height: "400px" }} data-view={view}>
           <section class="page result-page">
             <StickyHeader separator={view !== "History"}>
@@ -54,7 +79,37 @@ export const Layout: Story = {
                   Connectez-vous pour accéder aux données de votre compte.
                 </p>
                 {view === "Moods" && <div class="mood-cards" />}
-                <EmptyState icon={view === "Rated" ? "star" : "heart"}>
+                <EmptyState
+                  icon={
+                    (
+                      {
+                        Tags: "tags",
+                        Moods: "moods",
+                        Favorites: "heart",
+                        Rated: "star",
+                        Collections: "library",
+                        History: "history",
+                        Artists: "users",
+                        Albums: "disc",
+                        Tracks: "list",
+                        Countries: "globe",
+                        Genres: "genres",
+                        Composers: "note",
+                        Labels: "label",
+                        Podcasts: "podcast",
+                        Concerts: "concerts",
+                        Trophies: "trophy",
+                        Diagnostics: "doctor",
+                        Analyses: "wave",
+                        Devices: "drive",
+                        Playback: "visualizer",
+                        Radio: "radio",
+                        Search: "search",
+                        M3U: "playlist",
+                      } as Record<string, string>
+                    )[view] ?? "heart"
+                  }
+                >
                   No retained results.
                 </EmptyState>
               </>

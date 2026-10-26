@@ -191,3 +191,20 @@ it("admits an HTTPS administrator but keeps another administrator's lock read-on
     dispose();
   }
 });
+
+it("cancels a policy read without accepting its late administrative response", async () => {
+  const response = deferred(),
+    request = vi.fn().mockReturnValue(response.promise);
+  const state = createRoot((dispose) => ({
+    dispose,
+    admin: createParentalAdmin(() => parentalScope(), request),
+  }));
+  await settleParental();
+  expect(state.admin.loading()).toBe(true);
+  state.admin.cancelLoad();
+  expect(state.admin.loading()).toBe(false);
+  response.resolve(parentalSnapshot());
+  await settleParental();
+  expect(state.admin.draft()).toBeUndefined();
+  state.dispose();
+});

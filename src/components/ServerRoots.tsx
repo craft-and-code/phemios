@@ -44,6 +44,7 @@ export function ServerRoots(props: { busy: boolean; revision: number; scan: () =
       <div class="section-heading">
         <h3>{t("Dossiers fournis par Aède")}</h3>
         <RefreshButton
+          identity={library.serverSession()}
           label={t("Relire la liste des dossiers, sans scanner")}
           busy={read.loading()}
           disabled={props.busy || (read.pending() && !read.loading())}

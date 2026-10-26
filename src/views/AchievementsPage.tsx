@@ -19,6 +19,7 @@ export function AchievementsPage() {
         <div class="section-heading">
           <p>{rows() ? t("{0} / {1} dévoilés", rows()!.unlocked, rows()!.total) : ""}</p>
           <RefreshButton
+            identity={library.session()}
             busy={loaded.loading()}
             disabled={!library.session() || (loaded.pending() && !loaded.loading())}
             onCancel={loaded.cancel}

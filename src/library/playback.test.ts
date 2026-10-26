@@ -3108,3 +3108,31 @@ it("keeps a replacement HQPlayer seek owned when the previous run rejects its se
     }
   });
 });
+
+it("cancels output discovery and ignores the old reply without ending its successor", async () => {
+  await createRoot(async (dispose) => {
+    const player = createPlayback(() => true);
+    let finish!: (value: unknown) => void;
+    vi.mocked(playbackOutputs)
+      .mockImplementationOnce(
+        () =>
+          new Promise((done) => {
+            finish = done;
+          }),
+      )
+      .mockResolvedValueOnce([{ id: "new", name: "New", default: true }]);
+    const old = player.discover();
+    player.cancelDiscovery();
+    expect(player.discovering()).toBe(false);
+    const fresh = player.discover();
+    await Promise.resolve();
+    finish([{ id: "old", name: "Old", default: true }]);
+    await old;
+    expect(player.discovering()).toBe(true);
+    expect(player.outputs()[0]?.id).toBe("new");
+    await vi.advanceTimersByTimeAsync(1000);
+    await fresh;
+    expect(player.discovering()).toBe(false);
+    dispose();
+  });
+});

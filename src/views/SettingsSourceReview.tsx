@@ -119,7 +119,9 @@ function SourceReviewLibrary(props: { source: SourceId }) {
       <div class="source-review-heading">
         <strong>{sourceLabel(props.source)}</strong>
         <RefreshButton
+          identity={owner()}
           busy={read.loading()}
+          pending={read.pending()}
           disabled={!!busy()}
           onRefresh={() => read.refetch()}
           onCancel={read.cancel}

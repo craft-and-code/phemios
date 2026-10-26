@@ -123,6 +123,7 @@ export function AnalysisPage(props: { query: string }) {
             />
             <Show when={!imported()}>
               <RefreshButton
+                identity={library.session()}
                 busy={read.loading()}
                 disabled={!library.session() || (read.pending() && !read.loading())}
                 onCancel={read.cancel}
@@ -169,6 +170,7 @@ export function AnalysisPage(props: { query: string }) {
               <div class="missing-notice">
                 <Feedback error persistent message={String(read.error())} />
                 <RefreshButton
+                  identity={library.session()}
                   busy={read.loading()}
                   disabled={read.pending() && !read.loading()}
                   onCancel={read.cancel}

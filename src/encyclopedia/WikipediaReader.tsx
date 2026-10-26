@@ -1,3 +1,4 @@
+import { RefreshButton } from "../components/RefreshButton";
 import { linkResourceBlocks } from "./resource-links";
 import {
   WikipediaResourceText,
@@ -12,6 +13,7 @@ import { ActionButton } from "../components/ActionButton";
 import { wikipediaBlocks, wikipediaLinks, type WikipediaArticle } from "./wikipedia";
 /** Plain-text reading retains revision, author history and licence even when offline. */
 export function WikipediaReader(props: {
+  identity?: unknown;
   article: WikipediaArticle;
   retained: boolean;
   busy: boolean;
@@ -24,6 +26,7 @@ export function WikipediaReader(props: {
   onSave: () => void;
   onDownload: () => Promise<boolean>;
   onRefresh: () => void;
+  onCancel?: () => void;
   onRemove: () => void;
 }) {
   let reader!: HTMLElement;
@@ -52,17 +55,14 @@ export function WikipediaReader(props: {
           <Show when={props.retained}> · {t("Disponible hors connexion")}</Show>
         </span>
         <div class="wikipedia-reader-tools">
-          <button
-            class="icon-button quiet"
-            disabled={props.busy || !props.native}
-            aria-label={t("Actualiser l’article depuis Wikipédia")}
-            title={t("Actualiser l’article depuis Wikipédia")}
-            onClick={props.onRefresh}
-          >
-            <Show when={props.loading} fallback={<Icon name="refresh" />}>
-              <span class="spinner" />
-            </Show>
-          </button>
+          <RefreshButton
+            identity={props.identity}
+            label={t("Actualiser l’article depuis Wikipédia")}
+            busy={props.loading}
+            disabled={!props.native || (props.busy && !props.loading)}
+            onRefresh={props.onRefresh}
+            onCancel={props.onCancel}
+          />
           <button
             class="icon-button quiet"
             disabled={props.busy || !props.writable}

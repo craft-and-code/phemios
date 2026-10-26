@@ -1,3 +1,4 @@
+import { createDiagnosticRead } from "../../../src/library/diagnostic-read";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { createSignal } from "solid-js";
 import { expect, userEvent, within, waitFor } from "storybook/test";
@@ -171,5 +172,48 @@ export const PagingHelp: Story = {
     await userEvent.click(previous);
     expect(next).toBeEnabled();
     expect(canvas.getByRole("navigation", { name: "Pagination" })).toBeVisible();
+  },
+};
+
+/** The composer must forward the native read slot independently from row-addition activity. */
+export const CancelledRefresh: Story = {
+  render: (args) => {
+    let calls = 0,
+      finish: (() => void) | undefined;
+    const read = createDiagnosticRead(
+      () => ({ scope: "queue-fixture" }),
+      async () => {
+        if (++calls > 1)
+          await new Promise<void>((done) => {
+            finish = done;
+          });
+        return true;
+      },
+    );
+    return (
+      <>
+        <QueueAddView
+          {...args}
+          error="Temporary source failure"
+          loading={read.loading()}
+          readPending={read.pending()}
+          onRefresh={read.refetch}
+          onCancel={read.cancel}
+        />
+        <button onClick={() => finish?.()}>Finish transport</button>
+        <output>{read.pending() ? "Pending" : "Ready"}</output>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByRole("status")).toHaveTextContent("Ready"));
+    const refresh = canvas.getByRole("button", { name: "Actualiser" });
+    await userEvent.click(refresh);
+    await userEvent.click(canvas.getByRole("button", { name: "Arrêter" }));
+    expect(refresh).toBeDisabled();
+    expect(refresh.querySelector(".spinner")).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Finish transport" }));
+    await waitFor(() => expect(refresh).toBeEnabled());
   },
 };

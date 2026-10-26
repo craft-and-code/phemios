@@ -111,8 +111,11 @@ export function SettingsAede() {
         <div class="error-retry">
           <Feedback error persistent message={active()?.tracking_error ?? ""} />
           <RefreshButton
+            identity={account()}
             busy={false}
-            onRefresh={() => void library.tasks.restore(active()?.source ?? source())}
+            onRefresh={(_event, signal) =>
+              library.tasks.restore(active()?.source ?? source(), signal)
+            }
           />
         </div>
       </Show>

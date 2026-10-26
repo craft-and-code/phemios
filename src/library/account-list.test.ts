@@ -49,3 +49,32 @@ it("protects the managed local account without blocking a remote namesake", () =
   expect(managedLocalAccount({ username: "PHEMIOS-LOCAL" }, "local")).toBe(true);
   expect(managedLocalAccount({ username: "phemios-local-child" }, "local")).toBe(false);
 });
+
+it("cancels the account read and ignores a late administrative list", async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(requestAede).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  const owner = {
+    server: "https://music.example",
+    account: { id: "admin", username: "admin", role: "admin" },
+  } as AccountSession;
+  const state = createRoot((dispose) => ({
+    dispose,
+    accounts: createAccountList(
+      () => owner,
+      () => "server",
+    ),
+  }));
+  await Promise.resolve();
+  expect(state.accounts.loading()).toBe(true);
+  state.accounts.cancel();
+  finish([{ id: "late", username: "late", role: "user", enabled: true }]);
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+  expect(state.accounts.values()).toEqual([]);
+  expect(state.accounts.loading()).toBe(false);
+  state.dispose();
+});

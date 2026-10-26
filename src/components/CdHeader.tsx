@@ -65,7 +65,6 @@ export function CdHeader(props: {
           </button>
           <RefreshButton
             busy={props.loading}
-            rotate
             disabled={
               !props.native ||
               props.ejecting ||

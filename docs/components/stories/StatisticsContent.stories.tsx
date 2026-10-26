@@ -19,7 +19,6 @@ export const Reload: Story = {
       <div style={{ position: "relative", height: "400px" }}>
         <RefreshButton
           busy={busy()}
-          busyIndicator="stop"
           onRefresh={() => setBusy(true)}
           onCancel={() => setBusy(false)}
         />
@@ -44,10 +43,10 @@ export const Reload: Story = {
       expect(canvas.getByText("Example artist 1", { exact: true })).toBeVisible(),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Actualiser" }));
-    expect(canvasElement.querySelectorAll(".spinner").length).toBe(1);
+    expect(canvasElement.querySelectorAll(".spinner").length).toBe(2);
     expect(canvasElement.querySelectorAll(".page-loader-inline").length).toBe(0);
     const root = canvasElement.firstElementChild!.getBoundingClientRect(),
-      spinner = canvasElement.querySelector(".spinner")!.getBoundingClientRect();
+      spinner = canvasElement.querySelector(".page-loader .spinner")!.getBoundingClientRect();
     expect(Math.abs(spinner.left + spinner.width / 2 - root.left - root.width / 2)).toBeLessThan(1);
     expect(Math.abs(spinner.top + spinner.height / 2 - root.top - root.height / 2)).toBeLessThan(1);
     await userEvent.click(canvas.getByRole("button", { name: "Arrêter" }));

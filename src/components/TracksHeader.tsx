@@ -5,6 +5,7 @@ import { RefreshButton } from "./RefreshButton";
 import { StickyHeader } from "./StickyHeader";
 /** Page size and read admission stay above the independent track scroller. */
 export function TracksHeader(props: {
+  identity?: unknown;
   total: number;
   children?: JSX.Element;
   filters?: JSX.Element;
@@ -31,6 +32,7 @@ export function TracksHeader(props: {
             />
           </div>
           <RefreshButton
+            identity={props.identity}
             busy={props.busy}
             disabled={props.pending && !props.busy}
             onCancel={props.onCancel}

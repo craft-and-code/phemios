@@ -1,23 +1,26 @@
 import { t } from "../i18n";
+import { RefreshButton } from "./RefreshButton";
 import { ActionButton } from "./ActionButton";
 /** Connected-server actions expose their own request state. */
 export function ConnectionActions(props: {
+  identity?: unknown;
   syncing: boolean;
   disconnecting: boolean;
-  onSync: () => void;
+  blocked?: boolean;
+  onSync: (signal: AbortSignal) => unknown;
   onDisconnect: () => void;
 }) {
   return (
     <div class="settings-actions">
-      <ActionButton
-        type="button"
-        icon="refresh"
+      <RefreshButton
+        identity={props.identity}
+        label={t("Recharger le catalogue connu")}
         busy={props.syncing}
-        disabled={props.disconnecting}
-        onClick={props.onSync}
+        disabled={props.disconnecting || !!props.blocked}
+        onRefresh={(_event, signal) => props.onSync(signal)}
       >
         {props.syncing ? t("Synchronisation…") : t("Recharger le catalogue connu")}
-      </ActionButton>
+      </RefreshButton>
       <ActionButton
         type="button"
         icon="disconnect"

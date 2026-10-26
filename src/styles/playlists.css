@@ -52,11 +52,6 @@ main > .playlist-page {
   margin-left: auto;
 }
 
-.playback-queue > .empty-state > svg {
-  width: 38px;
-  height: 38px;
-}
-
 /* Only explicitly supplied thumbnails add a column; cloned drag rows retain their geometry. */
 .playback-page .playback-queue li.queue-row-with-cover {
   --queue-cover-size: 40px;

@@ -39,9 +39,7 @@ export const Refresh: Story = {
           <div class="page-heading">
             <span>Mounted volumes</span>
             <RefreshButton
-              rotate
               busy={busy()}
-              busyIndicator="stop"
               onRefresh={() => setBusy(true)}
               onCancel={() => setBusy(false)}
             />
@@ -61,11 +59,11 @@ export const Refresh: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: t("Sélectionner") }));
     await userEvent.click(canvas.getByRole("button", { name: t("Actualiser") }));
-    expect(canvasElement.querySelectorAll(".spinner").length).toBe(1);
+    expect(canvasElement.querySelectorAll(".spinner").length).toBe(2);
     expect(canvasElement.querySelectorAll(".page-loader-inline").length).toBe(0);
     expect(canvas.queryByText(volume.name)).toBeNull();
     const page = canvasElement.querySelector(".transfer-destination")!.getBoundingClientRect(),
-      spinner = canvasElement.querySelector(".spinner")!.getBoundingClientRect();
+      spinner = canvasElement.querySelector(".page-loader .spinner")!.getBoundingClientRect();
     expect(Math.abs(spinner.left + spinner.width / 2 - page.left - page.width / 2)).toBeLessThan(1);
     expect(Math.abs(spinner.top + spinner.height / 2 - page.top - page.height / 2)).toBeLessThan(1);
     await userEvent.click(canvas.getByRole("button", { name: t("Arrêter") }));

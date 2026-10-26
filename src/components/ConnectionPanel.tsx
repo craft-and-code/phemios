@@ -79,20 +79,42 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
   }
   const [disconnecting, setDisconnecting] = createSignal(false);
   const [syncMessage, setSyncMessage] = createSignal("");
-  createEffect(on(library.serverSession, () => setSyncMessage("")));
-  async function synchronize() {
+  const [syncing, setSyncing] = createSignal(false);
+  let syncGeneration = 0;
+  createEffect(
+    on(library.serverSession, () => {
+      syncGeneration++;
+      setSyncing(false);
+      setSyncMessage("");
+    }),
+  );
+  async function synchronize(signal: AbortSignal) {
     const session = library.serverSession();
     if (!session || library.busy()) return;
+    const ticket = ++syncGeneration;
+    const current = () =>
+      ticket === syncGeneration && !signal.aborted && session === library.serverSession();
+    const cancel = () => {
+      if (ticket === syncGeneration) setSyncing(false);
+    };
+    signal.addEventListener("abort", cancel, { once: true });
+    setSyncing(true);
     setSyncMessage("");
-    await library.sync("server");
-    if (session === library.serverSession() && !library.error())
-      setSyncMessage(
-        t(
-          "Catalogue connu rechargé : {0} albums. Pour découvrir des fichiers déplacés ou ajoutés, lancez un scan des dossiers.",
-          library.publicSnapshot("server")?.albums.length ?? 0,
-        ),
-      );
+    try {
+      await library.sync("server", signal);
+      if (current() && !library.error())
+        setSyncMessage(
+          t(
+            "Catalogue connu rechargé : {0} albums. Pour découvrir des fichiers déplacés ou ajoutés, lancez un scan des dossiers.",
+            library.publicSnapshot("server")?.albums.length ?? 0,
+          ),
+        );
+    } finally {
+      signal.removeEventListener("abort", cancel);
+      cancel();
+    }
   }
+
   async function disconnect() {
     if (disconnecting()) return;
     setDisconnecting(true);
@@ -242,9 +264,11 @@ export function ConnectionPanel(props: { onClose: () => void; embedded?: boolean
           </Show>
           <p class="muted">{library.serverSession()?.server}</p>
           <ConnectionActions
-            syncing={library.busy()}
+            identity={library.serverSession()}
+            syncing={syncing()}
+            blocked={library.busy() && !syncing()}
             disconnecting={disconnecting()}
-            onSync={() => void synchronize()}
+            onSync={synchronize}
             onDisconnect={() => void disconnect()}
           />
         </Show>

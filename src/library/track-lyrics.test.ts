@@ -284,3 +284,39 @@ it("does not expose a lyrics reply after the optional reader is disposed", async
   await settle();
   expect(words.lyrics()).toBeUndefined();
 });
+
+it("cancels a lyrics refresh while retaining confirmed words and rejecting its late result", async () => {
+  let finish!: (value: unknown) => void;
+  vi.mocked(requestAede)
+    .mockResolvedValueOnce(answer)
+    .mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          finish = done;
+        }),
+    );
+  const state = createRoot((dispose) => ({
+    dispose,
+    words: createTrackLyrics({
+      reference: () => "track:one",
+      session: () => session,
+      jobs: () => [],
+      available: () => true,
+    }),
+  }));
+  state.words.toggle();
+  await settle();
+  const refresh = state.words.refresh();
+  await settle();
+  expect(state.words.loading()).toBe(true);
+  state.words.cancel();
+  expect(state.words.loading()).toBe(false);
+  expect(state.words.lyrics()?.lines[0]?.text).toBe("Original control words");
+  finish({
+    ...answer,
+    lyrics: { ...answer.lyrics, lines: [{ at_ms: null, text: "Late replacement" }] },
+  });
+  await refresh;
+  expect(state.words.lyrics()?.lines[0]?.text).toBe("Original control words");
+  state.dispose();
+});

@@ -300,6 +300,7 @@ export function MoodsPage(props: { query: string }) {
       <AccountNotice />
       <Show when={current()?.acoustic}>
         <MoodFeatures
+          identity={library.session()}
           coverage={current()?.acoustic}
           {...(featureJob() ? { job: featureJob()! } : {})}
           admin={

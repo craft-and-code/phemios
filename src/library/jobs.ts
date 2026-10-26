@@ -54,6 +54,7 @@ export function createJobs(
     disposed = false;
   // Returning to the same account object must not revive an earlier login's requests.
   const epochs: Record<SourceId, number> = { local: 0, server: 0 };
+  const restoreRevisions: Record<SourceId, number> = { local: 0, server: 0 };
   const capture = (source: SourceId) => {
     const owner = options?.session(source),
       epoch = epochs[source];
@@ -157,9 +158,11 @@ export function createJobs(
     ]);
     if (timer === undefined) timer = window.setTimeout(() => void poll(), 300);
   }
-  async function restore(source: SourceId) {
+  async function restore(source: SourceId, signal?: AbortSignal) {
     const context = capture(source);
-    if (!context.current()) return;
+    const current = () => !signal?.aborted && context.current();
+    if (!current()) return;
+    const revision = ++restoreRevisions[source];
     const previousDiagnostic = diagnostic();
     // Keep updates made after this recovery started, even if the older list omits that task.
     const known = new Map(
@@ -167,6 +170,7 @@ export function createJobs(
         .filter((row) => row.source === source)
         .map((row) => [row.task_id, row]),
     );
+    let accepted = false;
     try {
       const info = await requestAede<{ capabilities?: string[] }>(
         "/api/v1/status",
@@ -176,7 +180,7 @@ export function createJobs(
         source,
         context.owner,
       );
-      if (!context.current() || !info.capabilities?.includes("administrative_tasks_list")) return;
+      if (!current() || !info.capabilities?.includes("administrative_tasks_list")) return;
       const rows = await requestAede<Job[]>(
         "/api/admin/v1/tasks",
         {},
@@ -185,7 +189,7 @@ export function createJobs(
         source,
         context.owner,
       );
-      if (!context.current()) return;
+      if (!current()) return;
       if (
         !Array.isArray(rows) ||
         rows.length > 64 ||
@@ -237,6 +241,9 @@ export function createJobs(
             !rows.some((remote) => remote.task_id === row.task_id),
         ),
       ]);
+      accepted = true;
+      // Committing this result may remove the retry button and abort its view signal.
+      // Polling/catalogue follow-up now belongs to the admitted account, not that control.
       if (!context.current()) return;
       // A successful read retires only the error this recovery actually observed.
       if (diagnostic() === previousDiagnostic && previousDiagnostic?.source === source)
@@ -249,7 +256,10 @@ export function createJobs(
       // Catalog synchronization must not hold up independent task progress.
       if (finished) await refresh.request(source, context.current);
     } catch (failure) {
-      if (context.current()) setDiagnostic({ source, task: undefined, message: String(failure) });
+      // A superseded list read cannot replace the latest recovery diagnostic.
+      // An accepted snapshot's catalogue follow-up is independent work and retains its error.
+      if (accepted ? context.current() : current() && revision === restoreRevisions[source])
+        setDiagnostic({ source, task: undefined, message: String(failure) });
     }
   }
   if (options) {

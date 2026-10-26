@@ -1,6 +1,7 @@
+import { createDiagnosticRead } from "../../../src/library/diagnostic-read";
 import { createSignal } from "solid-js";
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, within, waitFor } from "storybook/test";
 import { RefreshButton } from "../../../src/components/RefreshButton";
 import { TransferPanel } from "../../../src/components/TransferPanel";
 import { createTransferRecipe } from "../../../src/library/transfer-recipe";
@@ -77,7 +78,6 @@ export const StableRefresh: Story = {
       <>
         <RefreshButton
           busy={busy()}
-          busyIndicator="stop"
           onRefresh={() => {
             setSelected("");
             setBusy(true);
@@ -171,5 +171,62 @@ export const ForgetFolderAndReset: Story = {
     expect(
       c.getByRole("checkbox", { name: t("Vérifier les fichiers copiés et déjà présents") }),
     ).toBeChecked();
+  },
+};
+
+/** A pending cancelled discovery must not admit a no-op refresh that clears a new selection. */
+export const CancelledDiscovery: Story = {
+  render: (args) => {
+    const [selected, setSelected] = createSignal("");
+    let calls = 0,
+      finish: (() => void) | undefined;
+    const read = createDiagnosticRead(
+      () => ({ native: true }),
+      async () => {
+        if (++calls > 1)
+          await new Promise<void>((done) => {
+            finish = done;
+          });
+        return [folder];
+      },
+    );
+    return (
+      <>
+        <RefreshButton
+          busy={read.loading()}
+          pending={read.pending()}
+          onCancel={read.cancel}
+          onRefresh={() => {
+            setSelected("");
+            return read.refetch();
+          }}
+        />
+        <TransferDestination
+          {...args}
+          volumes={read.current()}
+          selected={selected()}
+          busy={read.loading()}
+          onSelect={setSelected}
+        />
+        <button onClick={() => finish?.()}>Finish discovery</button>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() =>
+      expect(canvas.getByRole("button", { name: t("Sélectionner") })).toBeEnabled(),
+    );
+    const refresh = canvas.getByRole("button", { name: t("Actualiser") });
+    await userEvent.click(refresh);
+    await userEvent.click(canvas.getByRole("button", { name: t("Arrêter") }));
+    const select = canvas.getByRole("button", { name: t("Sélectionner") });
+    await userEvent.click(select);
+    expect(refresh).toBeDisabled();
+    await userEvent.click(refresh);
+    expect(select).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(canvas.getByRole("button", { name: "Finish discovery" }));
+    await waitFor(() => expect(refresh).toBeEnabled());
+    expect(select).toHaveAttribute("aria-pressed", "true");
   },
 };

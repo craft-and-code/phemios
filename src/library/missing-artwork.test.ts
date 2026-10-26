@@ -125,3 +125,38 @@ it("explicit refresh retries an absent cover using its missing group, never an o
   expect(request).toHaveBeenCalledTimes(2);
   expect(request).toHaveBeenLastCalledWith(row.artist, row.release_group, true);
 });
+
+it("cancels current and queued covers without dispatching the queued request or losing retry", async () => {
+  const session = { account: { role: "user" } } as AccountSession;
+  let finish!: (bytes: ArrayBuffer) => void;
+  const request = vi.fn(
+    () =>
+      new Promise<ArrayBuffer>((done) => {
+        finish = done;
+      }),
+  );
+  const loader = createMissingCoverLoader(
+    () => session,
+    () => true,
+    request,
+    () => {},
+  );
+  const second = { ...row, release_group: "second" };
+  const firstRead = loader.load(row),
+    secondRead = loader.load(second);
+  await Promise.resolve();
+  expect(request).toHaveBeenCalledTimes(1);
+  loader.cancel([row, second]);
+  expect(loader.status(row)).toBe("cancelled");
+  finish(new ArrayBuffer(0));
+  await Promise.all([firstRead, secondRead]);
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(loader.status(second)).toBe("cancelled");
+  const retry = loader.load(second, true);
+  await Promise.resolve();
+  expect(request).toHaveBeenCalledTimes(2);
+  finish(new ArrayBuffer(0));
+  await retry;
+  expect(loader.status(second)).toBe("absent");
+  loader.dispose();
+});

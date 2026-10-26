@@ -1,3 +1,4 @@
+import { TaskRecoveryButton, type TaskRecovery } from "../components/TaskRecoveryButton";
 import { enrichmentOptions } from "../library/enrichment";
 import { SettingsSourceReview } from "./SettingsSourceReview";
 import { errorMessage, isAedeConnectionError } from "../library/aede-availability";
@@ -11,7 +12,6 @@ import { t } from "../i18n";
 import { createMemo, createResource, createSignal, onCleanup, For, Show } from "solid-js";
 import { localStatus, saveLocalKeys } from "../platform/desktop";
 import { useLibrary } from "../library/context";
-import type { SourceId } from "../library/sources";
 import { sourceLabel } from "../library/sources";
 import {
   completeEnrichmentLaunch,
@@ -41,7 +41,7 @@ export function SettingsServices() {
     [message, setMessage] = createSignal(""),
     [busy, setBusy] = createSignal(false),
     [failure, setFailure] = createSignal(false),
-    [retrying, setRetrying] = createSignal<SourceId>();
+    [retrying, setRetrying] = createSignal<TaskRecovery>();
   const cancellation = createServiceCancellation({
     session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
     cancel: library.tasks.cancel,
@@ -248,7 +248,7 @@ export function SettingsServices() {
       </div>
       <div class="enrichment-actions">
         <ActionButton
-          icon="refresh"
+          icon="sparkles"
           busy={launching() || enrichmentActive()}
           disabled={
             busy() ||
@@ -338,29 +338,29 @@ export function SettingsServices() {
                     {t("Tâche #{0}", job.task_id)} · {sourceLabel(job.source ?? "server")}
                   </strong>
                   <Show when={job.tracking_error}>
-                    <button
-                      class="icon-button quiet"
-                      title={t("Réessayer")}
-                      aria-label={t("Réessayer")}
-                      disabled={!!retrying()}
-                      onClick={async () => {
+                    <TaskRecoveryButton
+                      identity={
+                        job.source === "local" ? library.localSession() : library.serverSession()
+                      }
+                      job={job}
+                      active={retrying()}
+                      onRefresh={async (_event, signal) => {
                         if (retrying()) return;
                         const source = job.source ?? "server";
-                        setRetrying(source);
+                        const held = { source, task: job.task_id };
+                        setRetrying(held);
+                        const cancel = () => {
+                          if (retrying() === held) setRetrying(undefined);
+                        };
+                        signal.addEventListener("abort", cancel, { once: true });
                         try {
-                          await library.tasks.restore(source);
+                          await library.tasks.restore(source, signal);
                         } finally {
-                          setRetrying(undefined);
+                          signal.removeEventListener("abort", cancel);
+                          if (!signal.aborted) cancel();
                         }
                       }}
-                    >
-                      <Show
-                        when={retrying() === (job.source ?? "server")}
-                        fallback={<Icon name="refresh" />}
-                      >
-                        <span class="spinner" aria-hidden="true" />
-                      </Show>
-                    </button>
+                    />
                   </Show>
                   <Show when={!job.tracking_error && ["queued", "running"].includes(job.status)}>
                     <span

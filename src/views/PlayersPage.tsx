@@ -177,8 +177,9 @@ export function PlayersPage() {
         <div class="page-heading">
           <span>{t("Lecteurs externes")}</span>
           <RefreshButton
-            rotate
+            identity={library.session()}
             busy={read.loading()}
+            pending={read.pending()}
             disabled={!isNative() || status().running || preparing() || destinationBusy()}
             onRefresh={() => {
               reset();

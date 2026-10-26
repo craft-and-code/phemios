@@ -90,21 +90,6 @@
   width: var(--row-action-icon-size);
   height: var(--row-action-icon-size);
 }
-.refresh-glyph {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-}
-.refresh-glyph.refresh-rotating {
-  animation: activity-spin 0.65s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .refresh-glyph.refresh-rotating {
-    animation: none;
-  }
-}
-
 /* Cover-local sizing follows the actual, responsively capped list artwork. */
 .density-compact .album-cover {
   container-type: inline-size;

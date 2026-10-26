@@ -71,9 +71,19 @@ export function createTrackLyrics(options: {
         (!!a && !!b && a.owner === b.owner && a.version === b.version && a.expanded === b.expanded),
     },
   );
+  let sequence = 0;
+  const [active, setActive] = createSignal<number>();
+  const [confirmed, setConfirmed] = createSignal<{
+    owner: ReturnType<typeof owner>;
+    lyrics: ReturnType<typeof parseLyrics>;
+    error: string;
+  }>();
   const [words, { refetch }] = createResource(
     identity,
     async ({ reference, session, owner: held }) => {
+      const ticket = ++sequence;
+      setActive(ticket);
+      const current = () => !disposed && ticket === active() && held === owner();
       try {
         const raw = await requestAede(
           "/api/v1/lyrics",
@@ -85,26 +95,32 @@ export function createTrackLyrics(options: {
         );
         if (reference !== options.reference() || session !== options.session())
           throw new Error(t("Session invalide."));
-        return { reference, session, owner: held, lyrics: parseLyrics(raw, reference), error: "" };
+        const lyrics = parseLyrics(raw, reference);
+        if (current()) setConfirmed({ owner: held, lyrics, error: "" });
       } catch (failure) {
         // Resource errors must stay inside the optional panel, never break track navigation.
-        return { reference, session, owner: held, lyrics: null, error: String(failure) };
+        if (current()) setConfirmed({ owner: held, lyrics: null, error: String(failure) });
+      } finally {
+        if (active() === ticket) setActive(undefined);
       }
     },
     { initialValue: undefined },
   );
   const current = () => {
     // Optional reads retain the surrounding workspace and queue rather than enter its Suspense.
-    const value = words.latest;
+    const value = confirmed();
     return !disposed && value?.owner === owner() ? value : undefined;
   };
   return {
+    identity: owner,
     visible,
     toggle: () => setVisible(!visible()),
     available: () => !!current()?.lyrics || options.available() === true,
     lyrics: () => current()?.lyrics,
-    loading: () => !disposed && !!owner() && words.loading,
+    loading: () => !disposed && !!owner() && active() !== undefined,
+    pending: () => words.loading,
+    cancel: () => setActive(undefined),
     error: () => current()?.error ?? "",
-    refresh: () => void refetch(),
+    refresh: () => !words.loading && refetch(),
   };
 }

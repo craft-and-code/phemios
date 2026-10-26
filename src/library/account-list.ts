@@ -1,4 +1,4 @@
-import { createResource } from "solid-js";
+import { createDiagnosticRead } from "./diagnostic-read";
 import { t } from "../i18n";
 import { requestAede } from "../platform/desktop";
 import type { AccountSession } from "./server";
@@ -42,30 +42,19 @@ export function createAccountList(
   session: () => AccountSession | undefined,
   source: () => SourceId,
 ) {
-  const [rows, { refetch }] = createResource(
+  const rows = createDiagnosticRead(
     () => (session()?.account.role === "admin" ? { session: session()!, source: source() } : false),
-    async (key) => {
-      try {
-        return {
-          ...key,
-          values: parseAccounts(
-            await requestAede("/api/admin/v1/accounts", {}, "GET", null, key.source),
-          ),
-          error: "",
-        };
-      } catch (failure) {
-        return { ...key, values: [] as Account[], error: String(failure) };
-      }
-    },
+    async (key) =>
+      parseAccounts(
+        await requestAede("/api/admin/v1/accounts", {}, "GET", null, key.source, key.session),
+      ),
   );
-  const current = () => {
-    const value = rows();
-    return value && value.session === session() && value.source === source() ? value : undefined;
-  };
   return {
-    values: () => current()?.values ?? [],
-    error: () => current()?.error ?? "",
-    loading: () => rows.loading,
-    refresh: refetch,
+    values: () => rows.current() ?? [],
+    error: rows.error,
+    loading: rows.loading,
+    pending: rows.pending,
+    cancel: rows.cancel,
+    refresh: rows.refetch,
   };
 }

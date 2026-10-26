@@ -1,3 +1,4 @@
+import { RefreshButton } from "./RefreshButton";
 import { createSignal, Show, onMount, onCleanup } from "solid-js";
 import { t } from "../i18n";
 import type { MissingAlbum } from "../library/missing";
@@ -73,29 +74,22 @@ export function MissingAlbumCard(props: { album: MissingAlbum }) {
           <Icon name="close" />
         </button>
         <Show
-          when={["failed", "absent", "loading"].includes(
+          when={["failed", "absent", "loading", "cancelled"].includes(
             library.missingArtwork.status(props.album),
           )}
         >
-          <button
-            type="button"
-            class="icon-button missing-cover-retry"
-            title={t("Réessayer les pochettes")}
-            aria-label={t("Réessayer les pochettes")}
-            disabled={library.missingArtwork.status(props.album) === "loading"}
-            onClick={(event) => {
+          <RefreshButton
+            identity={library.sessionFor(props.album.artist)}
+            class="missing-cover-retry"
+            label={t("Réessayer les pochettes")}
+            busy={library.missingArtwork.status(props.album) === "loading"}
+            onCancel={() => library.missingArtwork.cancel([props.album])}
+            onRefresh={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              void library.missingArtwork.load(props.album, true);
+              return library.missingArtwork.load(props.album, true);
             }}
-          >
-            <Show
-              when={library.missingArtwork.status(props.album) === "loading"}
-              fallback={<Icon name="refresh" />}
-            >
-              <span class="spinner" />
-            </Show>
-          </button>
+          />
         </Show>
       </div>
       <div class="missing-album-title">

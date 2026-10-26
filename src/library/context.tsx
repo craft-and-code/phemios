@@ -68,6 +68,7 @@ interface Library {
     image: (row: import("./missing").MissingAlbum) => string | undefined;
     error: (row: import("./missing").MissingAlbum) => string | undefined;
     load: (row: import("./missing").MissingAlbum, retry?: boolean) => Promise<void>;
+    cancel: (rows: readonly import("./missing").MissingAlbum[]) => void;
     status: (
       row: import("./missing").MissingAlbum,
     ) => ReturnType<ReturnType<typeof createMissingCoverLoader>["status"]>;
@@ -109,7 +110,7 @@ interface Library {
     password: string,
     certificate?: number[],
   ) => Promise<void>;
-  sync: (source?: SourceId) => Promise<void>;
+  sync: (source?: SourceId, signal?: AbortSignal) => Promise<void>;
   disconnect: () => Promise<void>;
   image: (reference: string, kind: string) => string | undefined;
   imageError: (reference: string, kind: string) => string | undefined;
@@ -600,22 +601,28 @@ export function LibraryProvider(props: ParentProps) {
   onCleanup(annotationsLoader.dispose);
   let synchronizing = false;
   let synchronizationDone: Promise<void> = Promise.resolve();
-  async function sync(owner: SourceId = source()) {
+  async function sync(owner: SourceId = source(), signal?: AbortSignal) {
     const expected = sessionAt(owner);
+    if (signal?.aborted) return;
     while (synchronizing) {
       await synchronizationDone;
-      if (!bootstrap.active() || sessionAt(owner) !== expected) return;
+      if (signal?.aborted || !bootstrap.active() || sessionAt(owner) !== expected) return;
     }
-    if (bootstrap.active()) await synchronize(owner, false);
+    if (!signal?.aborted && bootstrap.active()) await synchronize(owner, false, signal);
   }
-  async function synchronize(owner: SourceId, background: boolean): Promise<boolean> {
+  async function synchronize(
+    owner: SourceId,
+    background: boolean,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
     if (!bootstrap.active() || busy() || synchronizing) return false;
     synchronizing = true;
     let complete = () => {};
     synchronizationDone = new Promise<void>((resolve) => {
       complete = resolve;
     });
-    const current = bootstrap.capture(owner);
+    const held = bootstrap.capture(owner);
+    const current = () => !signal?.aborted && held();
     if (!background) {
       setBusy(true);
       setError("");
@@ -837,6 +844,7 @@ export function LibraryProvider(props: ParentProps) {
         return missingArtwork.error(row);
       },
       load: missingArtwork.load,
+      cancel: missingArtwork.cancel,
       status: (row) => {
         missingImageVersion();
         return missingArtwork.status(row);

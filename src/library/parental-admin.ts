@@ -147,6 +147,12 @@ export function createParentalAdmin(
       }
     },
     load,
+    cancelLoad() {
+      if (loading()) {
+        revision++;
+        setLoading(false);
+      }
+    },
     save,
     dismiss: () => setMessage(""),
   };

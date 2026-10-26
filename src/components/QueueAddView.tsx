@@ -12,6 +12,7 @@ import { Feedback } from "./Feedback";
 import { RefreshButton } from "./RefreshButton";
 /** Compact queue composer presentation; admission and authenticated reads belong to its controller. */
 export function QueueAddView(props: {
+  identity?: unknown;
   title?: string | undefined;
   footer?: string | undefined;
   actionLabel?: ((row: QueueSearchItem) => string) | undefined;
@@ -19,6 +20,8 @@ export function QueueAddView(props: {
   query: string;
   rows: readonly QueueSearchItem[];
   loading: boolean;
+  /** Transport may still be pending after the visible read has been cancelled. */
+  readPending?: boolean;
   pending: string;
   added: string;
   error: string;
@@ -212,7 +215,9 @@ export function QueueAddView(props: {
           />
           <Show when={props.error}>
             <RefreshButton
+              identity={props.identity}
               busy={props.loading}
+              pending={!!props.readPending}
               onRefresh={props.onRefresh}
               onCancel={props.onCancel}
             />

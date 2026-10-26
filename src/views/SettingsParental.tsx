@@ -30,6 +30,7 @@ export function SettingsParental() {
       : undefined;
   });
   const admin = createParentalAdmin(scope);
+  const refreshIdentity = createMemo(() => ({ owner: identity(), target: selected() }));
   const origins = createMemo(() =>
     (["local", "server"] as const).filter((source) =>
       source === "local" ? library.localSession() : library.serverSession(),
@@ -40,12 +41,15 @@ export function SettingsParental() {
       <div class="section-heading">
         <h2>{t("Contrôle parental")}</h2>
         <RefreshButton
+          identity={refreshIdentity()}
           busy={accounts.loading() || admin.loading()}
+          pending={!selected() && accounts.pending()}
           disabled={!administrative() || admin.saving()}
-          onRefresh={() => {
-            if (selected()) void admin.load();
-            else void accounts.refresh();
+          onCancel={() => {
+            accounts.cancel();
+            admin.cancelLoad();
           }}
+          onRefresh={() => (selected() ? admin.load() : accounts.refresh())}
         />
       </div>
       <Show when={origins().length > 1}>

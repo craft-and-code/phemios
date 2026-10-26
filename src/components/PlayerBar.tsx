@@ -1,3 +1,4 @@
+import { RefreshButton } from "./RefreshButton";
 import { NetworkAudio } from "./NetworkAudio";
 import { cdReference } from "../cd/model";
 import { DurationToggle } from "./DurationToggle";
@@ -8,7 +9,7 @@ import { ChoiceSelect } from "./ChoiceSelect";
 import { WaveformSeek } from "./WaveformSeek";
 import { PlayingFavourite } from "./PlayingFavourite";
 import { t } from "../i18n";
-import { Show } from "solid-js";
+import { createMemo, Show } from "solid-js";
 import { useLibrary } from "../library/context";
 import { PlayingBars } from "./PlayingBars";
 import { Artwork } from "./Artwork";
@@ -20,8 +21,13 @@ const time = (ms: number | null) =>
 /** The transport follows native consumed frames, independent of the open catalog page. */
 export function PlayerBar(props: { playbackView?: boolean } = {}) {
   let audioSettings: HTMLDetailsElement | undefined;
-  const player = useLibrary().player,
+  const library = useLibrary(),
+    player = library.player,
     state = player.state;
+  const refreshIdentity = createMemo(() => ({
+    local: library.localSession(),
+    server: library.serverSession(),
+  }));
   const position = player.seekPosition;
   const displayed = () => playbackDisplay(player.current(), state(), player.queue());
   const cover = () => displayed()?.album;
@@ -281,18 +287,15 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
                   ]}
                 />
               </label>
-              <button
-                class="icon-button audio-output-refresh"
-                aria-busy={player.discovering()}
-                aria-label={t("Actualiser les sorties audio")}
-                title={t("Actualiser les sorties audio")}
-                disabled={!player.ready() || player.busy() || player.discovering()}
-                onClick={() => void player.discover()}
-              >
-                <Show when={player.discovering()} fallback={<Icon name="refresh" />}>
-                  <span class="spinner" aria-hidden="true" />
-                </Show>
-              </button>
+              <RefreshButton
+                identity={refreshIdentity()}
+                class="audio-output-refresh"
+                label={t("Actualiser les sorties audio")}
+                busy={player.discovering()}
+                disabled={!player.ready() || player.busy()}
+                onCancel={player.cancelDiscovery}
+                onRefresh={() => player.discover()}
+              />
             </div>
             <label>
               {t("Mode de lecture")}{" "}

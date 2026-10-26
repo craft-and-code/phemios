@@ -106,7 +106,7 @@ export function SourceReviewCard(props: {
         </Show>
         <Show when={props.row.decision !== null}>
           <ActionButton
-            icon="refresh"
+            icon="undo"
             disabled={props.disabled}
             onClick={() => props.onDecision("undo")}
           >

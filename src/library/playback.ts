@@ -590,9 +590,11 @@ export function createPlayback(
       }
     }
   }
+  let discoveryRevision = 0;
   let discoveryTimer: ReturnType<typeof setTimeout> | undefined,
     finishDiscovery: (() => void) | undefined;
   function cancelDiscovery() {
+    discoveryRevision++;
     clearTimeout(discoveryTimer);
     finishDiscovery?.();
     discoveryTimer = undefined;
@@ -601,7 +603,9 @@ export function createPlayback(
   }
   async function discover() {
     if (!outputReady() || discovering()) return;
-    const epoch = lifetime;
+    const epoch = lifetime,
+      ticket = ++discoveryRevision;
+    const current = () => epoch === lifetime && ticket === discoveryRevision;
     setDiscovering(true);
     setError("");
     const minimum = new Promise<void>((resolve) => {
@@ -610,12 +614,12 @@ export function createPlayback(
     });
     try {
       const value = parseOutputs(await playbackOutputs());
-      if (epoch === lifetime) setOutputs(value);
+      if (current()) setOutputs(value);
     } catch (failure) {
-      if (epoch === lifetime) setError(message(failure));
+      if (current()) setError(message(failure));
     } finally {
       await minimum;
-      if (epoch === lifetime) cancelDiscovery();
+      if (current()) cancelDiscovery();
     }
   }
   const writeVolume = createAudioSettingQueue(
@@ -1005,6 +1009,7 @@ export function createPlayback(
     start,
     action,
     discover,
+    cancelDiscovery,
     chooseOutput,
     volume,
     settledVolume,

@@ -112,6 +112,7 @@ export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
             {(page) => <span class="muted">{t("{0} liste(s)", page().total)}</span>}
           </Show>
           <RefreshButton
+            identity={library.session()}
             label={t("Actualiser les listes M3U")}
             busy={reads.refreshing() || reads.detailLoading()}
             disabled={
@@ -143,7 +144,7 @@ export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
         />
       </Show>
       <Show when={reads.loading()}>
-        <PageLoader inline />
+        <PageLoader />
       </Show>
       <Show
         when={reads.page()?.items.length}
@@ -189,6 +190,7 @@ export function M3UPage(props: { query: string; navigation?: JSX.Element }) {
               <div class="error-retry">
                 <Feedback error message={reads.detailError()} />
                 <RefreshButton
+                  identity={library.session()}
                   busy={reads.detailLoading()}
                   disabled={reads.pending() && !reads.detailLoading()}
                   onCancel={reads.cancel}

@@ -1,3 +1,4 @@
+import { RefreshButton } from "./RefreshButton";
 import { TrackResultPanel } from "./TrackResultPanel";
 import { Feedback } from "./Feedback";
 import { createCatalogDetail } from "../library/catalog-detail";
@@ -240,17 +241,14 @@ export function TrackResults(props: {
         <section id={`${id}-lyrics`} class="track-analysis track-lyrics">
           <div class="analysis-result-heading">
             <strong>{t("Paroles")}</strong>
-            <button
-              class="icon-button quiet"
-              aria-label={t("Actualiser les paroles")}
-              title={t("Actualiser les paroles")}
-              disabled={words.loading()}
-              onClick={words.refresh}
-            >
-              <Show when={words.loading()} fallback={<Icon name="refresh" />}>
-                <span class="spinner" />
-              </Show>
-            </button>
+            <RefreshButton
+              identity={words.identity()}
+              label={t("Actualiser les paroles")}
+              busy={words.loading()}
+              disabled={words.pending() && !words.loading()}
+              onCancel={words.cancel}
+              onRefresh={words.refresh}
+            />
           </div>
           <Show when={words.loading()}>
             <PageLoader inline label={t("Chargement des paroles…")} />

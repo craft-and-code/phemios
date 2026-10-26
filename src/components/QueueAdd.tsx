@@ -118,6 +118,7 @@ export function QueueAdd(props: {
   }
   return (
     <QueueAddView
+      identity={owners()}
       title={props.onSelect ? t("Choisir la musique à copier") : undefined}
       footer={props.onSelect ? t("Ajout à la sélection de transfert") : undefined}
       actionLabel={props.onSelect ? (row) => t("Sélectionner {0}", row.title) : undefined}
@@ -125,6 +126,7 @@ export function QueueAdd(props: {
       query={search.query()}
       rows={read.current()?.items ?? []}
       loading={search.waiting() || read.loading()}
+      readPending={read.pending()}
       pending={pending()}
       added={added()}
       error={error() || read.error() || read.current()?.errors.join("\n") || ""}

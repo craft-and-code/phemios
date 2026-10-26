@@ -14,6 +14,7 @@ export function createMissingCoverLoader(
     url?: string;
     error?: string;
     finished?: boolean;
+    cancelled?: boolean;
   };
   const entries = new Map<string, Entry>();
   const tails = { local: Promise.resolve(), server: Promise.resolve() };
@@ -26,10 +27,11 @@ export function createMissingCoverLoader(
   return {
     status: (
       row: MissingAlbum,
-    ): "idle" | "loading" | "ready" | "absent" | "failed" | "unsupported" => {
+    ): "idle" | "loading" | "ready" | "absent" | "failed" | "unsupported" | "cancelled" => {
       if (!supported(row.artist)) return "unsupported";
       const held = entries.get(key(row));
       if (held?.session !== sessionFor(row.artist) || !held) return "idle";
+      if (held.cancelled) return "cancelled";
       return held.url ? "ready" : held.error ? "failed" : held.finished ? "absent" : "loading";
     },
     image: (row: MissingAlbum) => {
@@ -76,6 +78,20 @@ export function createMissingCoverLoader(
       changed();
       tails[source] = entry.promise;
       return entry.promise;
+    },
+    cancel: (rows: readonly MissingAlbum[]) => {
+      for (const row of rows) {
+        const id = key(row),
+          entry = entries.get(id);
+        if (entry && !entry.finished)
+          entries.set(id, {
+            session: entry.session,
+            promise: Promise.resolve(),
+            finished: true,
+            cancelled: true,
+          });
+      }
+      changed();
     },
     prune: () => {
       for (const [id, entry] of entries) {

@@ -238,3 +238,45 @@ it("keeps the current local shutdown failure visible", async () => {
   expect(library.localSession()).toBeUndefined();
   expect(library.error()).toBe("current local shutdown failed");
 });
+
+it.each([
+  ["server", "policy"],
+  ["server", "catalogue"],
+  ["local", "policy"],
+  ["local", "catalogue"],
+] as const)("retires a stopped %s catalogue reload at the %s stage", async (source, stage) => {
+  const library = mountLibrary();
+  if (source === "server")
+    await library.connect("https://fixture.example", "fixture-admin", "fixture");
+  else await library.enableLocal();
+  vi.mocked(syncAede).mockClear();
+  const before = library.publicSnapshot(source);
+  let finish!: () => void;
+  if (stage === "policy") {
+    vi.spyOn(library.parental, "refresh").mockReturnValueOnce(
+      new Promise<undefined>((done) => {
+        finish = () => done(undefined);
+      }),
+    );
+  } else {
+    const raw = await syncAede(source);
+    vi.mocked(syncAede).mockClear();
+    vi.mocked(syncAede).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          finish = () => done(raw);
+        }),
+    );
+  }
+  const controller = new AbortController(),
+    pending = library.sync(source, controller.signal);
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  expect(library.busy()).toBe(true);
+  controller.abort();
+  finish();
+  await pending;
+  expect(syncAede).toHaveBeenCalledTimes(stage === "policy" ? 0 : 1);
+  expect(library.publicSnapshot(source)).toBe(before);
+  expect(library.busy()).toBe(false);
+  expect(library.error()).toBe("");
+});

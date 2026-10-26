@@ -43,6 +43,8 @@
   --unplayed-color: #d54646;
   --album-unplayed-size: 30px;
   --header-summary-size: 0.85rem;
+  --empty-state-icon-size: 38px;
+  --empty-state-gap: 14px;
   --error: #d47777;
   --compact-control-gap: 4px;
   --row-action-size: 30px;
@@ -253,14 +255,15 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: var(--empty-state-gap);
   padding: 32px 24px;
   color: var(--muted);
   text-align: center;
 }
 .empty-state > svg {
-  width: 38px;
-  height: 38px;
+  width: var(--empty-state-icon-size);
+  height: var(--empty-state-icon-size);
+  flex: 0 0 var(--empty-state-icon-size);
   opacity: 0.75;
 }
 .empty-state > p {
@@ -563,7 +566,7 @@ main:has(> .library-page:not(.country-library) .library-results > .empty-state) 
   font-size: 10px;
   color: var(--muted);
 }
-.playback-queue svg {
+:where(.playback-queue) svg {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
@@ -2251,9 +2254,6 @@ main:has(> .result-page) > * {
 }
 .history-selection-actions {
   justify-content: flex-start;
-}
-.empty-state > svg {
-  flex: 0 0 38px;
 }
 .inline-action-form input:not([type="range"], [type="checkbox"]) {
   min-height: var(--form-control-height);

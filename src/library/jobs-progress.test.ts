@@ -1,4 +1,4 @@
-import { createRoot, createSignal } from "solid-js";
+import { createEffect, createRoot, createSignal, onCleanup } from "solid-js";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createJobs, type Job } from "./jobs";
 import { requestAede } from "../platform/desktop";
@@ -461,4 +461,193 @@ it("never dispatches a queued refresh from an earlier login after returning to t
   expect(changed.mock.calls).toEqual([["local"]]);
   expect(tasks.error()).toBe("");
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it.each(["status", "tasks"])(
+  "retires an explicitly stopped recovery at the %s stage",
+  async (stage) => {
+    const held = deferred<unknown>(),
+      controller = new AbortController();
+    request.mockImplementation(async (path) => {
+      if (path === "/api/v1/status")
+        return stage === "status" ? held.promise : { capabilities: ["administrative_tasks_list"] };
+      return held.promise;
+    });
+    const tasks = createRoot((end) => {
+      dispose = end;
+      return createJobs(() => true);
+    });
+    const refresh = tasks.restore("server", controller.signal);
+    await settle();
+    controller.abort();
+    held.resolve(
+      stage === "status"
+        ? { capabilities: ["administrative_tasks_list"] }
+        : [{ task_id: 88, status: "completed" }],
+    );
+    await refresh;
+    expect(tasks.jobs()).toEqual([]);
+    expect(tasks.error()).toBe("");
+    expect(request).toHaveBeenCalledTimes(stage === "status" ? 1 : 2);
+  },
+);
+
+it("resumes task polling when successful recovery removes its own retry control", async () => {
+  let polls = 0,
+    retrySignal!: AbortSignal;
+  request.mockImplementation(async (path) => {
+    if (path === "/api/v1/status") return { capabilities: ["administrative_tasks_list"] };
+    if (path === "/api/admin/v1/tasks") return [{ task_id: 7, status: "running" }];
+    if (++polls === 1) throw Error("Temporary tracking failure");
+    return { task_id: 7, status: "running" };
+  });
+  const tasks = createRoot((end) => {
+    dispose = end;
+    const tasks = createJobs(() => true);
+    // The actual retry button lives only while tracking_error is present.
+    createEffect(() => {
+      if (tasks.jobs().some((row) => row.tracking_error)) {
+        const controller = new AbortController();
+        retrySignal = controller.signal;
+        onCleanup(() => controller.abort());
+      }
+    });
+    return tasks;
+  });
+  tasks.track({ task_id: 7 }, "check", "server", "release:fixture");
+  await vi.advanceTimersByTimeAsync(300);
+  expect(tasks.jobs()[0]?.tracking_error).toBeTruthy();
+  expect(retrySignal.aborted).toBe(false);
+  await tasks.restore("server", retrySignal);
+  expect(tasks.jobs()[0]?.tracking_error).toBeUndefined();
+  expect(retrySignal.aborted).toBe(true);
+  await vi.advanceTimersByTimeAsync(300);
+  expect(polls).toBe(2);
+});
+
+it.each(["current", "retired"])(
+  "keeps catalogue follow-up with the %s account after the retry control disappears",
+  async (lifetime) => {
+    const owner: AccountSession = {
+      server: "https://music.example",
+      account: { id: "admin", username: "admin", role: "admin" },
+    };
+    const [session, setSession] = createSignal<AccountSession | undefined>(owner);
+    const changed = vi.fn(async () => {});
+    let supported = false,
+      retrySignal!: AbortSignal;
+    request.mockImplementation(async (path) => {
+      if (path === "/api/v1/status")
+        return { capabilities: supported ? ["administrative_tasks_list"] : [] };
+      if (path === "/api/admin/v1/tasks") return [{ task_id: 7, status: "completed" }];
+      throw Error("Temporary tracking failure");
+    });
+    const tasks = createRoot((end) => {
+      dispose = end;
+      const tasks = createJobs(() => true, {
+        session: (source) => (source === "server" ? session() : undefined),
+        changed,
+      });
+      createEffect(() => {
+        if (tasks.jobs().some((row) => row.tracking_error)) {
+          const controller = new AbortController();
+          retrySignal = controller.signal;
+          onCleanup(() => {
+            controller.abort();
+            if (lifetime === "retired") setSession(undefined);
+          });
+        }
+      });
+      return tasks;
+    });
+    await settle();
+    tasks.track({ task_id: 7 }, "fetch", "server");
+    await vi.advanceTimersByTimeAsync(300);
+    expect(tasks.jobs()[0]?.tracking_error).toBeTruthy();
+    supported = true;
+    await tasks.restore("server", retrySignal);
+    expect(retrySignal.aborted).toBe(true);
+    expect(changed).toHaveBeenCalledTimes(lifetime === "current" ? 1 : 0);
+    if (lifetime === "retired") expect(tasks.jobs()).toEqual([]);
+    else expect(tasks.jobs()[0]?.status).toBe("completed");
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
+
+it.each(["server", "local"] as const)(
+  "keeps recovery diagnostics scoped when a newer %s list succeeded",
+  async (nextSource) => {
+    const oldReply = deferred<unknown>();
+    let lists = 0;
+    request.mockImplementation(async (path) => {
+      if (path === "/api/v1/status") return { capabilities: ["administrative_tasks_list"] };
+      if (path === "/api/admin/v1/tasks")
+        return ++lists === 1 ? oldReply.promise : [{ task_id: 7, status: "running" }];
+      return { task_id: 7, status: "running" };
+    });
+    const tasks = createRoot((end) => {
+      dispose = end;
+      return createJobs(() => true);
+    });
+    tasks.track({ task_id: 7 }, "check", "server", "release:fixture");
+    const old = tasks.restore("server");
+    await settle();
+    await tasks.restore(nextSource);
+    expect(tasks.jobs().find((row) => row.source === nextSource)?.status).toBe("running");
+    expect(tasks.error()).toBe("");
+    oldReply.reject(Error("Earlier task-list failure"));
+    await old;
+    expect(tasks.error()).toBe(nextSource === "server" ? "" : "Error: Earlier task-list failure");
+  },
+);
+
+it("retains the latest recovery failure instead of replacing it with an older error", async () => {
+  const oldReply = deferred<unknown>();
+  let lists = 0;
+  request.mockImplementation(async (path) => {
+    if (path === "/api/v1/status") return { capabilities: ["administrative_tasks_list"] };
+    if (++lists === 1) return oldReply.promise;
+    throw Error("Current recovery failure");
+  });
+  const tasks = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true);
+  });
+  const old = tasks.restore("server");
+  await settle();
+  await tasks.restore("server");
+  expect(tasks.error()).toContain("Current recovery failure");
+  oldReply.reject(Error("Earlier recovery failure"));
+  await old;
+  expect(tasks.error()).toContain("Current recovery failure");
+});
+it("does not hide a committed catalogue refresh failure behind a newer successful task-list read", async () => {
+  const changed = deferred<void>();
+  const owner: AccountSession = {
+    server: "https://music.example",
+    account: { id: "admin", username: "admin", role: "admin" },
+  };
+  let supported = false;
+  request.mockImplementation(async (path) =>
+    path === "/api/v1/status"
+      ? { capabilities: supported ? ["administrative_tasks_list"] : [] }
+      : [{ task_id: 7, status: "completed" }],
+  );
+  const tasks = createRoot((end) => {
+    dispose = end;
+    return createJobs(() => true, {
+      session: (source) => (source === "server" ? owner : undefined),
+      changed: () => changed.promise,
+    });
+  });
+  await settle();
+  supported = true;
+  tasks.track({ task_id: 7 }, "fetch", "server");
+  const committed = tasks.restore("server");
+  await settle();
+  expect(tasks.jobs()[0]?.status).toBe("completed");
+  await tasks.restore("server");
+  changed.reject(Error("Catalogue refresh failure"));
+  await committed;
+  expect(tasks.error()).toContain("Catalogue refresh failure");
 });

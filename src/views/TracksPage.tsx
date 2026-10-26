@@ -43,6 +43,10 @@ export function TracksPage(props: {
   const library = useLibrary(),
     offset = () => props.offset,
     setOffset = props.setOffset;
+  const refreshIdentity = createMemo(() => ({
+    local: library.localSession(),
+    server: library.serverSession(),
+  }));
   const sources = createMemo(() =>
     publicCatalogSources(library.publicSnapshot, library.trackSources()),
   );
@@ -181,6 +185,7 @@ export function TracksPage(props: {
   return (
     <section class="page result-page tracks-page">
       <TracksHeader
+        identity={refreshIdentity()}
         filters={
           <FilterBar
             yearDomain={props.yearDomain}
@@ -250,6 +255,7 @@ export function TracksPage(props: {
                       message={`${sourceLabel(issue.source)} · ${issue.error.replace(/^Error: /, "")}`}
                     />
                     <RefreshButton
+                      identity={refreshIdentity()}
                       label={t("Synchroniser la bibliothèque")}
                       busy={recovery.loading()}
                       disabled={

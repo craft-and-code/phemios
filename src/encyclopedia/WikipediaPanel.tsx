@@ -204,6 +204,7 @@ export function WikipediaPanel(props: {
       >
         {(article) => (
           <WikipediaReader
+            identity={library.session()}
             article={article()}
             retained={state.retained()}
             busy={!!state.busy() || saved.pending()}
@@ -215,7 +216,8 @@ export function WikipediaPanel(props: {
             onBack={state.back}
             onSave={() => void state.save()}
             onDownload={state.download}
-            onRefresh={() => void state.open(article(), true)}
+            onCancel={state.cancel}
+            onRefresh={() => state.open(article(), true)}
             onRemove={() => void state.saved.remove(article())}
           />
         )}

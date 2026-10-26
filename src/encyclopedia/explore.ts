@@ -168,6 +168,7 @@ export function createWikipediaExplorer(
     open,
     changeEdition,
     download,
+    cancel: invalidate,
     back() {
       invalidate();
       editions.clear();

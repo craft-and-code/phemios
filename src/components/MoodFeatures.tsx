@@ -6,6 +6,7 @@ import { ActionButton } from "./ActionButton";
 import { RefreshButton } from "./RefreshButton";
 /** Shared descriptors are explicit background work; private labels remain owned by the current account. */
 export function MoodFeatures(props: {
+  identity?: unknown;
   coverage: MoodPage["acoustic"];
   job?: Job;
   admin: boolean;
@@ -33,6 +34,7 @@ export function MoodFeatures(props: {
             }
           >
             <RefreshButton
+              identity={props.identity}
               busy={true}
               label={t("Arrêter l’extraction audio")}
               onRefresh={() => {}}

@@ -72,6 +72,7 @@ export function DoctorPage() {
             </For>
           </div>
           <RefreshButton
+            identity={library.session()}
             label={t("Actualiser le diagnostic")}
             busy={report.loading()}
             disabled={!library.session() || (report.pending() && !report.loading())}

@@ -1,76 +1,57 @@
-import { Show, createEffect, createSignal, onCleanup, untrack } from "solid-js";
+import { Show, type JSX } from "solid-js";
 import { t } from "../i18n";
 import { Icon } from "./Icon";
 import { ActivityGlyph } from "./ActivityGlyph";
-/** A controlled read action exposes Stop only when the caller can retire its current admission. */
+import { createRefreshActivity } from "../library/refresh-activity";
+/** Every explicit refresh acknowledges one second; Stop retires its captured request and feedback. */
 export function RefreshButton(props: {
+  /** Stable account/target identity, independent from the request's busy/revision state. */
+  identity?: unknown;
   label?: string;
+  children?: JSX.Element;
   busy: boolean;
-  /** A page-wide indicator can own activity while this action remains an immediate Stop. */
-  busyIndicator?: "spinner" | "stop";
-  /** Keep the arrows visible for a complete turn, including immediately completed reads. */
-  rotate?: boolean;
+  /** A retired native read can still hold the transport slot after its visible activity stops. */
+  pending?: boolean;
   disabled?: boolean;
-  onRefresh: () => unknown;
-  onCancel?: () => void;
+  class?: string;
+  onRefresh: (event: MouseEvent, signal: AbortSignal) => unknown;
+  onCancel?: (() => void) | undefined;
 }) {
-  const [rotating, setRotating] = createSignal(false);
-  let fallback: ReturnType<typeof setTimeout> | undefined;
-  function finish() {
-    clearTimeout(fallback);
-    setRotating(false);
-  }
-  function begin() {
-    clearTimeout(fallback);
-    setRotating(true);
-    // Hidden/reduced-motion views may not dispatch animation iteration events.
-    fallback = setTimeout(finish, 900);
-  }
-  createEffect(() => {
-    if (!props.rotate) finish();
-    else if (props.busy) {
-      clearTimeout(fallback);
-      setRotating(true);
-    } else if (untrack(rotating)) fallback = setTimeout(finish, 900);
-  });
-  onCleanup(() => clearTimeout(fallback));
-  function refresh() {
-    if (props.busy) props.onCancel?.();
-    else if (!rotating()) {
-      if (props.rotate) begin();
-      void props.onRefresh();
+  const activity = createRefreshActivity(
+    () => props.identity,
+    () => props.busy,
+  );
+  const visible = () => props.busy || activity.visible() || activity.pending();
+  const disabled = () => props.disabled || (!!props.pending && !visible());
+  function refresh(event: MouseEvent) {
+    if (disabled()) return;
+    if (visible()) {
+      activity.clear();
+      props.onCancel?.();
+    } else {
+      const signal = activity.begin();
+      try {
+        activity.track(signal, props.onRefresh(event, signal));
+      } catch (failure) {
+        activity.clear();
+        throw failure;
+      }
     }
   }
   return (
     <button
       type="button"
-      class="icon-button quiet refresh-button"
-      disabled={props.disabled || (props.busy && !props.onCancel) || (!props.busy && rotating())}
-      aria-busy={props.busy || rotating() || undefined}
-      aria-label={props.busy && props.onCancel ? t("Arrêter") : (props.label ?? t("Actualiser"))}
-      title={props.busy && props.onCancel ? t("Arrêter") : (props.label ?? t("Actualiser"))}
+      class={`${props.children ? "action-button action-button-with-icon" : "icon-button quiet"} refresh-button ${props.class ?? ""}`}
+      disabled={disabled()}
+      aria-busy={visible() || undefined}
+      aria-label={visible() ? t("Arrêter") : (props.label ?? t("Actualiser"))}
+      title={visible() ? t("Arrêter") : (props.label ?? t("Actualiser"))}
       onClick={refresh}
     >
-      <Show
-        when={props.rotate}
-        fallback={
-          <Show when={props.busy} fallback={<Icon name="refresh" />}>
-            <Show when={props.busyIndicator !== "stop"} fallback={<Icon name="stop" />}>
-              <ActivityGlyph cancellable={!!props.onCancel} />
-            </Show>
-          </Show>
-        }
-      >
-        <span
-          class="refresh-glyph"
-          classList={{ "refresh-rotating": rotating() }}
-          onAnimationIteration={(event) => {
-            if (event.target === event.currentTarget && !props.busy) finish();
-          }}
-        >
-          <Icon name="refresh" />
-        </span>
+      <Show when={visible()} fallback={<Icon name="refresh" />}>
+        <ActivityGlyph cancellable />
       </Show>
+      <Show when={props.children}>{(label) => <span>{label()}</span>}</Show>
     </button>
   );
 }
