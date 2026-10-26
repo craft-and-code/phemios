@@ -198,6 +198,8 @@ export function requestAede<T>(
 
 /** Optical access uses only opaque, previously discovered native selectors. */
 export const scanCd = (id?: string) => nativeCall<unknown>("cd_scan", { id });
+/** Optional public metadata accepts only the already admitted optical token. */
+export const identifyCd = (token: string) => nativeCall<unknown>("cd_identify", { token });
 /** Only the native file dialog can choose a CUE path and admit its bounded relative BIN files. */
 export const openCdImage = () => nativeCall<string | null>("cd_open_image");
 export const ejectCd = (id: string) => nativeCall<unknown>("cd_eject", { id });

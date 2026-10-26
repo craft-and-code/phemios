@@ -9,6 +9,7 @@ mod awake;
 mod cd;
 mod cd_accounts;
 mod cd_image;
+mod cd_metadata;
 mod commands;
 mod concerts;
 mod display_awake;
@@ -110,6 +111,7 @@ pub fn run() -> Result<(), tauri::Error> {
             awake::awake_open,
             awake::awake_update,
             cd::cd_scan,
+            cd_metadata::cd_identify,
             cd_image::cd_open_image,
             cd::cd_start,
             cd::cd_eject,

@@ -140,6 +140,26 @@ impl Disc {
                 .zip(other.image.as_ref())
                 .is_some_and(|(a, b)| a.same(b))
     }
+    /// Native TOC for public identification, without reading samples or exposing a device path.
+    /// MusicBrainz expects consecutive audio tracks starting at one; images and unusual layouts stay local.
+    pub fn identification_toc(&self) -> Option<Vec<u32>> {
+        if self.image.is_some()
+            || self
+                .tracks
+                .iter()
+                .enumerate()
+                .any(|(i, t)| usize::from(t.number) != i + 1)
+        {
+            return None;
+        }
+        let last = self.tracks.last()?;
+        let end = last
+            .start
+            .checked_add(u32::try_from(last.frames / FRAMES_PER_SECTOR).ok()?)?;
+        let mut toc = vec![1, self.tracks.len() as u32, end.checked_add(150)?];
+        toc.extend(self.tracks.iter().map(|t| t.start + 150));
+        Some(toc)
+    }
     /// On-disc CD-Text or explicit CUE title; no network identification.
     pub fn title(&self) -> Option<&str> {
         self.image

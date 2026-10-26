@@ -28,6 +28,8 @@ La dernière piste n’a plus de trait de séparation en dessous. La forme d’o
 
 Sur macOS, Linux et Windows, les titres et interprètes CD-Text s’affichent automatiquement quand le disque et le lecteur les fournissent (ASCII/Latin-1). Sans texte compatible, les noms « Piste N » restent affichés et la lecture audio reste disponible. Il s’agit d’informations inscrites sur le disque, sans recherche en ligne. Cette lecture locale des métadonnées ne nécessite ni compte ni logiciel supplémentaire. Les titres CUE restent disponibles. Les essais matériels Linux/Windows et la vérification de CD-Text sur un vrai disque restent à réaliser ; certains lecteurs ne fournissent pas ces informations.
 
+Si des noms manquent sur un CD physique, Phémios tente automatiquement de les compléter avec MusicBrainz dès sa détection dans la vue CD Audio. Aucun compte Aède n’est nécessaire. Seule la table des pistes est envoyée, jamais le son ni le chemin du lecteur. Les noms inscrits sur le CD restent prioritaires. Sans connexion, sans correspondance exacte ou si les éditions se contredisent, « Piste N » reste affiché et la lecture reste possible. Les images CUE ne déclenchent pas cette recherche. Les réponses sont conservées temporairement en mémoire pendant l’exécution de Phémios.
+
 ## Préparer une sortie concert
 
 Concerts recherche les dates disponibles pour les artistes via JamBase. Renseignez votre clé dans Paramètres → Sources externes. Le plafond local limite les appels gratuits ; l’absence de résultat n’établit pas qu’un artiste ne se produit jamais. Les conditions et limites du fournisseur s’appliquent.

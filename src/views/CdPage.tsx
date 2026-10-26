@@ -1,11 +1,12 @@
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { useLibrary } from "../library/context";
 import { createDiagnosticRead } from "../library/diagnostic-read";
-import { ejectCd, isNative, scanCd, openCdImage } from "../platform/desktop";
+import { ejectCd, isNative, scanCd, openCdImage, identifyCd } from "../platform/desktop";
 import { cdReference, cdPlaying, parseCd } from "../cd/model";
 import { CdContent } from "../components/CdContent";
 import { CdHeader } from "../components/CdHeader";
 import { activateCdPlayback } from "../cd/transport";
+import { createCdIdentification } from "../cd/identification";
 import { t } from "../i18n";
 /** Native optical discovery never connects to Aède or imports audio into the catalogue. */
 export function CdPage() {
@@ -18,7 +19,8 @@ export function CdPage() {
     () => (isNative() ? { native: true } : false),
     async () => parseCd(await scanCd(selected() || undefined)),
   );
-  const drives = () => read.current() ?? [];
+  const identification = createCdIdentification(() => read.current() ?? [], identifyCd);
+  const drives = identification.drives;
   const active = createMemo(
     () => drives().find((d) => d.id === selected()) ?? drives().find((d) => d.disc) ?? drives()[0],
   );
@@ -96,11 +98,15 @@ export function CdPage() {
         onOpen={() => void openImage()}
         onEject={() => void eject()}
         onRefresh={read.refetch}
-        onCancel={read.cancel}
+        onCancel={() => {
+          read.cancel();
+          identification.cancel();
+        }}
       />
       <CdContent
         drives={drives()}
         selected={active()?.id ?? ""}
+        identification={identification.message(active()?.disc?.token)}
         busy={read.loading() && !read.current()}
         error={failure() || read.error() || ""}
         native={isNative()}

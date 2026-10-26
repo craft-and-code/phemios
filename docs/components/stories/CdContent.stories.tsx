@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { createSignal, type ComponentProps } from "solid-js";
+import { createCdIdentification } from "../../../src/cd/identification";
 import { CdHeader } from "../../../src/components/CdHeader";
 import { cdPlaybackAction, cdPlaying } from "../../../src/cd/model";
 import { CdContent } from "../../../src/components/CdContent";
@@ -208,5 +209,43 @@ export const BufferingDisc: Story = {
     const canvas = within(canvasElement);
     expect(canvas.getByRole("button", { name: t("Mettre le CD en pause") })).toBeEnabled();
     expect(canvas.getByRole("button", { name: t("Éjecter le CD") })).toBeDisabled();
+  },
+};
+
+/** Runs the actual optional-name admission model, with a synthetic response and no network/drive. */
+export const AutomaticTrackNames: Story = {
+  render: (args) => {
+    const identification = createCdIdentification(
+      () => [drive],
+      async (token) => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return {
+          token,
+          metadata: {
+            status: "matched",
+            title: "Night Signals",
+            artist: "Synthetic Ensemble",
+            tracks: ["Opening", "Interlude", "Finale"].map((title) => ({
+              title,
+              artist: "Synthetic Ensemble",
+            })),
+          },
+        };
+      },
+    );
+    return (
+      <CdScenario
+        {...args}
+        drives={identification.drives()}
+        identification={identification.message(disc.token)}
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.findByRole("heading", { name: "Night Signals" })).resolves.toBeVisible();
+    expect(canvas.getByText("Interlude")).toBeVisible();
+    expect(canvas.getByRole("status")).toHaveTextContent(t("Titres complétés avec MusicBrainz."));
+    expect(canvas.getByRole("button", { name: t("Lire le CD") })).toBeEnabled();
   },
 };

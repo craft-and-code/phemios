@@ -30,6 +30,8 @@ On macOS, automatic Music launch is configured under **System Settings → CDs &
 
 Optical dropouts may involve drive latency, competing applications, the audio output or host load. Successful reinsertion alone does not identify a cause. Retest with other players closed and no compilation running; record the disc, track, time, drive and output if it recurs.
 
+When a physical CD has missing names, Phémios automatically tries MusicBrainz after detection in the Audio CD view. No Aède account is needed. Only the table of contents is sent, never audio or a device path. Embedded CD-Text remains authoritative. Offline, without an exact match or with conflicting editions, Track N remains and playback stays available. CUE images do not trigger this lookup. Responses are temporarily cached in process memory.
+
 ## Find a concert
 
 Concerts requests available dates for artists through JamBase. Enter your key in Settings → External sources. The local cap limits free requests; an empty result does not prove that an artist never performs. Provider terms and limits apply.

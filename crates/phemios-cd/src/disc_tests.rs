@@ -131,3 +131,24 @@ fn unavailable_optional_text_never_changes_the_admitted_audio_layout_or_referenc
     assert_eq!(disc.reference(7), reference);
     assert!(disc.matches(&toc()));
 }
+
+#[test]
+fn identification_toc_uses_audio_leadout_with_msf_offset_and_rejects_unusual_numbers() {
+    assert!(inspect(&toc()).unwrap().identification_toc().is_none());
+    let mut normal = toc();
+    normal.first_track = 1;
+    normal.last_track = 2;
+    normal.tracks[0].number = 1;
+    normal.tracks[1].number = 2;
+    assert_eq!(
+        inspect(&normal).unwrap().identification_toc(),
+        Some(vec![1, 2, 450, 150, 300])
+    );
+    normal.leadout_lba = 15000;
+    normal.tracks[1].start_lba = 12000;
+    normal.tracks[1].is_audio = false;
+    assert_eq!(
+        inspect(&normal).unwrap().identification_toc(),
+        Some(vec![1, 1, 750, 150])
+    );
+}

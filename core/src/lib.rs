@@ -77,3 +77,6 @@ pub fn transfer_random(bytes: &mut [u8]) -> Result<(), String> {
 }
 
 pub mod session_cleanup;
+
+/// Optional public MusicBrainz identification of native optical tables of contents.
+pub mod cd_metadata;

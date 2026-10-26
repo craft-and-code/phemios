@@ -11,6 +11,7 @@ import { CoverPlayView } from "./CoverPlayView";
 export function CdContent(props: {
   drives: readonly CdDrive[];
   selected: string;
+  identification?: string;
   busy: boolean;
   error: string;
   native: boolean;
@@ -89,6 +90,11 @@ export function CdContent(props: {
                       · {collectionDuration(duration())}
                     </p>
                     <p class="muted">{t("16 bits · 44,1 kHz · stéréo")}</p>
+                    <Show when={props.identification}>
+                      <p class="muted" role="status">
+                        {props.identification}
+                      </p>
+                    </Show>
                   </Show>
                 </div>
                 <div class="cd-actions">
