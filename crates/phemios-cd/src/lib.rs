@@ -22,6 +22,12 @@ mod macos;
 mod macos_cdtext;
 #[cfg(target_os = "macos")]
 mod macos_cf;
+#[cfg(target_os = "macos")]
+mod macos_info;
+#[cfg(target_os = "macos")]
+mod macos_registry;
+#[cfg(target_os = "macos")]
+mod macos_tray;
 mod physical;
 mod process;
 mod stream;

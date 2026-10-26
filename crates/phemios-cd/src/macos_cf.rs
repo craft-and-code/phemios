@@ -7,6 +7,14 @@ pub(super) type Ref = *const c_void;
 #[link(name = "CoreFoundation", kind = "framework")]
 unsafe extern "C" {
     fn CFRelease(value: Ref);
+    fn CFDataCreate(allocator: Ref, bytes: *const u8, length: isize) -> Ref;
+    fn CFPropertyListCreateWithData(
+        allocator: Ref,
+        data: Ref,
+        options: usize,
+        format: *mut isize,
+        error: *mut Ref,
+    ) -> Ref;
     fn CFGetTypeID(value: Ref) -> usize;
     fn CFArrayGetTypeID() -> usize;
     fn CFArrayGetCount(value: Ref) -> isize;
@@ -68,4 +76,22 @@ pub(super) fn array(value: Ref, limit: usize) -> Option<Vec<Ref>> {
             .map(|i| unsafe { CFArrayGetValueAtIndex(value, i as isize) })
             .collect(),
     )
+}
+
+/// Parse only a small native system response with Apple's immutable property-list parser.
+/// No webview input, path lookup or external resource resolver is exposed.
+pub(super) fn property_list(bytes: &[u8]) -> Option<Owned> {
+    if bytes.is_empty() || bytes.len() > 8192 {
+        return None;
+    }
+    // The length is bounded and CFData copies the bytes before this borrowed slice retires.
+    let data = Owned(unsafe { CFDataCreate(ptr::null(), bytes.as_ptr(), bytes.len() as isize) });
+    if data.0.is_null() {
+        return None;
+    }
+    // Immutable retained output; null optional output arguments do not allocate an error object.
+    let result = Owned(unsafe {
+        CFPropertyListCreateWithData(ptr::null(), data.0, 0, ptr::null_mut(), ptr::null_mut())
+    });
+    (!result.0.is_null()).then_some(result)
 }

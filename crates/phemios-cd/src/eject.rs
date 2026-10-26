@@ -8,7 +8,10 @@ pub(super) fn run(path: &str) -> Result<(), String> {
     if path.starts_with("dr:") {
         return super::macos::eject(path);
     }
-    let mut command = command(path)?;
+    execute(command(path)?)
+}
+// Shared fixed-tool boundary: no shell, stdin or output inheritance, and a bounded exit wait.
+pub(super) fn execute(mut command: Command) -> Result<(), String> {
     let mut child = command
         .stdin(Stdio::null())
         .stdout(Stdio::null())

@@ -132,6 +132,11 @@ export const TrackSelection: Story = {
       ).toBeLessThan(0.75);
     }
     await userEvent.click(canvas.getByRole("button", { name: t("Lire la piste {0}", 2) }));
+    expect(
+      canvas.getByRole("button", {
+        name: t("Arrêtez la lecture du CD pour actualiser les lecteurs."),
+      }),
+    ).toBeDisabled();
     expect(canvas.getByRole("button", { name: t("Éjecter le CD") })).toBeDisabled();
     expect(canvas.getByRole("button", { name: t("Mettre le CD en pause") })).toBeEnabled();
     expect(

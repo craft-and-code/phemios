@@ -64,6 +64,11 @@ export function CdHeader(props: {
             </Show>
           </button>
           <RefreshButton
+            label={
+              props.reading
+                ? t("Arrêtez la lecture du CD pour actualiser les lecteurs.")
+                : t("Actualiser")
+            }
             busy={props.loading}
             disabled={
               !props.native ||
