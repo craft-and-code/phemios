@@ -27,6 +27,8 @@ jobs:
           node-version: 24
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - name: Install native documentation and engine prerequisites
         run: |
@@ -36,16 +38,27 @@ jobs:
             librsvg2-dev libasound2-dev libdbus-1-dev libssl-dev \
             build-essential pkg-config autoconf automake libtool
       - run: npm ci
-      - name: Prepare the latest published stable engine for native Rustdoc
+      - name: Select the latest published stable audio once for desktop documentation and Web
+        id: audio
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/audio-source.mjs --resolve
+      - name: Prepare the selected stable engine for native Rustdoc
+        env:
+          AEDE_AUDIO_RELEASE: ${{ steps.audio.outputs.release }}
         run: node scripts/prepare-engine.mjs
+      - name: Install the matching WebAssembly binding tool
+        run: cargo install wasm-bindgen-cli --version 0.2.129 --locked
       - name: Verify website and manual behavior
         run: node --test tests/site.test.mjs
       - name: Build frontend assets required by the native Rustdoc context
         run: npm run build
-      - name: Build website, manual and technical documentation
+      - name: Build website, playable demo, manual and technical documentation
+        env:
+          AEDE_AUDIO_RELEASE: ${{ steps.audio.outputs.release }}
         run: npm run site:build
+      - name: Execute the generated WebAssembly DSP checks
+        run: npm run web:test
       - name: Check the assembled website
         run: npm run site:check
       - name: Upload the checked website

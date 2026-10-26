@@ -1,0 +1,119 @@
+[
+  {
+    "title": "Hiraeth",
+    "artist": "Scott Buckley",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/hiraeth/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2020/06/sb_hiraeth.mp3",
+    "file": "audio/hiraeth.mp3",
+    "sha256": "f790c7d53b8d802981ff7cdd8c59e22cdfe103ea66aba296c6cf1a65fe7fcf01",
+    "modified": false
+  },
+  {
+    "title": "Solace",
+    "artist": "Scott Buckley",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/solace/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2020/05/sb_solace.mp3",
+    "file": "audio/solace.mp3",
+    "sha256": "bb54696d9b49e60d8e9edc25d80c19a975d25b3c8d8ca32afe4d963372e1d1bf",
+    "modified": false
+  },
+  {
+    "title": "Catalyst",
+    "artist": "Scott Buckley",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/catalyst/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2020/06/sb_catalyst.mp3",
+    "file": "audio/catalyst.mp3",
+    "sha256": "8dabdc650ed2db00c9b5b685e5c9ddbc9e14e5d9f4a8dcd3f87db3ccf139e41e",
+    "modified": false
+  },
+  {
+    "title": "Reverie",
+    "artist": "Scott Buckley",
+    "album": "Reverie",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/reverie/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2020/03/sb_reverie.mp3",
+    "file": "audio/reverie.mp3",
+    "sha256": "ca1e7194d7d6f49127c77ff2f4011d07182525c826bb7ded3d3944e69ca678d2",
+    "modified": false
+  },
+  {
+    "title": "The Climb",
+    "artist": "Scott Buckley",
+    "album": "The Climb",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/the-climb/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2021/02/sb_theclimb.mp3",
+    "file": "audio/theclimb.mp3",
+    "sha256": "791472ee1554311ca4191f1efc6b839b41fcb3139edc0ad0fd58292d95479343",
+    "modified": false
+  },
+  {
+    "title": "Freedom",
+    "artist": "Scott Buckley",
+    "album": "Freedom",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/freedom/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2019/02/sb_freedom.mp3",
+    "file": "audio/freedom.mp3",
+    "sha256": "3ede53066c7ad33e242f2c883482b08351cedcf839e150f5b162d8d7f35b2693",
+    "modified": false
+  },
+  {
+    "title": "Undertow",
+    "artist": "Scott Buckley",
+    "album": "Undertow",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://www.scottbuckley.com.au/library/undertow/",
+    "download": "https://www.scottbuckley.com.au/library/wp-content/uploads/2019/12/sb_undertow.mp3",
+    "file": "audio/undertow.mp3",
+    "sha256": "4652007dad67295f1f5c87c8cbc8e2df1a530e7671266a29f693a084375d3910",
+    "modified": false
+  },
+  {
+    "title": "Cylinder One",
+    "artist": "Chris Zabriskie",
+    "album": "Cylinders",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://chriszabriskie.com/cylinders/",
+    "download": "https://audio.chriszabriskie.com/cylinders/cylinders-01.m4a",
+    "file": "audio/cylinderone.m4a",
+    "sha256": "dc88756d6c5453ca0293f340c59c62b41ed0478f2c4b7d3d12f1df9428675b74",
+    "modified": false
+  },
+  {
+    "title": "The Temperature of the Air on the Bow of the Kaleetan",
+    "artist": "Chris Zabriskie",
+    "album": "Undercover Vampire Policeman",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://chriszabriskie.com/uvp/",
+    "download": "https://audio.chriszabriskie.com/uvp/uvp-01.m4a",
+    "file": "audio/kaleetan.m4a",
+    "sha256": "96812c1a37c4f503c00464fcd4f56ceb3b1489bb7c5777c5562561fbd757edd6",
+    "modified": false
+  },
+  {
+    "title": "Heliograph",
+    "artist": "Chris Zabriskie",
+    "album": "Divider",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://chriszabriskie.com/divider/",
+    "download": "https://audio.chriszabriskie.com/divider/divider-01.m4a",
+    "file": "audio/heliograph.m4a",
+    "sha256": "ed614ee448559a1f7f4ad597d6548723d07c79e5d47bb9569dbe42994cf4f60d",
+    "modified": false
+  }
+]

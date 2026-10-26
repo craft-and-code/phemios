@@ -65,3 +65,9 @@ Use **Add spacing**, then its pencil, to create an optional group title. A named
 When an internal Aède error appears, click **View diagnostics** in the message. The dialog lists failed operations and their library. The journal keeps the latest 64 errors for current connections and clears them on logout. It contains neither request parameters nor the internal server log.
 
 If personal data becomes unreadable after an update, check compatibility with the Aède engine in use. An older engine may display the public catalogue while refusing newer notes, preferences or collections. Use a compatible engine; do not delete personal data or rescan to attempt a downgrade.
+
+## Browser demonstration
+
+[Try Phémios](../../demo/#/albums) opens the initial Web edition without installation. It includes ten freely licensed recordings by Scott Buckley and Chris Zabriskie (CC BY 4.0), original demo covers, Albums/Cover Flow, the queue and playback through the shared Aède DSP compiled to WebAssembly. Attribution is accessible in the sidebar. Use **Settings → Libraries → Reset the demo** to reset the demo's presentation settings; this never removes music or real-account settings.
+
+To use your own collection, host the Web interface with an Aède API at the same address, then choose **Use my library** in Settings → Libraries and sign in. This first version plays browser-compatible original files up to 64 MiB per track and needs a fresh login after reload. The public demonstration cannot automatically access folders or an Aède server inside your home network. CD/device access, crossfade/normalization and supervised listening remain desktop features. See the developer guide in `docs/design/web-client.md` for developer commands and limits.

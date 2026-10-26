@@ -1,3 +1,4 @@
+import { webEnabled, webMode } from "../web/runtime";
 import { composerExpression } from "../library/composers";
 import { referenceSource } from "../library/sources";
 import { Feedback } from "./Feedback";
@@ -41,6 +42,7 @@ export function SelectionCollection(props: {
       <button
         class="icon-button"
         disabled={
+          (webEnabled() && webMode() === "demo") ||
           !writable() ||
           props.disabled ||
           (props.section === "composers" &&

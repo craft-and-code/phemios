@@ -152,3 +152,7 @@ External-player copying supports reviewed selected music, conversion and read-ba
 ## Quality assurance templates
 
 The [quality workflow](docs/quality/README.md), [audit scope](docs/quality/audit-scope.md), [findings register](docs/quality/findings.md) and [release checklist](docs/quality/release-checklist.md) are reusable preparation templates, not records of completed audits. Role prompts are provided for the [code auditor](docs/quality/prompts/auditor.md), [test engineer](docs/quality/prompts/test-engineer.md), [adversarial reviewer](docs/quality/prompts/adversarial-reviewer.md) and [release validator](docs/quality/prompts/release-validator.md).
+
+## Browser edition
+
+The browser edition adds a separate, playable browser demo with ten attributed CC BY 4.0 recordings and the shared Rust DSP compiled to WebAssembly. `npm run web:dev` prepares the adapter and starts port 1440. `npm run web:build` creates `dist-web`; `npm run web:serve` serves it on loopback port 1441, optionally with `--aede URL` for a personal same-origin API. This does not replace the ordinary fictional `npm run dev` preview or rebuild the native App. See [Web prerequisites, security and initial limits](docs/design/web-client.md).

@@ -1,3 +1,4 @@
+import { webEnabled } from "../web/runtime";
 import { aedeAvailability } from "../library/aede-availability";
 import { aedeDiagnostics } from "../library/aede-diagnostics";
 import { concertConfig } from "../concerts/config";
@@ -21,7 +22,13 @@ export interface RuntimeInfo {
 /** Browser previews stay offline and report their lack of native capabilities. */
 export async function getRuntimeInfo(): Promise<RuntimeInfo> {
   if (!isTauri()) {
-    return { bridgeVersion: 1, name: "Phémios", version: appVersion, native: false };
+    return {
+      bridgeVersion: 1,
+      name: "Phémios",
+      version: appVersion,
+      native: false,
+      ...(webEnabled() ? { capabilities: ["web_session_read"] } : {}),
+    };
   }
   const info = await invoke<RuntimeInfo>("runtime_info");
   if (info.bridgeVersion !== 1) {
@@ -33,7 +40,10 @@ export async function getRuntimeInfo(): Promise<RuntimeInfo> {
 /** All native data operations carry the bridge version and stay on typed IPC. */
 export const isNative = () => isTauri();
 async function nativeCall<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
-  if (!isTauri()) throw new Error(t("La connexion Aède nécessite l’application desktop."));
+  if (!isTauri()) {
+    if (webEnabled()) return (await import("../web/bridge")).webCall<T>(command, args);
+    throw new Error(t("La connexion Aède nécessite l’application desktop."));
+  }
   try {
     return await invoke<T>(command, { version: 1, ...args });
   } catch (error) {
@@ -60,7 +70,10 @@ export async function restoreAedeSession(
   const runtime = await getRuntimeInfo();
   if (
     operation !== sessionOperations[source] ||
-    !runtime.capabilities?.includes("native_session_read")
+    !(
+      runtime.capabilities?.includes("native_session_read") ||
+      runtime.capabilities?.includes("web_session_read")
+    )
   )
     return;
   const value = await nativeCall<import("../library/server").AccountSession | null>(

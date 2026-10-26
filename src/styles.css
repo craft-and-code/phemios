@@ -2571,3 +2571,52 @@ main:has(> .tracks-page) {
 .floating-lyrics .lyric-bass-echo .lyric-chunk {
   animation: none;
 }
+
+.web-status {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.web-status small {
+  display: block;
+}
+.web-credits {
+  font-size: 12px;
+  line-height: 1.5;
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+.web-credits p {
+  margin: 5px 0;
+}
+.web-settings {
+  max-width: 860px;
+}
+.web-settings section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.web-settings section:last-of-type {
+  border-bottom: 0;
+}
+.web-settings p {
+  line-height: 1.6;
+}
+.web-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--control-gap);
+}
+.web-login {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin: 20px 0;
+}
+.web-login label {
+  display: grid;
+  gap: 6px;
+}
+.web-login .action-button {
+  justify-self: start;
+}

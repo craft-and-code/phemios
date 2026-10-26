@@ -1,3 +1,5 @@
+import { webEnabled, webMode } from "../web/runtime";
+import { demoArtwork } from "../web/catalog";
 import { activeNativeSessionConflict } from "./connection-recovery";
 import { createNetworkAudio } from "../network-audio/controller";
 import { prepareNetworkPlayback } from "../network-audio/local-handoff";
@@ -124,7 +126,7 @@ interface Library {
 const Context = createContext<Library>();
 /** Public catalog is cached; own annotations and session secrets remain separate. */
 export function LibraryProvider(props: ParentProps) {
-  const demo = !isNative();
+  const demo = !isNative() && !webEnabled();
   const [serverSnapshot, setServerSnapshot] = createSignal<Snapshot>(),
     [localSnapshot, setLocalSnapshot] = createSignal<Snapshot>(),
     [serverSession, setSession] = createSignal<AccountSession>(),
@@ -466,6 +468,11 @@ export function LibraryProvider(props: ParentProps) {
   async function warmImage(reference: string, kind: string) {
     const id = key(reference, kind);
     if (images[id]) return;
+    if (webEnabled() && webMode() === "demo") {
+      const url = demoArtwork(reference);
+      if (url) setImages(id, url);
+      return;
+    }
     const held = pending.get(id);
     if (held) return held;
     const source = referenceSource(reference);

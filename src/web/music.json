@@ -1,0 +1,112 @@
+[
+  {
+    "id": "hiraeth",
+    "title": "Hiraeth",
+    "author": "scott",
+    "album": "Hiraeth",
+    "year": 2020,
+    "genre": "Ambient",
+    "duration": 346199,
+    "source": "https://www.scottbuckley.com.au/library/hiraeth/",
+    "file": "hiraeth.mp3"
+  },
+  {
+    "id": "solace",
+    "title": "Solace",
+    "author": "scott",
+    "album": "Solace",
+    "year": 2020,
+    "genre": "Piano",
+    "duration": 356356,
+    "source": "https://www.scottbuckley.com.au/library/solace/",
+    "file": "solace.mp3"
+  },
+  {
+    "id": "catalyst",
+    "title": "Catalyst",
+    "author": "scott",
+    "album": "Catalyst",
+    "year": 2020,
+    "genre": "Orchestral",
+    "duration": 277568,
+    "source": "https://www.scottbuckley.com.au/library/catalyst/",
+    "file": "catalyst.mp3"
+  },
+  {
+    "id": "reverie",
+    "title": "Reverie",
+    "author": "scott",
+    "album": "Reverie",
+    "year": 2020,
+    "genre": "Piano",
+    "file": "reverie.mp3",
+    "source": "https://www.scottbuckley.com.au/library/reverie/",
+    "duration": 223673
+  },
+  {
+    "id": "theclimb",
+    "title": "The Climb",
+    "author": "scott",
+    "album": "The Climb",
+    "year": 2021,
+    "genre": "Orchestral",
+    "file": "theclimb.mp3",
+    "source": "https://www.scottbuckley.com.au/library/the-climb/",
+    "duration": 347087
+  },
+  {
+    "id": "freedom",
+    "title": "Freedom",
+    "author": "scott",
+    "album": "Freedom",
+    "year": 2019,
+    "genre": "Orchestral",
+    "file": "freedom.mp3",
+    "source": "https://www.scottbuckley.com.au/library/freedom/",
+    "duration": 243508
+  },
+  {
+    "id": "undertow",
+    "title": "Undertow",
+    "author": "scott",
+    "album": "Undertow",
+    "year": 2019,
+    "genre": "Piano",
+    "file": "undertow.mp3",
+    "source": "https://www.scottbuckley.com.au/library/undertow/",
+    "duration": 249931
+  },
+  {
+    "id": "cylinderone",
+    "title": "Cylinder One",
+    "author": "chris",
+    "album": "Cylinders",
+    "year": 2014,
+    "genre": "Ambient",
+    "file": "cylinderone.m4a",
+    "source": "https://chriszabriskie.com/cylinders/",
+    "duration": 176170
+  },
+  {
+    "id": "kaleetan",
+    "title": "The Temperature of the Air on the Bow of the Kaleetan",
+    "author": "chris",
+    "album": "Undercover Vampire Policeman",
+    "year": 2012,
+    "genre": "Piano",
+    "file": "kaleetan.m4a",
+    "source": "https://chriszabriskie.com/uvp/",
+    "duration": 264197
+  },
+  {
+    "id": "heliograph",
+    "title": "Heliograph",
+    "author": "chris",
+    "album": "Divider",
+    "year": 2011,
+    "genre": "Electronic",
+    "file": "heliograph.m4a",
+    "source": "https://chriszabriskie.com/divider/",
+    "duration": 339522
+  }
+]

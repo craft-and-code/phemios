@@ -1,4 +1,5 @@
 import { readFile, readdir, access } from "node:fs/promises";
+import { checkWebDemo } from "./check-web-demo.mjs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 /** Check authored/generated editorial pages; bundled third-party technical HTML keeps its own contracts. */
@@ -32,7 +33,7 @@ export async function checkSite(root, { technical = true } = {}) {
       );
       if (target.startsWith("../") || path.isAbsolute(target))
         throw Error(`${page}: link escapes site`);
-      if (!technical && /^(components|rust|typescript)\//.test(target)) continue;
+      if (!technical && /^(components|rust|typescript|demo)\//.test(target)) continue;
       await access(path.join(root, target)).catch(() => {
         throw Error(`${page}: missing target ${raw}`);
       });
@@ -55,6 +56,7 @@ export async function checkSite(root, { technical = true } = {}) {
       "typescript/index.html",
     ])
       await access(path.join(root, entry));
+  if (technical) await checkWebDemo(path.join(root, "demo"));
   console.log(
     `Validated ${pages.length} Phémios pages and local links${technical ? " with technical outputs" : ""}.`,
   );

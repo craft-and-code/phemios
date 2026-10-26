@@ -4,6 +4,7 @@ import { readFile, mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { generateSite, renderMarkdown } from "../scripts/site-content.mjs";
+import { installWebDemoFixture } from "./web-demo-publication-fixture.mjs";
 import { checkSite } from "../scripts/check-site.mjs";
 const root = path.resolve(import.meta.dirname, "..");
 for (const language of ["fr", "en"]) {
@@ -17,6 +18,7 @@ for (const language of ["fr", "en"]) {
         "utf8",
       );
       assert.match(home, new RegExp(`<html lang="${language}"`));
+      assert.match(home, /href="(?:\.\.\/)?demo\/#\/albums"/);
       assert.match(home, /href="https:\/\/craft-and-code\.github\.io\/aede\/"/);
       assert.match(home, /href="https:\/\/craft-and-code\.github\.io\/FlacCompagnon\/"/);
       assert.doesNotMatch(home, /<iframe|<form|https?:\/\/[^" ]+\.(?:js|css|png|woff)/);
@@ -39,6 +41,7 @@ for (const language of ["fr", "en"]) {
         await mkdir(path.dirname(path.join(out, name)), { recursive: true });
         await writeFile(path.join(out, name), "test-only technical output");
       }
+      await installWebDemoFixture(path.join(out, "demo"));
       await checkSite(out);
     } finally {
       await rm(out, { recursive: true, force: true });

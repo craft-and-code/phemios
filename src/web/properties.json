@@ -1,0 +1,102 @@
+{
+  "solace": {
+    "size": 14257802,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "hiraeth": {
+    "size": 13851302,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "catalyst": {
+    "size": 11106408,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "reverie": {
+    "size": 8950768,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "theclimb": {
+    "size": 13886884,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "freedom": {
+    "size": 9743859,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "undertow": {
+    "size": 10000906,
+    "codec": "mp3",
+    "container": "MP3",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 320,
+    "lossless": false
+  },
+  "cylinderone": {
+    "size": 3580793,
+    "codec": "aac",
+    "container": "MP4",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 160,
+    "lossless": false
+  },
+  "kaleetan": {
+    "size": 5341169,
+    "codec": "aac",
+    "container": "MP4",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 160,
+    "lossless": false
+  },
+  "heliograph": {
+    "size": 6909639,
+    "codec": "aac",
+    "container": "MP4",
+    "sample_rate": 44100,
+    "bit_depth": null,
+    "channels": 2,
+    "bitrate_kbps": 160,
+    "lossless": false
+  }
+}

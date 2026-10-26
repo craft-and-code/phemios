@@ -20,3 +20,13 @@ dist-release/
 
 # Build-time stable Aède source and selection (never personal/runtime data).
 .audio-source/
+
+# Web-only generated output and shared public asset copies.
+dist-web/
+web-public/web-audio/wasm/
+web-public/demo/
+web-public/.DS_Store
+web-public/licenses/
+web-public/icons/
+web-public/favicon.svg
+web-public/geography/

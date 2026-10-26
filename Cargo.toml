@@ -1,5 +1,5 @@
 [workspace]
-members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer", "crates/phemios-glib-regression"]
+members = ["core", "src-tauri", "crates/phemios-cd", "crates/phemios-transfer", "crates/phemios-glib-regression", "crates/phemios-web-audio"]
 resolver = "2"
 exclude = ["vendor/glib", "vendor/glib-macros", "vendor/gtk3-macros", "vendor/keepawake"]
 [workspace.package]

@@ -18,3 +18,12 @@ vendor/glib/
 vendor/glib-macros/
 vendor/gtk3-macros/
 vendor/keepawake/
+
+# Generated Web output and mirrored desktop static assets.
+dist-web/
+web-public/web-audio/wasm/
+web-public/demo/
+web-public/geography/
+web-public/icons/
+web-public/licenses/
+web-public/favicon.svg

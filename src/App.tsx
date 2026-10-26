@@ -1,3 +1,5 @@
+import { webEnabled, webUnavailable } from "./web/runtime";
+import { WebStatus } from "./web/WebStatus";
 import { ViewSessionProvider, useViewSession } from "./navigation/ViewSession";
 import { createCollectionMenuChoices } from "./library/collection-menu-choices";
 import { createCollectionAlbums } from "./library/collection-albums";
@@ -84,7 +86,7 @@ import { TagsPage } from "./views/TagsPage";
 import { AlbumPage } from "./views/AlbumPage";
 import { WorkspacePage } from "./views/WorkspacePage";
 
-/** Offline shell: demonstration data is never represented as server state. */
+/** Shared shell; the explicit Web demo has a separate synthetic authority and no real server session. */
 export function App() {
   return (
     <ViewSessionProvider>
@@ -104,6 +106,7 @@ function AppContent() {
     visibleMenu(
       menu.value(),
       new Set([
+        ...(webEnabled() ? menu.value().order.filter((id) => webUnavailable.has(id)) : []),
         ...(!library.session() ? menu.value().order.filter(isCollectionMenuId) : []),
         ...(library.parental.radioAllowed() ? [] : ["radio" as const]),
         ...(library.parental.podcastsAllowed() ? [] : ["podcasts" as const]),
@@ -482,12 +485,17 @@ function AppContent() {
             </For>
           </nav>
           <div class="connection">
+            <Show when={webEnabled()}>
+              <WebStatus />
+            </Show>
             <span class="status-dot" />
-            {library.demo
-              ? t("Aperçu hors ligne")
-              : library.session()
-                ? t("Bibliothèque Aède")
-                : t("Cache local · hors ligne")}
+            {webEnabled()
+              ? t("Session navigateur")
+              : library.demo
+                ? t("Aperçu hors ligne")
+                : library.session()
+                  ? t("Bibliothèque Aède")
+                  : t("Cache local · hors ligne")}
             <small>
               {principalArtists().length} {t("artistes d’album ·")}{" "}
               <AlbumCount value={library.albums().length} />
@@ -505,8 +513,12 @@ function AppContent() {
             </Show>
             <small>
               <Show when={runtime()} fallback={t("Initialisation du pont…")}>
-                {runtime()?.native ? t("Application desktop") : t("Aperçu navigateur")} ·{" "}
-                {runtime()?.version}
+                {runtime()?.native
+                  ? t("Application desktop")
+                  : webEnabled()
+                    ? "Phémios Web"
+                    : t("Aperçu navigateur")}{" "}
+                · {runtime()?.version}
               </Show>
             </small>
             <Show when={runtime.error}>
@@ -752,10 +764,19 @@ function AppContent() {
               )}
             >
               <Show
-                when={parentalRouteAllowed(route, library.parental.available)}
+                when={
+                  (!webEnabled() || route.kind !== "section" || !webUnavailable.has(section())) &&
+                  parentalRouteAllowed(route, library.parental.available)
+                }
                 fallback={
                   <div class="page">
-                    <EmptyState icon="lock">{t("Accès indisponible pour ce compte.")}</EmptyState>
+                    <EmptyState icon="lock">
+                      {t(
+                        webEnabled() && webUnavailable.has(section())
+                          ? "Cette vue nécessite l’application desktop."
+                          : "Accès indisponible pour ce compte.",
+                      )}
+                    </EmptyState>
                   </div>
                 }
               >

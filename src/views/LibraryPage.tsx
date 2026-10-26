@@ -1,3 +1,4 @@
+import { webEnabled } from "../web/runtime";
 import { composerAlbumOrder, composerAlbumNames } from "../library/composers";
 import { supportsCoverFlow } from "../navigation/catalog-presentation";
 import { AlbumCount } from "../components/AlbumCount";
@@ -49,7 +50,7 @@ export function LibraryPage(props: LibraryPageProps) {
   const library = useLibrary();
   const baseAlbums = () => props.baseAlbums ?? library.albums();
   const listening = createAlbumListening({
-    enabled: () => !library.demo && albumListeningCatalog(props.section),
+    enabled: () => !webEnabled() && !library.demo && albumListeningCatalog(props.section),
     session: (source) => (source === "local" ? library.localSession() : library.serverSession()),
     checkpoint: () => {
       const state = library.player.state();

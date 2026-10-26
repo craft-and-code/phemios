@@ -1,3 +1,5 @@
+import { webEnabled } from "../web/runtime";
+import { WebSettings } from "../web/WebSettings";
 import { useLibrary } from "../library/context";
 import type { createCollectionMenuChoices } from "../library/collection-menu-choices";
 import { SettingsParental } from "./SettingsParental";
@@ -44,7 +46,11 @@ export function SettingsPage(props: {
     { icon: "download", id: "backup", label: t("Sauvegarde") },
     { icon: "upload", id: "imports", label: t("Imports") },
     { icon: "help", id: "about", label: t("À propos") },
-  ];
+  ].filter(
+    (item) =>
+      !webEnabled() ||
+      ["libraries", "language", "appearance", "navigation", "shortcuts", "about"].includes(item.id),
+  );
   return (
     <section class="page settings-page">
       <div
@@ -88,7 +94,9 @@ export function SettingsPage(props: {
       </div>
       <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-tab-${tab()}`}>
         <Show when={tab() === "libraries"}>
-          <SettingsLibraries />
+          <Show when={webEnabled()} fallback={<SettingsLibraries />}>
+            <WebSettings />
+          </Show>
         </Show>
         <Show when={tab() === "accounts"}>
           <SettingsAccounts />

@@ -1,3 +1,4 @@
+import { webEnabled } from "../web/runtime";
 import { RefreshButton } from "./RefreshButton";
 import { NetworkAudio } from "./NetworkAudio";
 import { cdReference } from "../cd/model";
@@ -307,6 +308,7 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
               <ChoiceSelect
                 label={t("Mode de lecture")}
                 disabled={
+                  webEnabled() ||
                   !player.ready() ||
                   player.busy() ||
                   player.device() === "@hqplayer" ||
@@ -323,7 +325,7 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
                 options={[
                   { value: "hqplayer", label: t("Traitement HQPlayer"), disabled: true },
                   { value: "without-effects", label: t("Sans DSP") },
-                  { value: "dsp", label: t("DSP · normalisation album") },
+                  { value: "dsp", label: t("DSP · normalisation album"), disabled: webEnabled() },
                   {
                     value: "bit-perfect",
                     label: t("Bit-perfect · indisponible sur ce flux"),
@@ -346,6 +348,7 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
                 step="500"
                 value={player.crossfade()}
                 disabled={
+                  webEnabled() ||
                   !player.ready() ||
                   player.busy() ||
                   player.device() === "@hqplayer" ||
@@ -356,7 +359,9 @@ export function PlayerBar(props: { playbackView?: boolean } = {}) {
                 onInput={(event) => void player.chooseCrossfade(Number(event.currentTarget.value))}
               />
             </label>
-            <small>{t("Activez le mode DSP pour utiliser le fondu.")}</small>
+            <Show when={!webEnabled()}>
+              <small>{t("Activez le mode DSP pour utiliser le fondu.")}</small>
+            </Show>
             <NetworkAudio />
           </div>
         </details>
