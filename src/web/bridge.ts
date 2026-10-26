@@ -91,3 +91,9 @@ window.addEventListener("pagehide", () => {
   player.stop();
   void session.logout();
 });
+
+// pagehide retires named credentials immediately. A BFCache restoration reuses the old
+// frontend realm, so reload before showing its retained owner/transport as connected.
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) location.reload();
+});

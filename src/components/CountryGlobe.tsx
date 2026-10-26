@@ -1,3 +1,4 @@
+import { readCountryBorders } from "../geography/borders";
 import { ChoiceSelect } from "./ChoiceSelect";
 import { geoCentroid } from "d3-geo";
 import { countryGeometry } from "../geography/geometry";
@@ -39,9 +40,7 @@ export function CountryGlobe(props: {
 }) {
   const [countries] = createResource(async () => {
     if (props.loadCountries) return props.loadCountries();
-    const response = await fetch("/geography/countries.json");
-    if (!response.ok) throw new Error(t("Frontières indisponibles"));
-    return (await response.json()) as Country[];
+    return readCountryBorders();
   });
   const [center, setCenter] = createSignal<Point>([8, 22]),
     [zoom, setZoom] = createSignal(1),

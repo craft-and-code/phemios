@@ -1,3 +1,4 @@
+import { bundledAsset } from "../bundled-assets";
 import { BiographyLanguageNotice } from "../components/BiographyLanguageNotice";
 import { createAccountSavedArticles } from "../encyclopedia/account-saved";
 import { articleRetained } from "../encyclopedia/saved";
@@ -74,11 +75,11 @@ export function ArtistPage(props: {
   const appearances = () => (catalogue().credited ? [] : catalogue().appearances);
   const banner = () =>
     library.demo && props.artist.artwork
-      ? "/demo/landscape.svg"
+      ? bundledAsset("demo/landscape.svg")
       : library.image(props.artist.reference, "banner");
   const background = () =>
     library.demo && props.artist.artwork
-      ? "/demo/landscape.svg"
+      ? bundledAsset("demo/landscape.svg")
       : library.image(props.artist.reference, "background");
   return (
     <Show

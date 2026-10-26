@@ -29,7 +29,7 @@ vi.mock("./audio-output", () => ({
 import { WebPlayer } from "./player";
 beforeEach(() => {
   vi.clearAllMocks();
-  Object.assign(output.media, {
+  output.media = Object.assign(new EventTarget(), {
     paused: true,
     ended: false,
     src: "",
@@ -169,4 +169,17 @@ it("a boundary Next cancels a connecting final visit instead of letting its late
   expect(player.snapshot().status).toBe("ended");
   expect(output.media.play).not.toHaveBeenCalled();
   expect(release).toHaveBeenCalledOnce();
+});
+
+it("keeps the consumed endpoint when the final track naturally ends", async () => {
+  const player = new WebPlayer(async () => ({ url: "blob:final" }));
+  await player.start(["track:final"], 0, "", "without-effects");
+  await flush();
+  output.media.currentTime = 10;
+  output.media.duration = 10;
+  output.media.ended = true;
+  output.media.dispatchEvent(new Event("ended"));
+  expect(player.snapshot().status).toBe("ended");
+  expect(player.snapshot().position_ms).toBe(10000);
+  expect(player.snapshot().duration_ms).toBe(10000);
 });

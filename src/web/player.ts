@@ -145,7 +145,7 @@ export class WebPlayer {
   }
   snapshot(): PlaybackState {
     const media = this.output.media,
-      active = ["playing", "paused", "connecting"].includes(this.state.status);
+      active = ["playing", "paused", "connecting", "ended"].includes(this.state.status);
     const spectrum = this.output.levels(),
       levels = Array.from(
         { length: 4 },

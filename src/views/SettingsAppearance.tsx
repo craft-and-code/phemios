@@ -1,3 +1,4 @@
+import { bundledAsset } from "../bundled-assets";
 import { BrandWordmark } from "../components/BrandWordmark";
 import { interfacePreferences, interfaceProfileIdentity } from "../library/account-preferences";
 import { Feedback } from "../components/Feedback";
@@ -72,7 +73,7 @@ export function SettingsAppearance() {
         <span>{t("Aperçu")}</span>
         <div class="theme-preview-shell">
           <aside>
-            <img src="/favicon.svg" alt="Phémios" width="44" height="44" />
+            <img src={bundledAsset("favicon.svg")} alt="Phémios" width="44" height="44" />
             <span class="wordmark">
               <BrandWordmark />
             </span>
