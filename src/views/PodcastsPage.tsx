@@ -4,8 +4,8 @@ import { DownloadButton } from "../components/DownloadButton";
 import { AccountNotice } from "../components/AccountNotice";
 import { PageLoader } from "../components/PageLoader";
 import { Feedback } from "../components/Feedback";
-import { createSignal, createMemo, createEffect, on, For, Show, onCleanup } from "solid-js";
-import { t, locale } from "../i18n";
+import { createSignal, createMemo, createEffect, on, For, Show } from "solid-js";
+import { t } from "../i18n";
 import { useLibrary } from "../library/context";
 import { createEpisodeDownloads } from "../podcasts/downloads";
 import {
@@ -14,19 +14,37 @@ import {
   downloadPodcastEpisode,
   isNative,
 } from "../platform/desktop";
-import { parsePodcastFeed } from "../podcasts/feed";
+import { RefreshButton } from "../components/RefreshButton";
+import { PodcastEpisodeList } from "../components/PodcastEpisodeList";
 import { Icon } from "../components/Icon";
-import { acquirePodcastFeed } from "../podcasts/acquisition";
+import { createPodcastReader } from "../podcasts/reader";
 import { EmptyState } from "../components/EmptyState";
 /** RSS subscriptions stay usable offline; adding/updating is explicit and never starts an episode. */
 export function PodcastsPage(props: { query: string }) {
   const library = useLibrary(),
     subscriptions = library.podcastSubscriptions,
     [url, setUrl] = createSignal(""),
-    [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? ""),
-    [busy, setBusy] = createSignal<"" | "subscribe" | "refresh">(""),
-    [error, setError] = createSignal("");
+    [selected, setSelected] = createSignal(subscriptions.feeds()[0]?.url ?? "");
   const owner = createMemo(() => ({ session: library.session(), source: library.source() }));
+  const {
+    busy,
+    error,
+    load,
+    cancel: cancelLoad,
+  } = createPodcastReader({
+    owner,
+    selected,
+    writable: subscriptions.writable,
+    capture: subscriptions.capture,
+    resolve: resolvePodcastFeed,
+    read: readPodcastFeed,
+    allowed: (value) => library.parental.podcastAllowed(value),
+    saved: (data) => {
+      setSelected(data.url);
+      setUrl("");
+    },
+  });
+  const refreshIdentity = createMemo(() => ({ owner: owner(), selected: selected() }));
   const downloads = createEpisodeDownloads(async (url, title) => {
     if (!library.parental.available() || library.parental.status()?.policy.enabled)
       throw Error(t("Le téléchargement des épisodes est indisponible pour un compte supervisé."));
@@ -52,8 +70,6 @@ export function PodcastsPage(props: { query: string }) {
     on(owner, () => {
       setUrl("");
       setSelected("");
-      setBusy("");
-      setError("");
       unsubscribe.cancel();
     }),
   );
@@ -61,39 +77,12 @@ export function PodcastsPage(props: { query: string }) {
     const rows = subscriptions.feeds();
     if (!rows.some((row) => row.url === selected())) setSelected(rows[0]?.url ?? "");
   });
-  let alive = true;
-  onCleanup(() => {
-    alive = false;
-  });
   const feed = () => subscriptions.feeds().find((f) => f.url === selected());
   const episodes = () =>
     (feed()?.episodes ?? []).filter((e) =>
       `${e.title} ${e.summary}`.toLocaleLowerCase().includes(props.query.toLocaleLowerCase()),
     );
-  async function load(value: string, action: "subscribe" | "refresh" = "subscribe") {
-    if (busy() || !subscriptions.writable()) return;
-    const actor = subscriptions.capture();
-    setBusy(action);
-    setError("");
-    try {
-      const result = await acquirePodcastFeed(value, {
-        resolve: resolvePodcastFeed,
-        read: readPodcastFeed,
-        current: () => alive && actor.current(),
-        allowed: (source) => library.parental.podcastAllowed(source),
-      });
-      if (!result) return;
-      const data = parsePodcastFeed(result.xml, result.url);
-      if ((await actor.save(data)) && alive && actor.current()) {
-        setSelected(data.url);
-        setUrl("");
-      }
-    } catch (e) {
-      if (alive && actor.current()) setError(String(e));
-    } finally {
-      if (alive && actor.current()) setBusy("");
-    }
-  }
+  const episodeScope = createMemo(() => ({ owner: owner(), feed: selected(), query: props.query }));
   return (
     <section class="page result-page podcasts-page">
       <Show when={subscriptions.loading()}>
@@ -131,7 +120,7 @@ export function PodcastsPage(props: { query: string }) {
         fallback={<EmptyState icon="podcast">{t("Aucun podcast enregistré.")}</EmptyState>}
       >
         <div class="podcast-library">
-          <nav aria-label={t("Abonnements podcasts")}>
+          <nav class="podcast-subscriptions" aria-label={t("Abonnements podcasts")}>
             <For each={subscriptions.feeds()}>
               {(row) => (
                 <button
@@ -155,21 +144,16 @@ export function PodcastsPage(props: { query: string }) {
               <section class="podcast-episodes">
                 <div class="section-heading">
                   <h2>{current().title}</h2>
-                  <button
-                    class="icon-button"
-                    disabled={!!busy() || !isNative() || !subscriptions.writable()}
-                    aria-busy={busy() === "refresh"}
-                    aria-label={t("Actualiser les épisodes")}
-                    title={t("Actualiser les épisodes")}
-                    onClick={() => void load(current().url, "refresh")}
-                  >
-                    <Show when={busy() === "refresh"} fallback={<Icon name="refresh" />}>
-                      <span class="spinner" aria-hidden="true" />
-                      <span class="sr-only" role="status">
-                        {t("Chargement du podcast…")}
-                      </span>
-                    </Show>
-                  </button>
+                  <RefreshButton
+                    identity={refreshIdentity()}
+                    label={t("Actualiser les épisodes")}
+                    busy={busy() === "refresh"}
+                    disabled={
+                      (!!busy() && busy() !== "refresh") || !isNative() || !subscriptions.writable()
+                    }
+                    onCancel={cancelLoad}
+                    onRefresh={() => load(current().url, "refresh")}
+                  />
                   <button
                     class="icon-button quiet icon-close"
                     disabled={!!busy() || !subscriptions.writable()}
@@ -207,54 +191,35 @@ export function PodcastsPage(props: { query: string }) {
                     </div>
                   )}
                 </Show>
-                <ul>
-                  <For each={episodes()}>
-                    {(row) => (
-                      <li>
-                        <div>
-                          <strong>{row.title}</strong>
-                          <small>
-                            {row.date ? new Date(row.date).toLocaleDateString(locale()) : ""}
-                            {row.duration
-                              ? ` · ${Math.floor(row.duration / 60)}:${String(Math.floor(row.duration % 60)).padStart(2, "0")}`
-                              : ""}
-                          </small>
-                          <Show when={library.podcastListened.has(current().url, row.id)}>
-                            <small class="podcast-listened">
-                              <Icon name="check" /> {t("Écouté")}
-                            </small>
-                          </Show>
-                          <Show when={row.summary}>
-                            <p>{row.summary}</p>
-                          </Show>
-                        </div>
-                        <DownloadButton
-                          label={t("Télécharger {0}", row.title)}
-                          identity={owner()}
-                          disabled={
-                            !isNative() ||
-                            !library.parental.available() ||
-                            !!library.parental.status()?.policy.enabled ||
-                            (!!downloads.busy() && downloads.busy() !== row.url)
-                          }
-                          busy={downloads.busy() === row.url}
-                          onClick={() => downloads.save(row.url, row.title)}
-                        />
-                        <button
-                          class="icon-button"
-                          aria-label={t("Lire {0}", row.title)}
-                          title={t("Lire {0}", row.title)}
-                          onClick={() => void library.podcast.start(current(), row)}
-                        >
-                          <Icon name="play" />
-                        </button>
-                      </li>
-                    )}
-                  </For>
-                </ul>
-                <Show when={!episodes().length}>
-                  <EmptyState icon="podcast">{t("Aucun épisode dans cette sélection.")}</EmptyState>
-                </Show>
+                <PodcastEpisodeList
+                  episodes={episodes()}
+                  scope={episodeScope()}
+                  listened={(row) => library.podcastListened.has(current().url, row.id)}
+                  actions={(row) => (
+                    <>
+                      <DownloadButton
+                        label={t("Télécharger {0}", row.title)}
+                        identity={owner()}
+                        disabled={
+                          !isNative() ||
+                          !library.parental.available() ||
+                          !!library.parental.status()?.policy.enabled ||
+                          (!!downloads.busy() && downloads.busy() !== row.url)
+                        }
+                        busy={downloads.busy() === row.url}
+                        onClick={() => downloads.save(row.url, row.title)}
+                      />
+                      <button
+                        class="icon-button quiet"
+                        aria-label={t("Lire {0}", row.title)}
+                        title={t("Lire {0}", row.title)}
+                        onClick={() => void library.podcast.start(current(), row)}
+                      >
+                        <Icon name="play" />
+                      </button>
+                    </>
+                  )}
+                />
               </section>
             )}
           </Show>

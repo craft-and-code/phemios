@@ -303,3 +303,31 @@ it.each(["lookup", "rss"] as const)(
     }
   },
 );
+
+it("retires a stopped feed save while it is queued behind another account mutation", async () => {
+  vi.mocked(readPodcastState).mockResolvedValue(empty);
+  let finish!: (value: unknown) => void;
+  vi.mocked(updatePodcastState).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  const view = scope();
+  try {
+    await settle();
+    const first = view.store.mark(feed.url, "heard");
+    let current = true;
+    const queued = view.store.capture().save(feed, () => current);
+    await settle();
+    expect(updatePodcastState).toHaveBeenCalledTimes(1);
+    current = false;
+    finish(empty);
+    await first;
+    expect(await queued).toBe(false);
+    expect(updatePodcastState).toHaveBeenCalledTimes(1);
+    expect(view.store.pending()).toBe(false);
+  } finally {
+    view.dispose();
+  }
+});

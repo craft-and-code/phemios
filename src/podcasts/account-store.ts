@@ -89,19 +89,25 @@ export function createAccountPodcasts(
   function capture() {
     const held = scope(),
       active = () => current(held);
-    async function update(action: "save" | "remove" | "mark", payload: unknown) {
+    async function update(
+      action: "save" | "remove" | "mark",
+      payload: unknown,
+      admit: () => boolean = () => true,
+    ) {
       if (
         !held ||
         !active() ||
+        !admit() ||
         loading() ||
         !admitted() ||
         !["user", "admin"].includes(held.owner.account.role)
       )
         return false;
       const work = held.tail.then(async () => {
-        if (!active()) return false;
+        if (!active() || !admit()) return false;
         const epoch = loadEpoch;
-        const admittedWrite = () => active() && epoch === loadEpoch;
+        const ownsWrite = () => active() && epoch === loadEpoch;
+        const admittedWrite = () => ownsWrite() && admit();
         setPending(true);
         setError("");
         try {
@@ -113,7 +119,7 @@ export function createAccountPodcasts(
           if (admittedWrite()) setError(String(failure));
           return false;
         } finally {
-          if (admittedWrite()) setPending(false);
+          if (ownsWrite()) setPending(false);
         }
       });
       held.tail = work;
@@ -121,7 +127,8 @@ export function createAccountPodcasts(
     }
     return {
       current: active,
-      save: (feed: Podcast) => update("save", validatedPodcast(feed)),
+      save: (feed: Podcast, current?: () => boolean) =>
+        update("save", validatedPodcast(feed), current),
       remove: (url: string) => update("remove", podcastUrl(url)),
       mark: (feed: string, id: string) => update("mark", { feed: podcastUrl(feed), id }),
     };
